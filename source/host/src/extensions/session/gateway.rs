@@ -28,7 +28,7 @@ use uuid::Uuid;
 
 use super::agent_db_transcript_pages::{HumanTranscriptPageQuery, TranscriptPageQuery, TranscriptWindowQuery};
 use super::agent_session::SandAgentSessionStore;
-use super::production::{MiniAppPostError, ProductionSessionWorkers};
+use super::production::{HumanForwardDestination, MiniAppPostError, ProductionSessionWorkers};
 use super::session_profile_files::AgentProfileUpdate;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -46,6 +46,17 @@ impl SessionGatewayError {
         Self::Internal(message.into())
     }
 }
+
+impl std::fmt::Display for SessionGatewayError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::BadRequest(msg) => write!(f, "Bad request: {msg}"),
+            Self::Internal(msg) => write!(f, "Internal error: {msg}"),
+        }
+    }
+}
+
+impl std::error::Error for SessionGatewayError {}
 
 fn recent_recovery_user_messages(
     entries: &[Value],
@@ -343,6 +354,54 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 .create_human_conversation(peer_human_id, title)
                 .map_err(SessionGatewayError::internal)
         }),
+        "createGroupConversation" => (|| {
+            let group_id = optional_string(args, "groupId")?
+                .or(optional_string(args, "conversationId")?)
+                .ok_or_else(|| SessionGatewayError::bad("createGroupConversation requires groupId"))?;
+            let title = optional_string(args, "title")?.unwrap_or(group_id);
+            let participant_ids = optional_string_array(args, "participantIds")?.unwrap_or_default();
+            let slow_mode_seconds = args.get("slowModeSeconds").and_then(Value::as_u64).map(|v| v as u32);
+            session
+                .create_group_conversation(group_id, title, &participant_ids, slow_mode_seconds)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "createChannelConversation" => (|| {
+            let channel_id = optional_string(args, "channelId")?
+                .or(optional_string(args, "conversationId")?)
+                .ok_or_else(|| SessionGatewayError::bad("createChannelConversation requires channelId"))?;
+            let title = optional_string(args, "title")?.unwrap_or(channel_id);
+            let participant_ids = optional_string_array(args, "participantIds")?.unwrap_or_default();
+            session
+                .create_channel_conversation(channel_id, title, &participant_ids)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "upsertConversationTopic" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let topic_id = required_string(args, "topicId")?;
+            let title = required_string(args, "title")?;
+            let icon = optional_string(args, "icon")?;
+            let closed = optional_bool(args, "closed")?.unwrap_or(false);
+            let pinned = optional_bool(args, "pinned")?.unwrap_or(false);
+            let hidden = optional_bool(args, "hidden")?.unwrap_or(false);
+            session
+                .upsert_conversation_topic(conversation_id, topic_id, title, icon, closed, pinned, hidden)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "listConversationTopics" => required_string(args, "conversationId").and_then(|conversation_id| {
+            session
+                .list_conversation_topics(conversation_id)
+                .map(Value::Array)
+                .map_err(SessionGatewayError::internal)
+        }),
+        "upsertConversationMember" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let member_value = args.get("member").unwrap_or(args);
+            let member: fabushi_messaging_core::CommunityMember = serde_json::from_value(member_value.clone())
+                .map_err(|e| SessionGatewayError::bad(format!("invalid member payload: {e}")))?;
+            session
+                .upsert_conversation_member(conversation_id, member)
+                .map_err(SessionGatewayError::internal)
+        })(),
         "searchHumanRecipients" => required_string(args, "sourceConversationId").and_then(|source_conversation_id| {
             required_string(args, "sourceEntryId").and_then(|source_entry_id| {
                 let query = optional_string(args, "query")?.unwrap_or_default();
@@ -360,6 +419,22 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
         "forwardHumanMessage" => required_string(args, "sourceConversationId").and_then(|source_conversation_id| {
             required_string(args, "sourceEntryId").and_then(|source_entry_id| {
                 let destination_conversation_ids = required_string_array(args, "destinationConversationIds")?;
+                let destination_topics: Option<std::collections::HashMap<String, String>> = match args.get("destinationTopics") {
+                    None | Some(Value::Null) => None,
+                    Some(Value::Object(map)) => {
+                        let mut parsed = std::collections::HashMap::new();
+                        for (k, v) in map {
+                            if let Some(s) = v.as_str() {
+                                let trimmed = s.trim();
+                                if !trimmed.is_empty() {
+                                    parsed.insert(k.clone(), trimmed.to_string());
+                                }
+                            }
+                        }
+                        Some(parsed)
+                    }
+                    Some(_) => return Err(SessionGatewayError::bad("invalid destinationTopics: expected object")),
+                };
                 let comment = match args.get("comment") {
                     None | Some(Value::Null) => None,
                     Some(Value::String(text)) => {
@@ -386,12 +461,22 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     }
                     Some(_) => return Err(SessionGatewayError::bad("invalid comment: expected object or string")),
                 };
+                let destinations: Vec<HumanForwardDestination> = destination_conversation_ids
+                    .into_iter()
+                    .map(|id| {
+                        let topic_id = destination_topics.as_ref().and_then(|map| map.get(&id)).cloned();
+                        HumanForwardDestination {
+                            conversation_id: id,
+                            topic_id,
+                        }
+                    })
+                    .collect();
                 required_string(args, "clientNonce").and_then(|client_nonce| {
                     session
-                        .forward_human_message_with_comment(
+                        .forward_human_message_to_destinations(
                             source_conversation_id,
                             source_entry_id,
-                            &destination_conversation_ids,
+                            &destinations,
                             client_nonce,
                             optional_bool(args, "dropSenderNames")?.unwrap_or(false),
                             optional_bool(args, "dropCaptions")?.unwrap_or(false),
@@ -425,6 +510,7 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             }
             let text = optional_string(args, "text")?.unwrap_or_default();
             let reply_to_id = optional_string(args, "replyToId")?;
+            let topic_id = optional_string(args, "topicId")?;
             let attachments = match args.get("attachments") {
                 None | Some(Value::Null) => Vec::new(),
                 Some(Value::Array(values)) => values.clone(),
@@ -441,13 +527,14 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             }
             required_string(args, "clientNonce").and_then(|client_nonce| {
                 session
-                    .append_human_message_with_queue_origin(
+                    .append_human_message_with_topic_and_queue_origin(
                         conversation_id,
                         text,
                         client_nonce,
                         composed_at_ms,
                         reply_to_id,
                         &attachments,
+                        topic_id,
                         queued_offline,
                     )
                     .map_err(SessionGatewayError::internal)
@@ -989,6 +1076,28 @@ fn required_string_array(
                 .ok_or_else(|| SessionGatewayError::bad(format!("{field} must contain only strings")))
         })
         .collect()
+}
+
+fn optional_string_array(
+    args: &Value,
+    field: &str,
+) -> Result<Option<Vec<String>>, SessionGatewayError> {
+    match args.get(field) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Array(values)) => {
+            let res = values
+                .iter()
+                .map(|value| {
+                    value
+                        .as_str()
+                        .map(ToOwned::to_owned)
+                        .ok_or_else(|| SessionGatewayError::bad(format!("{field} must contain only strings")))
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(Some(res))
+        }
+        _ => Err(SessionGatewayError::bad(format!("{field} must be an array of strings"))),
+    }
 }
 
 pub(crate) fn optional_string<'a>(

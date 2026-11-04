@@ -40,6 +40,40 @@ use super::agent_db_transcript_pages::{
     read_human_transcript_entries, read_human_transcript_entries_for_topic, read_human_transcript_tail,
     read_transcript_page, read_transcript_tail, read_transcript_window,
 };
+use fabushi_messaging_core::{
+    ActorId, AdminRights, CommunityMember, ConversationId, ForumTopicState, MemberRestrictions,
+    MemberStatus,
+};
+
+fn member_status_to_str(status: MemberStatus) -> &'static str {
+    match status {
+        MemberStatus::Owner => "owner",
+        MemberStatus::Administrator => "administrator",
+        MemberStatus::Member => "member",
+        MemberStatus::Restricted => "restricted",
+        MemberStatus::Left => "left",
+        MemberStatus::Banned => "banned",
+    }
+}
+
+fn member_status_from_str(s: &str) -> Result<MemberStatus, rusqlite::Error> {
+    match s {
+        "owner" | "Owner" => Ok(MemberStatus::Owner),
+        "administrator" | "Administrator" => Ok(MemberStatus::Administrator),
+        "member" | "Member" => Ok(MemberStatus::Member),
+        "restricted" | "Restricted" => Ok(MemberStatus::Restricted),
+        "left" | "Left" => Ok(MemberStatus::Left),
+        "banned" | "Banned" => Ok(MemberStatus::Banned),
+        other => Err(rusqlite::Error::FromSqlConversionFailure(
+            1,
+            rusqlite::types::Type::Text,
+            Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("invalid MemberStatus: {other}"),
+            )),
+        )),
+    }
+}
 
 #[cfg(test)]
 #[path = "human_creation_storage_tests.rs"]
@@ -1962,6 +1996,336 @@ impl SandAgentDb {
             }
             Err(error) => Err(error.into()),
         }
+    }
+
+    pub fn upsert_conversation_topic(
+        &self,
+        topic: &ForumTopicState,
+    ) -> Result<(), AgentDbProjectionError> {
+        self.run_write_value("upsertConversationTopic", |db| {
+            let changed = db.execute(
+                "INSERT INTO conversation_topics (
+                    topic_id, title, icon, creator_id, created_at_ms,
+                    pinned, closed, hidden, last_message_id, unread_count
+                ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+                ON CONFLICT(topic_id) DO UPDATE SET
+                    title = excluded.title,
+                    icon = excluded.icon,
+                    creator_id = excluded.creator_id,
+                    created_at_ms = excluded.created_at_ms,
+                    pinned = excluded.pinned,
+                    closed = excluded.closed,
+                    hidden = excluded.hidden,
+                    last_message_id = excluded.last_message_id,
+                    unread_count = excluded.unread_count",
+                params![
+                    topic.id,
+                    topic.title,
+                    topic.icon,
+                    topic.creator_id.0,
+                    topic.created_at_ms,
+                    if topic.pinned { 1i64 } else { 0i64 },
+                    if topic.closed { 1i64 } else { 0i64 },
+                    if topic.hidden { 1i64 } else { 0i64 },
+                    topic.last_message_id,
+                    topic.unread_count as i64,
+                ],
+            )? > 0;
+            Ok(((), changed))
+        })
+    }
+
+    pub fn get_conversation_topic(
+        &self,
+        topic_id: &str,
+    ) -> Result<Option<ForumTopicState>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(None);
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(None);
+        };
+        let mut statement = db.prepare(
+            "SELECT topic_id, title, icon, creator_id, created_at_ms, pinned, closed, hidden, last_message_id, unread_count
+             FROM conversation_topics WHERE topic_id = ?1",
+        )?;
+        let result = statement.query_row(params![topic_id], |row| {
+            let topic_id = row.get::<_, String>(0)?;
+            let title = row.get::<_, String>(1)?;
+            let icon = row.get::<_, Option<String>>(2)?;
+            let creator_id = row.get::<_, String>(3)?;
+            let created_at_ms = row.get::<_, i64>(4)?;
+            let pinned = row.get::<_, i64>(5)? != 0;
+            let closed = row.get::<_, i64>(6)? != 0;
+            let hidden = row.get::<_, i64>(7)? != 0;
+            let last_message_id = row.get::<_, Option<String>>(8)?;
+            let unread_count = row.get::<_, i64>(9)? as u32;
+            Ok(ForumTopicState {
+                id: topic_id,
+                conversation_id: ConversationId::new(&self.agent_dir_name),
+                title,
+                icon,
+                creator_id: ActorId::new(creator_id),
+                created_at_ms,
+                pinned,
+                closed,
+                hidden,
+                unread_count,
+                last_message_id,
+            })
+        }).optional()?;
+        Ok(result)
+    }
+
+    pub fn list_conversation_topics(
+        &self,
+    ) -> Result<Vec<ForumTopicState>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(Vec::new());
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(Vec::new());
+        };
+        let mut statement = db.prepare(
+            "SELECT topic_id, title, icon, creator_id, created_at_ms, pinned, closed, hidden, last_message_id, unread_count
+             FROM conversation_topics
+             ORDER BY pinned DESC, created_at_ms DESC, topic_id ASC",
+        )?;
+        let rows = statement.query_map([], |row| {
+            let topic_id = row.get::<_, String>(0)?;
+            let title = row.get::<_, String>(1)?;
+            let icon = row.get::<_, Option<String>>(2)?;
+            let creator_id = row.get::<_, String>(3)?;
+            let created_at_ms = row.get::<_, i64>(4)?;
+            let pinned = row.get::<_, i64>(5)? != 0;
+            let closed = row.get::<_, i64>(6)? != 0;
+            let hidden = row.get::<_, i64>(7)? != 0;
+            let last_message_id = row.get::<_, Option<String>>(8)?;
+            let unread_count = row.get::<_, i64>(9)? as u32;
+            Ok(ForumTopicState {
+                id: topic_id,
+                conversation_id: ConversationId::new(&self.agent_dir_name),
+                title,
+                icon,
+                creator_id: ActorId::new(creator_id),
+                created_at_ms,
+                pinned,
+                closed,
+                hidden,
+                unread_count,
+                last_message_id,
+            })
+        })?;
+        let mut topics = Vec::new();
+        for row in rows {
+            topics.push(row?);
+        }
+        Ok(topics)
+    }
+
+    pub fn upsert_conversation_member(
+        &self,
+        member: &CommunityMember,
+        updated_at_ms: i64,
+    ) -> Result<(), AgentDbProjectionError> {
+        let admin_rights_json = serde_json::to_string(&member.admin_rights).ok();
+        let restrictions_json = serde_json::to_string(&member.restrictions).ok();
+        self.run_write_value("upsertConversationMember", |db| {
+            let changed = db.execute(
+                "INSERT INTO conversation_members (
+                    actor_id, status, admin_title, admin_rights,
+                    restrictions, joined_at_ms, invited_by, updated_at_ms
+                ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+                ON CONFLICT(actor_id) DO UPDATE SET
+                    status = excluded.status,
+                    admin_title = excluded.admin_title,
+                    admin_rights = excluded.admin_rights,
+                    restrictions = excluded.restrictions,
+                    joined_at_ms = excluded.joined_at_ms,
+                    invited_by = excluded.invited_by,
+                    updated_at_ms = excluded.updated_at_ms",
+                params![
+                    member.actor_id.0,
+                    member_status_to_str(member.status),
+                    member.admin_title,
+                    admin_rights_json,
+                    restrictions_json,
+                    member.joined_at_ms,
+                    member.invited_by.as_ref().map(|id| id.0.clone()),
+                    updated_at_ms,
+                ],
+            )? > 0;
+            Ok(((), changed))
+        })
+    }
+
+    pub fn get_conversation_member(
+        &self,
+        actor_id: &str,
+    ) -> Result<Option<CommunityMember>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(None);
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(None);
+        };
+        let mut statement = db.prepare(
+            "SELECT actor_id, status, admin_title, admin_rights, restrictions, joined_at_ms, invited_by
+             FROM conversation_members WHERE actor_id = ?1",
+        )?;
+        let result = statement.query_row(params![actor_id], |row| {
+            let actor_id = row.get::<_, String>(0)?;
+            let status_str = row.get::<_, String>(1)?;
+            let status = member_status_from_str(&status_str)?;
+            let admin_title = row.get::<_, Option<String>>(2)?;
+            let admin_rights_str = row.get::<_, Option<String>>(3)?;
+            let admin_rights: AdminRights = admin_rights_str
+                .as_deref()
+                .and_then(|s| serde_json::from_str(s).ok())
+                .unwrap_or_default();
+            let restrictions_str = row.get::<_, Option<String>>(4)?;
+            let restrictions: MemberRestrictions = restrictions_str
+                .as_deref()
+                .and_then(|s| serde_json::from_str(s).ok())
+                .unwrap_or_default();
+            let joined_at_ms = row.get::<_, i64>(5)?;
+            let invited_by = row.get::<_, Option<String>>(6)?.map(ActorId::new);
+
+            Ok(CommunityMember {
+                actor_id: ActorId::new(actor_id),
+                status,
+                admin_title,
+                admin_rights,
+                restrictions,
+                joined_at_ms,
+                invited_by,
+            })
+        }).optional()?;
+        Ok(result)
+    }
+
+    pub fn list_conversation_members(
+        &self,
+    ) -> Result<Vec<CommunityMember>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(Vec::new());
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(Vec::new());
+        };
+        let mut statement = db.prepare(
+            "SELECT actor_id, status, admin_title, admin_rights, restrictions, joined_at_ms, invited_by
+             FROM conversation_members
+             ORDER BY joined_at_ms ASC, actor_id ASC",
+        )?;
+        let rows = statement.query_map([], |row| {
+            let actor_id = row.get::<_, String>(0)?;
+            let status_str = row.get::<_, String>(1)?;
+            let status = member_status_from_str(&status_str)?;
+            let admin_title = row.get::<_, Option<String>>(2)?;
+            let admin_rights_str = row.get::<_, Option<String>>(3)?;
+            let admin_rights: AdminRights = admin_rights_str
+                .as_deref()
+                .and_then(|s| serde_json::from_str(s).ok())
+                .unwrap_or_default();
+            let restrictions_str = row.get::<_, Option<String>>(4)?;
+            let restrictions: MemberRestrictions = restrictions_str
+                .as_deref()
+                .and_then(|s| serde_json::from_str(s).ok())
+                .unwrap_or_default();
+            let joined_at_ms = row.get::<_, i64>(5)?;
+            let invited_by = row.get::<_, Option<String>>(6)?.map(ActorId::new);
+
+            Ok(CommunityMember {
+                actor_id: ActorId::new(actor_id),
+                status,
+                admin_title,
+                admin_rights,
+                restrictions,
+                joined_at_ms,
+                invited_by,
+            })
+        })?;
+        let mut members = Vec::new();
+        for row in rows {
+            members.push(row?);
+        }
+        Ok(members)
+    }
+
+    pub fn pin_conversation_message(
+        &self,
+        child_scope: &str,
+        message_id: &str,
+        pinned_at_ms: i64,
+        pinned_by: &str,
+    ) -> Result<(), AgentDbProjectionError> {
+        self.run_write_value("pinConversationMessage", |db| {
+            let changed = db.execute(
+                "INSERT INTO conversation_pins (child_scope, message_id, pinned_at_ms, pinned_by)
+                 VALUES (?1, ?2, ?3, ?4)
+                 ON CONFLICT(child_scope, message_id) DO UPDATE SET
+                    pinned_at_ms = excluded.pinned_at_ms,
+                    pinned_by = excluded.pinned_by",
+                params![child_scope, message_id, pinned_at_ms, pinned_by],
+            )? > 0;
+            Ok(((), changed))
+        })
+    }
+
+    pub fn unpin_conversation_message(
+        &self,
+        child_scope: &str,
+        message_id: &str,
+    ) -> Result<(), AgentDbProjectionError> {
+        self.run_write_value("unpinConversationMessage", |db| {
+            let changed = db.execute(
+                "DELETE FROM conversation_pins WHERE child_scope = ?1 AND message_id = ?2",
+                params![child_scope, message_id],
+            )? > 0;
+            Ok(((), changed))
+        })
+    }
+
+    pub fn list_conversation_pins(
+        &self,
+        child_scope: &str,
+    ) -> Result<Vec<String>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(Vec::new());
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(Vec::new());
+        };
+        let mut statement = db.prepare(
+            "SELECT message_id FROM conversation_pins WHERE child_scope = ?1 ORDER BY pinned_at_ms DESC",
+        )?;
+        let rows = statement.query_map(params![child_scope], |row| row.get::<_, String>(0))?;
+        let mut pins = Vec::new();
+        for row in rows {
+            pins.push(row?);
+        }
+        Ok(pins)
     }
 
 }
