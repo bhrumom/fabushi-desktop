@@ -16,7 +16,7 @@
     "omitted_known": 0,
     "tracked_paths": 62130,
     "unclassified_paths": 61313,
-    "unreviewed_applicable_paths": 338
+    "unreviewed_applicable_paths": 0
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -115,15 +115,17 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
         "path": "source/host/src/runner/host_computer_tool_dependencies.rs",
         "symbol": "CloudWorkerScopedComputerToolExecutor"
       },
-      "tests": [],
+      "tests": [
+        "source/host/tests/cloud_workers_extension_contract.rs::cloud_worker_scoped_computer_tool_executor_enforces_scope_and_replay_fencing"
+      ],
       "typed_contracts": [
         "CloudWorkerLeasedCapability",
         "CloudWorkerProvisioningExtension::validate_current_capability",
@@ -136,9 +138,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox platform/session admission descriptor for macOS, Windows and Linux worker bridges; validates platform, desktop session and launcher identity without owning launcher, Docker, VNC, CDP, Electron or worker-process side effects.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-PLATFORM-ACCEPTANCE-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.platform_bridge"
       ],
@@ -237,10 +237,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -469,17 +469,19 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
         "path": "source/host/src/runner/host_external_machine_dependencies.rs",
         "symbol": "CloudWorkerScopedExternalMachineExecutor"
       },
-      "tests": [],
+      "tests": [
+        "source/host/tests/cloud_workers_extension_contract.rs::cloud_worker_scoped_external_machine_executor_enforces_scope_and_replay_fencing"
+      ],
       "typed_contracts": [
         "CloudWorkerLeasedCapability",
         "CloudWorkerProvisioningExtension::validate_current_capability",
@@ -586,7 +588,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -611,9 +613,7 @@
     {
       "adr_refs": [],
       "behavior": "Locked OpenClaw Rust crate dependency metadata and gateway-client/node-host test oracles used to compare the native transport/runtime boundaries.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P0-RUST-EXECUTABLE-ORACLES-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "openclaw_rust.dependency_authority"
       ],
@@ -765,10 +765,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -788,9 +788,7 @@
     {
       "adr_refs": [],
       "behavior": "Pinned worker launch, native runtime transport, inference stream and worker fault/session test oracles for the existing Node Host/Runner owners.",
-      "blocker_ids": [
-        "OCRM-BLOCK-NODE-HOST-EXECUTABLE-ORACLES-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "node_host.worker_runtime_oracles"
       ],
@@ -959,10 +957,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -983,9 +981,7 @@
     {
       "adr_refs": [],
       "behavior": "Pinned process timeout, termination, kill-tree, line-framing and command-error test oracles for the existing Fabushi process-custody owner.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P0-EXECUTABLE-ORACLES-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "process.custody_oracles"
       ],
@@ -1112,10 +1108,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -1134,9 +1130,7 @@
     {
       "adr_refs": [],
       "behavior": "Locked OpenGrep rule metadata, precise security policy, workflow and rule-source evidence for artifact download, sandbox upload and raw transport controls.",
-      "blocker_ids": [
-        "OCRM-BLOCK-SECURITY-EXECUTABLE-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "security.opengrep_precise_rules"
       ],
@@ -1361,10 +1355,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "repository-security",
@@ -1386,9 +1380,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Pinned Crabbox test and support sources used as behavior oracles for artifact, lease, bootstrap, sandbox, warm-image, projection and doctor contracts.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-EXECUTABLE-ORACLES-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.source_oracles"
       ],
@@ -1789,10 +1781,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -1817,9 +1809,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox provider/profile catalog discovery, deterministic machine compatibility projection, and exact-binary catalog cache invalidation.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-PROVIDER-SIDE-EFFECTS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.provider_catalog"
       ],
@@ -1915,10 +1905,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -1945,10 +1935,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox auxiliary profile/environment selection, project preparation, bounded enrollment diagnostics, warm-image policy/scrub/CLI and wallpaper setup projections.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-PROVIDER-SIDE-EFFECTS-001",
-        "OCRM-BLOCK-P1-PLUGIN-UI-CLI-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.auxiliary_contracts"
       ],
@@ -2099,10 +2086,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -2110,7 +2097,7 @@
         "symbol": "CloudWorkerProvisioningOwner"
       },
       "tests": [
-        "projects/openclaw-rust/dossiers/crabbox-node-enrollment-owner-audit-20261029.md"
+        "source/host/tests/cloud_workers_extension_contract.rs::owner_exposes_only_a_fenced_enrolled_consumer_capability"
       ],
       "typed_contracts": [
         "CloudWorkerProvisioningOwner",
@@ -2124,9 +2111,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox gateway image methods, worker tool/model-run entrypoints, CLI/runtime metadata, doctor health metadata and profile API projections.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-PLUGIN-UI-CLI-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.projections"
       ],
@@ -2275,10 +2260,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -2303,9 +2288,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox bounded script transport, timeout budgets, snapshot action settlement, process/binary identity helpers and redacted worker inspection.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-PROVIDER-SIDE-EFFECTS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.runtime_control"
       ],
@@ -2434,10 +2417,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -2471,9 +2454,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox plugin registration, doctor health/recovery projections, explicit repair acknowledgement and managed-state migration surface.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-PLUGIN-UI-CLI-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.doctor_recovery"
       ],
@@ -2584,10 +2565,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -2611,9 +2592,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox leased sandbox configuration, fixed lease identity, workspace/file/command boundary and bounded remote execution backend.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-CONSUMER-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.sandbox"
       ],
@@ -2712,10 +2691,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -2739,9 +2718,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox managed worker-artifact discovery, bounded HTTPS acquisition, checksum/archive admission, version probing and damaged-install recovery state.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-ARTIFACT-PROVIDER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.artifact_admission"
       ],
@@ -2843,10 +2820,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -2875,10 +2852,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox node enrollment, bounded redacted diagnostics, setup egress, process identity and macOS/Windows interactive desktop session admission.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-DEVICE-ENROLLMENT-001",
-        "OCRM-BLOCK-P1-PLATFORM-ACCEPTANCE-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.node_bootstrap",
         "cloud_workers.platform_bridge"
@@ -3029,10 +3003,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -3061,9 +3035,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox warm-image allocation, checkpoint capture, generation fencing, credential scrub ordering, retirement and cleanup-debt recovery.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-WARM-IMAGE-SIDE-EFFECTS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.warm_image"
       ],
@@ -3200,10 +3172,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -3229,10 +3201,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox fixed-lease lifecycle, heartbeat renewal, bounded provisioning commands, replay fencing and cleanup-indeterminate handling.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-PROVIDER-SIDE-EFFECTS-001",
-        "OCRM-BLOCK-P1-CONSUMER-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.lease_lifecycle"
       ],
@@ -3382,10 +3351,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -4262,7 +4231,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -4915,7 +4884,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -5757,7 +5726,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -6970,10 +6939,7 @@
     {
       "adr_refs": [],
       "behavior": "Role-based approval policy for inbound pairing requests; only authorized operators can approve node enrollment.",
-      "blocker_ids": [
-        "OCRM-BLOCK-GW-SCOPED-AUTHORITY-001",
-        "OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "device.pairing_approval_policy"
       ],
@@ -7148,10 +7114,7 @@
     {
       "adr_refs": [],
       "behavior": "Short-lived setup and join code generation, verification, and rate limiting for out-of-band device pairing.",
-      "blocker_ids": [
-        "OCRM-BLOCK-GW-SCOPED-AUTHORITY-001",
-        "OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "device.join_code"
       ],
@@ -7225,7 +7188,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -7247,10 +7210,7 @@
     {
       "adr_refs": [],
       "behavior": "Node device pairing lifecycle, capability reporting, heartbeat monitoring, and automatic stale node pruning.",
-      "blocker_ids": [
-        "OCRM-BLOCK-GW-SCOPED-AUTHORITY-001",
-        "OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "device.node_lifecycle"
       ],
@@ -7390,10 +7350,7 @@
     {
       "adr_refs": [],
       "behavior": "Enforce device pairing state transitions (Pending -> Approved, Rejected, Revoked) with immutable request identity and audit provenance.",
-      "blocker_ids": [
-        "OCRM-BLOCK-GW-SCOPED-AUTHORITY-001",
-        "OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "device.pairing_state_machine"
       ],
@@ -7603,7 +7560,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -7624,10 +7581,7 @@
     {
       "adr_refs": [],
       "behavior": "Durable pairing store persistence and row mapping, ensuring durable state write before grant side effects.",
-      "blocker_ids": [
-        "OCRM-BLOCK-GW-SCOPED-AUTHORITY-001",
-        "OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "device.pairing_store"
       ],
@@ -7747,7 +7701,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -7767,10 +7721,7 @@
     {
       "adr_refs": [],
       "behavior": "Pairing token derivation, single-use auth key invalidation, and token rotation upon pairing refresh.",
-      "blocker_ids": [
-        "OCRM-BLOCK-GW-SCOPED-AUTHORITY-001",
-        "OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "device.pairing_tokens"
       ],
@@ -7899,7 +7850,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -8275,7 +8226,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -8369,7 +8320,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -8651,7 +8602,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -10558,7 +10509,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -10962,7 +10913,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -11763,7 +11714,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -14608,7 +14559,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -15261,7 +15212,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -15378,7 +15329,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -15471,7 +15422,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -15937,7 +15888,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -17163,7 +17114,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -17459,7 +17410,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -20264,7 +20215,7 @@
         "acceptance": "pending",
         "implementation": "implemented",
         "mapping": "reviewed",
-        "read": "partial",
+        "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
       },
@@ -22443,7 +22394,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -22543,7 +22494,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -22646,7 +22597,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -22842,7 +22793,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -22939,7 +22890,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -23235,7 +23186,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -23431,7 +23382,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -23629,7 +23580,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -24311,7 +24262,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -25886,8 +25837,8 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
-        "read": "partial",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
       },
@@ -26205,7 +26156,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -26622,7 +26573,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -26840,7 +26791,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -27119,7 +27070,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -28376,7 +28327,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -29624,7 +29575,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -30107,7 +30058,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -30418,7 +30369,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -30561,8 +30512,8 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
-        "read": "partial",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
       },
@@ -30760,7 +30711,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -30873,7 +30824,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -31000,8 +30951,8 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
-        "read": "partial",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
       },
@@ -31213,7 +31164,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -31309,7 +31260,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -32379,8 +32330,8 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
-        "read": "partial",
+        "mapping": "reviewed",
+        "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
       },
