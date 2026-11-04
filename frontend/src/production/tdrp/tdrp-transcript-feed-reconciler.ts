@@ -37,8 +37,8 @@ export interface CreateTranscriptFeedObserversOptions {
   readonly humanReactionSettlement: any;
   readonly humanMessageRetryController: any;
   readonly observeTranscriptSettlement: (agentId: string, entry: ConversationTranscriptEntry) => void;
-  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, readonly ConversationTranscriptEntry[]>>>;
-  readonly entriesByAgentRef: React.MutableRefObject<Record<string, readonly ConversationTranscriptEntry[]>>;
+  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, ConversationTranscriptEntry[]>>>;
+  readonly entriesByAgentRef: React.MutableRefObject<Record<string, ConversationTranscriptEntry[]>>;
   readonly invalidateActiveHumanSearch: (ownerId: string) => void;
   readonly transcriptPaginationController: any;
   readonly invalidateTranscriptConversation: (ownerId: string) => void;
@@ -47,7 +47,7 @@ export interface CreateTranscriptFeedObserversOptions {
   readonly activeAgentIdRef: React.MutableRefObject<string>;
   readonly openAgentRequestGenerationRef: React.MutableRefObject<number>;
   readonly initialTranscriptRequestRef: React.MutableRefObject<any>;
-  readonly openAgentRef: React.MutableRefObject<(agentId: string, options?: { background?: boolean }) => Promise<void>>;
+  readonly openAgentRef: { readonly current: (agentId: string, options?: { background?: boolean }) => void | Promise<unknown> };
 }
 
 export function createTranscriptFeedObservers({

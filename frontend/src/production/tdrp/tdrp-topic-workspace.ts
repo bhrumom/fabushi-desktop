@@ -19,7 +19,7 @@ export interface CommunityComposerGuardState {
 }
 
 export interface UseTdrpTopicWorkspaceOptions {
-  readonly activeAgent: RendererAgent | null;
+  readonly activeAgent: RendererAgent | null | undefined;
   readonly activeAgentId: string;
   readonly client: ProductionCoordinatorClient | null;
   readonly entries: readonly ConversationTranscriptEntry[];

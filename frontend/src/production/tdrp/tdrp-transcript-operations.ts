@@ -38,7 +38,7 @@ export interface UseTdrpTranscriptOperationsOptions {
   readonly humanCoverageContinuationInFlightRef: React.MutableRefObject<Set<string>>;
   readonly composerSubmissionQueueRef: React.MutableRefObject<any>;
   readonly pendingTranscriptReceiptsRef: React.MutableRefObject<Set<TranscriptReadUpdateBuffer>>;
-  readonly setPendingSendScopes: React.Dispatch<React.SetStateAction<Map<string, TranscriptSubmissionScope>>>;
+  readonly setPendingSendScopes: React.Dispatch<React.SetStateAction<ReadonlyMap<string, TranscriptSubmissionScope>>>;
 }
 
 export function useTdrpTranscriptOperations({

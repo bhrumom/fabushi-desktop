@@ -40,7 +40,7 @@ export interface UseTdrpOpenAgentOptions {
   readonly transportRef: React.MutableRefObject<string>;
   readonly setNotice: React.Dispatch<React.SetStateAction<string | null>>;
   readonly observeTranscriptSettlement: (agentId: string, entry: ConversationTranscriptEntry) => void;
-  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, readonly ConversationTranscriptEntry[]>>>;
+  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, ConversationTranscriptEntry[]>>>;
   readonly completeRosterAgentIdsRef: React.MutableRefObject<readonly string[]>;
   readonly hasLoadedAgentsRef: React.MutableRefObject<boolean>;
   readonly setHumanConversations: React.Dispatch<React.SetStateAction<RendererAgent[]>>;

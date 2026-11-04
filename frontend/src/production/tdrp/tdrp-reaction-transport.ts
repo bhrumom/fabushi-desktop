@@ -16,7 +16,7 @@ export interface CreateHumanReactionTransportOptions {
   readonly humanReactionSettlement: any;
   readonly humanConversationsRef: React.MutableRefObject<RendererAgent[]>;
   readonly transcriptPaginationController: any;
-  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, readonly ConversationTranscriptEntry[]>>>;
+  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, ConversationTranscriptEntry[]>>>;
   readonly setNotice: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
@@ -89,7 +89,7 @@ export interface CreateProductionHumanMessageRetryControllerOptions {
   readonly openAgentRequestGenerationRef: React.MutableRefObject<number>;
   readonly selectionStore: any;
   readonly acknowledgementController: any;
-  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, readonly ConversationTranscriptEntry[]>>>;
+  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, ConversationTranscriptEntry[]>>>;
   readonly setNotice: React.Dispatch<React.SetStateAction<string | null>>;
   readonly pendingTranscriptReadsRef: React.MutableRefObject<Set<TranscriptReadUpdateBuffer>>;
   readonly pendingTranscriptReceiptsRef: React.MutableRefObject<Set<TranscriptReadUpdateBuffer>>;

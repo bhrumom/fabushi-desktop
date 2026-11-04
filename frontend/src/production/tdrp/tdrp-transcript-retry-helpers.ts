@@ -14,11 +14,11 @@ export interface UseTdrpTranscriptRetryHelpersOptions {
   readonly composerDraftStore: any;
   readonly composerSubmissionQueueRef: React.MutableRefObject<any>;
   readonly acknowledgementController: any;
-  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, readonly ConversationTranscriptEntry[]>>>;
+  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, ConversationTranscriptEntry[]>>>;
   readonly isTranscriptScopeCurrent: (scope: TranscriptOperationScope) => boolean;
   readonly activeIsHuman: boolean;
   readonly activeAgentId: string;
-  readonly activeAgent: RendererAgent | null;
+  readonly activeAgent: RendererAgent | null | undefined;
   readonly composerSubmissionQueue: any;
   readonly renderedAccountScopeGeneration: number;
   readonly accountScopeGenerationRef: React.MutableRefObject<number>;
