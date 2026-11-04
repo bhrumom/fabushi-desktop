@@ -1,0 +1,45 @@
+{
+  "taskId": "bfafe567-d2b0-4f1e-85d4-74a546c04b1e",
+  "round": 19,
+  "status": "next",
+  "fixedUpstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "requestedHead": "cbdaa50c52996dff5c36d95e517179e0ce0c077b",
+  "evidenceBase": "7527a251e80435a7b3341ec6a0961311deeb0720",
+  "actions": {
+    "41803721430": "failure",
+    "41803721382": "failure",
+    "41806486174": "success",
+    "41806486119": "success",
+    "41813144415": "failure",
+    "41813351108": "success"
+  },
+  "verified": {
+    "41803721430": "Native UI failure; Playwright timeouts in two added tests; native reconciliation and shipping compile status from that run are not accepted as green.",
+    "41803721382": "Rust desktop runtime failed; renderer TypeScript/Vite work on the later run is not inherited evidence for this exact H.",
+    "41806486174": "Native UI passed: ProductionRenderer 15/15, Transcript 14/14, ForwardMessageDialog 26/26, forward settlement 6/6; TS checks, Vite 6.4.3 and 45-text-asset bundle boundary passed.",
+    "41806486119": "Rust desktop runtime renderer job passed; strict/non-strict Grok architecture checks passed (2002 modules).",
+    "41813144415": "ProductionRenderer actual 16 tests: 15 passed, one NMR-UI-01d failed. Failure at spec line 565 was an invalid oracle: pending().sends reports historical requests, not unsettled sends. Reply contract tests passed 4/4. Native reconciliation passed; shipping compile still running at last detailed poll.",
+    "41813351108": "Renderer job passed including Grok Electron and Fabushi TS configs, Vite 6.4.3, 45 emitted text assets, architecture strict/non-strict checks."
+  },
+  "ledgerSnapshot": {
+    "blob": "a1e81908156228d99aab6cadc2b3187a0134739c",
+    "responsibilities": null,
+    "rows": 184,
+    "sourceReviews": 6,
+    "reviewStatusCounts": {
+      "complete": 6
+    },
+    "completeReviews": 6,
+    "unresolvedRefObservations": 0,
+    "unknown": null,
+    "unread": null,
+    "acceptanceFlags": {}
+  },
+  "next": {
+    "NMR-UI-01d": "Correct Playwright fixture and assertion for Host canonical reply rekey; validate on a fresh exact H.",
+    "sourceReview": "Run source-review contract and fixed-source-candidate validator on fresh exact H and record full validator output.",
+    "ledger": "Update canonical ledger/RTM and both status documents only with fresh validator evidence.",
+    "product": "Continue typed topic/sublist lifecycle, suggestion/cloud-save, Saved Messages and premium feedback production integration."
+  },
+  "pr189": "Keep open/draft; no merge or acceptance."
+}
