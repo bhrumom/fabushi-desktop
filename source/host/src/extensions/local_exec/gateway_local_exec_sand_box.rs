@@ -603,6 +603,8 @@ pub fn create_bridge_user_computers(
 #[cfg(test)]
 mod operation_journal_fail_closed_tests {
     use super::*;
+    use std::{fs, io};
+    use std::sync::atomic::Ordering;
     use std::sync::mpsc;
 
     struct AllowGate;

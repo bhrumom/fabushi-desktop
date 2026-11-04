@@ -46,6 +46,15 @@ impl SessionGatewayError {
     }
 }
 
+impl std::fmt::Display for SessionGatewayError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::BadRequest(msg) => write!(f, "{msg}"),
+            Self::Internal(msg) => write!(f, "{msg}"),
+        }
+    }
+}
+
 fn recent_recovery_user_messages(
     entries: &[Value],
 ) -> Vec<crate::runner::RecoveryUserMessage> {

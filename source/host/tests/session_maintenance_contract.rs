@@ -6,7 +6,7 @@ use mahayana_host_runtime::agent_isolation::{
     AgentWorkerPool, ConversationBlobWorkerBackend, WorkerBlobStore,
 };
 use mahayana_host_runtime::extensions::session::agent_db::{
-    hidden_entry_repair_version, read_persisted_latest_root_blob_id,
+    hidden_entry_repair_version, read_persisted_latest_root_blob_id, SandAgentDb,
     read_persisted_transcript_entries, stale_root_cleanup_version,
 };
 use mahayana_host_runtime::extensions::session::agent_db_schema::AGENT_DB_SCHEMA;
@@ -107,12 +107,14 @@ fn production_missing_root_recovery_requires_all_structural_refs_and_cas_persist
     let root_id = Sha256::digest(&root_blob).to_vec();
     futures::executor::block_on(store.set_blob(&(), &root_id, &root_blob)).expect("root");
 
+    let owner = SandAgentDb::open(&db_path, 500).expect("owner");
     assert!(recover_conversation_root_if_missing(
         Arc::clone(&pool),
         "agent-a",
         &db_path,
         &blob_path,
         500,
+        &owner,
     )
     .expect("recovery"));
     assert_eq!(
@@ -125,6 +127,7 @@ fn production_missing_root_recovery_requires_all_structural_refs_and_cas_persist
         &db_path,
         &blob_path,
         500,
+        &owner,
     )
     .expect("second recovery"));
 
@@ -162,14 +165,15 @@ fn stale_root_cleanup_is_feature_gated_and_records_one_time_version() {
         &db_path, 500, &[], &retained_id,
     ).expect("seed root"));
 
+    let owner = SandAgentDb::open(&db_path, 500).expect("owner");
     pin_stale_root_gc(false);
     assert!(!clear_stale_checkpoint_roots_once(
-        Arc::clone(&pool), "agent-b", &db_path, &blob_path, 500,
+        Arc::clone(&pool), "agent-b", &db_path, &blob_path, 500, &owner,
     ).expect("disabled cleanup"));
 
     pin_stale_root_gc(true);
     assert!(clear_stale_checkpoint_roots_once(
-        Arc::clone(&pool), "agent-b", &db_path, &blob_path, 500,
+        Arc::clone(&pool), "agent-b", &db_path, &blob_path, 500, &owner,
     ).expect("enabled cleanup"));
     assert_eq!(
         stale_root_cleanup_version(&db_path, 500).expect("cleanup version"),
@@ -211,8 +215,9 @@ fn transcript_backfill_only_appends_a_matching_recovered_tail() {
         serde_json::json!({"id":"recovered-one","kind":"message","role":"user","content":"one"}),
         serde_json::json!({"id":"recovered-two","kind":"message","role":"user","content":"two"}),
     ];
-    assert_eq!(backfill_transcript(&db_path, 500, &rebuilt).expect("backfill"), 1);
-    assert_eq!(backfill_transcript(&db_path, 500, &rebuilt).expect("idempotent"), 0);
+    let owner = SandAgentDb::open(&db_path, 500).expect("owner");
+    assert_eq!(backfill_transcript(&db_path, 500, &rebuilt, &owner).expect("backfill"), 1);
+    assert_eq!(backfill_transcript(&db_path, 500, &rebuilt, &owner).expect("idempotent"), 0);
 
     let _ = fs::remove_dir_all(root);
 }
@@ -262,14 +267,15 @@ fn outline_backfill_and_hidden_repair_match_frozen_maintenance_contract() {
         },
     ]];
 
+    let owner = SandAgentDb::open(&db_path, 500).expect("owner");
     assert_eq!(
-        backfill_transcript_from_outline(&db_path, 500, &turns).expect("outline backfill"),
+        backfill_transcript_from_outline(&db_path, 500, &turns, &owner).expect("outline backfill"),
         0,
         "a mismatched persisted prefix must not append a tail"
     );
     let outline = turns.iter().flatten().cloned().collect::<Vec<_>>();
     assert_eq!(
-        repair_hidden_transcript_entries_once(&db_path, 500, &outline)
+        repair_hidden_transcript_entries_once(&db_path, 500, &outline, &owner)
             .expect("hidden repair"),
         1
     );
@@ -283,7 +289,7 @@ fn outline_backfill_and_hidden_repair_match_frozen_maintenance_contract() {
             .is_empty()
     );
     assert_eq!(
-        repair_hidden_transcript_entries_once(&db_path, 500, &[])
+        repair_hidden_transcript_entries_once(&db_path, 500, &[], &owner)
             .expect("idempotent hidden repair"),
         0
     );
@@ -320,8 +326,9 @@ fn outline_backfill_serializes_visible_user_send_and_tool_items() {
         },
     ]];
 
+    let owner = SandAgentDb::open(&db_path, 500).expect("owner");
     assert_eq!(
-        backfill_transcript_from_outline(&db_path, 500, &turns).expect("backfill"),
+        backfill_transcript_from_outline(&db_path, 500, &turns, &owner).expect("backfill"),
         3
     );
     let entries = read_persisted_transcript_entries(&db_path, 500).expect("entries");
@@ -341,11 +348,12 @@ fn recovered_profile_name_sync_matches_frozen_recovery_contract() {
     let db_path = agent_dir.join("store.db");
     create_store_db(&db_path, "agent-profile");
 
-    assert!(sync_recovered_profile_name(&db_path, 500, "  Profile Wins  ")
+    let owner = SandAgentDb::open(&db_path, 500).expect("owner");
+    assert!(sync_recovered_profile_name(&db_path, 500, "  Profile Wins  ", &owner)
         .expect("sync profile name"));
-    assert!(!sync_recovered_profile_name(&db_path, 500, "Profile Wins")
+    assert!(!sync_recovered_profile_name(&db_path, 500, "Profile Wins", &owner)
         .expect("idempotent sync"));
-    assert!(!sync_recovered_profile_name(&db_path, 500, "   ")
+    assert!(!sync_recovered_profile_name(&db_path, 500, "   ", &owner)
         .expect("blank profile ignored"));
 
     use mahayana_host_runtime::extensions::session::agent_db::read_persisted_agent_name;
