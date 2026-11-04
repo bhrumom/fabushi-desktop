@@ -1,7 +1,13 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
+
+pub use super::legacy_telegram_retirement::{
+    LegacyTelegramRetirementError, LegacyTelegramRetirementReport, RetiredTelegramMarker,
+    TelegramKeyClearHook,
+};
+use super::legacy_telegram_retirement::retire_legacy_telegram_data_internal;
 
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
@@ -237,6 +243,9 @@ pub struct ProductionSessionWorkers {
     mini_app_package_verifier: Mutex<Option<MiniAppPackageVerifier>>,
     miniapp_launch_sessions: Mutex<BTreeMap<String, HostMiniAppLaunchSession>>,
     miniapp_grants: Mutex<BTreeMap<(String, String), fabushi_messaging_core::MiniAppGrant>>,
+    has_valid_native_credential: Arc<AtomicBool>,
+    account_data_root: Arc<Mutex<Option<PathBuf>>>,
+    telegram_key_clear_callback: Arc<Mutex<Option<TelegramKeyClearHook>>>,
 }
 
 pub type MiniAppPackageVerifier = Arc<
@@ -444,6 +453,9 @@ impl ProductionSessionWorkers {
                 Ok(store) => (Some(Arc::new(store)), None),
                 Err(error) => (None, Some(error)),
             };
+        let default_has_valid_native = local_human_id.is_some()
+            && native_messaging_error.is_none()
+            && (native_messaging.is_some() || !native_messaging_required);
         Self {
             memory_service,
             agents_root,
@@ -471,6 +483,9 @@ impl ProductionSessionWorkers {
             mini_app_package_verifier: Mutex::new(None),
             miniapp_launch_sessions: Mutex::new(BTreeMap::new()),
             miniapp_grants: Mutex::new(BTreeMap::new()),
+            has_valid_native_credential: Arc::new(AtomicBool::new(default_has_valid_native)),
+            account_data_root: Arc::new(Mutex::new(None)),
+            telegram_key_clear_callback: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -1139,6 +1154,64 @@ impl ProductionSessionWorkers {
 
     pub fn agents_root(&self) -> &Path {
         &self.agents_root
+    }
+
+    pub fn set_has_valid_native_credential(&self, valid: bool) {
+        self.has_valid_native_credential.store(valid, Ordering::SeqCst);
+    }
+
+    pub fn has_valid_native_credential(&self) -> bool {
+        self.has_valid_native_credential.load(Ordering::SeqCst)
+    }
+
+    pub fn with_valid_native_credential(self, valid: bool) -> Self {
+        self.set_has_valid_native_credential(valid);
+        self
+    }
+
+    pub fn set_account_data_root(&self, path: impl Into<PathBuf>) {
+        *self.account_data_root.lock().expect("account_data_root lock") = Some(path.into());
+    }
+
+    pub fn account_data_root(&self) -> PathBuf {
+        if let Some(ref path) = *self.account_data_root.lock().expect("account_data_root lock") {
+            return path.clone();
+        }
+        if self.agents_root.join("app-host/feature-host").exists() {
+            return self.agents_root.clone();
+        }
+        if let Some(parent) = self.agents_root.parent() {
+            if parent.join("app-host/feature-host").exists() {
+                return parent.to_path_buf();
+            }
+        }
+        if self.agents_root.file_name().and_then(|s| s.to_str()) == Some("agents") {
+            return self.agents_root.parent().map(Path::to_path_buf).unwrap_or_else(|| self.agents_root.clone());
+        }
+        self.agents_root.clone()
+    }
+
+    pub fn set_telegram_key_clear_callback<F>(&self, callback: F)
+    where
+        F: Fn() -> Result<(), String> + Send + Sync + 'static,
+    {
+        *self.telegram_key_clear_callback.lock().expect("telegram_key_clear_callback lock") =
+            Some(Arc::new(callback));
+    }
+
+    pub fn retire_legacy_telegram_data(
+        &self,
+        remove_immediately: bool,
+    ) -> Result<LegacyTelegramRetirementReport, LegacyTelegramRetirementError> {
+        let account_root = self.account_data_root();
+        let has_credential = self.has_valid_native_credential();
+        let callback = self.telegram_key_clear_callback.lock().expect("callback lock").clone();
+        retire_legacy_telegram_data_internal(
+            &account_root,
+            has_credential,
+            remove_immediately,
+            callback.as_deref().map(|c| c as &dyn Fn() -> Result<(), String>),
+        )
     }
 
     pub fn session_db_path(&self, agent_id: &str) -> Result<PathBuf, String> {
