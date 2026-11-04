@@ -147,6 +147,8 @@ export function createDesktopPreloadBridge(options: {
       list: () => ipc.invoke("sand:miniapp-list"),
       install: (appId: string) => ipc.invoke("sand:miniapp-install", appId),
       launch: (appId: string) => ipc.invoke("sand:miniapp-launch", appId),
+      launchInConversation: (appId: string, conversationId: string, startParameter?: string) =>
+        ipc.invoke("sand:miniapp-launch-in-conversation", { appId, conversationId, startParameter }),
       removeCode: (appId: string) => ipc.invoke("sand:miniapp-remove-code", appId),
     },
     marketplacePublisher: {

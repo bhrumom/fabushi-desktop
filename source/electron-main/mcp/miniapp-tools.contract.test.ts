@@ -637,11 +637,12 @@ test("launch.getContext returns scope launchContext without leaking outside scop
   const router = createMiniAppToolRouter({ backend });
   const contextualScope: MiniAppToolScope = {
     ...scope,
-    launchContext: { conversationId: "conv-42", startParameter: "ref_abc" },
+    launchContext: { launchSessionId: "msess_42", conversationId: "conv-42", startParameter: "ref_abc" },
   };
   const result = await router.invoke(contextualScope, "launch.getContext", {});
   assert.equal(result.ok, true);
   assert.deepEqual(result.ok && result.data, {
+    launchSessionId: "msess_42",
     conversationId: "conv-42",
     startParameter: "ref_abc",
   });
@@ -675,20 +676,23 @@ test("conversation.sendMessage routes to backend with main-held conversationId a
   const router = createMiniAppToolRouter({ backend, approve: () => true });
   const contextualScope: MiniAppToolScope = {
     ...scope,
-    launchContext: { conversationId: "conv-99", startParameter: "param_1" },
+    launchContext: { launchSessionId: "msess_99", conversationId: "conv-99", startParameter: "param_1" },
   };
 
-  const result = await router.invoke(contextualScope, "conversation.sendMessage", { text: "Hello" });
+  const result = await router.invoke(contextualScope, "conversation.sendMessage", { text: "Hello", userConfirmed: true });
   assert.equal(result.ok, true);
   assert.equal(calledAction, "sendMessage");
+  assert.equal(calledArgs.launchSessionId, "msess_99");
   assert.equal(calledArgs.conversationId, "conv-99");
   assert.equal(calledArgs.text, "Hello");
   assert.equal(calledArgs.startParameter, "param_1");
+  assert.equal(calledArgs.userConfirmed, true);
 
   // SendData
   const dataResult = await router.invoke(contextualScope, "conversation.sendData", { data: "test-data" });
   assert.equal(dataResult.ok, true);
   assert.equal(calledAction, "sendData");
+  assert.equal(calledArgs.launchSessionId, "msess_99");
   assert.equal(calledArgs.conversationId, "conv-99");
   assert.equal(calledArgs.data, "test-data");
 });
@@ -736,7 +740,7 @@ test("renderer cannot inject or forge conversationId in conversation.sendMessage
   const router = createMiniAppToolRouter({ backend, approve: () => true });
   const contextualScope: MiniAppToolScope = {
     ...scope,
-    launchContext: { conversationId: "legitimate-conv-id" },
+    launchContext: { launchSessionId: "msess_legit", conversationId: "legitimate-conv-id" },
   };
 
   // Attempt to inject a forged conversationId

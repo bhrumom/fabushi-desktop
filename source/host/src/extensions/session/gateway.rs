@@ -28,7 +28,7 @@ use uuid::Uuid;
 
 use super::agent_db_transcript_pages::{HumanTranscriptPageQuery, TranscriptPageQuery, TranscriptWindowQuery};
 use super::agent_session::SandAgentSessionStore;
-use super::production::ProductionSessionWorkers;
+use super::production::{MiniAppPostError, ProductionSessionWorkers};
 use super::session_profile_files::AgentProfileUpdate;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -426,105 +426,46 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     .map_err(SessionGatewayError::internal)
             })
         }),
+        "issueMiniAppLaunchSession" => (|| {
+            let app_id = required_string(args, "appId")?;
+            let conversation_id = required_string(args, "conversationId")?;
+            let start_parameter = optional_string(args, "startParameter")?;
+            let permissions = match args.get("requestedPermissions") {
+                Some(Value::Array(arr)) => arr
+                    .iter()
+                    .filter_map(|v| serde_json::from_value(v.clone()).ok())
+                    .collect::<Vec<fabushi_messaging_core::MiniAppPermission>>(),
+                _ => vec![fabushi_messaging_core::MiniAppPermission::SendMessage],
+            };
+            session
+                .issue_miniapp_launch_session(app_id, conversation_id, start_parameter, &permissions)
+                .map_err(|err| match err {
+                    MiniAppPostError::PersistenceFailed(msg) => SessionGatewayError::internal(msg),
+                    _ => SessionGatewayError::bad(err.to_string()),
+                })
+        })(),
         "miniAppPostToConversation" => (|| {
+            let launch_session_id = required_string(args, "launchSessionId")
+                .or_else(|_| required_string(args, "sessionId"))?;
             let request_id = required_string(args, "requestId")?;
-            let now_ms = optional_i64(args, "nowMs").unwrap_or_else(|| system_now_ms() as i64);
+            let user_confirmed = optional_bool(args, "userConfirmed")?.unwrap_or(false);
 
-            let (miniapp_session, grant, request) = if let Some(session_val) = args.get("session") {
-                let miniapp_session: fabushi_messaging_core::MiniAppSession = serde_json::from_value(session_val.clone())
-                    .map_err(|e| SessionGatewayError::bad(format!("invalid miniapp session: {e}")))?;
-                let grant = if let Some(grant_val) = args.get("grant") {
-                    serde_json::from_value(grant_val.clone())
-                        .map_err(|e| SessionGatewayError::bad(format!("invalid miniapp grant: {e}")))?
-                } else {
-                    fabushi_messaging_core::MiniAppGrant {
-                        mini_app_id: miniapp_session.mini_app_id.clone(),
-                        actor_id: miniapp_session.actor_id.clone(),
-                        permissions: miniapp_session.granted_permissions.clone(),
-                        granted_at_ms: miniapp_session.opened_at_ms,
-                        expires_at_ms: if miniapp_session.expires_at_ms > 0 { Some(miniapp_session.expires_at_ms) } else { None },
-                    }
-                };
-                let request = if let Some(req_val) = args.get("request") {
-                    serde_json::from_value(req_val.clone())
-                        .map_err(|e| SessionGatewayError::bad(format!("invalid miniapp request: {e}")))?
-                } else if let Some(text) = optional_string(args, "text")? {
-                    fabushi_messaging_core::MiniAppRequest::SendMessage { text: text.to_string() }
-                } else if let Some(data) = optional_string(args, "data")? {
-                    fabushi_messaging_core::MiniAppRequest::SendData { data: data.to_string() }
-                } else {
-                    return Err(SessionGatewayError::bad("miniAppPostToConversation requires request or text/data"));
-                };
-                (miniapp_session, grant, request)
+            let request: fabushi_messaging_core::MiniAppRequest = if let Some(req_val) = args.get("request") {
+                serde_json::from_value(req_val.clone())
+                    .map_err(|e| SessionGatewayError::bad(format!("invalid miniapp request: {e}")))?
+            } else if let Some(text) = optional_string(args, "text")? {
+                fabushi_messaging_core::MiniAppRequest::SendMessage { text: text.to_string() }
+            } else if let Some(data) = optional_string(args, "data")? {
+                fabushi_messaging_core::MiniAppRequest::SendData { data: data.to_string() }
             } else {
-                let session_id = required_string(args, "sessionId")?;
-                let app_id = optional_string(args, "appId")?
-                    .or(optional_string(args, "miniAppId")?)
-                    .ok_or_else(|| SessionGatewayError::bad("miniAppPostToConversation requires appId"))?;
-                let conversation_id = required_string(args, "conversationId")?;
-                let start_parameter = optional_string(args, "startParameter")?.map(String::from);
-                let local_human = session.local_human_id().map_err(SessionGatewayError::internal)?;
-                let actor_id = optional_string(args, "actorId")?.unwrap_or(local_human);
-
-                let permissions = vec![fabushi_messaging_core::MiniAppPermission::SendMessage];
-                let opened_at_ms = optional_i64(args, "openedAtMs").unwrap_or(now_ms);
-                let expires_at_ms = optional_i64(args, "expiresAtMs").unwrap_or(0);
-
-                let miniapp_session = fabushi_messaging_core::MiniAppSession {
-                    id: session_id.to_string(),
-                    mini_app_id: app_id.to_string(),
-                    actor_id: fabushi_messaging_core::ActorId::new(actor_id),
-                    conversation_id: Some(fabushi_messaging_core::ConversationId::new(conversation_id)),
-                    start_parameter,
-                    granted_permissions: permissions.clone(),
-                    opened_at_ms,
-                    expires_at_ms,
-                };
-                let grant = if let Some(grant_val) = args.get("grant") {
-                    serde_json::from_value(grant_val.clone())
-                        .map_err(|e| SessionGatewayError::bad(format!("invalid miniapp grant: {e}")))?
-                } else {
-                    fabushi_messaging_core::MiniAppGrant {
-                        mini_app_id: app_id.to_string(),
-                        actor_id: fabushi_messaging_core::ActorId::new(actor_id),
-                        permissions,
-                        granted_at_ms: opened_at_ms,
-                        expires_at_ms: if expires_at_ms > 0 { Some(expires_at_ms) } else { None },
-                    }
-                };
-                let request = if let Some(req_val) = args.get("request") {
-                    serde_json::from_value(req_val.clone())
-                        .map_err(|e| SessionGatewayError::bad(format!("invalid miniapp request: {e}")))?
-                } else if let Some(text) = optional_string(args, "text")? {
-                    fabushi_messaging_core::MiniAppRequest::SendMessage { text: text.to_string() }
-                } else if let Some(data) = optional_string(args, "data")? {
-                    fabushi_messaging_core::MiniAppRequest::SendData { data: data.to_string() }
-                } else {
-                    return Err(SessionGatewayError::bad("miniAppPostToConversation requires text or data"));
-                };
-                (miniapp_session, grant, request)
+                return Err(SessionGatewayError::bad("miniAppPostToConversation requires request or text/data"));
             };
 
-            if let Some(conv_id) = optional_string(args, "conversationId")? {
-                if miniapp_session.conversation_id.as_ref().map(|c| c.as_str()) != Some(conv_id) {
-                    return Err(SessionGatewayError::bad("conversationId does not match MiniApp session conversation binding"));
-                }
-            }
-
             session
-                .post_miniapp_message(&miniapp_session, &grant, &request, request_id, now_ms)
-                .map_err(|error| {
-                    if error.contains("denied")
-                        || error.contains("requires")
-                        || error.contains("exceeds")
-                        || error.contains("different")
-                        || error.contains("binding")
-                        || error.contains("participant")
-                    {
-                        SessionGatewayError::bad(error)
-                    } else {
-                        SessionGatewayError::internal(error)
-                    }
+                .post_miniapp_message(launch_session_id, request_id, &request, user_confirmed)
+                .map_err(|err| match err {
+                    MiniAppPostError::PersistenceFailed(msg) => SessionGatewayError::internal(msg),
+                    _ => SessionGatewayError::bad(err.to_string()),
                 })
         })(),
         "reactHumanMessage" => required_string(args, "conversationId").and_then(|conversation_id| {

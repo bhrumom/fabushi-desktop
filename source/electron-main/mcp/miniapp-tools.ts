@@ -25,7 +25,8 @@ export const MINIAPP_CAPABILITY = Object.freeze({
 export type MiniAppCapability = typeof MINIAPP_CAPABILITY[keyof typeof MINIAPP_CAPABILITY];
 
 export interface MiniAppLaunchContext {
-  readonly conversationId?: string;
+  readonly launchSessionId: string;
+  readonly conversationId: string;
   readonly startParameter?: string;
 }
 
@@ -87,6 +88,7 @@ export interface MiniAppToolBackend {
   conversation?(
     action: "sendData" | "sendMessage",
     args: {
+      readonly launchSessionId: string;
       readonly conversationId: string;
       readonly text?: string;
       readonly data?: string;
@@ -95,6 +97,7 @@ export interface MiniAppToolBackend {
       readonly requestId?: string;
       readonly appId: string;
       readonly accountScope: string;
+      readonly userConfirmed?: boolean;
     },
   ): Promise<unknown>;
   /** Fences and cancels native work when account/window ownership changes. */
@@ -150,6 +153,7 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
       ok: true,
       data: scope.launchContext
         ? {
+            launchSessionId: scope.launchContext.launchSessionId,
             conversationId: scope.launchContext.conversationId,
             startParameter: scope.launchContext.startParameter,
           }
@@ -157,8 +161,9 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
     })],
     ["conversation.sendMessage", MINIAPP_CAPABILITY.CONVERSATION, true, async (args, scope) => {
       if (!backend.conversation) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供会话能力");
+      const launchSessionId = scope.launchContext?.launchSessionId;
       const conversationId = scope.launchContext?.conversationId;
-      if (!conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
+      if (!launchSessionId || !conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
       if (args.conversationId !== undefined && args.conversationId !== conversationId) {
         return fail("FORBIDDEN_CONVERSATION_INJECTION", "禁止伪造或注入会话ID");
       }
@@ -167,7 +172,9 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
       const text = rawText.trim();
       const requestId = typeof args.requestId === "string" && args.requestId ? args.requestId : undefined;
       const clientNonce = typeof args.clientNonce === "string" && args.clientNonce ? args.clientNonce : undefined;
+      const userConfirmed = typeof args.userConfirmed === "boolean" ? args.userConfirmed : false;
       const sent = await backend.conversation("sendMessage", {
+        launchSessionId,
         conversationId,
         text,
         startParameter: scope.launchContext?.startParameter,
@@ -175,13 +182,15 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
         accountScope: scope.accountScope,
         requestId,
         clientNonce,
+        userConfirmed,
       });
       return { ok: true, data: sent };
     }],
     ["conversation.sendData", MINIAPP_CAPABILITY.CONVERSATION, true, async (args, scope) => {
       if (!backend.conversation) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供会话能力");
+      const launchSessionId = scope.launchContext?.launchSessionId;
       const conversationId = scope.launchContext?.conversationId;
-      if (!conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
+      if (!launchSessionId || !conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
       if (args.conversationId !== undefined && args.conversationId !== conversationId) {
         return fail("FORBIDDEN_CONVERSATION_INJECTION", "禁止伪造或注入会话ID");
       }
@@ -189,6 +198,7 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
       const requestId = typeof args.requestId === "string" && args.requestId ? args.requestId : undefined;
       const clientNonce = typeof args.clientNonce === "string" && args.clientNonce ? args.clientNonce : undefined;
       const sent = await backend.conversation("sendData", {
+        launchSessionId,
         conversationId,
         data: args.data,
         startParameter: scope.launchContext?.startParameter,

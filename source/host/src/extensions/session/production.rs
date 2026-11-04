@@ -234,7 +234,64 @@ pub struct ProductionSessionWorkers {
     call_session_store: Option<Arc<CallSessionStore>>,
     call_session_store_error: Option<String>,
     busy_timeout_ms: u64,
+    miniapp_launch_sessions: Mutex<BTreeMap<String, HostMiniAppLaunchSession>>,
+    miniapp_grants: Mutex<BTreeMap<(String, String), fabushi_messaging_core::MiniAppGrant>>,
 }
+
+#[derive(Debug, Clone)]
+pub struct HostMiniAppLaunchSession {
+    pub session: fabushi_messaging_core::MiniAppSession,
+    pub grant: fabushi_messaging_core::MiniAppGrant,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MiniAppPostError {
+    SessionNotFound(String),
+    SessionExpired { expired_at_ms: i64, now_ms: i64 },
+    GrantMismatch,
+    GrantExpired { expired_at_ms: i64, now_ms: i64 },
+    PermissionDenied(fabushi_messaging_core::MiniAppPermission),
+    MissingConversationBinding,
+    ConversationMismatch { expected: String, actual: String },
+    UserConfirmationRequired,
+    NoBotRecipient,
+    InvalidRequestId,
+    NonceTooLong,
+    NotParticipant,
+    ConversationNotFound(String),
+    Conflict(String),
+    PersistenceFailed(String),
+}
+
+impl std::fmt::Display for MiniAppPostError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::SessionNotFound(id) => write!(f, "MiniApp launch session not found: {id}"),
+            Self::SessionExpired { expired_at_ms, now_ms } => {
+                write!(f, "MiniApp launch session expired at {expired_at_ms} (now {now_ms})")
+            }
+            Self::GrantMismatch => write!(f, "MiniApp grant mismatch"),
+            Self::GrantExpired { expired_at_ms, now_ms } => {
+                write!(f, "MiniApp grant expired at {expired_at_ms} (now {now_ms})")
+            }
+            Self::PermissionDenied(perm) => write!(f, "MiniApp permission denied: {perm:?}"),
+            Self::MissingConversationBinding => write!(f, "MiniApp session is not bound to a conversation"),
+            Self::ConversationMismatch { expected, actual } => {
+                write!(f, "MiniApp conversation mismatch: session bound to {expected}, requested {actual}")
+            }
+            Self::UserConfirmationRequired => write!(f, "MiniApp SendMessage requires explicit user confirmation"),
+            Self::NoBotRecipient => write!(f, "MiniApp SendData requires a bot recipient participant in the conversation"),
+            Self::InvalidRequestId => write!(f, "MiniApp request requires a non-empty requestId"),
+            Self::NonceTooLong => write!(f, "MiniApp clientNonce exceeds 200 UTF-8 bytes"),
+            Self::NotParticipant => write!(f, "Authenticated local human is not a participant in the conversation"),
+            Self::ConversationNotFound(id) => write!(f, "Conversation not found: {id}"),
+            Self::Conflict(msg) => write!(f, "MiniApp message conflict: {msg}"),
+            Self::PersistenceFailed(err) => write!(f, "MiniApp message persistence failed: {err}"),
+        }
+    }
+}
+
+impl std::error::Error for MiniAppPostError {}
 
 impl ProductionSessionWorkers {
     pub fn production() -> Self {
@@ -392,6 +449,8 @@ impl ProductionSessionWorkers {
             call_session_store,
             call_session_store_error,
             busy_timeout_ms,
+            miniapp_launch_sessions: Mutex::new(BTreeMap::new()),
+            miniapp_grants: Mutex::new(BTreeMap::new()),
         }
     }
 
@@ -2522,7 +2581,7 @@ impl ProductionSessionWorkers {
             .or_insert_with(|| Arc::new(Mutex::new(())))))
     }
 
-    fn pending_human_forward_is_batch_owned(
+    pub fn pending_human_forward_is_batch_owned(
         &self, conversation_id: &str, entry: &serde_json::Value,
     ) -> Result<bool, String> {
         // A damaged version must not turn source-owned intent into an ordinary
@@ -4508,49 +4567,229 @@ impl ProductionSessionWorkers {
         )
     }
 
+    pub fn issue_miniapp_launch_session(
+        &self,
+        app_id: &str,
+        conversation_id: &str,
+        start_parameter: Option<&str>,
+        requested_permissions: &[fabushi_messaging_core::MiniAppPermission],
+    ) -> Result<serde_json::Value, MiniAppPostError> {
+        let app_id = app_id.trim();
+        if app_id.is_empty() {
+            return Err(MiniAppPostError::InvalidRequestId);
+        }
+        let local_human = self
+            .local_human_id()
+            .map_err(|e| MiniAppPostError::PersistenceFailed(e))?;
+
+        // 1. Verify participant in conversation
+        let owner = self
+            .open_human_conversation_db_owner(conversation_id)
+            .map_err(|_| MiniAppPostError::ConversationNotFound(conversation_id.to_string()))?;
+        let metadata = owner
+            .read_metadata()
+            .map_err(|e| MiniAppPostError::PersistenceFailed(e.to_string()))?;
+        let is_participant = metadata
+            .get("participantIds")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|ids| ids.iter().any(|id| id.as_str() == Some(local_human)));
+        if !is_participant {
+            return Err(MiniAppPostError::NotParticipant);
+        }
+
+        let now_ms = (std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis()) as i64;
+
+        // 2. Read existing grant or initialize default
+        let grant = {
+            let mut grants = self.miniapp_grants.lock().map_err(|_| {
+                MiniAppPostError::PersistenceFailed("miniapp_grants lock poisoned".into())
+            })?;
+            grants
+                .entry((app_id.to_string(), local_human.to_string()))
+                .or_insert_with(|| {
+                    let permissions = if requested_permissions.is_empty() {
+                        vec![fabushi_messaging_core::MiniAppPermission::SendMessage]
+                    } else {
+                        requested_permissions.to_vec()
+                    };
+                    fabushi_messaging_core::MiniAppGrant {
+                        mini_app_id: app_id.to_string(),
+                        actor_id: fabushi_messaging_core::ActorId::new(local_human),
+                        permissions,
+                        granted_at_ms: now_ms,
+                        expires_at_ms: None,
+                    }
+                })
+                .clone()
+        };
+
+        // 3. Issue authoritative launch session
+        let launch_session_id = format!("msess_{}", uuid::Uuid::new_v4().simple());
+        let expires_at_ms = now_ms + 86_400_000; // 24h
+        let mut granted_permissions: Vec<_> = requested_permissions
+            .iter()
+            .copied()
+            .filter(|p| grant.permissions.contains(p))
+            .collect();
+        if granted_permissions.is_empty() && grant.permissions.contains(&fabushi_messaging_core::MiniAppPermission::SendMessage) {
+            granted_permissions.push(fabushi_messaging_core::MiniAppPermission::SendMessage);
+        }
+
+        let session = fabushi_messaging_core::MiniAppSession {
+            id: launch_session_id.clone(),
+            mini_app_id: app_id.to_string(),
+            actor_id: fabushi_messaging_core::ActorId::new(local_human),
+            conversation_id: Some(fabushi_messaging_core::ConversationId::new(conversation_id)),
+            start_parameter: start_parameter.map(|s| s.to_string()),
+            granted_permissions,
+            opened_at_ms: now_ms,
+            expires_at_ms,
+        };
+
+        // 4. Save to Host authoritative registry
+        let mut sessions = self.miniapp_launch_sessions.lock().map_err(|_| {
+            MiniAppPostError::PersistenceFailed("miniapp_launch_sessions lock poisoned".into())
+        })?;
+        sessions.insert(
+            launch_session_id.clone(),
+            HostMiniAppLaunchSession { session, grant },
+        );
+
+        Ok(serde_json::json!({
+            "launchSessionId": launch_session_id,
+            "appId": app_id,
+            "conversationId": conversation_id,
+            "startParameter": start_parameter,
+            "openedAtMs": now_ms,
+            "expiresAtMs": expires_at_ms,
+        }))
+    }
+
+    pub fn set_miniapp_grant(
+        &self,
+        grant: fabushi_messaging_core::MiniAppGrant,
+    ) -> Result<(), String> {
+        let mut grants = self
+            .miniapp_grants
+            .lock()
+            .map_err(|_| "miniapp_grants lock poisoned".to_string())?;
+        grants.insert(
+            (grant.mini_app_id.clone(), grant.actor_id.as_str().to_string()),
+            grant,
+        );
+        Ok(())
+    }
+
+    pub fn register_miniapp_launch_session_for_test(
+        &self,
+        session: fabushi_messaging_core::MiniAppSession,
+        grant: fabushi_messaging_core::MiniAppGrant,
+    ) -> Result<(), String> {
+        let mut sessions = self
+            .miniapp_launch_sessions
+            .lock()
+            .map_err(|_| "miniapp_launch_sessions lock poisoned".to_string())?;
+        sessions.insert(session.id.clone(), HostMiniAppLaunchSession { session, grant });
+        Ok(())
+    }
+
     pub fn post_miniapp_message(
         &self,
-        session: &fabushi_messaging_core::MiniAppSession,
-        grant: &fabushi_messaging_core::MiniAppGrant,
-        request: &fabushi_messaging_core::MiniAppRequest,
+        launch_session_id: &str,
         request_id: &str,
-        now_ms: i64,
-    ) -> Result<serde_json::Value, String> {
-        let action = fabushi_messaging_core::authorize_miniapp_request(session, grant, request, now_ms)
-            .map_err(|denial| format!("MiniApp authorization denied: {denial:?}"))?;
-
-        let (conversation_id, content) = match action {
-            fabushi_messaging_core::MiniAppAction::SendMessage { conversation_id, text } => {
-                (conversation_id, text)
-            }
-            fabushi_messaging_core::MiniAppAction::SendData { conversation_id, data } => {
-                (conversation_id, data)
-            }
-            _ => return Err("MiniApp action does not post to a conversation".to_string()),
-        };
-
+        request: &fabushi_messaging_core::MiniAppRequest,
+        user_confirmed: bool,
+    ) -> Result<serde_json::Value, MiniAppPostError> {
+        let launch_session_id = launch_session_id.trim();
+        if launch_session_id.is_empty() {
+            return Err(MiniAppPostError::SessionNotFound(launch_session_id.to_string()));
+        }
         let request_id = request_id.trim();
         if request_id.is_empty() {
-            return Err("miniAppPostToConversation requires non-empty requestId".to_string());
-        }
-        let client_nonce = format!("miniapp:{}:{}", session.id, request_id);
-        if client_nonce.len() > 200 {
-            return Err("MiniApp clientNonce exceeds 200 UTF-8 bytes".to_string());
+            return Err(MiniAppPostError::InvalidRequestId);
         }
 
-        let action_name = match request {
-            fabushi_messaging_core::MiniAppRequest::SendMessage { .. } => "sendMessage",
-            fabushi_messaging_core::MiniAppRequest::SendData { .. } => "sendData",
-            _ => "unknown",
+        // 1. Look up Host-held launch session
+        let launch_session = {
+            let sessions = self.miniapp_launch_sessions.lock().map_err(|_| {
+                MiniAppPostError::PersistenceFailed("miniapp_launch_sessions lock poisoned".into())
+            })?;
+            sessions
+                .get(launch_session_id)
+                .cloned()
+                .ok_or_else(|| MiniAppPostError::SessionNotFound(launch_session_id.to_string()))?
         };
-        let forward_context = serde_json::json!({
-            "miniApp": {
-                "appId": session.mini_app_id,
-                "sessionId": session.id,
-                "action": action_name,
-            }
-        });
 
+        // 2. Host clock
+        let now_ms = (std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis()) as i64;
+
+        // 3. Pure authorization in core
+        let action = fabushi_messaging_core::authorize_miniapp_request(
+            &launch_session.session,
+            &launch_session.grant,
+            request,
+            now_ms,
+        )
+        .map_err(|denial| match denial {
+            fabushi_messaging_core::MiniAppDenial::SessionExpired { expired_at_ms, now_ms } => {
+                MiniAppPostError::SessionExpired { expired_at_ms, now_ms }
+            }
+            fabushi_messaging_core::MiniAppDenial::GrantExpired { expired_at_ms, now_ms } => {
+                MiniAppPostError::GrantExpired { expired_at_ms, now_ms }
+            }
+            fabushi_messaging_core::MiniAppDenial::GrantMismatch => MiniAppPostError::GrantMismatch,
+            fabushi_messaging_core::MiniAppDenial::PermissionDenied { permission } => {
+                MiniAppPostError::PermissionDenied(permission)
+            }
+            fabushi_messaging_core::MiniAppDenial::MissingConversationBinding => {
+                MiniAppPostError::MissingConversationBinding
+            }
+        })?;
+
+        // 4. Policy enforcement on message action
+        let (conversation_id, content) = match action {
+            fabushi_messaging_core::MiniAppAction::SendMessage { conversation_id, text } => {
+                if !user_confirmed {
+                    return Err(MiniAppPostError::UserConfirmationRequired);
+                }
+                (conversation_id, text)
+            }
+            fabushi_messaging_core::MiniAppAction::SendData { conversation_id, data: _ } => {
+                let owner = self
+                    .open_human_conversation_db_owner(conversation_id.as_str())
+                    .map_err(|_| MiniAppPostError::ConversationNotFound(conversation_id.as_str().to_string()))?;
+                let metadata = owner
+                    .read_metadata()
+                    .map_err(|e| MiniAppPostError::PersistenceFailed(e.to_string()))?;
+                let has_bot_participant = metadata
+                    .get("participantKinds")
+                    .and_then(serde_json::Value::as_object)
+                    .is_some_and(|kinds| kinds.values().any(|k| k.as_str() == Some("bot")));
+                if !has_bot_participant {
+                    return Err(MiniAppPostError::NoBotRecipient);
+                }
+                (conversation_id, "[MiniApp Data Payload]".to_string())
+            }
+            _ => {
+                return Err(MiniAppPostError::PersistenceFailed(
+                    "MiniApp action does not post to a conversation".into(),
+                ));
+            }
+        };
+
+        // 5. Deterministic CAS nonce
+        let client_nonce = format!("miniapp:{}:{}", launch_session_id, request_id);
+        if client_nonce.len() > 200 {
+            return Err(MiniAppPostError::NonceTooLong);
+        }
+
+        // 6. Append to conversation: forward_context is None (Point 3)
         self.append_human_message_with_context(
             conversation_id.as_str(),
             &content,
@@ -4558,10 +4797,17 @@ impl ProductionSessionWorkers {
             Some(now_ms as f64),
             None,
             &[],
-            Some(&forward_context),
+            None, // Point 3: DO NOT use forwardContext for miniapp!
             None,
             false,
         )
+        .map_err(|err| {
+            if err.contains("already identifies different content") {
+                MiniAppPostError::Conflict(err)
+            } else {
+                MiniAppPostError::PersistenceFailed(err)
+            }
+        })
     }
 
     fn append_human_message_from_intent(

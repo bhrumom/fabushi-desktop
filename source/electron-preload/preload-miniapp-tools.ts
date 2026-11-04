@@ -10,6 +10,7 @@ import { MINIAPP_TOOL_CHANNEL } from "../shared/miniapp-tool-contract.js";
 export { MINIAPP_TOOL_CHANNEL } from "../shared/miniapp-tool-contract.js";
 
 export interface MiniAppLaunchContext {
+  readonly launchSessionId?: string;
   readonly conversationId?: string;
   readonly startParameter?: string;
 }

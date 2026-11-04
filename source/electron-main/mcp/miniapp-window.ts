@@ -22,7 +22,8 @@ export interface VerifiedMiniAppResource {
 }
 
 export interface MiniAppLaunchContext {
-  readonly conversationId?: string;
+  readonly launchSessionId: string;
+  readonly conversationId: string;
   readonly startParameter?: string;
 }
 

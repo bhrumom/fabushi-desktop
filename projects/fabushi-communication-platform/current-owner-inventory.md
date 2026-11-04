@@ -334,16 +334,18 @@ Authority and boundary for Telegram Mini App / Bot WebApp desktop integration:
 | Layer | Canonical owner / implementation | Boundary and authority |
 | --- | --- | --- |
 | Mini App Container | `source/electron-main/mcp/miniapp-window.ts` | Sole desktop container. Strict CSP (`fabushi-miniapp:` scheme, offline loopback proxy, no navigation/WebRTC leak). No second WebView container. |
-| Launch Context | `source/electron-main/mcp/miniapp-window.ts` (`VerifiedMiniAppLaunch.launchContext`) | Main process only; bound to verified launch from chat `InlineButtonAction::MiniApp`. Preload exposes read-only `getLaunchContext()`. Renderer cannot forge context or accountScope. |
-| Tool Invocation Bridge | `source/electron-main/mcp/miniapp-tools.ts` (`conversation.sendData`, `conversation.sendMessage`) | Tools route from isolated preload via `MINIAPP_TOOL_CHANNEL` to `MiniAppToolRouter`, validating account scope, window origin, and rate limits before handing to Host gateway. |
-| Pure Policy Authority | `fabushi_messaging_core::authorize_miniapp_request` (`native/mahayana-messaging/src/miniapp.rs`) | Pure deterministic domain policy: checks session expiry, grant validity/expiry, permission matrix, and conversation binding. No storage, IO, or clock ownership. |
-| Message Persistence Owner | `ProductionSessionWorkers` (`source/host/src/extensions/session/production.rs`) | Single message state owner on desktop. Messages write to SandAgentDb SQLite, outbox, and remote sync via `append_human_message_with_context`. Nonce `miniapp:{sessionId}:{requestId}` enforces CAS idempotency. |
+| Launch Session Authority | `ProductionSessionWorkers` (`issue_miniapp_launch_session`) | Host strictly verifies local Human is a conversation participant before issuing `launchSessionId`. Session/grant held in Host memory; renderer cannot forge permissions or time. |
+| Launch Context | `source/electron-main/mcp/miniapp-window.ts` (`VerifiedMiniAppLaunch.launchContext`) | Main process only; carries Host-issued `launchContext { launchSessionId, conversationId, startParameter }`. Preload exposes read-only `getLaunchContext()`. |
+| Tool Invocation Bridge | `source/electron-main/mcp/miniapp-tools.ts` (`conversation.sendData`, `conversation.sendMessage`) | Tools route from isolated preload via `MINIAPP_TOOL_CHANNEL` to `MiniAppToolRouter`, passing Host `launchSessionId` and validating origin/anti-injection before Host dispatch. |
+| Pure Policy Authority | `fabushi_messaging_core::authorize_miniapp_request` (`native/mahayana-messaging/src/miniapp.rs`) | Pure deterministic domain policy: checks session expiry, grant validity/expiry, permission matrix, and conversation binding against Host-held records using Host clock. |
+| Message Persistence Owner | `ProductionSessionWorkers` (`source/host/src/extensions/session/production.rs`) | Single message state owner on desktop. Messages write to SandAgentDb SQLite via `append_human_message_with_context`. Nonce `miniapp:{launchSessionId}:{requestId}` enforces CAS idempotency. SendMessage requires explicit user confirmation; SendData requires bot recipient. `forwardContext` is isolated (None). |
 
 Calling Chain:
-1. Message UI (`InlineButtonAction::MiniApp { mini_app_id, start_parameter }`) triggers desktop launch with `conversation_id + start_parameter`.
-2. Main process creates sandboxed `miniapp-window` with immutable `launchContext { conversationId, startParameter }`.
-3. Preload exposes read-only `getLaunchContext()` and `fabushi.invoke(...)`.
-4. Mini App calls `conversation.sendMessage` / `conversation.sendData`.
-5. `MiniAppToolRouter` validates scope and dispatches to Host gateway method `miniAppPostToConversation`.
-6. Host evaluates `fabushi_messaging_core::authorize_miniapp_request(session, grant, request, now_ms)`.
-7. On authorization, Host delegates to `ProductionSessionWorkers::append_human_message_with_context` with deterministic nonce `miniapp:{sessionId}:{requestId}` into SandAgentDb SQLite.
+1. Message UI or Host launch API triggers launch with `conversation_id + start_parameter`.
+2. Host `issue_miniapp_launch_session` verifies participant membership and issues authoritative `launchSessionId`.
+3. Main process creates sandboxed `miniapp-window` with immutable `launchContext { launchSessionId, conversationId, startParameter }`.
+4. Preload exposes read-only `getLaunchContext()` and `fabushi.invoke(...)`.
+5. Mini App calls `conversation.sendMessage` / `conversation.sendData`.
+6. `MiniAppToolRouter` validates scope and dispatches to Host gateway method `miniAppPostToConversation`.
+7. Host evaluates `fabushi_messaging_core::authorize_miniapp_request(&session, &grant, &request, host_now_ms)`.
+8. On authorization and user confirmation, Host delegates to `ProductionSessionWorkers::append_human_message_with_context` with deterministic nonce `miniapp:{launchSessionId}:{requestId}` into SandAgentDb SQLite with `forward_context: None`.

@@ -54627,7 +54627,7 @@
       "source_repository": "telegramdesktop/tdesktop",
       "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
       "source_path": "Telegram/SourceFiles/inline_bots/bot_attach_web_view.cpp",
-      "source_blob_sha": "unresolved-pending-upstream-inventory",
+      "source_blob_sha": "a99e6c7ec3aae8ab2db77b74ce387f33794d584e",
       "source_kind": "source",
       "module_id": "tdesktop.inline_bots",
       "responsibility_id": "TDRP-S5-MINIAPP-CONVERSATION-BRIDGE-001",
@@ -54693,8 +54693,10 @@
       ],
       "fabushi_target_symbols": [
         "authorize_miniapp_request",
+        "issue_miniapp_launch_session",
         "post_miniapp_message",
         "miniAppPostToConversation",
+        "issueMiniAppLaunchSession",
         "MiniAppLaunchContext",
         "conversation.sendMessage",
         "conversation.sendData"
@@ -54718,8 +54720,9 @@
       "implementation_status": "mapped",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Upstream blob SHA for Telegram/SourceFiles/inline_bots/bot_attach_web_view.cpp is not present in local inventory/dossiers (requires Actions artifact 13118749668); status held at mapped without fabricated blob SHA.",
-        "Transcript inline button action rendering is not yet wired in frontend transcript projection."
+        "Transcript inline button action rendering is not yet wired in frontend transcript projection.",
+        "MiniApp SendMessage currently fails closed pending desktop user confirmation UI; SendData fails closed in human direct conversations without a Bot recipient.",
+        "Full release gate acceptance pending containing-head GitHub Actions."
       ],
       "production_entrypoints": [
         "InlineButtonAction::MiniApp -> miniapp-window launch -> preload fabushi.invoke -> MiniAppToolRouter -> gateway miniAppPostToConversation -> ProductionSessionWorkers::post_miniapp_message -> SandAgentDb"
@@ -54849,9 +54852,9 @@
       "test_execution_evidence": [],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
-      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted Telegram Bot WebApp / Mini App attachment bridge semantics using canonical Fabushi ProductionSessionWorkers and miniapp-window owners. Exact blob identity for inline_bots/bot_attach_web_view.cpp is held pending remote inventory artifact 13118749668.",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted Telegram Bot WebApp / Mini App attachment bridge semantics using canonical Fabushi ProductionSessionWorkers and miniapp-window owners. Exact blob identity for inline_bots/bot_attach_web_view.cpp is a99e6c7ec3aae8ab2db77b74ce387f33794d584e from verified recursive inventory artifact 13118749668.",
       "reviewer": null,
-      "notes": "[FMEP-STATE-02 wired via Session and Electron] Slice S5: Mini App / Bot WebApp conversation bridge wired to ProductionSessionWorkers and miniapp-window.ts. Pure authorization handled by fabushi_messaging_core::authorize_miniapp_request. Status held at mapped pending exact upstream blob binding and transcript inline button UI wiring."
+      "notes": "[FMEP-STATE-02 wired via Session and Electron] Slice S5: Mini App / Bot WebApp conversation bridge wired to ProductionSessionWorkers and miniapp-window.ts. Pure authorization handled by fabushi_messaging_core::authorize_miniapp_request; session/grant held authoritatively in Host; SendMessage requires user confirmation; forwardContext isolated. Status held at mapped pending transcript inline button UI wiring."
     }
   ],
   "rebaseline_candidate": {
