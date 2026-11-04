@@ -30,6 +30,7 @@ pub fn is_sensitive_key(key: &str) -> bool {
         || lower.contains("password")
         || lower.contains("auth")
         || lower.contains("credential")
+        || lower.contains("session")
 }
 
 /// Redacts sensitive query parameters from URLs

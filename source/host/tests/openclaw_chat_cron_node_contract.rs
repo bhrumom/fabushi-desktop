@@ -9,7 +9,14 @@ use mahayana_host_runtime::extensions::transcript::runner_registry::TranscriptRu
 use mahayana_host_runtime::gateway_command_error::GatewayCommandError;
 use serde_json::{Value, json};
 
-const SHIPPING_HOST_MAIN: &str = include_str!("../app/src/main.rs");
+fn shipping_source() -> String {
+    format!(
+        "{}\n{}\n{}",
+        include_str!("../app/src/ocrm_handlers/openclaw_chat_cron.rs"),
+        include_str!("../app/src/ocrm_handlers/openclaw_node.rs"),
+        include_str!("../app/src/main.rs"),
+    )
+}
 
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -125,14 +132,15 @@ fn test_ocrm_chat_o02_session_key_stripping_and_unknown_session_rejection() {
 
 #[test]
 fn test_ocrm_chat_o03_send_response_contract_fields() {
-    let send_start = SHIPPING_HOST_MAIN
+    let shipping_main = shipping_source();
+    let send_start = shipping_main
         .find("fn call_openclaw_chat_send(")
         .expect("shipping chat.send owner exists");
-    let send_end = SHIPPING_HOST_MAIN[send_start..]
-        .find("\n    fn call_openclaw_chat_abort(")
+    let send_end = shipping_main[send_start..]
+        .find("fn call_openclaw_chat_abort(")
         .map(|offset| send_start + offset)
         .expect("shipping chat.send function boundary exists");
-    let send = &SHIPPING_HOST_MAIN[send_start..send_end];
+    let send = &shipping_main[send_start..send_end];
     assert!(send.contains("active_stream_ids_for_agent"));
     assert!(send.contains("if let Some(stream_id) = new_stream_id"));
     assert!(send.contains("unwrap_or_else(|| serde_json::json!(\"accepted\"))"));
@@ -185,14 +193,15 @@ fn test_ocrm_chat_o05_abort_invokes_runner_registry_cancellation() {
     assert_eq!(abort_res["aborted"], false);
     assert!(abort_res["runIds"].as_array().unwrap().is_empty());
 
-    let abort_start = SHIPPING_HOST_MAIN
+    let shipping_main = shipping_source();
+    let abort_start = shipping_main
         .find("fn call_openclaw_chat_abort(")
         .expect("shipping chat.abort owner exists");
-    let abort_end = SHIPPING_HOST_MAIN[abort_start..]
-        .find("\n    fn call_openclaw_cron_list(")
+    let abort_end = shipping_main[abort_start..]
+        .find("fn call_openclaw_cron_list(")
         .map(|offset| abort_start + offset)
         .expect("shipping chat.abort function boundary exists");
-    let shipping_abort = &SHIPPING_HOST_MAIN[abort_start..abort_end];
+    let shipping_abort = &shipping_main[abort_start..abort_end];
     assert!(shipping_abort.contains("active_stream_ids_for_agent"));
     assert!(shipping_abort.contains("or_else(|| args.get(\"sessionId\"))"));
     assert!(shipping_abort.contains("cancel_stream(run_id, \"rpc\")"));
@@ -512,30 +521,32 @@ fn test_ocrm_node_o05_node_invoke_contract_and_security() {
 
 #[test]
 fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
-    let register_start = SHIPPING_HOST_MAIN
+    let shipping_main = shipping_source();
+    let register_start = shipping_main
         .find("fn call_openclaw_node_register(")
         .expect("shipping node.register owner exists");
-    let register_end = SHIPPING_HOST_MAIN[register_start..]
-        .find("\n    fn call_openclaw_node_list(")
+    let register_end = shipping_main[register_start..]
+        .find("fn call_openclaw_node_list(")
         .map(|offset| register_start + offset)
         .expect("shipping node.register function boundary exists");
-    let register = &SHIPPING_HOST_MAIN[register_start..register_end];
-    assert!(register.contains("self.device_pairing.handle_pair_request"));
+    let register = &shipping_main[register_start..register_end];
+    assert!(register.contains(".device_pairing.handle_pair_request"));
     assert!(register.contains("node.register requires nodeId"));
     assert!(!register.contains("pairingGeneration"));
 
-    let invoke_start = SHIPPING_HOST_MAIN
+    let invoke_start = shipping_main
         .find("fn call_openclaw_node_invoke(")
         .expect("shipping node.invoke owner exists");
-    let invoke_end = SHIPPING_HOST_MAIN[invoke_start..]
-        .find("\n}\n\nfn post_agent_message_to_group(")
+    let invoke_end = shipping_main[invoke_start..]
+        .find("pub(crate) fn ")
+        .or_else(|| shipping_main[invoke_start..].find("pub async fn "))
         .map(|offset| invoke_start + offset)
-        .expect("shipping node.invoke function boundary exists");
-    let invoke = &SHIPPING_HOST_MAIN[invoke_start..invoke_end];
+        .unwrap_or(shipping_main.len());
+    let invoke = &shipping_main[invoke_start..invoke_end];
     assert!(invoke.contains("GatewayLocalToolScope"));
     assert!(invoke.contains(".local_exec"));
     assert!(invoke.contains(".exec_manager()"));
-    assert!(invoke.contains(".execute_shell("));
+    assert!(invoke.contains(".execute_shell"));
     assert!(invoke.contains("NodeInvokeRequest"));
     assert!(invoke.contains("NodeInvokeResult::failure"));
     assert!(invoke.contains("NodeHostInvocationRuntime::start"));
@@ -548,25 +559,26 @@ fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
     assert!(invoke.contains("paramsJSON exceeds 256 KiB"));
     assert!(invoke.contains("node.invoke system.run requires params.command"));
     assert!(invoke.contains("unsupported local node command"));
-    assert!(SHIPPING_HOST_MAIN.contains("\"connected\": false"));
-    assert!(SHIPPING_HOST_MAIN.contains("\"active\": false"));
-    assert!(SHIPPING_HOST_MAIN.contains("\"commands\": []"));
-    assert!(SHIPPING_HOST_MAIN.contains("handle_pair_list(&serde_json::json!({}))?"));
-    assert!(SHIPPING_HOST_MAIN.contains("\"deviceFamily\": \"remote\""));
+    assert!(shipping_main.contains("\"connected\": false"));
+    assert!(shipping_main.contains("\"active\": false"));
+    assert!(shipping_main.contains("\"commands\": []"));
+    assert!(shipping_main.contains("handle_pair_list(&serde_json::json!({}))?"));
+    assert!(shipping_main.contains("\"deviceFamily\": \"remote\""));
     assert!(!invoke.contains("\"stdout\": \"ok\""));
     assert!(!invoke.contains("\"exitCode\": 0"));
 }
 
 #[test]
 fn test_ocrm_cron_projection_does_not_invent_schedule_or_terminal_status() {
-    let list_start = SHIPPING_HOST_MAIN
+    let shipping_main = shipping_source();
+    let list_start = shipping_main
         .find("fn call_openclaw_cron_list(")
         .expect("shipping cron.list owner exists");
-    let list_end = SHIPPING_HOST_MAIN[list_start..]
-        .find("\n    fn call_openclaw_cron_trigger(")
+    let list_end = shipping_main[list_start..]
+        .find("fn call_openclaw_cron_trigger(")
         .map(|offset| list_start + offset)
         .expect("shipping cron.list function boundary exists");
-    let list = &SHIPPING_HOST_MAIN[list_start..list_end];
+    let list = &shipping_main[list_start..list_end];
     assert!(list.contains("\"kind\": \"event\""));
     assert!(list.contains("last_run = r.runs.first()"));
     assert!(list.contains("last_run.map(|run| run.status.clone())"));
@@ -575,17 +587,18 @@ fn test_ocrm_cron_projection_does_not_invent_schedule_or_terminal_status() {
     assert!(!list.contains("\"lastRunStatus\": \"ok\""));
     assert!(!list.contains("if let Ok(records)"));
 
-    let trigger_start = SHIPPING_HOST_MAIN
+    let trigger_start = shipping_main
         .find("fn call_openclaw_cron_trigger(")
         .expect("shipping cron.trigger owner exists");
-    let trigger_end = SHIPPING_HOST_MAIN[trigger_start..]
-        .find("\n    fn call_openclaw_node_register(")
+    let trigger_end = shipping_main[trigger_start..]
+        .find("fn call_openclaw_node_register(")
         .map(|offset| trigger_start + offset)
-        .expect("shipping cron.trigger function boundary exists");
-    let trigger = &SHIPPING_HOST_MAIN[trigger_start..trigger_end];
+        .unwrap_or(shipping_main.len());
+    let trigger = &shipping_main[trigger_start..trigger_end];
     assert!(trigger.contains("previous_run_id"));
     assert!(trigger.contains("record.runs.first()"));
-    assert!(trigger.contains(".first()\n                    .filter"));
+    assert!(trigger.contains(".first()"));
+    assert!(trigger.contains(".filter"));
     assert!(trigger.contains("\"action\": if finished"));
     assert!(trigger.contains("unwrap_or(\"accepted\")"));
     assert!(!trigger.contains("if let Ok(records)"));

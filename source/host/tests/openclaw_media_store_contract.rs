@@ -181,7 +181,7 @@ fn test_ocrm_media_store_subdir_traversal_protection() {
 
     #[cfg(unix)]
     {
-        let outside = temp.path.join("outside");
+        let outside = std::env::temp_dir().join(format!("ocrm-media-outside-{}", uuid::Uuid::new_v4()));
         fs::create_dir_all(&outside).unwrap();
         let linked = temp.path.join("linked");
         std::os::unix::fs::symlink(&outside, &linked).unwrap();
@@ -189,6 +189,7 @@ fn test_ocrm_media_store_subdir_traversal_protection() {
             resolve_media_scoped_dir(&temp.path, "linked/new", "test").is_err(),
             "an existing symlinked ancestor must not escape the media root"
         );
+        let _ = fs::remove_dir_all(&outside);
     }
 
     let escaped_file = temp.path.join("escaped.txt");
