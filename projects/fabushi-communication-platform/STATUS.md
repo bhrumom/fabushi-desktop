@@ -6,6 +6,14 @@ Date: 2026-11-02
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
+## task20bf round17 — forwarding current-head reconciliation
+
+The forward-settlement syntax failure at c38 was corrected in `b969b7c`; later native-service Actions at `2308c203` passed forward-settlement6/6, ForwardMessageDialog23/23, ProductionRenderer13/13 and Transcript14/14. The relevant production/test blobs remain unchanged on current head `2bde7847`. Current-head source-review contract `41787913149` passed Node171, Python37 and ledger schema0 errors; renderer run `41787913243` passed TypeScript/Vite build and the 45-asset bundle boundary.
+
+The four previously pending mixed-UI source reviews are now complete and mapped to existing forward privacy, thread-destination and settlement/idempotency responsibilities. This is source accounting only. The actual shipping chain remains Transcript → ProductionRenderer/ForwardMessageDialog → Coordinator → Session gateway → HumanForwardBatch journal → SandAgentDb → authenticated native service. Multi-source draft/removal, typed topic/sublist lifecycle, reply/suggestion/cloud-save behavior and self/premium/Saved Messages terminal feedback/navigation remain product gaps. No new message owner or parallel runtime is introduced.
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`; inventory is 16,381 entries / 184 responsibilities / 6 complete source reviews / 76 unresolved refs. PR #189 remains open/draft. Full product, service, signed installer, platform, legal and independent acceptance remain false. See `projects/telegram-desktop-rust/evidence/task20bf-round17-actions-reconciliation.json`.
+
 ## Round31 — canonical reply identity recovery
 
 Production H `4cbd7ddbe58ae789db9d2c674e8c9fa73146af40` uses the existing

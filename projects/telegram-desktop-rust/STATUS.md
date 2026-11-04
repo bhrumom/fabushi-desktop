@@ -5,7 +5,15 @@ Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2
 Parent: FBCP-001 Revision 8  
 Complete: false
 
-## task20bf round17 — forwarding exact-H Actions reconciliation
+## task20bf round17 follow-up — current branch head 2bde7847
+
+Requested c38 Actions are reconciled: the only failed job was native-message-ui, caused by a literal backslash-n before a test declaration in `forward-settlement.contract.test.ts:160`; the production renderer build passed. The syntax repair is in `b969b7c`, and subsequent native-service run `41758433155` passed. The later code-validation H `2308c203` passed forward-settlement 6/6, ForwardMessageDialog23/23, ProductionRenderer13/13, Transcript14/14, Human73/73, forward journal13/13 and the selected HTTP/ShareBox/resource contracts. The two forwarding production/test blobs are unchanged on current head `2bde7847`.
+
+Current-head Actions: source-review contract `41787913149` passed Node171/171, Python37/37 and canonical ledger schema0 errors; fixed-source-candidate reports `unaccepted-candidate-consistent`. Renderer run `41787913243` passed TypeScript project checks, `tsc --noEmit`, Vite build and the 45-asset bundle boundary. The four source reviews previously pending at ad015 are now complete in the unique ledger: forward-panel h/cpp and share-message phrase-factory h/cpp. All six reviews are complete; this does not close their product behavior.
+
+Unique ledger: 16,381 recursive entries, 184 responsibilities, six source reviews (6 complete / 0 pending), unknown/unread null, 76 unresolved refs (57 named / 10 short / 9 expression), two opaque inputs unread. Formerly pending forward behavior remains open: multi-source draft/removal, typed topic/sublist lifecycle, reply/suggestion cleanup, delayed cloud save, self/premium/Saved Messages phrase and navigation semantics. All baseline/source/product/independent acceptance flags remain false. PR #189 is open/draft. The detailed run/job/artifact identities and SHA-256 digests are recorded in the round17 reconciliation evidence file. Local worktree state is not observable through the remote GitHub connector.
+
+## Historical initial snapshot — requested c38 exact-H Actions reconciliation
 
 Requested c38e268 runs were fully read with job logs and downloaded artifacts. `41757851720` had one real failure: `forward-settlement.contract.test.ts:160` contained a literal `\\n` before `test(`, causing Node's TypeScript parser to raise `ERR_INVALID_TYPESCRIPT_SYNTAX`; the production renderer build passed. Reconciliation (Human73, forward journal13, HTTP1, sharebox1) and shipping compile (Protocol122, TCP9, Proxy4, credential1, package resource copy4) passed. `41757851849` renderer passed.
 

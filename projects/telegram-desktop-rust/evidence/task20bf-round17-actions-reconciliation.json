@@ -8,7 +8,10 @@
     "head_before_round_commit": "ad015021b01c723305546d862675ced83e27bb7c",
     "head_ref_verified": true,
     "main_head": "5528062177e3865eef60a073a066cca144f9e3e8",
-    "local_worktree_status": "not_observable_through_the_GitHub_remote_connector"
+    "local_worktree_status": "not_observable_through_the_GitHub_remote_connector",
+    "current_head_after_followup": "2bde78475b34f19018368838f188f8d6e98455c4",
+    "current_head_verified_after_followup": true,
+    "main_head_at_followup": "5528062177e3865eef60a073a066cca144f9e3e8"
   },
   "pull_request": {
     "number": 189,
@@ -16,7 +19,8 @@
     "draft": true,
     "head_before_round_commit": "ad015021b01c723305546d862675ced83e27bb7c",
     "base": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
-    "merged": false
+    "merged": false,
+    "current_head_after_followup": "2bde78475b34f19018368838f188f8d6e98455c4"
   },
   "fixed_upstream": {
     "repository": "telegramdesktop/tdesktop",
@@ -381,8 +385,8 @@
     "responsibilities": 184,
     "source_reviews": {
       "total": 6,
-      "complete": 2,
-      "pending": 4
+      "complete": 6,
+      "pending": 0
     },
     "unknown": null,
     "unread": null,
@@ -402,48 +406,7 @@
       "snapcraft.yaml"
     ]
   },
-  "pending_source_reviews": [
-    {
-      "repository": "telegramdesktop/tdesktop",
-      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-      "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
-      "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8",
-      "category": "mixed-ui",
-      "risk": "high",
-      "review_depth": "deep",
-      "status": "pending"
-    },
-    {
-      "repository": "telegramdesktop/tdesktop",
-      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-      "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
-      "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
-      "category": "mixed-ui",
-      "risk": "high",
-      "review_depth": "deep",
-      "status": "pending"
-    },
-    {
-      "repository": "telegramdesktop/tdesktop",
-      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-      "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
-      "object": "86865db47439dbce848fc812df2554335d3e004c",
-      "category": "mixed-ui",
-      "risk": "medium",
-      "review_depth": "deep",
-      "status": "pending"
-    },
-    {
-      "repository": "telegramdesktop/tdesktop",
-      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-      "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
-      "object": "1437bbfbd86b9d6649faae0bed7eed755e06337e",
-      "category": "mixed-ui",
-      "risk": "medium",
-      "review_depth": "deep",
-      "status": "pending"
-    }
-  ],
+  "pending_source_reviews": [],
   "current_owner_gap_analysis": {
     "existing_fabushi_owner_chain": [
       "ProductionRenderer transcript Forward action",
@@ -549,6 +512,504 @@
       "renderer_job_id": 126361254415,
       "conclusion": "success",
       "renderer_bundle_boundary": "45 emitted text assets"
+    }
+  },
+  "source_accounting_at_ad015": {
+    "fixed_upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "recursive_inventory_entries": 16381,
+    "root_source_entries": 6895,
+    "repository_identities": 41,
+    "recursive_edges": 40,
+    "responsibilities": 184,
+    "source_reviews": {
+      "total": 6,
+      "complete": 2,
+      "pending": 4
+    },
+    "unknown": null,
+    "unread": null,
+    "lexical_observations": 333,
+    "text_files_read": 203,
+    "opaque_inputs_unread": 2,
+    "unresolved_ref_observations": 76,
+    "unresolved_ref_types": {
+      "named": 57,
+      "short": 10,
+      "expression": 9
+    },
+    "unresolved_ref_paths": [
+      "mac_packaged.yml",
+      "CentOS Dockerfile",
+      "prepare.py",
+      "snapcraft.yaml"
+    ]
+  },
+  "pending_source_reviews_at_ad015": [
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+      "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8",
+      "category": "mixed-ui",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending"
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+      "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+      "category": "mixed-ui",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending"
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+      "object": "86865db47439dbce848fc812df2554335d3e004c",
+      "category": "mixed-ui",
+      "risk": "medium",
+      "review_depth": "deep",
+      "status": "pending"
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+      "object": "1437bbfbd86b9d6649faae0bed7eed755e06337e",
+      "category": "mixed-ui",
+      "risk": "medium",
+      "review_depth": "deep",
+      "status": "pending"
+    }
+  ],
+  "current_head_followup": {
+    "observed_date": "2026-11-04",
+    "branch": {
+      "name": "checkpoint/tdrp-forward-privacy-task20bf-r1",
+      "head": "2bde78475b34f19018368838f188f8d6e98455c4",
+      "head_verified": true,
+      "main_head": "5528062177e3865eef60a073a066cca144f9e3e8"
+    },
+    "pull_request": {
+      "number": 189,
+      "state": "open",
+      "draft": true,
+      "head_sha": "2bde78475b34f19018368838f188f8d6e98455c4",
+      "base": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+      "merged": false
+    },
+    "fixed_upstream": {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "changed": false
+    },
+    "c38_exact_head_reconciliation": {
+      "native_service_contracts_run": 41757851720,
+      "head_sha": "c38e26811940ca4c9631a6625e9a85c8c8dd2b7d",
+      "jobs": [
+        {
+          "id": 126338106985,
+          "name": "native-message-ui",
+          "conclusion": "failure"
+        },
+        {
+          "id": 126338106888,
+          "name": "native-message-reconciliation",
+          "conclusion": "success"
+        },
+        {
+          "id": 126338106567,
+          "name": "native-message-shipping-compile",
+          "conclusion": "success"
+        }
+      ],
+      "failure": {
+        "path": "frontend/src/production/forward-settlement.contract.test.ts",
+        "line": 160,
+        "error": "SyntaxError [ERR_INVALID_TYPESCRIPT_SYNTAX]: Expected unicode escape",
+        "cause": "literal backslash-n prefix before test declaration; test-source syntax defect, not production renderer build failure"
+      },
+      "renderer_build": "passed",
+      "reconciliation": {
+        "human_gateway": "73 passed",
+        "forward_batch_journal": "13 passed",
+        "forward_http": "1 passed",
+        "forward_sharebox": "1 passed",
+        "transcript_recovery": "3 passed",
+        "resource_upload_bounds": "3 passed"
+      },
+      "shipping": {
+        "telegram_protocol": "122 passed",
+        "telegram_tcp_transport": "9 passed",
+        "telegram_proxy_boundary": "4 passed",
+        "native_credential_schema": "1 passed",
+        "package_resource_copy": "4 passed",
+        "app_host_sha256": "64061e9c75cc3b8127f62647400c337590982b14198b618b4ae9628f889dbc96",
+        "app_host_size_bytes": 160462688,
+        "app_host_mode": "0755",
+        "package_hash_mismatch_negative": "expected rejection observed"
+      },
+      "artifacts": [
+        {
+          "id": 13289315886,
+          "name": "native-message-ui",
+          "sha256": "b70ae627b554680f0852d808487269b1c519e4d12b0f47c76c382a54640ec1d6",
+          "downloaded_and_checksum_verified": true
+        },
+        {
+          "id": 13289825445,
+          "name": "native-message-reconciliation",
+          "sha256": "2e001b07f1f41fc86e69c4caf537de4ddff44051d3eb2d9aa460a354f7f28722",
+          "downloaded_and_checksum_verified": true
+        },
+        {
+          "id": 13291115464,
+          "name": "native-message-shipping-compile",
+          "sha256": "73224707910b2a698a901131abad763133197fff443679aa67a38ea928f3c3f4",
+          "downloaded_and_checksum_verified": true
+        }
+      ]
+    },
+    "syntax_repair": {
+      "commit": "b969b7c88c934fe0e0d382378df6fa426812edb6",
+      "parent": "c38e26811940ca4c9631a6625e9a85c8c8dd2b7d",
+      "changed_file": "frontend/src/production/forward-settlement.contract.test.ts",
+      "change": "removed literal backslash-n before unknown-runtime-status test",
+      "native_service_contracts_run": 41758433155,
+      "conclusion": "success",
+      "forward_settlement": {
+        "tests": 6,
+        "passed": 6,
+        "failed": 0
+      },
+      "forward_dialog": {
+        "tests": 23,
+        "passed": 23,
+        "failed": 0
+      },
+      "production_renderer": {
+        "tests": 13,
+        "passed": 13,
+        "failed": 0
+      },
+      "production_transcript": {
+        "tests": 14,
+        "passed": 14,
+        "failed": 0
+      }
+    },
+    "current_product_code_validation": {
+      "run": 41785017099,
+      "validation_head": "2308c203aa18f1b545b5878e27716e92279826ba",
+      "current_head_code_unchanged": true,
+      "current_head_commit_parent": "2308c203aa18f1b545b5878e27716e92279826ba",
+      "current_head_commit_changed_files": [
+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md",
+        "projects/telegram-desktop-rust/parity-ledger.json"
+      ],
+      "job_ids": {
+        "native_message_ui": 126425068595,
+        "native_message_reconciliation": 126425068649,
+        "shipping_compile": 126425068587
+      },
+      "conclusions": {
+        "native_message_ui": "success",
+        "native_message_reconciliation": "success",
+        "shipping_compile": "success"
+      },
+      "production_blobs": {
+        "frontend/src/production/forward-settlement.contract.test.ts": "3402aeb8db689a1e50fe3d7ffa32da444f1624d3",
+        "frontend/src/production/forward-settlement.ts": "c12d1f126dac055b904172e55e7b6df382b69171"
+      },
+      "ui": {
+        "forward_settlement": {
+          "tests": 6,
+          "passed": 6,
+          "failed": 0
+        },
+        "forward_message_dialog": {
+          "tests": 23,
+          "passed": 23,
+          "failed": 0
+        },
+        "production_renderer": {
+          "tests": 13,
+          "passed": 13,
+          "failed": 0
+        },
+        "production_transcript": {
+          "tests": 14,
+          "passed": 14,
+          "failed": 0
+        },
+        "human_cursors": {
+          "tests": 17,
+          "passed": 17,
+          "failed": 0
+        },
+        "coordinator_admission": {
+          "tests": 13,
+          "passed": 13,
+          "failed": 0
+        },
+        "network_proxy_settings": {
+          "tests": 18,
+          "passed": 18,
+          "failed": 0
+        },
+        "transcript_contract": {
+          "tests": 40,
+          "passed": 40,
+          "failed": 0
+        },
+        "renderer_bundle_boundary": "45 emitted text assets",
+        "vite_build": "built in 5.11s"
+      },
+      "reconciliation": {
+        "human_gateway": "73 passed, 0 failed",
+        "forward_batch_journal": "13 passed, 0 failed",
+        "forward_http": "1 passed, 0 failed",
+        "forward_sharebox": "1 passed, 0 failed",
+        "transcript_recovery": "3 passed, 0 failed",
+        "resource_upload_bounds": "3 passed, 0 failed",
+        "human_creation": "12 passed, 0 failed",
+        "human_creation_storage": "3 passed, 0 failed",
+        "settlement_credential": "3 passed, 0 failed"
+      },
+      "shipping": {
+        "telegram_protocol": "122 passed, 0 failed",
+        "telegram_tcp_transport": "9 passed, 0 failed",
+        "telegram_proxy_boundary": "4 passed, 0 failed",
+        "native_credential_schema": "1 passed, 0 failed",
+        "package_resource_copy": "4 passed, 0 failed",
+        "app_host_sha256": "64061e9c75cc3b8127f62647400c337590982b14198b618b4ae9628f889dbc96",
+        "app_host_size_bytes": 160462688,
+        "app_host_mode": "0755",
+        "package_hash_mismatch_negative": "expected rejection observed"
+      },
+      "artifacts": [
+        {
+          "id": 13300123897,
+          "name": "native-message-ui",
+          "sha256": "e65c2ed1a7432b21359b7b10dde0bee8111367060813d12b532ec058abd1ec87",
+          "downloaded_and_checksum_verified": true
+        },
+        {
+          "id": 13300269647,
+          "name": "native-message-reconciliation",
+          "sha256": "e1076fcca81d0b784851d0454fde5931be8aa3d2117188691976966990a2200a",
+          "downloaded_and_checksum_verified": true
+        },
+        {
+          "id": 13301167939,
+          "name": "native-message-shipping-compile",
+          "sha256": "188cf263d85d1027022742c6607e6ed4aaf1eec5b81e52a981ffc5030f7dfcdf",
+          "downloaded_and_checksum_verified": true
+        }
+      ]
+    },
+    "current_head_actions": {
+      "source_review_contract": {
+        "run": 41787913149,
+        "head_sha": "2bde78475b34f19018368838f188f8d6e98455c4",
+        "contract_job": {
+          "id": 126434212735,
+          "conclusion": "success"
+        },
+        "fixed_source_candidate_job": {
+          "id": 126434295039,
+          "conclusion": "success"
+        },
+        "node_tests": {
+          "passed": 171,
+          "failed": 0
+        },
+        "python_schema_tests": {
+          "passed": 37,
+          "failed": 0
+        },
+        "canonical_ledger_schema": {
+          "valid": true,
+          "errors": 0,
+          "source_accepted": false
+        },
+        "fixed_source_candidate": {
+          "status": "unaccepted-candidate-consistent",
+          "target_commit": "2bde78475b34f19018368838f188f8d6e98455c4",
+          "source_entries_total": 16381,
+          "root_source_entries_total": 6895,
+          "responsibility_rows": 184,
+          "authored_source_review_records": 6,
+          "completed_source_review_records": 6,
+          "pending_source_review_records": 0,
+          "unknown": null,
+          "unread": null,
+          "lexical_observations": 333,
+          "text_files_read": 203,
+          "opaque_inputs_unread": 2,
+          "unresolved_ref_observations": 76,
+          "baseline_accepted": false,
+          "source_closure_ready": false,
+          "product_accepted": false,
+          "independent_acceptance": false,
+          "expected_acceptance_guard": "candidate rejection confirmed by accepted.log; open rebaseline candidate cannot be marked accepted"
+        },
+        "ledger_blob_sha": "92863afd568c64c2422c59f44ca4f18a39b33736",
+        "ledger_schema_blob_sha": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+        "source_review_records": [
+          {
+            "path": "Telegram/SourceFiles/ui/chat/forward_options_box.h",
+            "object": "65db5fbe067e340e0259a23ae57cda59096ccda0",
+            "status": "complete",
+            "responsibility_ids": [
+              "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
+            ]
+          },
+          {
+            "path": "Telegram/SourceFiles/ui/chat/forward_options_box.cpp",
+            "object": "708ae65e92dc435bf798f8c0220b0547f35ab2bf",
+            "status": "complete",
+            "responsibility_ids": [
+              "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
+            ]
+          },
+          {
+            "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+            "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8",
+            "status": "complete",
+            "responsibility_ids": [
+              "TDRP-R9-SHARE-FORWARD-PRIVACY-001",
+              "TDRP-R9-SHARE-THREAD-DESTINATION-001"
+            ]
+          },
+          {
+            "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+            "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+            "status": "complete",
+            "responsibility_ids": [
+              "TDRP-R9-SHARE-FORWARD-PRIVACY-001",
+              "TDRP-R9-SHARE-THREAD-DESTINATION-001"
+            ]
+          },
+          {
+            "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+            "object": "86865db47439dbce848fc812df2554335d3e004c",
+            "status": "complete",
+            "responsibility_ids": [
+              "TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001",
+              "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
+            ]
+          },
+          {
+            "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+            "object": "1437bbfbd86b9d6649faae0bed7eed755e06337e",
+            "status": "complete",
+            "responsibility_ids": [
+              "TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001",
+              "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
+            ]
+          }
+        ],
+        "artifacts": [
+          {
+            "id": 13302625305,
+            "name": "tdrp-source-review-contract",
+            "sha256": "e9f45aed1bd1d5358c95933901226558bd4fd00f87c69635babf632d5644bf9e",
+            "downloaded_and_checksum_verified": true
+          },
+          {
+            "id": 13302156531,
+            "name": "tdrp-source-candidate",
+            "sha256": "e291e49ac8ff1d7d1f8da71acf0c4aeba2669ccba2cfc36e5ca39c3d1c427c8e",
+            "downloaded_and_checksum_verified": true
+          }
+        ]
+      },
+      "renderer": {
+        "run": 41787913243,
+        "head_sha": "2bde78475b34f19018368838f188f8d6e98455c4",
+        "job": {
+          "id": 126434213898,
+          "conclusion": "success"
+        },
+        "typescript": {
+          "grok_electron_tsc": "passed",
+          "fabushi_product_tsc": "passed",
+          "renderer_build_tsc_no_emit": "passed"
+        },
+        "vite_build": "372 modules transformed; built in 5.20s",
+        "bundle_boundary": "45 emitted text assets passed",
+        "desktop_runtime_check": "passed"
+      }
+    },
+    "source_review_followup": {
+      "total": 6,
+      "complete": 6,
+      "pending": 0,
+      "formerly_pending_now_complete": [
+        "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+        "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+        "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+        "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp"
+      ],
+      "review_completion_scope": "deep source reading and exact responsibility mapping only; not production implementation or acceptance"
+    },
+    "remaining": {
+      "unresolved_ref_observations": 76,
+      "unresolved_ref_types": {
+        "named": 57,
+        "short": 10,
+        "expression": 9
+      },
+      "unresolved_ref_paths": [
+        "mac_packaged.yml",
+        "CentOS Dockerfile",
+        "prepare.py",
+        "snapcraft.yaml"
+      ],
+      "opaque_inputs_unread": 2,
+      "forward_panel_gaps": [
+        "multi-source selection and forward draft lifecycle",
+        "source-item removal",
+        "typed destination topic/sublist lifecycle",
+        "reply/suggestion draft cleanup",
+        "delayed cloud-save and destination lifetime behavior"
+      ],
+      "phrase_factory_gaps": [
+        "self/Saved Messages distinction",
+        "premium-specific phrase suppression/behavior",
+        "Saved Messages icon and typed session-window navigation",
+        "terminal feedback for one/two/many recipients must match canonical phrase semantics"
+      ],
+      "full_acceptance_gates_open": [
+        "real services",
+        "signed installers",
+        "platform packaging",
+        "UI visual/accessibility",
+        "timing",
+        "security",
+        "performance/soak",
+        "upgrade/rollback",
+        "full Bot regression",
+        "legal closure",
+        "independent ACCEPT"
+      ]
+    },
+    "acceptance": {
+      "baseline_accepted": false,
+      "source_closure_ready": false,
+      "product_accepted": false,
+      "independent_acceptance": false,
+      "unknown": null,
+      "unread": null
+    },
+    "execution_constraints": {
+      "local_builds_or_tests_run": false,
+      "local_worktree_status": "not observable through GitHub remote connector"
     }
   }
 }
