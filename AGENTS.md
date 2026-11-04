@@ -323,7 +323,7 @@ All AI development in this repository must comply with that policy.
 
 ## Build and test execution environment
 
-All builds and tests must run only in **GitHub Actions** or on **`htch-runtime`**, as required by the user. Do not run builds, linters, generators, schema checks, tests, benchmarks or acceptance on a local workstation, the user's Mac/Windows desktop, or the assistant's local working container. Read-only investigation, editing and Git/API operations are allowed.
+All builds and tests must run only in **GitHub Actions** or on **`htch-runtime`**, as required by the user. Do not run builds, linters, generators, schema checks, tests, benchmarks or acceptance on a local workstation, the user's Mac/Windows desktop, or the assistant's local working container. Read-only investigation, editing and Git/API operations are allowed. The only exception is FBCP/TDRP Stage A `local-feedback` defined under FMEP-FAST-09 below; it never produces evidence.
 
 Missing runner, OS, device, account or signing configuration is `not-configured` / `blocked`, never a passing test. Record the exact source revision, actual commands, test counts, exit codes and artifacts from the allowed execution environment.
 
@@ -370,9 +370,15 @@ TDRP-001 remains source-informed and is not clean-room. Do not claim Rust automa
 
 ### Execution
 
-**FBCP-001 / TDRP-001 project exception:** all executable verification for this migration project runs **only in GitHub Actions**. The repository-wide `htch-runtime` allowance above does not apply to FBCP/TDRP. This includes build, lint, generator, schema, unit/property/state-machine, contract, integration, E2E, temporal, visual, accessibility, performance, soak, fault-injection, package and acceptance runs.
+**FBCP-001 / TDRP-001 project exception:** all **evidence-bearing** executable verification for this migration project runs **only in GitHub Actions**. The repository-wide `htch-runtime` allowance above does not apply to FBCP/TDRP evidence. This includes build, lint, generator, schema, unit/property/state-machine, contract, integration, E2E, temporal, visual, accessibility, performance, soak, fault-injection, package and acceptance runs that qualify a batch, a ledger state or a release.
 
-For FBCP/TDRP, FMEP-001 Revision 2 supersedes the former zero-CI development rule. Implement coherent product batches; run focused compile/contract/state-machine/integration and risk checks in GitHub Actions as each batch is ready. Push/PR/dispatch for these checks is allowed. Continue independent work while checks run; repair failed shared contracts before dependent work. Reuse valid exact-revision evidence, then complete all applicable final-candidate gates and independent acceptance. Local executable validation remains prohibited.
+For FBCP/TDRP, FMEP-001 Revision 3 supersedes the former zero-CI development rule and the Revision 2 ban on local feedback. Implement coherent product batches; run focused compile/contract/state-machine/integration and risk checks in GitHub Actions as each batch is ready. Push/PR/dispatch for these checks is allowed. Continue independent work while checks run; repair failed shared contracts before dependent work. Reuse valid exact-revision evidence, then complete all applicable final-candidate gates and independent acceptance.
+
+**Stage A local fast feedback (FMEP-FAST-09, user-approved 2026-11-04):** during Stage A, developers and AI agents may run focused local compile/typecheck/unit/contract commands (for example `cargo check`, `cargo test -p <crate>`, `tsc --noEmit`, focused vitest/node tests) to shorten the fix loop. Local results are `local-feedback` only: they never qualify a ledger state, RTM verdict, batch gate or release, and must not be reported as a pass. Do not run packaging, signing, live-service, soak or acceptance suites locally, and never let local runs touch real user data, credentials or production services.
+
+**Legacy Telegram stack freeze (FMEP-EXIT-01):** do not start new MTProto/Telegram-network/Telegram-runtime/Telegram-storage implementation rounds. Changes to those crates are limited to security fixes, compile repairs, retained old-data readers needed for migration/rollback, and removal steps. Needed reliability behavior is implemented in Fabushi-owned Session/native messaging/service owners instead.
+
+**Upstream tooling (FMEP-TOOL-01):** upstream `.agents`, cross-review, code-health and similar development tooling are disposed as `upstream-development-tooling`, are excluded from product progress, and do not get new ledger rows, governance documents or Rust/TS counterparts unless a named product/build/security/acceptance gate is blocked by them.
 
 Read-only investigation, spec/test-plan editing, evidence review and Git/API operations may occur outside Actions. Missing runner/account/service/signing configuration is blocked, never pass.
 

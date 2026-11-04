@@ -5,7 +5,7 @@ Project ID: TDRP-001
 Revision: 10
 Date: 2026-10-31
 Parent: FBCP-001 Revision 8
-Execution addendum: FMEP-001 Revision 2 (2026-11-02)
+Execution addendum: FMEP-001 Revision 3 (2026-11-04; Revision 2 2026-11-02)
 
 ## Role
 
@@ -16,7 +16,7 @@ Execution addendum: FMEP-001 Revision 2 (2026-11-02)
 ## Must read
 
 - root `AGENTS.md`
-- `docs/specs/fabushi-deferred-ci-migration.md` — FMEP-001 Revision 2；执行时机、批次协作、保存与集中验收的权威补充
+- `docs/specs/fabushi-deferred-ci-migration.md` — FMEP-001 Revision 3（§14 为 2026-11-04 纠偏：旧 Telegram 栈冻结与退出、工具处置、阶段 A 本地快速反馈、领域库接线判定、STATUS 格式、后端阻塞）；执行时机、批次协作、保存与集中验收的权威补充
 - `projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md` Revision 8 with execution addendum
 - `docs/specs/fabushi-bot-communication-platform.md` Revision 8
 - `docs/specs/telegram-desktop-rust-equivalence-migration.md` Revision 10
@@ -111,3 +111,7 @@ Execution addendum: FMEP-001 Revision 2 (2026-11-02)
 
 FMEP-SOURCE-01 (`docs/specs/fabushi-deferred-ci-migration.md` §13) supersedes blanket per-file deep-reading/unread=0 requirements: enumerate and disposition every exact source identity; review product/mixed/high-risk logic deeply, generated and dependency contracts at their owning inputs/interfaces, and resources/docs/tooling by evidenced disposition. Preserve full product scope. Unknown or ambiguous responsibilities escalate to deep review. Historical unread counts are not rewritten as completed reads. Final acceptance requires complete identity coverage, required review depth, responsibility mapping and all original product/evidence gates.
 
+
+### FMEP-001 Revision 3 amendment — 2026-11-04
+
+`docs/specs/fabushi-deferred-ci-migration.md` §14 applies. The legacy Telegram stack (`providers/telegram-*`, `mahayana-telegram`, platform-core `native/telegram-*`) is frozen and on an explicit exit path (FMEP-EXIT-01); rows implemented only there are `mapped`, not Fabushi product implementation. Upstream development tooling is disposed and excluded from product progress (FMEP-TOOL-01). Stage A may use local `local-feedback` runs, which never qualify any state; GitHub Actions remains the only evidence source (FMEP-FAST-09). Domain code reachable only through the desktop-rejected standalone `MessagingService` is domain-only until consumed by Session/Transcript (FMEP-STATE-02). STATUS files follow FMEP-REPORT-01, and backend PR137/Worker deployment is a tracked P0 blocker (FMEP-BLOCK-01). The Revision 2 sentences above remain for history; where they say all executable validation runs only in Actions, read "all evidence-bearing validation".

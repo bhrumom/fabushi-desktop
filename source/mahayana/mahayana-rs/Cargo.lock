@@ -9201,7 +9201,6 @@ dependencies = [
 name = "mahayana-ffi"
 version = "0.1.0"
 dependencies = [
- "fabushi-telegram-runtime",
  "mahayana-core",
  "mahayana-host",
  "mahayana-platform-client",

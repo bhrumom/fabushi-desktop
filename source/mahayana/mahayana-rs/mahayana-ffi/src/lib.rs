@@ -199,8 +199,13 @@ pub unsafe extern "C" fn mahayana_product_execute(request_json: *const c_char) -
     })
 }
 
-/// Linker anchor for native builds that resolve Runtime and Telegram
-/// symbols from one shared artifact.
+/// Linker anchor for native builds that resolve Runtime symbols from one
+/// shared artifact.
+///
+/// FMEP-OWNER-03 / FMEP-EXIT-01: the legacy `fabushi_telegram_*` C symbols
+/// are no longer anchored or re-exported from this artifact. The retained
+/// Telegram provider keeps its own crate-local ABI and tests for rollback and
+/// old-data compatibility only; it is not a Fabushi shipping owner.
 #[unsafe(no_mangle)]
 pub extern "C" fn mahayana_runtime_force_link() -> u32 {
     let runtime_symbols = [
@@ -213,14 +218,7 @@ pub extern "C" fn mahayana_runtime_force_link() -> u32 {
         mahayana_product_execute as *const () as usize,
         mahayana_runtime_free_string as *const () as usize,
     ];
-    let telegram_symbols = [
-        fabushi_telegram_runtime::fabushi_telegram_create_client as *const () as usize,
-        fabushi_telegram_runtime::fabushi_telegram_create_persistent_client as *const () as usize,
-        fabushi_telegram_runtime::fabushi_telegram_execute as *const () as usize,
-        fabushi_telegram_runtime::fabushi_telegram_close_client as *const () as usize,
-        fabushi_telegram_runtime::fabushi_telegram_free_string as *const () as usize,
-    ];
-    std::hint::black_box((runtime_symbols, telegram_symbols));
+    std::hint::black_box(runtime_symbols);
     1
 }
 

@@ -68,6 +68,18 @@ This matrix is the executable planning contract required by FBCP P0. A selected 
 | TDE2E-SECURITY | long-tail dossier; frozen TDE2E temporary keys, participant permissions, scoped encrypt/decrypt and call/channel key lifecycle | identity/device security; native sync security; CallSession; Shared Room permissions; new crypto product | existing identity/device security + native messaging/sync security + ADR-003 CallSession + Shared Room permissions | auth/secrets/WebAuthn + network row + ADR-003 + Shared Room | Fabushi protocol security only; Telegram TDE2E rejected | authenticated device keys, rotation/revoke, replay/order binding, secure erase, crypto migration | membership/key rotation/device loss/replay/restart/call lifetime/security review |
 ## P0 invariants carried by every row
 
+### 2026-11-04 message-owner split (FMEP-001 r3 §14 FMEP-STATE-02) — open ADR
+
+Inspected base `5682bec433fc5f42051db978ed627754be244d3f`, read only:
+
+| Path | Entry | State authority | Desktop production |
+| --- | --- | --- | --- |
+| Desktop Session/Transcript | `ProductionRenderer` → Session gateway → `source/host/src/extensions/session/production.rs::ProductionSessionWorkers` | SandAgentDb SQLite + forward/reply journals + Fabushi service | **selected**, sole Human message owner |
+| FeatureHost standalone messaging | `mahayana-feature-host::execute_messaging_sync` → `fabushi_messaging_core::MessagingService::handle` → `MessagingEngine` | `<account>/_messaging/snapshot.json` + `blobs/` | **rejected** by `ensure_desktop_messaging_owner` (Electron + Production); reachable on iOS/Android and in tests |
+| Shared pure helpers | `recipient_search_authorized`, `ForwardPrivacy`, `ConversationPermissions`, `MemberRestrictions`, `query_matches_fields` | none (pure) | consumed by `ProductionSessionWorkers`; counts as wired |
+
+Consequences: (1) Engine/Service-only features (for example SendMenu details, destination policy, topic eligibility, thread destination, saved-sublist child windows) are domain-only for desktop and are `mapped` with `[FMEP-STATE-02 domain-only wiring gap]` in the ledger. (2) Mobile and desktop currently have two writers of the same message semantics with different persistence. An ADR must select one authoritative semantic owner and make the other an adapter, with ID/version/data migration and rollback. Until then, new Telegram-derived message capabilities must not land only in `MessagingService`.
+
 ### Round 15 desktop message boundary (base c15dfbd9631f8b9fb6920cb5f80b9aea35210d07)
 
 `ACCOUNT-AUTH-MULTI`, `STORAGE-MIGRATION-RECOVERY` and `NETWORK-SYNC-REALTIME`
