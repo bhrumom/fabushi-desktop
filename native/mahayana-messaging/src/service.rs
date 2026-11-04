@@ -2739,6 +2739,19 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 audience.clear();
                 audience.insert(draft.actor_id.clone());
             }
+            ServerEvent::ConversationChildReadChanged { actor_id, .. }
+            | ServerEvent::ConversationChildDraftChanged { actor_id, .. }
+            | ServerEvent::ConversationChildWindowReplaced { actor_id, .. }
+            | ServerEvent::ConversationChildPinnedChanged { actor_id, .. }
+            | ServerEvent::ConversationChildActiveChanged { actor_id, .. }
+            | ServerEvent::ConversationChildMarkedUnreadChanged { actor_id, .. }
+            | ServerEvent::ConversationChildNoPaidMessagesChanged { actor_id, .. }
+            | ServerEvent::ConversationChildDestroyed { actor_id, .. } => {
+                // Child histories are actor-scoped projections. Never fan these events
+                // out to every participant in the parent Conversation.
+                audience.clear();
+                audience.insert(actor_id.clone());
+            }
             ServerEvent::MessageAdded { message } | ServerEvent::MessageChanged { message } => {
                 self.extend_conversation_id_audience(&mut audience, &message.conversation_id);
             }
