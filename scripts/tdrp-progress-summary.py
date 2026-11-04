@@ -18,6 +18,7 @@ STATUSES = ["unreviewed", "understood", "mapped", "implemented", "verified"]
 CATEGORY_LABEL = {
     "product": "产品职责（Fabushi owner）",
     "domain-only": "领域库实现、桌面未接线（FMEP-STATE-02）",
+    "replaced": "旧栈职责→Fabushi 替代方案（E4，仅设计级 mapped）",
     "legacy": "旧 Telegram 栈（FMEP-EXIT-01，不计产品）",
     "governance": "构建/仓库治理支撑",
     "tool": "上游开发工具（FMEP-TOOL-01，已处置）",
@@ -44,6 +45,8 @@ def category(row) -> str:
     notes = row.get("notes") or ""
     if "[FMEP-TOOL-01" in notes:
         return "tool"
+    if "[FMEP-EXIT-01 E4 remapped]" in notes:
+        return "replaced"
     if "[FMEP-EXIT-01" in notes:
         return "legacy"
     if "[FMEP-STATE-02" in notes:
@@ -74,7 +77,7 @@ def main() -> int:
     print()
     print("| 类别 | 行数 | understood | mapped | implemented | verified | release gate passed |")
     print("| --- | ---: | ---: | ---: | ---: | ---: | ---: |")
-    for cat in ["product", "domain-only", "legacy", "governance", "tool"]:
+    for cat in ["product", "domain-only", "replaced", "legacy", "governance", "tool"]:
         c = table.get(cat, Counter())
         total = sum(c.values())
         print(
