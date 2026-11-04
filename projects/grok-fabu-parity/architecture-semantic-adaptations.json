@@ -22,7 +22,7 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "d4caceb371159ba99608d650c0294460dedb7e07",
+      "targetBlobSha": "2c1c147003ae1dc50c03003cc86f8d4ff0682b05",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/account/session/sign-in-status.tsx",
@@ -71,7 +71,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "68eb88a950d8c48f674566efbfad335a6bf620af",
+      "targetBlobSha": "0cc3766c31423da0c4711f44e51faa1910a153e3",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "frontend/src/production/ProductionRenderer.tsx",
@@ -1771,7 +1771,7 @@
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
       "targetPath": "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
-      "targetBlobSha": "9418fa1d1c083f17a79818e1575ca64066124c22",
+      "targetBlobSha": "962f8e74c2104154b3ff9ed80c50d2cb6cc2e771",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
         "frontend/src/production/ProductionRenderer.tsx"

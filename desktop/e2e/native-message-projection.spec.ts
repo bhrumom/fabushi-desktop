@@ -211,13 +211,14 @@ test('NMR-26 a peer nonce collision, delayed receipt and roster failure preserve
   await page.getByRole('button', { name: 'Send message', exact: true }).click();
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(1);
   await page.evaluate(() => window.nativeMessageFixture.peerCollision());
-  await expect(page.locator('[data-entry-id^="pending-"]')).toHaveCount(1);
+  await expect(page.locator('[data-entry-id^="human-message:"]')).toHaveCount(1);
+  await expect(page.locator('[data-entry-id^="human-message:"]')).toContainText('Original outgoing content');
   await expect(messageRow(page, 'human-server-message:200')).toContainText('Independent peer message');
   await page.evaluate(() => {
     const id = window.nativeMessageFixture.publishSend();
     window.nativeMessageFixture.mutate('human:a', id, { content: '', attachments: [], reactions: [{ emoji: '❤️', by: 'me' }] });
   });
-  await expect(page.locator('[data-entry-id^="pending-"]')).toHaveCount(0);
+  await expect(page.locator('[data-entry-id^="human-message:"]')).toHaveCount(0);
   await expect(messageRow(page, 'human-server-message:100').locator('.sand-message')).not.toContainText('Original outgoing content');
   await page.getByRole('button', { name: 'Bob', exact: true }).click();
   await expect(messageRow(page, 'b1')).toBeVisible();
@@ -236,7 +237,7 @@ test('NMR-26 a peer nonce collision, delayed receipt and roster failure preserve
   await page.evaluate(() => window.nativeMessageFixture.failSendRosterRefresh());
   await expect(page.getByText('Human roster refresh unavailable: fixture-roster: post-send roster unavailable', { exact: true })).toBeVisible();
   await expect(page.locator('[contenteditable="true"]')).toHaveText('');
-  await expect(page.locator('[data-entry-id^="pending-"]')).toHaveCount(0);
+  await expect(page.locator('[data-entry-id^="human-message:"]')).toHaveCount(0);
   await expect(messageRow(page, 'human-server-message:100')).toContainText('Edited after send acknowledgement event');
   expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'sendHumanMessage').length)).toBe(1);
   await milestone(page, info, 'late-receipt-after-switch');
@@ -252,7 +253,7 @@ for (const oldPhase of ['in-flight', 'queued']) {
     if (oldPhase === 'in-flight') {
       await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(1);
     } else {
-      await expect(page.locator('[data-entry-id^="pending-"]')).toContainText('Will send when reconnected');
+      await expect(page.locator('[data-entry-id^="human-message:"]')).toContainText('Will send when reconnected');
       expect(await page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(0);
     }
     await page.evaluate(() => window.nativeMessageFixture.setAccount(null));
@@ -277,7 +278,7 @@ for (const oldPhase of ['in-flight', 'queued']) {
     });
     await expect(messageRow(page, 'new-a')).toBeVisible();
     await expect(page.getByRole('log', { name: 'Conversation transcript' })).not.toContainText('Previous account private message');
-    await expect(page.locator('[data-entry-id^="pending-"]')).toHaveCount(1);
+    await expect(page.locator('[data-entry-id^="human-message:"]')).toHaveCount(1);
     expect(await page.evaluate(() => window.nativeMessageFixture.approvalClears)).toEqual([]);
     await milestone(page, info, `new-account-send-before-old-${oldPhase}-completion`);
 
@@ -288,7 +289,7 @@ for (const oldPhase of ['in-flight', 'queued']) {
     const canonicalId = `human-server-message:${100 + previousRequests}`;
     await expect(messageRow(page, canonicalId)).toContainText('Current account independent send');
     await expect.poll(() => domIds(page)).toEqual(['new-a', canonicalId]);
-    await expect(page.locator('[data-entry-id^="pending-"]')).toHaveCount(0);
+    await expect(page.locator('[data-entry-id^="human-message:"]')).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.approvalClears)).toEqual(['next-account']);
     await expect(page.locator('[contenteditable="true"]')).toHaveText('');
     await milestone(page, info, `account-fence-after-old-${oldPhase}-replies`);
