@@ -10824,6 +10824,19 @@ fn miniapp_post_to_conversation_contract_enforces_host_authoritative_session_and
     );
     let conversation_id = created["id"].as_str().expect("conversation id").to_string();
 
+    // Set up ledger package verifier backed by existing installable_package owner
+    let package_db = Arc::new(std::sync::Mutex::new(rusqlite::Connection::open_in_memory().unwrap()));
+    {
+        let db = package_db.lock().unwrap();
+        mahayana_host_runtime::extensions::mcp::installable_package::ledger::initialize(&db).expect("ledger initialized");
+    }
+    runtime.set_mini_app_package_verifier(
+        ProductionSessionWorkers::create_ledger_package_verifier(
+            Arc::clone(&package_db),
+            "human-local".into(),
+        ),
+    );
+
     // 1. issueMiniAppLaunchSession on uninstalled package fails closed (Point 3)
     let uninstalled = dispatch_production_session_gateway_call(
         &runtime,
@@ -10837,16 +10850,35 @@ fn miniapp_post_to_conversation_contract_enforces_host_authoritative_session_and
     .expect_err("uninstalled package must be rejected");
     assert!(matches!(uninstalled, SessionGatewayError::BadRequest(ref msg) if msg.contains("not installed")));
 
-    // Register verified installed package in Host
-    runtime
-        .register_installed_miniapp_package(mahayana_host_runtime::extensions::session::production::MiniAppPackageDescriptor {
-            app_id: "org.fabushi.shop".into(),
-            version: "1.0.0".into(),
-            package_digest: "a".repeat(64),
-        })
-        .expect("registered package");
+    // Install real verified package into installable_package ledger owner (Point 4)
+    let (bundle_bytes, policy) = mahayana_host_runtime::extensions::mcp::installable_package::create_test_bundle_and_authorization("org.fabushi.shop", "1.0.0");
+    let verified_pkg = mahayana_host_runtime::extensions::mcp::installable_package::verify_catalog_bundle(&bundle_bytes, &policy).expect("verified package");
+    let real_digest = verified_pkg.digest().to_string();
+    {
+        let mut db = package_db.lock().unwrap();
+        let scope = mahayana_host_runtime::extensions::mcp::installable_package::ledger::HostInstallScope {
+            account_scope: "human-local".into(),
+            generation: 1,
+        };
+        mahayana_host_runtime::extensions::mcp::installable_package::ledger::activate(&mut db, &scope, &scope, "op-1", verified_pkg).expect("activated");
+    }
 
-    // 2. issueMiniAppLaunchSession on non-participant conversation fails closed
+    // 2. Digest mismatch fails closed
+    let mismatch = dispatch_production_session_gateway_call(
+        &runtime,
+        "issueMiniAppLaunchSession",
+        &json!({
+            "appId": "org.fabushi.shop",
+            "conversationId": conversation_id,
+            "version": "1.0.0",
+            "packageDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+        }),
+    )
+    .expect("handled call")
+    .expect_err("digest mismatch must be rejected");
+    assert!(matches!(mismatch, SessionGatewayError::BadRequest(ref msg) if msg.contains("digest mismatch")));
+
+    // 3. issueMiniAppLaunchSession on non-participant conversation fails closed
     let non_participant = dispatch_production_session_gateway_call(
         &runtime,
         "issueMiniAppLaunchSession",
@@ -10859,7 +10891,7 @@ fn miniapp_post_to_conversation_contract_enforces_host_authoritative_session_and
     .expect_err("non-participant conversation must be rejected");
     assert!(matches!(non_participant, SessionGatewayError::BadRequest(_)));
 
-    // 3. issueMiniAppLaunchSession succeeds for verified package + participant
+    // 4. issueMiniAppLaunchSession succeeds for verified package + participant + matching digest
     // Notice: without prior user grant, effective permissions are EMPTY (Point 2: no self-granting!)
     let launch_res = dispatch(
         &runtime,
@@ -10868,6 +10900,8 @@ fn miniapp_post_to_conversation_contract_enforces_host_authoritative_session_and
             "appId": "org.fabushi.shop",
             "conversationId": conversation_id,
             "startParameter": "promo_2026",
+            "version": "1.0.0",
+            "packageDigest": real_digest,
         }),
     );
     let launch_session_id = launch_res["launchSessionId"].as_str().expect("launchSessionId").to_string();

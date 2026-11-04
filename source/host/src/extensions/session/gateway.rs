@@ -430,8 +430,10 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             let app_id = required_string(args, "appId")?;
             let conversation_id = required_string(args, "conversationId")?;
             let start_parameter = optional_string(args, "startParameter")?;
+            let version = optional_string(args, "version")?;
+            let package_digest = optional_string(args, "packageDigest")?;
             session
-                .issue_miniapp_launch_session(app_id, conversation_id, start_parameter)
+                .issue_miniapp_launch_session(app_id, conversation_id, start_parameter, version, package_digest)
                 .map_err(|err| match err {
                     MiniAppPostError::PersistenceFailed(msg) => SessionGatewayError::internal(msg),
                     _ => SessionGatewayError::bad(err.to_string()),

@@ -234,17 +234,14 @@ pub struct ProductionSessionWorkers {
     call_session_store: Option<Arc<CallSessionStore>>,
     call_session_store_error: Option<String>,
     busy_timeout_ms: u64,
-    miniapp_packages: Mutex<BTreeMap<String, MiniAppPackageDescriptor>>,
+    mini_app_package_verifier: Mutex<Option<MiniAppPackageVerifier>>,
     miniapp_launch_sessions: Mutex<BTreeMap<String, HostMiniAppLaunchSession>>,
     miniapp_grants: Mutex<BTreeMap<(String, String), fabushi_messaging_core::MiniAppGrant>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MiniAppPackageDescriptor {
-    pub app_id: String,
-    pub version: String,
-    pub package_digest: String,
-}
+pub type MiniAppPackageVerifier = Arc<
+    dyn Fn(&str, Option<&str>, Option<&str>) -> Result<(), MiniAppPostError> + Send + Sync,
+>;
 
 #[derive(Debug, Clone)]
 pub struct HostMiniAppLaunchSession {
@@ -268,6 +265,7 @@ pub enum MiniAppPostError {
     NotParticipant,
     ConversationNotFound(String),
     AppNotInstalled(String),
+    PackageDigestMismatch(String),
     Conflict(String),
     PersistenceFailed(String),
 }
@@ -295,6 +293,7 @@ impl std::fmt::Display for MiniAppPostError {
             Self::NotParticipant => write!(f, "Authenticated local human is not a participant in the conversation"),
             Self::ConversationNotFound(id) => write!(f, "Conversation not found: {id}"),
             Self::AppNotInstalled(id) => write!(f, "MiniApp package is not installed or verified: {id}"),
+            Self::PackageDigestMismatch(msg) => write!(f, "MiniApp package digest or version mismatch: {msg}"),
             Self::Conflict(msg) => write!(f, "MiniApp message conflict: {msg}"),
             Self::PersistenceFailed(err) => write!(f, "MiniApp message persistence failed: {err}"),
         }
@@ -459,7 +458,7 @@ impl ProductionSessionWorkers {
             call_session_store,
             call_session_store_error,
             busy_timeout_ms,
-            miniapp_packages: Mutex::new(BTreeMap::new()),
+            mini_app_package_verifier: Mutex::new(None),
             miniapp_launch_sessions: Mutex::new(BTreeMap::new()),
             miniapp_grants: Mutex::new(BTreeMap::new()),
         }
@@ -4578,16 +4577,50 @@ impl ProductionSessionWorkers {
         )
     }
 
-    pub fn register_installed_miniapp_package(
-        &self,
-        descriptor: MiniAppPackageDescriptor,
-    ) -> Result<(), String> {
-        let mut packages = self
-            .miniapp_packages
-            .lock()
-            .map_err(|_| "miniapp_packages lock poisoned".to_string())?;
-        packages.insert(descriptor.app_id.clone(), descriptor);
-        Ok(())
+    pub fn set_mini_app_package_verifier(&self, verifier: MiniAppPackageVerifier) {
+        if let Ok(mut guard) = self.mini_app_package_verifier.lock() {
+            *guard = Some(verifier);
+        }
+    }
+
+    pub fn create_ledger_package_verifier(
+        db: Arc<Mutex<rusqlite::Connection>>,
+        account_scope: String,
+    ) -> MiniAppPackageVerifier {
+        Arc::new(move |app_id: &str, version: Option<&str>, digest: Option<&str>| {
+            let conn = db
+                .lock()
+                .map_err(|_| MiniAppPostError::PersistenceFailed("db lock poisoned".into()))?;
+            let scope = crate::extensions::mcp::installable_package::ledger::HostInstallScope {
+                account_scope: account_scope.clone(),
+                generation: 1,
+            };
+            let installed = crate::extensions::mcp::installable_package::ledger::installed(&conn, &scope, app_id)
+                .map_err(|e| MiniAppPostError::PersistenceFailed(format!("ledger query error: {e:?}")))?;
+            let Some(record) = installed else {
+                return Err(MiniAppPostError::AppNotInstalled(app_id.to_string()));
+            };
+            if let Some(reason) = crate::extensions::mcp::installable_package::ledger::quarantine_reason(&conn, &scope, app_id)
+                .map_err(|e| MiniAppPostError::PersistenceFailed(format!("quarantine query error: {e:?}")))?
+            {
+                return Err(MiniAppPostError::AppNotInstalled(format!("{app_id} (quarantined: {reason})")));
+            }
+            if let Some(expected_ver) = version {
+                if record.version != expected_ver {
+                    return Err(MiniAppPostError::PackageDigestMismatch(format!(
+                        "version mismatch: expected {expected_ver}, found {}", record.version
+                    )));
+                }
+            }
+            if let Some(expected_digest) = digest {
+                if record.digest != expected_digest {
+                    return Err(MiniAppPostError::PackageDigestMismatch(format!(
+                        "digest mismatch: expected {expected_digest}, found {}", record.digest
+                    )));
+                }
+            }
+            Ok(())
+        })
     }
 
     pub fn issue_miniapp_launch_session(
@@ -4595,19 +4628,22 @@ impl ProductionSessionWorkers {
         app_id: &str,
         conversation_id: &str,
         start_parameter: Option<&str>,
+        version: Option<&str>,
+        package_digest: Option<&str>,
     ) -> Result<serde_json::Value, MiniAppPostError> {
         let app_id = app_id.trim();
         if app_id.is_empty() {
             return Err(MiniAppPostError::InvalidRequestId);
         }
 
-        // 1. Verify installed and verified package in Host
+        // 1. Verify installed and reverified package against existing owner
         {
-            let packages = self
-                .miniapp_packages
-                .lock()
-                .map_err(|_| MiniAppPostError::PersistenceFailed("miniapp_packages lock poisoned".into()))?;
-            if !packages.contains_key(app_id) {
+            let verifier_guard = self.mini_app_package_verifier.lock().map_err(|_| {
+                MiniAppPostError::PersistenceFailed("package verifier lock poisoned".into())
+            })?;
+            if let Some(verifier) = verifier_guard.as_ref() {
+                verifier(app_id, version, package_digest)?;
+            } else {
                 return Err(MiniAppPostError::AppNotInstalled(app_id.to_string()));
             }
         }

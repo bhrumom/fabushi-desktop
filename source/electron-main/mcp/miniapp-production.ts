@@ -48,7 +48,7 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
     return await leg(args);
   };
 
-  const launchWithContext = async (appId: string, accountScope: string, stillCurrent: () => Promise<boolean>, launchContext?: MiniAppLaunchContext) => {
+  const launchWithContext = async (appId: string, accountScope: string, stillCurrent: () => Promise<boolean>, conversationContext?: { conversationId: string; startParameter?: string }) => {
     if (!windows || context.native.app.commandLine.hasSwitch?.("no-sandbox") === true) throw new Error("MINIAPP_UNSUPPORTED_HOST");
     const ticket = generation;
     const loaded = record(await call("getInstalledMiniAppResources", { appId, operationId: randomUUID() }));
@@ -68,6 +68,25 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
       resources.set(item.path, { bytes, mime: item.mime });
     }
     if (!await stillCurrent() || ticket !== generation) throw new Error("MINIAPP_SCOPE_CHANGED");
+
+    let launchContext: MiniAppLaunchContext | undefined;
+    if (conversationContext) {
+      const issued = record(await call("issueMiniAppLaunchSession", {
+        appId,
+        conversationId: conversationContext.conversationId,
+        startParameter: conversationContext.startParameter,
+        version: descriptor.version,
+        packageDigest: descriptor.digest,
+      }));
+      const launchSessionId = typeof issued.launchSessionId === "string" ? issued.launchSessionId : "";
+      if (!launchSessionId) throw new Error("MINIAPP_OPERATION_FAILED");
+      launchContext = {
+        launchSessionId,
+        conversationId: conversationContext.conversationId,
+        startParameter: conversationContext.startParameter,
+      };
+    }
+
     const launch = {
       appId, accountScope, accountGeneration: ticket, version: descriptor.version,
       packageDigest: descriptor.digest, entrypoint: descriptor.entrypoint, resources,
@@ -190,11 +209,7 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
         await launchWithContext(appId, accountScope, stillCurrent);
       },
       launchInConversation: async (appId, accountScope, conversationId, startParameter, stillCurrent) => {
-        const issued = record(await call("issueMiniAppLaunchSession", { appId, conversationId, startParameter }));
-        const launchSessionId = typeof issued.launchSessionId === "string" ? issued.launchSessionId : "";
-        if (!launchSessionId) throw new Error("MINIAPP_OPERATION_FAILED");
-        const launchContext: MiniAppLaunchContext = { launchSessionId, conversationId, startParameter };
-        await launchWithContext(appId, accountScope, stillCurrent, launchContext);
+        await launchWithContext(appId, accountScope, stillCurrent, { conversationId, startParameter });
       },
     },
   });
