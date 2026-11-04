@@ -146,7 +146,7 @@ accepted 状态门的行为证据必须包含现有 authority entrypoint 的子�
    - E1（2026-11-04 已完成）：`mahayana-ffi` 不再依赖 `fabushi-telegram-runtime`，`mahayana_runtime_force_link` 不再锚定 `fabushi_telegram_*` 符号。桌面 AppHost/Host/CLI 的 normal 依赖图早已不含旧栈（CI 负例守卫保留）。
    - E2（2026-11-04 已完成）：删除 `mahayana-telegram` crate、workspace 条目、app-host 的 dev 依赖和仅测试用的 `carrier_projection`；9 行账本移除该 crate 的 target，3 行实际经 `TelegramClientLease`（已被 AppHost 硬禁用）的 account 行改为 `legacy-only`。
    - E3（规范已定，2026-11-04）：`docs/specs/fmep-exit-legacy-telegram-data.md`，不迁移产品数据，保留两个稳定版本后改名再删除。
-   - E4：从 workspace 和 CI 中移除 `providers/telegram-*` 成员及其专属 job（`native-service-contracts.yml` 中 telegram-protocol/network/runtime 测试步骤），只保留法律声明与研究 provenance。
+   - E4（2026-11-04 部分完成）：已删除 `providers/telegram-{runtime,network,protocol,media,wasm}` 五个 crate、对应 workspace 成员与 `Cargo.lock` 条目；`native-service-contracts.yml` 移除这些路径触发、`retained-direct-ffi-compatibility` job（仅测 `fabushi-telegram-runtime`）以及 telegram-protocol/network/runtime 测试步骤，所有"不得包含旧栈"负例守卫保留。法律声明（TDLib Boost 许可证与 THIRD_PARTY_NOTICES）移至 `projects/telegram-desktop-rust/research/retired-providers/` 作为研究 provenance。账本中以这些 crate 为 target 的 66 行改映射到 Fabushi owner（Session `native_messaging`/`production`、host TLS 依赖、`FabushiAuthService`、`ProductProxySettings`），`implementation_status=mapped`、notes 前缀 `[FMEP-EXIT-01 E4 remapped]`，等价性未证明；无 Fabushi owner 的 DoH/special-config 回退与 web-proxy 行保持 `pending`。**剩余：** `providers/telegram-storage` 与其依赖 `telegram-core` 保留到 E3 退役版本发布后，再随 AppHost 保留测试依赖一并删除（E4 完成）。
 5. 在 E4 完成前，旧 crate 名称（`fabushi-telegram-core/runtime` 等）视为待删除的遗留物，不再作为任何新 owner 的命名先例。
 
 ### FMEP-TOOL-01 — 上游开发工具处置

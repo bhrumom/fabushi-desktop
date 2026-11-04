@@ -79,9 +79,6 @@ on:
       - 'source/mahayana/mahayana-rs/mahayana-gateway-peer/**'
       - 'source/mahayana/mahayana-rs/mahayana-product/**'
       - 'source/mahayana/mahayana-rs/mahayana-runtime/**'
-      - 'source/mahayana/mahayana-rs/providers/telegram-protocol/**'
-      - 'source/mahayana/mahayana-rs/providers/telegram-network/**'
-      - 'source/mahayana/mahayana-rs/providers/telegram-runtime/**'
       - 'source/mahayana/mahayana-rs/Cargo.lock'
       - 'source/mahayana/mahayana-rs/Cargo.toml'
       - 'projects/telegram-desktop-rust/upstream.lock.json'
@@ -170,58 +167,6 @@ jobs:
         run: |
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
           echo 'Native credential and loopback HTTP transport evidence only; no deployed-cloud, full lifecycle or packaged-platform acceptance.' >> "$GITHUB_STEP_SUMMARY"
-  retained-direct-ffi-compatibility:
-    if: github.event_name == 'push' || inputs.message_batch
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.sha }}
-          fetch-depth: 1
-      - name: Bind retained direct C wrapper scope
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
-          mkdir -p artifacts/retained-direct-ffi
-          git rev-parse HEAD > artifacts/retained-direct-ffi/target-sha.txt
-          sha256sum source/mahayana/mahayana-rs/Cargo.lock source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs > artifacts/retained-direct-ffi/input-sha256.txt
-          printf '%s\n' 'NMR-39 compatibility retention: direct C wrappers and test-owned temporary encrypted-store reopen only; live DC remains ignored; no final shared/static library, installed consumer, real user data or service acceptance.' > artifacts/retained-direct-ffi/scope.txt
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: 1.97.1
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: source/mahayana/mahayana-rs -> target
-          shared-key: retained-direct-ffi-ubuntu-1.97.1
-      - name: Execute retained direct C lifecycle and rollback-reader contracts
-        shell: bash
-        run: |
-          set -euo pipefail
-          rustc --version > artifacts/retained-direct-ffi/toolchain.txt
-          cargo --version >> artifacts/retained-direct-ffi/toolchain.txt
-          printf '%s\n' 'cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-runtime --test runtime_ffi -- --nocapture --test-threads=1' > artifacts/retained-direct-ffi/command.txt
-          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-runtime --test runtime_ffi -- --nocapture --test-threads=1 2>&1 | tee artifacts/retained-direct-ffi/runtime-ffi.log
-          grep -Eq '^test result: ok\. 15 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in [0-9]+([.][0-9]+)?s$' artifacts/retained-direct-ffi/runtime-ffi.log
-          for case_name in \
-            exported_c_lifecycle_returns_owned_json_and_rejects_closed_handles \
-            exported_c_persistent_client_restores_committed_state_after_close \
-            exported_c_execute_rejects_null_non_utf8_and_invalid_json \
-            exported_c_persistent_create_rejects_null_and_non_utf8_inputs_before_storage \
-            exported_c_persistent_create_rejects_invalid_key_lengths_before_storage; do
-            grep -Fx "test $case_name ... ok" artifacts/retained-direct-ffi/runtime-ffi.log
-          done
-          grep -Fx 'test live_runtime_bootstrap_keeps_an_encrypted_transport_session ... ignored, requires a live Telegram production data center' artifacts/retained-direct-ffi/runtime-ffi.log
-          git diff --exit-code -- source/mahayana/mahayana-rs/Cargo.lock
-      - name: Preserve retained C wrapper evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: retained-direct-ffi-compatibility-${{ github.sha }}
-          path: artifacts/retained-direct-ffi
-          if-no-files-found: error
-
   gateway-peer-durability:
     if: github.event_name == 'push' || inputs.message_batch
     strategy:
@@ -762,32 +707,10 @@ jobs:
             echo 'generic Host still depends directly on legacy Telegram adapter' >&2
             exit 1
           fi
-      - name: Verify DNS and special-config response normalization
+      - name: Verify Native credential boundary
         shell: bash
         run: |
           set -euo pipefail
-          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-protocol --lib response_normalization:: 2>&1 | tee artifacts/native-message-shipping/telegram-response-normalization.log
-          grep -Eq 'test result: ok\. 6 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/telegram-response-normalization.log
-      - name: Verify bare future-salts parser against fixed-U wire
-        shell: bash
-        run: |
-          set -euo pipefail
-          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-protocol --lib mtproto_service_builder_contract_tests::future_salts_ 2>&1 | tee artifacts/native-message-shipping/telegram-future-salts.log
-          grep -Eq 'test result: ok\. 2 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/telegram-future-salts.log
-      - name: Verify protocol and TCP compatibility behavior
-        shell: bash
-        run: |
-          set -euo pipefail
-          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-protocol --test protocol_contract 2>&1 | tee artifacts/native-message-shipping/telegram-protocol-contract.log
-          grep -Eq 'test result: ok\. 122 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/telegram-protocol-contract.log
-          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-network --test tcp_transport -- --include-ignored 2>&1 | tee artifacts/native-message-shipping/telegram-tcp-transport.log
-          grep -Eq 'test result: ok\. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/telegram-tcp-transport.log
-      - name: Verify proxy rejection and Native credential boundary
-        shell: bash
-        run: |
-          set -euo pipefail
-          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-runtime --lib network_proxy_contracts -- --nocapture 2>&1 | tee artifacts/native-message-shipping/telegram-proxy-boundary.log
-          grep -Eq 'test result: ok\. 4 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/telegram-proxy-boundary.log
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib native_schema_is_not_ci_export_and_has_no_ci_ttl_cap -- --nocapture 2>&1 | tee artifacts/native-message-shipping/native-credential-schema.log
           grep -Eq 'test result: ok\. 1 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/native-credential-schema.log
       - uses: actions/setup-node@v6

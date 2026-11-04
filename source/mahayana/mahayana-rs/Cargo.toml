@@ -49,12 +49,7 @@ members = [
     "mahayana-web",
     "mahayana-workspace-engine",
     "providers/telegram-core",
-    "providers/telegram-media",
-    "providers/telegram-network",
-    "providers/telegram-protocol",
-    "providers/telegram-runtime",
     "providers/telegram-storage",
-    "providers/telegram-wasm",
     "providers/official-miniapps",
 ]
 resolver = "2"

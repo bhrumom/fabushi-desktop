@@ -5691,67 +5691,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fabushi-telegram-media"
-version = "0.1.0"
-dependencies = [
- "hex",
- "serde",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "fabushi-telegram-network"
-version = "0.1.0"
-dependencies = [
- "fabushi-telegram-protocol",
- "getrandom 0.2.17",
- "rustls",
- "serde_json",
- "sha1 0.10.7",
- "thiserror 1.0.69",
- "webpki-roots 0.26.11",
- "zeroize",
-]
-
-[[package]]
-name = "fabushi-telegram-protocol"
-version = "0.1.0"
-dependencies = [
- "aes 0.8.4",
- "crc32fast",
- "fabushi-telegram-core",
- "getrandom 0.2.17",
- "hex",
- "hmac 0.12.1",
- "num-bigint-dig 0.9.1",
- "pbkdf2 0.12.2",
- "serde",
- "serde_json",
- "sha1 0.10.7",
- "sha2 0.10.9",
- "subtle",
- "thiserror 1.0.69",
- "x25519-dalek",
- "zeroize",
-]
-
-[[package]]
-name = "fabushi-telegram-runtime"
-version = "0.1.0"
-dependencies = [
- "fabushi-telegram-core",
- "fabushi-telegram-network",
- "fabushi-telegram-protocol",
- "fabushi-telegram-storage",
- "once_cell",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 1.0.69",
- "zeroize",
-]
-
-[[package]]
 name = "fabushi-telegram-storage"
 version = "0.1.0"
 dependencies = [
@@ -5766,16 +5705,6 @@ dependencies = [
  "tempfile",
  "thiserror 1.0.69",
  "zeroize",
-]
-
-[[package]]
-name = "fabushi-telegram-wasm"
-version = "0.1.0"
-dependencies = [
- "fabushi-telegram-core",
- "fabushi-telegram-protocol",
- "serde_json",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -10110,23 +10039,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "num-bigint-dig"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7f9a86e097b0d187ad0e65667c2f58b9254671e86e7dbb78036b16692eae099"
-dependencies = [
- "libm",
- "num-integer",
- "num-iter",
- "num-traits",
- "once_cell",
- "rand 0.9.5",
- "serde",
- "smallvec",
- "zeroize",
-]
-
-[[package]]
 name = "num-complex"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12533,7 +12445,7 @@ checksum = "b8573f03f5883dcaebdfcf4725caa1ecb9c15b2ef50c43a07b816e06799bb12d"
 dependencies = [
  "const-oid 0.9.6",
  "digest 0.10.7",
- "num-bigint-dig 0.8.6",
+ "num-bigint-dig",
  "num-integer",
  "num-traits",
  "pkcs1",

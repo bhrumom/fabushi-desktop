@@ -13,9 +13,9 @@ _自动生成：`scripts/tdrp-progress-summary.py`，ledger U=`f985723b552b`_
 
 | 类别 | 行数 | understood | mapped | implemented | verified | release gate passed |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 产品职责（Fabushi owner） | 14 | 0 | 5 | 9 | 0 | 0 |
+| 产品职责（Fabushi owner） | 13 | 0 | 4 | 9 | 0 | 0 |
 | 领域库实现、桌面未接线（FMEP-STATE-02） | 4 | 0 | 4 | 0 | 0 | 0 |
-| 旧 Telegram 栈（FMEP-EXIT-01，不计产品） | 67 | 2 | 65 | 0 | 0 | 0 |
+| 旧 Telegram 栈（FMEP-EXIT-01，不计产品） | 68 | 0 | 68 | 0 | 0 | 0 |
 | 构建/仓库治理支撑 | 11 | 0 | 10 | 1 | 0 | 0 |
 | 上游开发工具（FMEP-TOOL-01，已处置） | 88 | 0 | 71 | 17 | 0 | 0 |
 | **合计** | 184 | | | | | |
