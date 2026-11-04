@@ -479,6 +479,42 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     .map_err(SessionGatewayError::internal)
             })
         }),
+        "composeShareComment" => (|| {
+            let link = match optional_string(args, "link")? {
+                Some(l) => l,
+                None => match optional_string(args, "shareUrl")? {
+                    Some(l) => l,
+                    None => return Err(SessionGatewayError::bad("composeShareComment requires link")),
+                },
+            };
+            let link = link.trim();
+            if link.is_empty() {
+                return Err(SessionGatewayError::bad("link must not be empty"));
+            }
+            if link.chars().any(|c| c == '\r' || c == '\n' || c.is_control()) {
+                return Err(SessionGatewayError::bad("link must not contain newlines or control characters"));
+            }
+            let comment = match args.get("comment") {
+                None | Some(Value::Null) => fabushi_messaging_core::FormattedText::plain(""),
+                Some(Value::String(text)) => {
+                    let trimmed = text.trim();
+                    if trimmed.is_empty() {
+                        fabushi_messaging_core::FormattedText::plain("")
+                    } else {
+                        fabushi_messaging_core::FormattedText::plain(text)
+                    }
+                }
+                Some(val @ Value::Object(_)) => {
+                    serde_json::from_value(val.clone())
+                        .map_err(|err| SessionGatewayError::bad(format!("invalid comment: {err}")))?
+                }
+                Some(_) => return Err(SessionGatewayError::bad("invalid comment: expected object or string")),
+            };
+            let composed = session
+                .compose_share_comment(link, comment)
+                .map_err(|err| SessionGatewayError::bad(format!("composeShareComment failed: {err:?}")))?;
+            serde_json::to_value(&composed).map_err(|e| SessionGatewayError::internal(e.to_string()))
+        })(),
         "forwardHumanMessage" => required_string(args, "sourceConversationId").and_then(|source_conversation_id| {
             required_string(args, "sourceEntryId").and_then(|source_entry_id| {
                 let destination_conversation_ids = required_string_array(args, "destinationConversationIds")?;
@@ -498,31 +534,62 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     }
                     Some(_) => return Err(SessionGatewayError::bad("invalid destinationTopics: expected object")),
                 };
-                let comment = match args.get("comment") {
+                let share_url = match optional_string(args, "shareUrl")? {
+                    Some(s) => {
+                        let trimmed = s.trim();
+                        if trimmed.is_empty() {
+                            return Err(SessionGatewayError::bad("shareUrl must not be empty"));
+                        }
+                        if trimmed.chars().any(|c| c == '\r' || c == '\n' || c.is_control()) {
+                            return Err(SessionGatewayError::bad("shareUrl must not contain newlines or control characters"));
+                        }
+                        Some(trimmed)
+                    }
+                    None => None,
+                };
+                let raw_comment = match args.get("comment") {
                     None | Some(Value::Null) => None,
                     Some(Value::String(text)) => {
                         let trimmed = text.trim();
                         if trimmed.is_empty() {
                             None
                         } else {
-                            let ft = fabushi_messaging_core::FormattedText::plain(text);
-                            fabushi_messaging_core::validate_formatted_text(&ft)
-                                .map_err(|err| SessionGatewayError::bad(format!("invalid comment: {err}")))?;
-                            Some(ft)
+                            Some(fabushi_messaging_core::FormattedText::plain(text))
                         }
                     }
                     Some(val @ Value::Object(_)) => {
                         let parsed: fabushi_messaging_core::FormattedText = serde_json::from_value(val.clone())
                             .map_err(|err| SessionGatewayError::bad(format!("invalid comment: {err}")))?;
-                        fabushi_messaging_core::validate_formatted_text(&parsed)
-                            .map_err(|err| SessionGatewayError::bad(format!("invalid comment: {err}")))?;
-                        if parsed.text.trim().is_empty() {
-                            None
-                        } else {
-                            Some(parsed)
-                        }
+                        Some(parsed)
                     }
                     Some(_) => return Err(SessionGatewayError::bad("invalid comment: expected object or string")),
+                };
+                let comment = match share_url {
+                    Some(url) => {
+                        let base_comment = raw_comment.unwrap_or_else(|| fabushi_messaging_core::FormattedText::plain(""));
+                        let composed = session
+                            .compose_share_comment(url, base_comment)
+                            .map_err(|err| SessionGatewayError::bad(format!("failed to compose share comment: {err:?}")))?;
+                        fabushi_messaging_core::validate_formatted_text(&composed)
+                            .map_err(|err| SessionGatewayError::bad(format!("invalid comment: {err}")))?;
+                        if composed.text.trim().is_empty() {
+                            None
+                        } else {
+                            Some(composed)
+                        }
+                    }
+                    None => match raw_comment {
+                        Some(c) => {
+                            fabushi_messaging_core::validate_formatted_text(&c)
+                                .map_err(|err| SessionGatewayError::bad(format!("invalid comment: {err}")))?;
+                            if c.text.trim().is_empty() {
+                                None
+                            } else {
+                                Some(c)
+                            }
+                        }
+                        None => None,
+                    },
                 };
                 let destinations: Vec<HumanForwardDestination> = destination_conversation_ids
                     .into_iter()

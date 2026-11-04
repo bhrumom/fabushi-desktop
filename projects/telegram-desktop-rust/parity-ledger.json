@@ -1104,6 +1104,8 @@
         "validate_formatted_text",
         "forward_human_message_with_comment",
         "forwardHumanMessage",
+        "composeShareComment",
+        "ProductionSessionWorkers::compose_share_comment",
         "ForwardMessageDialog",
         "commentText"
       ],
@@ -1124,7 +1126,7 @@
       ],
       "service_owner": "Existing Fabushi messaging service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
         "Current-head Rust GitHub Actions evidence is pending",
@@ -1133,7 +1135,8 @@
       "production_entrypoints": [
         "Canonical share/composer formatting -> FormattedText::prepend_plain_text -> existing SendMessage/Message lifecycle",
         "StoryShareContext::compose_link_with_comment + revalidate_source + outgoing_message_count -> MessagingEngine::compute_paid_send_plan -> PaidSendApprovalConsumer::consume_for_destination",
-        "ForwardMessageDialog comment input -> gateway forwardHumanMessage -> ProductionSessionWorkers::forward_human_message_with_comment -> compose_share_comment -> forward batch journal"
+        "ForwardMessageDialog comment input -> gateway forwardHumanMessage -> ProductionSessionWorkers::forward_human_message_with_comment -> compose_share_comment -> forward batch journal",
+        "Gateway composeShareComment and forwardHumanMessage (shareUrl) -> ProductionSessionWorkers::compose_share_comment -> FormattedText UTF-16 coordinate shift"
       ],
       "production_evidence": [
         "commit:cf60178cab2142e75e9b0f5b7d24145b0b997b15",
@@ -1144,7 +1147,9 @@
         "path:native/mahayana-messaging/src/engine.rs#compute_paid_send_plan",
         "path:native/mahayana-messaging/src/message.rs#compose_share_comment",
         "path:source/host/src/extensions/session/production.rs#forward_human_message_with_comment",
+        "path:source/host/src/extensions/session/production.rs#ProductionSessionWorkers::compose_share_comment",
         "path:source/host/src/extensions/session/gateway.rs#forwardHumanMessage",
+        "path:source/host/src/extensions/session/gateway.rs#composeShareComment",
         "path:frontend/src/production/ForwardMessageDialog.tsx#ForwardMessageDialog"
       ],
       "test_evidence": [
@@ -1283,7 +1288,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox formatted-comment semantics using the existing Fabushi formatted-message owner. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
       "reviewer": null,
-      "notes": "[FMEP-STATE-02 domain-only wiring gap] FMEP-001 r3 §14 / FMEP-001 r4 §15: pure compose_share_comment and validate_formatted_text implemented in fabushi_messaging_core (message.rs) and wired as ProductionSessionWorkers::compose_share_comment; remains mapped because Fabushi desktop does not yet have an authoritative public message link owner for canonical message deep links without client spoofing or fabricated domains. Forwarding with comment dispatches the comment as a separate pre-message intent per tdesktop ShareBox semantics."
+      "notes": "[FMEP-STATE-02 wired via Session] FMEP-001 r3 §14 / FMEP-001 r4 §15: pure compose_share_comment and validate_formatted_text implemented in fabushi_messaging_core (message.rs) and wired via ProductionSessionWorkers::compose_share_comment and session gateway routes composeShareComment and forwardHumanMessage (shareUrl). Caller provides explicit link without domain fabrication; UTF-16 entity offset calculation and atomic overflow are verified at the gateway boundary."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",

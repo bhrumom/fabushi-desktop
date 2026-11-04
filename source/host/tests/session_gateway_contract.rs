@@ -5439,6 +5439,127 @@ fn shipping_human_forward_formatted_comment_shifts_link_entities_and_fences_conf
     assert_eq!(shifted.text, format!("{expected_prefix}direct comment"));
     assert_eq!(shifted.entities[0].offset_utf16, 7 + shift);
 
+    // 6b. Gateway composeShareComment positive & overflow contract assertions
+    let gateway_compose_val = dispatch_production_session_gateway_call(
+        &runtime,
+        "composeShareComment",
+        &json!({
+            "link": "https://docs.fabushi.dev/spec?a=1&b=2#sec",
+            "comment": {
+                "text": "check spec",
+                "entities": [
+                    {
+                        "offsetUtf16": 6,
+                        "lengthUtf16": 4,
+                        "kind": { "type": "bold" }
+                    }
+                ]
+            }
+        }),
+    )
+    .expect("composeShareComment registered")
+    .expect("composeShareComment successful");
+    assert_eq!(
+        gateway_compose_val["text"],
+        "https://docs.fabushi.dev/spec?a=1&b=2#sec\ncheck spec"
+    );
+    assert_eq!(gateway_compose_val["entities"][0]["offsetUtf16"], 48);
+    assert_eq!(gateway_compose_val["entities"][0]["lengthUtf16"], 4);
+
+    let compose_overflow_err = dispatch_production_session_gateway_call(
+        &runtime,
+        "composeShareComment",
+        &json!({
+            "link": "https://docs.fabushi.dev/spec?a=1&b=2#sec",
+            "comment": {
+                "text": "overflow text",
+                "entities": [
+                    {
+                        "offsetUtf16": u32::MAX - 2,
+                        "lengthUtf16": 1,
+                        "kind": { "type": "bold" }
+                    }
+                ]
+            }
+        }),
+    )
+    .expect("composeShareComment registered")
+    .expect_err("composeShareComment with offset overflow must fail atomically");
+    assert!(
+        format!("{compose_overflow_err:?}").contains("TextEntityOffsetOverflow")
+            || format!("{compose_overflow_err:?}").contains("overflow"),
+        "error was: {compose_overflow_err:?}"
+    );
+
+    // composeShareComment link newline validation negative case
+    let compose_nl_err = dispatch_production_session_gateway_call(
+        &runtime,
+        "composeShareComment",
+        &json!({
+            "link": "https://docs.fabushi.dev/spec\nbreak",
+            "comment": "valid comment"
+        }),
+    )
+    .expect("composeShareComment registered")
+    .expect_err("composeShareComment with newline in link must fail");
+    assert!(format!("{compose_nl_err:?}").contains("link must not contain newlines or control characters"));
+
+    // 6c. Gateway forwardHumanMessage with shareUrl (including non-BMP emoji) & overflow negative case
+    let mut share_url_args = args.clone();
+    share_url_args["clientNonce"] = json!("fwd-nonce-with-share-url-emoji-1");
+    share_url_args["shareUrl"] = json!("🔗 https://docs.fabushi.dev/share");
+    share_url_args["comment"] = json!({
+        "text": "Check emoji shift!",
+        "entities": [
+            {
+                "offsetUtf16": 6,
+                "lengthUtf16": 5,
+                "kind": { "type": "italic" }
+            }
+        ]
+    });
+    let share_url_first = forward_gateway_result(&runtime, &share_url_args).expect("forward with shareUrl");
+    assert_eq!(share_url_first["destinations"][0]["status"], "sent");
+
+    // Inspect disk metadata for the shifted entities
+    let share_metadata = read_forward_metadata_from_disk(&root, args["sourceConversationId"].as_str().unwrap());
+    let share_batches = share_metadata["humanForwardBatches"].as_array().expect("batches array");
+    let share_batch = share_batches.iter().find(|b| b["requestId"] == share_url_args["clientNonce"]).expect("share batch found");
+    let share_stored_comment = &share_batch["context"]["comment"];
+    assert_eq!(share_stored_comment["text"], "🔗 https://docs.fabushi.dev/share\nCheck emoji shift!");
+    // '🔗' is 2 UTF-16 code units; prefix length is 2 (emoji) + 1 (space) + 30 (url) + 1 (\n) = 34 UTF-16 code units.
+    // 6 + 34 = 40.
+    assert_eq!(share_stored_comment["entities"][0]["offsetUtf16"], 40);
+    assert_eq!(share_stored_comment["entities"][0]["lengthUtf16"], 5);
+
+    // Negative case: forwardHumanMessage with shareUrl and newline/control chars
+    let mut bad_url_args = args.clone();
+    bad_url_args["clientNonce"] = json!("fwd-nonce-bad-share-url");
+    bad_url_args["shareUrl"] = json!("https://docs.fabushi.dev/share\nattack");
+    let err_bad_url = forward_gateway_result(&runtime, &bad_url_args).expect_err("shareUrl with newline must fail");
+    assert!(format!("{err_bad_url:?}").contains("shareUrl must not contain newlines or control characters"));
+
+    // Negative case: forwardHumanMessage with shareUrl and entity offset overflow
+    let mut share_overflow_args = args.clone();
+    share_overflow_args["clientNonce"] = json!("fwd-nonce-share-url-overflow");
+    share_overflow_args["shareUrl"] = json!("https://docs.fabushi.dev/share");
+    share_overflow_args["comment"] = json!({
+        "text": "overflow",
+        "entities": [
+            {
+                "offsetUtf16": u32::MAX - 2,
+                "lengthUtf16": 1,
+                "kind": { "type": "bold" }
+            }
+        ]
+    });
+    let err_share_overflow = forward_gateway_result(&runtime, &share_overflow_args).expect_err("shareUrl entity offset overflow must fail atomically");
+    assert!(
+        format!("{err_share_overflow:?}").contains("TextEntityOffsetOverflow")
+            || format!("{err_share_overflow:?}").contains("overflow"),
+        "error was: {err_share_overflow:?}"
+    );
+
     // 7. Crash recovery: comment sent and recorded on disk -> replay does not duplicate comment POSTs
     let mut resume_args = args.clone();
     resume_args["clientNonce"] = json!("fwd-nonce-comment-crash-resume");
