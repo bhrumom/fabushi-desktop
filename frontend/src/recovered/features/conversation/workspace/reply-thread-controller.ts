@@ -38,9 +38,11 @@ export interface ReplyThreadController {
   selectReply(targetId: string): boolean;
   restoreReplyFromDraft(draft: ComposerDraft): boolean;
   clearReply(): void;
+  clearReplyIfMatches(targetId: string): boolean;
   navigate(targetId: string): ReplyTargetResolution;
   applyReplyToDraft(draft: ComposerDraft): ComposerDraft;
   clearReplyFromDraft(draft: ComposerDraft): ComposerDraft;
+  clearReplyFromDraftIfMatches(draft: ComposerDraft, targetId: string): ComposerDraft;
   projectSubmission(submission: ComposerSubmission): ComposerSubmission;
   setScope(scope: ReplyThreadScope): void;
   dispose(): void;
@@ -157,6 +159,13 @@ export function createReplyThreadController(options: ReplyThreadControllerOption
       : { targetId: requestedTargetId, preview: previewForEntry(entry), isInScope: true, status: "resolved" };
   };
 
+  const sameResolvedTarget = (leftId: string, rightId: string): boolean => {
+    if (leftId === rightId) return true;
+    const left = currentResolution(leftId);
+    const right = currentResolution(rightId);
+    return left.status === "resolved" && right.status === "resolved" && left.targetId === right.targetId;
+  };
+
   const replaceEntries = (nextEntries: readonly ConversationTranscriptEntry[]) => {
     if (disposed) return;
     const indexed = indexEntries(nextEntries, scope.accountSlot);
@@ -219,6 +228,13 @@ export function createReplyThreadController(options: ReplyThreadControllerOption
       notify();
       options.onRestoreFocus?.();
     },
+    clearReplyIfMatches(targetId) {
+      if (disposed || targetId.length === 0 || selection == null || !sameResolvedTarget(selection.targetId, targetId)) return false;
+      selection = null;
+      notify();
+      options.onRestoreFocus?.();
+      return true;
+    },
     navigate(targetId) {
       const resolution = disposed || targetId.length === 0
         ? { targetId, preview: { kind: "missing" } as const, isInScope: false, status: "missing" as const }
@@ -234,6 +250,12 @@ export function createReplyThreadController(options: ReplyThreadControllerOption
       return { ...draft, replyToId: selection.targetId };
     },
     clearReplyFromDraft(draft) {
+      const { replyToId: _replyToId, ...withoutReply } = draft;
+      return withoutReply;
+    },
+    clearReplyFromDraftIfMatches(draft, targetId) {
+      if (disposed || targetId.length === 0 || draft.replyToId == null || draft.replyToId.length === 0
+        || !sameResolvedTarget(draft.replyToId, targetId)) return draft;
       const { replyToId: _replyToId, ...withoutReply } = draft;
       return withoutReply;
     },

@@ -214,6 +214,55 @@ test("a persisted local Human reply draft restores through its unique canonical 
   controller.dispose();
 });
 
+
+test("removing a reply parent clears only the matching live selection, including a Host-rekeyed canonical alias", () => {
+  const alias = "human-message:parent-nonce";
+  const canonicalId = "human-server-message:42";
+  const controller = createReplyThreadController({
+    scope: { accountSlot: "account-a", agentId: "human:alice" },
+  });
+
+  controller.replaceEntries([localHumanParent("parent-nonce", "Pending local parent")]);
+  assert.equal(controller.selectReply(alias), true);
+  controller.replaceEntries([canonicalHumanParent("parent-nonce", "42", "Canonical parent")]);
+  assert.equal(controller.getSelection()?.targetId, canonicalId);
+
+  assert.equal(controller.clearReplyIfMatches("human-server-message:99"), false);
+  assert.equal(controller.getSelection()?.targetId, canonicalId);
+  assert.equal(controller.clearReplyIfMatches(canonicalId), true);
+  assert.equal(controller.getSelection(), null);
+  controller.dispose();
+});
+
+test("removing a canonical reply parent clears only its matching persisted alias and preserves the rest of the draft", () => {
+  const alias = "human-message:parent-nonce";
+  const canonicalId = "human-server-message:42";
+  const controller = createReplyThreadController({
+    scope: { accountSlot: "account-a", agentId: "human:alice" },
+  });
+  controller.replaceEntries([canonicalHumanParent("parent-nonce", "42", "Canonical parent")]);
+
+  const original: ComposerDraft = {
+    prompt: "Keep this reply text",
+    attachments: [{ path: "/tmp/kept.png", name: "kept.png" }],
+    richText: "formatted reply",
+    replyToId: alias,
+    isFork: true,
+  };
+  const cleared = controller.clearReplyFromDraftIfMatches(original, canonicalId);
+  assert.deepEqual(cleared, {
+    prompt: "Keep this reply text",
+    attachments: [{ path: "/tmp/kept.png", name: "kept.png" }],
+    richText: "formatted reply",
+    isFork: true,
+  });
+  assert.equal(Object.hasOwn(cleared, "replyToId"), false);
+
+  const unrelated: ComposerDraft = { ...original, replyToId: "human-server-message:99" };
+  assert.equal(controller.clearReplyFromDraftIfMatches(unrelated, canonicalId), unrelated);
+  controller.dispose();
+});
+
 test("historical local Human reply aliases fail closed for foreign, ambiguous and non-canonical rows", () => {
   const alias = "human-message:parent-nonce";
   const cases: Array<{ name: string; entries: ConversationTranscriptEntry[] }> = [

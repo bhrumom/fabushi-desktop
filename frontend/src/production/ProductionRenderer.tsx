@@ -3734,12 +3734,22 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const removeTranscriptMessage = useCallback((entry: TranscriptMessage) => {
     const agentId = activeAgentIdRef.current;
     if (!agentId) return;
+    // A confirmed removal invalidates only a reply to this exact message.
+    // Resolve local Human aliases before the canonical transcript row is removed,
+    // then persist the surviving composer contents through the existing draft owner.
+    const draftWithoutRemovedReply = replyThreadController.clearReplyFromDraftIfMatches(baseDraft, entry.id);
+    replyThreadController.clearReplyIfMatches(entry.id);
+    if (draftWithoutRemovedReply !== baseDraft
+      && (activeDraftSnapshot.draft != null || activeDraftSnapshot.recovery != null)) {
+      composerDraftStore.setDraft(agentId, draftWithoutRemovedReply);
+      if (activeDraftSnapshot.recovery != null) composerDraftStore.clearRecovery(agentId);
+    }
     if (entry.clientNonce != null) acknowledgementController.removeOptimistic({ accountSlot: acknowledgementScopeRef.current.accountSlot, nonce: entry.clientNonce });
     setEntriesByAgent((current) => ({
       ...current,
       [agentId]: (current[agentId] ?? []).filter((candidate) => candidate.kind !== "message" || candidate.id !== entry.id)
     }));
-  }, [acknowledgementController]);
+  }, [acknowledgementController, activeDraftSnapshot.draft, activeDraftSnapshot.recovery, baseDraft, composerDraftStore, replyThreadController]);
 
   const resendFailedSend = useCallback(async (entry: TranscriptMessage) => {
     const conversationId = activeAgentIdRef.current;
