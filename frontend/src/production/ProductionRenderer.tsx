@@ -2337,20 +2337,27 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   useEffect(() => {
     if (client == null || activeAgent == null) return;
+    const isForum = rawMetadata.isForum === true;
+    const isCommunity = rawMetadata.conversationKind === "group" || rawMetadata.conversationKind === "channel";
+    if (!isForum && !isCommunity) return;
     const agentId = activeAgent.id;
     let cancelled = false;
-    client.call("listConversationTopics", { conversationId: agentId })
-      .then((res) => {
-        if (!cancelled && Array.isArray(res)) setConversationTopics(res as ForumTopicItem[]);
-      })
-      .catch(() => {});
-    client.call("listConversationPins", { conversationId: agentId, ...(activeTopicId ? { topicId: activeTopicId } : {}) })
-      .then((res) => {
-        if (!cancelled && Array.isArray(res)) setConversationPins(res as string[]);
-      })
-      .catch(() => {});
+    if (isForum && rawTopics.length === 0) {
+      client.call("listConversationTopics", { conversationId: agentId })
+        .then((res) => {
+          if (!cancelled && Array.isArray(res)) setConversationTopics(res as ForumTopicItem[]);
+        })
+        .catch(() => {});
+    }
+    if (isCommunity && rawPins.length === 0) {
+      client.call("listConversationPins", { conversationId: agentId, ...(activeTopicId ? { topicId: activeTopicId } : {}) })
+        .then((res) => {
+          if (!cancelled && Array.isArray(res)) setConversationPins(res as string[]);
+        })
+        .catch(() => {});
+    }
     return () => { cancelled = true; };
-  }, [client, activeAgent?.id, activeTopicId]);
+  }, [client, activeAgent?.id, activeTopicId, rawMetadata.isForum, rawMetadata.conversationKind, rawTopics.length, rawPins.length]);
 
   const liveEntries = activeAgent == null ? EMPTY_ENTRIES : entriesByAgent[activeAgent.id] ?? EMPTY_ENTRIES;
   const entries = useMemo(
@@ -2375,7 +2382,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     }
     const convKind = typeof rawMetadata.conversationKind === "string"
       ? rawMetadata.conversationKind
-      : (activeAgent.isGroup ? "group" : undefined);
+      : undefined;
     const memberStatus = typeof rawMetadata.memberStatus === "string" ? rawMetadata.memberStatus : undefined;
     const canPostMessages = typeof rawMetadata.canPostMessages === "boolean"
       ? rawMetadata.canPostMessages
@@ -5279,7 +5286,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           {showTranscriptLoadError
             ? <TranscriptLoadErrorSurface onRetry={() => void openAgent(activeAgent.id)} />
             : <ConversationTranscript
-                key={JSON.stringify([renderedAccountScopeGeneration, transcriptAccountSlot, activeAgentId, activeTopicId])}
+                key={JSON.stringify([renderedAccountScopeGeneration, transcriptAccountSlot, activeAgentId, ...(activeTopicId != null ? [activeTopicId] : [])])}
                 entries={displayedEntries}
                 hasOlder={transcriptPaginationSnapshot.cursor.kind === "more"}
                 isLoadingOlder={transcriptPaginationSnapshot.isLoadingOlder}

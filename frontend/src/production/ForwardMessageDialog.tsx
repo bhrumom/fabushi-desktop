@@ -77,7 +77,7 @@ interface ForwardDialogLifetime {
   readonly recipientTopics: Map<string, string>;
 }
 
-type ForwardRequest = Parameters<ForwardMessageDialogProps["forwardMessage"]>[0];
+type ForwardRequest = Parameters<NonNullable<ForwardMessageDialogProps["forwardMessage"]>>[0];
 
 interface ForwardDialogSnapshot {
   readonly request: ForwardRequest;
