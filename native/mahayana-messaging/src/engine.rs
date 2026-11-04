@@ -2061,6 +2061,24 @@ impl MessagingEngine {
                         DestinationAuthorizationDenial::SecretContentOutsideSecretConversation => {
                             EngineError::SecretContentOutsideSecretConversation
                         }
+                        DestinationAuthorizationDenial::TopicNotFound => {
+                            EngineError::ForumTopicNotFound {
+                                conversation_id: destination_conversation_id.clone(),
+                                topic_id: thread_root_message_id
+                                    .as_ref()
+                                    .map(|id| id.0.clone())
+                                    .unwrap_or_default(),
+                            }
+                        }
+                        DestinationAuthorizationDenial::TopicClosed => {
+                            EngineError::ForumTopicClosed {
+                                conversation_id: destination_conversation_id.clone(),
+                                topic_id: thread_root_message_id
+                                    .as_ref()
+                                    .map(|id| id.0.clone())
+                                    .unwrap_or_default(),
+                            }
+                        }
                     });
                 }
                 if let Some(community) = self.state.communities.get(&destination_conversation_id) {
@@ -2129,6 +2147,24 @@ impl MessagingEngine {
                         }
                         DestinationAuthorizationDenial::SecretContentOutsideSecretConversation => {
                             EngineError::SecretContentOutsideSecretConversation
+                        }
+                        DestinationAuthorizationDenial::TopicNotFound => {
+                            EngineError::ForumTopicNotFound {
+                                conversation_id: destination_conversation_id.clone(),
+                                topic_id: thread_root_message_id
+                                    .as_ref()
+                                    .map(|id| id.0.clone())
+                                    .unwrap_or_default(),
+                            }
+                        }
+                        DestinationAuthorizationDenial::TopicClosed => {
+                            EngineError::ForumTopicClosed {
+                                conversation_id: destination_conversation_id.clone(),
+                                topic_id: thread_root_message_id
+                                    .as_ref()
+                                    .map(|id| id.0.clone())
+                                    .unwrap_or_default(),
+                            }
                         }
                         _ => EngineError::CommunitySendRestricted(
                             destination_conversation_id.clone(),
