@@ -41,7 +41,6 @@ mahayana-platform-core.workspace = true
 mahayana-product.workspace = true
 mahayana-runtime-core = { package = "mahayana-runtime", path = "../mahayana-runtime", default-features = false }
 mahayana-social.workspace = true
-mahayana-telegram.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

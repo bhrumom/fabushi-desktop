@@ -1,0 +1,164 @@
+{
+  "code": {
+    "sha": "f2903f53ded5b07faea73e7f07d780eda0423283",
+    "parent": "c5f60507919b53b38690a05cd430c653f5f986dd",
+    "tree": "f35311322b17d3fc44b6e58aa157ed2a31c62e03",
+    "verifiedRef": true
+  },
+  "ledger": {
+    "sha": "1c0bd07f85c4f17ee465509c766eead878879185",
+    "parent": "bf0fd531432c2866f6c2433be6af27051c8bc8f9",
+    "tree": "c5c3e7d781fb9d66a5b3ab4974800e3ba8a14cea",
+    "verifiedRef": true,
+    "output_blob": "4bc2f00f9304d3d2542b412f605b1f92e78265d2",
+    "harness_sha": "f2903f53ded5b07faea73e7f07d780eda0423283"
+  },
+  "code_files": [
+    {
+      "path": "docs/specs/fbcp-desktop-social-owner-boundary.md",
+      "blob": "6d2beac6bc75dccaf102b70a0ea5aa21d9fde1c2",
+      "content_equal": true
+    },
+    {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "blob": "cf888c52e7860a766d8f41caaada3338e8fc1dbf",
+      "content_equal": true
+    },
+    {
+      "path": ".github/workflows/checkpoint-ledger-object-round23.yml",
+      "blob": "d7eeece4766379f13fbcda07f54eee5e2a86349a",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-f75-social-oracle-failure.json",
+      "blob": "b2cac3eb841a7e3fe7b660ea3a908d8ac635c1a6",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-product-http-current-delta.json",
+      "blob": "57362be7c91fde9c3f336150af435eb9f396d58b",
+      "content_equal": true
+    }
+  ],
+  "ledger_remote_blob": "4bc2f00f9304d3d2542b412f605b1f92e78265d2",
+  "ledger_content_equal": true,
+  "ledger_rows": 184,
+  "source_reviews": 6,
+  "ledger_commit_changes": [
+    {
+      "path": ".github/checkpoint-ledger-ops-round23.json",
+      "status": "removed",
+      "sha": "8081a491b37169d5e195f97bac4413d279519029"
+    },
+    {
+      "path": ".github/workflows/checkpoint-ledger-object-round23.yml",
+      "status": "removed",
+      "sha": "d7eeece4766379f13fbcda07f54eee5e2a86349a"
+    },
+    {
+      "path": "projects/telegram-desktop-rust/parity-ledger.json",
+      "status": "modified",
+      "sha": "4bc2f00f9304d3d2542b412f605b1f92e78265d2"
+    }
+  ],
+  "helper_receipt": {
+    "repository": "bhrumom/fabushi-desktop",
+    "ref": "refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "harness_sha": "f2903f53ded5b07faea73e7f07d780eda0423283",
+    "run_id": "41527614236",
+    "run_attempt": "1",
+    "ledger_path": "projects/telegram-desktop-rust/parity-ledger.json",
+    "payload_path": ".github/checkpoint-ledger-ops-round23.json",
+    "input_blob": "240a31aed59e8db794a9d54532831349d965b8da",
+    "payload_blob": "8081a491b37169d5e195f97bac4413d279519029",
+    "output_blob": "4bc2f00f9304d3d2542b412f605b1f92e78265d2",
+    "input_sha256": "00ce1dc29c2c6bd174689a5b54608ba242b747421ff9b11143e91436117bd6a1",
+    "payload_sha256": "d4d758749082a1b9a1b7747012b59962fc244bdc9d446c6981981640a1eeb3d9",
+    "output_sha256": "e310155de34022f1b64b8d3f9e62c524a4b0319c2611ed1e0313d3c2a8c95935",
+    "input_bytes": 3648456,
+    "payload_bytes": 4852,
+    "output_bytes": 3652576,
+    "row_count": 184,
+    "source_reviews_count": 6,
+    "operations_count": 2,
+    "counts": {
+      "requested_values": 22,
+      "appended_values": 22,
+      "requested_notes": 2,
+      "appended_notes": 2
+    },
+    "rows": [
+      {
+        "id": "FBCP-NMR-001",
+        "arrays": {
+          "requirement_ids": {
+            "before": 92,
+            "requested": 6,
+            "appended": 6,
+            "after": 98
+          },
+          "fabushi_target_paths": {
+            "before": 33,
+            "requested": 2,
+            "appended": 2,
+            "after": 35
+          },
+          "integration_case_ids": {
+            "before": 60,
+            "requested": 3,
+            "appended": 3,
+            "after": 63
+          },
+          "security_case_ids": {
+            "before": 44,
+            "requested": 2,
+            "appended": 2,
+            "after": 46
+          },
+          "test_evidence": {
+            "before": 91,
+            "requested": 1,
+            "appended": 1,
+            "after": 92
+          },
+          "production_evidence": {
+            "before": 42,
+            "requested": 1,
+            "appended": 1,
+            "after": 43
+          },
+          "test_execution_evidence": {
+            "before": 49,
+            "requested": 5,
+            "appended": 5,
+            "after": 54
+          }
+        },
+        "note_appended": true
+      },
+      {
+        "id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
+        "arrays": {
+          "test_execution_evidence": {
+            "before": 4,
+            "requested": 2,
+            "appended": 2,
+            "after": 6
+          }
+        },
+        "note_appended": true
+      }
+    ],
+    "changed_rows": [
+      "FBCP-NMR-001",
+      "TDRP-UPDATER-DISCOVERY-AUTHORITY-001"
+    ],
+    "product_validation": false,
+    "source_acceptance": false,
+    "independent_acceptance": false,
+    "commit_created": false,
+    "ref_updated": false,
+    "integration_condition": "Root API reads the exact input/output and scoped delta, requires current canonical ledger input equality, then integrates with force=false and expected_sha CAS. A changed ledger input requires regeneration.",
+    "github_blob": "4bc2f00f9304d3d2542b412f605b1f92e78265d2"
+  }
+}

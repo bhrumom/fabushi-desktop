@@ -1,0 +1,42 @@
+{
+  "schema": "FBCP_NMR_BATCH_RECEIPT_V1",
+  "taskId": "e7702709-d985-4d1b-bac7-2d6383583421",
+  "round": 1,
+  "batch": "NMR-CONVERSATION-IDENTITY-01",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "fixedUpstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "base": "04ba336789a46d926bf8b49c90f40b4dfedece84",
+  "implementationCommit": "bbcee06bc82333e10b8fbea331fbd0f31453b32c",
+  "changedProductionPath": "source/host/src/extensions/session/production.rs",
+  "changedTestPath": "source/host/tests/session_gateway_contract.rs",
+  "behavior": "Reject Human conversation metadata whose exact two-participant pair does not derive the requested canonical conversation ID; preserve existing data and owner recovery.",
+  "test": "Existing shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mutation adds participants-rebound-peer owner-open refusal.",
+  "execution": {
+    "workflowRun": 41564603392,
+    "status": "in_progress-or-queued",
+    "conclusion": null,
+    "requiredJob": "native-message-reconciliation",
+    "passed": false
+  },
+  "source": {
+    "fixedU": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "inventoryBlob": "d9a721c0ac1f94c50b562202fcdd1345ef4487ca",
+    "ledgerSourceReviews": 16,
+    "complete": 2,
+    "pending": 14,
+    "unknown": null,
+    "unread": null,
+    "sourceClosure": false
+  },
+  "acceptance": {
+    "product": false,
+    "independent": false,
+    "release": false
+  },
+  "limitations": [
+    "No automatic metadata repair or data deletion",
+    "No interprocess atomic identity lease or filesystem ABA guarantee",
+    "Full source/legal, service, platform, UI/a11y, Bot, soak, upgrade/rollback and independent ACCEPT remain open"
+  ]
+}

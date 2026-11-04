@@ -1,0 +1,587 @@
+{
+  "schema_version": 1,
+  "audit": "Focused recovery after caught-panic log-oracle flaw",
+  "reviewer": "/root/resume_current_native",
+  "repository": "bhrumom/fabushi-desktop",
+  "head_sha": "f2903f53ded5b07faea73e7f07d780eda0423283",
+  "run_id": 41527613857,
+  "workflow_blob_sha": "cf888c52e7860a766d8f41caaada3338e8fc1dbf",
+  "source_bindings": [
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs",
+      "blob_sha": "0aebff41e55f58921742440e9f0b896a03d25638",
+      "chars": 32165
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-runtime/src/retained_social_recovery_tests.rs",
+      "blob_sha": "ea8f8e5092e126e62b2dc671438f25b106dce493",
+      "chars": 20185
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs",
+      "blob_sha": "f5fa5ba672422f60111d92c90bc218e506e168e7",
+      "chars": 185046
+    },
+    {
+      "path": "source/host/src/extensions/session/human_creation_tests.rs",
+      "blob_sha": "6f59c6249a3c9be84fa36a22b1a79bc8c9d2b4ab",
+      "chars": 37176
+    },
+    {
+      "path": "desktop/e2e/native-message-projection.spec.ts",
+      "blob_sha": "b46404da5567673cec2fb4a7a3a116dc433eb290",
+      "chars": 23501
+    },
+    {
+      "path": "frontend/src/production/ProductionRenderer.tsx",
+      "blob_sha": "e6449278d2b45a40cfbd3537ef3a6590680dce82",
+      "chars": 258668
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+      "blob_sha": "56cc9788ae104e1acce98841efab7274f5548f8b",
+      "chars": 628853,
+      "comparison": "Fresh exact-f290 API read; identical blob to audited historical production input."
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs",
+      "blob_sha": "340c330e0f0a0e002ba78a291979290cf71c67e5",
+      "chars": 90209,
+      "comparison": "Fresh exact-f290 API read; identical blob to audited historical production input."
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+      "blob_sha": "5468b02fe9c8ee91ee452726deaee07ad7885d6d",
+      "chars": 94310,
+      "comparison": "Fresh exact-f290 API read; identical blob to audited historical production input."
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+      "blob_sha": "9b4bdaf53de31370a651e5a8d8e30eea14707026",
+      "chars": 32452,
+      "comparison": "Fresh exact-f290 API read; identical blob to audited historical production input."
+    }
+  ],
+  "prior_failure": {
+    "head_sha": "f75ba3b0c3a75631662a8d5bba72121cf9598b33",
+    "run_id": 41526236521,
+    "job_id": 125554566242,
+    "class": "TEST_FLAW",
+    "feature10_passed": true,
+    "runtime9": "skipped",
+    "http6": "skipped",
+    "record": "f75-social-oracle-failure.json",
+    "recovered_at": "f2903f53ded5b07faea73e7f07d780eda0423283"
+  },
+  "observations": [
+    {
+      "at": "2026-11-02 21:22:05 UTC",
+      "jobs": [
+        {
+          "id": 125559289936,
+          "name": "retained-direct-ffi-compatibility",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125559290320,
+          "name": "native-message-shipping-compile",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125559290370,
+          "name": "native-message-electron",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125559290438,
+          "name": "windows-update-publisher",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 125559290464,
+          "name": "native-message-reconciliation",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125559290571,
+          "name": "desktop-social-owner-behaviors",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125559290742,
+          "name": "native-message-ui",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125559292087,
+          "name": "native-auth-and-journal",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ],
+      "social_pass_claim": false
+    },
+    {
+      "at": "2026-11-02 21:26:11 UTC",
+      "jobs": [
+        {
+          "id": 125559289936,
+          "name": "retained-direct-ffi-compatibility",
+          "status": "completed",
+          "conclusion": "success",
+          "current_step": null
+        },
+        {
+          "id": 125559290320,
+          "name": "native-message-shipping-compile",
+          "status": "queued",
+          "conclusion": null,
+          "current_step": null
+        },
+        {
+          "id": 125559290370,
+          "name": "native-message-electron",
+          "status": "completed",
+          "conclusion": "success",
+          "current_step": null
+        },
+        {
+          "id": 125559290438,
+          "name": "windows-update-publisher",
+          "status": "completed",
+          "conclusion": "success",
+          "current_step": null
+        },
+        {
+          "id": 125559290464,
+          "name": "native-message-reconciliation",
+          "status": "in_progress",
+          "conclusion": null,
+          "current_step": "Human ingress, settlement and restart contracts"
+        },
+        {
+          "id": 125559290571,
+          "name": "desktop-social-owner-behaviors",
+          "status": "in_progress",
+          "conclusion": null,
+          "current_step": "Execute actual FeatureHost Social and retained messaging boundaries"
+        },
+        {
+          "id": 125559290742,
+          "name": "native-message-ui",
+          "status": "in_progress",
+          "conclusion": null,
+          "current_step": "Actual ProductionRenderer history, account and restart projection behaviors"
+        },
+        {
+          "id": 125559292087,
+          "name": "native-auth-and-journal",
+          "status": "completed",
+          "conclusion": "skipped",
+          "current_step": null
+        }
+      ],
+      "social_pass_claim": false
+    },
+    {
+      "at": "2026-11-02 21:30:40 UTC",
+      "jobs": [
+        {
+          "id": 125559289936,
+          "name": "retained-direct-ffi-compatibility",
+          "status": "completed",
+          "conclusion": "success",
+          "failed_steps": []
+        },
+        {
+          "id": 125559290320,
+          "name": "native-message-shipping-compile",
+          "status": "queued",
+          "conclusion": null,
+          "failed_steps": []
+        },
+        {
+          "id": 125559290370,
+          "name": "native-message-electron",
+          "status": "completed",
+          "conclusion": "success",
+          "failed_steps": []
+        },
+        {
+          "id": 125559290438,
+          "name": "windows-update-publisher",
+          "status": "completed",
+          "conclusion": "success",
+          "failed_steps": []
+        },
+        {
+          "id": 125559290464,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "failure",
+          "failed_steps": [
+            "Concurrent Human creation and non-destructive initialization recovery"
+          ]
+        },
+        {
+          "id": 125559290571,
+          "name": "desktop-social-owner-behaviors",
+          "status": "completed",
+          "conclusion": "success",
+          "failed_steps": []
+        },
+        {
+          "id": 125559290742,
+          "name": "native-message-ui",
+          "status": "completed",
+          "conclusion": "failure",
+          "failed_steps": [
+            "Actual ProductionRenderer history, account and restart projection behaviors"
+          ]
+        },
+        {
+          "id": 125559292087,
+          "name": "native-auth-and-journal",
+          "status": "completed",
+          "conclusion": "skipped",
+          "failed_steps": []
+        }
+      ],
+      "social_pass_claim": true,
+      "whole_run_pass_claim": false
+    }
+  ],
+  "limits": {
+    "local_execution": false,
+    "remote_mutations": false,
+    "independent_accept": false,
+    "linux_replaces_macos_shipping": false
+  },
+  "logs": [
+    {
+      "run_id": 41527613857,
+      "job_id": 125559289936,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41527613857-125559289936.log",
+      "bytes": 55828,
+      "sha256": "0c0bd1f21d2bbfd749061c6ab337e8bc281a80edd1b2b06aa36e70bf0dfe8a53",
+      "format": "Complete connector-decoded job log, UTF-8 exact text"
+    },
+    {
+      "run_id": 41527613857,
+      "job_id": 125559290370,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41527613857-125559290370.log",
+      "bytes": 92445,
+      "sha256": "56d650b201f6181ca3a61cba1b7779ea2b505a5511ac8af7ef4cbfd775446875",
+      "format": "Complete connector-decoded job log, UTF-8 exact text"
+    },
+    {
+      "run_id": 41527613857,
+      "job_id": 125559290438,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41527613857-125559290438.log",
+      "bytes": 35998,
+      "sha256": "095daa4896daaa1041bff9bc9d91153afbac04c40f0e3d7abe69e4ac93ac8bae",
+      "format": "Complete connector-decoded job log, UTF-8 exact text"
+    },
+    {
+      "run_id": 41527613857,
+      "job_id": 125559290464,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41527613857-125559290464.log",
+      "bytes": 230963,
+      "sha256": "56768fe916f53494097758cc93eabb659fde50cedc829d3d72b8d207a43d23c7",
+      "format": "Complete connector-decoded job log, UTF-8 exact text"
+    },
+    {
+      "run_id": 41527613857,
+      "job_id": 125559290571,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41527613857-125559290571.log",
+      "bytes": 240762,
+      "sha256": "77695382ea57961b9c22bd5f5ab9dd50b8ecc3af9556a7e295a9b76b1e294a76",
+      "format": "Complete connector-decoded job log, UTF-8 exact text"
+    },
+    {
+      "run_id": 41527613857,
+      "job_id": 125559290742,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41527613857-125559290742.log",
+      "bytes": 134377,
+      "sha256": "837bc89500fe042ccea66384fa0c2713586f89cc09086cc87ea754be5bef3d83",
+      "format": "Complete connector-decoded job log, UTF-8 exact text"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 13181180366,
+      "name": "native-message-electron-f2903f53ded5b07faea73e7f07d780eda0423283",
+      "size_in_bytes": 14792,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181180366",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181180366/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:24:08Z",
+      "expires_at": "2027-01-31T21:21:33Z",
+      "updated_at": "2026-11-02T21:24:08Z",
+      "digest": "sha256:b7201f131716064e7ab3563d54f2ec38584229fb67942aeb9a989e731b93ca62",
+      "workflow_run": {
+        "id": 41527613857,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "f2903f53ded5b07faea73e7f07d780eda0423283"
+      }
+    },
+    {
+      "id": 13180890897,
+      "name": "windows-update-publisher-f2903f53ded5b07faea73e7f07d780eda0423283",
+      "size_in_bytes": 1825,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180890897",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180890897/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:22:48Z",
+      "expires_at": "2027-01-31T21:21:33Z",
+      "updated_at": "2026-11-02T21:22:48Z",
+      "digest": "sha256:804fc161f8224c03fdd378863aa83b2eed39d78ffc2490c2e7ecc36d14fec4a2",
+      "workflow_run": {
+        "id": 41527613857,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "f2903f53ded5b07faea73e7f07d780eda0423283"
+      }
+    },
+    {
+      "id": 13180727033,
+      "name": "native-message-ui-f2903f53ded5b07faea73e7f07d780eda0423283",
+      "size_in_bytes": 20127274,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180727033",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180727033/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:27:43Z",
+      "expires_at": "2027-01-31T21:21:33Z",
+      "updated_at": "2026-11-02T21:27:43Z",
+      "digest": "sha256:9571e51001166e6afe1022b2888a5dbe5b32c036989626ec8fcffe4bbe84e25b",
+      "workflow_run": {
+        "id": 41527613857,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "f2903f53ded5b07faea73e7f07d780eda0423283"
+      }
+    },
+    {
+      "id": 13180587783,
+      "name": "desktop-social-owner-behaviors-f2903f53ded5b07faea73e7f07d780eda0423283",
+      "size_in_bytes": 18195,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180587783",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180587783/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:29:18Z",
+      "expires_at": "2027-01-31T21:21:33Z",
+      "updated_at": "2026-11-02T21:29:18Z",
+      "digest": "sha256:c001d9c13ae4adce815ca037194fd4db5228a19698dc52dd5b07f6721498fcfe",
+      "workflow_run": {
+        "id": 41527613857,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "f2903f53ded5b07faea73e7f07d780eda0423283"
+      }
+    },
+    {
+      "id": 13179829387,
+      "name": "native-message-reconciliation-f2903f53ded5b07faea73e7f07d780eda0423283",
+      "size_in_bytes": 20986,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179829387",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179829387/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:27:18Z",
+      "expires_at": "2027-01-31T21:21:33Z",
+      "updated_at": "2026-11-02T21:27:18Z",
+      "digest": "sha256:19196a31f6510226f4598ceaf97934f933510a79331d435c2d31040b821ddab6",
+      "workflow_run": {
+        "id": 41527613857,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "f2903f53ded5b07faea73e7f07d780eda0423283"
+      }
+    },
+    {
+      "id": 13179623934,
+      "name": "retained-direct-ffi-compatibility-f2903f53ded5b07faea73e7f07d780eda0423283",
+      "size_in_bytes": 2545,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179623934",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179623934/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:23:26Z",
+      "expires_at": "2027-01-31T21:21:33Z",
+      "updated_at": "2026-11-02T21:23:26Z",
+      "digest": "sha256:c66e62ec062b60a1b29d1e389f943b9c93f88e74167d1dd067d76b91cc0a09c0",
+      "workflow_run": {
+        "id": 41527613857,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "f2903f53ded5b07faea73e7f07d780eda0423283"
+      }
+    }
+  ],
+  "expected_social_cases": {
+    "feature10": [
+      "desktop_social_intents_refuse_before_auth_runtime_context_io_and_events",
+      "desktop_social_refusal_does_not_lock_state_or_touch_retained_context",
+      "social_boundary_keeps_explicit_test_non_desktop_and_other_namespaces",
+      "desktop_entries_refuse_before_auth_parse_io_and_event_publication",
+      "desktop_refusal_does_not_touch_poisoned_owner_state",
+      "desktop_refusal_retains_original_stores_and_unfinished_uploads_across_reconstruction",
+      "desktop_refusal_leaves_corrupt_and_unknown_stores_byte_identical",
+      "explicit_test_mode_still_executes_persists_issues_access_and_reads_blobs",
+      "non_desktop_production_retains_blob_reads_and_existing_validation_boundaries",
+      "automation_store_preserves_reserved_messaging_tree_and_normal_agent_lifecycle"
+    ],
+    "runtime9": [
+      "retained_social_pending_turns_survive_repeated_sqlite_restart_without_dispatch",
+      "retained_social_waiting_user_preserves_pending_question_and_payload_bytes",
+      "retained_social_handoffs_preserve_queued_running_and_terminal_target_records",
+      "retained_social_policy_keeps_agent_recovery_on_shared_async_builder",
+      "retained_social_policy_keeps_missing_handoff_target_on_agent_fallback",
+      "default_policy_recovers_social_work_with_registered_provider",
+      "default_policy_does_not_hide_missing_social_provider",
+      "retained_social_policy_does_not_hide_unrelated_or_nearby_namespace_errors",
+      "default_policy_keeps_explicit_retry_requirement_for_waiting_user"
+    ],
+    "http6": [
+      "session_owned_platform_rejects_message_routes_before_credentials",
+      "session_owned_platform_rejects_normalized_and_ambiguous_route_aliases",
+      "session_owned_platform_preserves_existing_contact_transport",
+      "session_owned_platform_rejects_non_origin_base_before_credentials",
+      "session_owned_platform_never_follows_redirects_to_messages",
+      "session_owned_platform_does_not_change_other_product_entrypoints"
+    ]
+  },
+  "completed_results": {
+    "retained_direct_ffi": {
+      "job_id": 125559289936,
+      "passed": 15,
+      "failed": 0,
+      "ignored": 1,
+      "ignored_reason": "requires live Telegram production DC; not accepted"
+    },
+    "electron": {
+      "job_id": 125559290370,
+      "passed_groups": [
+        10,
+        8,
+        3,
+        16,
+        28,
+        18,
+        10,
+        7
+      ],
+      "failed": 0,
+      "skipped": 0,
+      "actual_build": "success"
+    },
+    "windows": {
+      "job_id": 125559290438,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "fixture": "actual Authenticode with CI-only inert certificate; no formal publisher authorization or package acceptance"
+    },
+    "social": {
+      "job_id": 125559290571,
+      "conclusion": "success",
+      "feature": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 35,
+        "result_at": "2026-11-02T21:28:10.2331450Z",
+        "all_three_named_checks": "success"
+      },
+      "runtime": {
+        "passed": 9,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 20,
+        "result_at": "2026-11-02T21:28:39.2673868Z"
+      },
+      "http": {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 26,
+        "result_at": "2026-11-02T21:29:17.0165308Z",
+        "scope": "Includes the strengthened UUID resource/origin/alias/redirect and positive-control assertions at Product blob f5fa5ba672422f60111d92c90bc218e506e168e7."
+      },
+      "oracle_recovery": "Caught panic hook text still separates the poisoned-state case name from its ok result. Exact named execution prefix, successful cargo under pipefail and aggregate 10/0/0 jointly qualify that case; the other two new cases retain named same-line ok checks.",
+      "source_binding": "Exact SHA checkout and input SHA256 artifact generation succeeded; locked Cargo tests and unchanged-lock assertion succeeded."
+    },
+    "reconciliation": {
+      "job_id": 125559290464,
+      "conclusion": "failure",
+      "passed_groups": {
+        "transcript_recovery": 3,
+        "human": 63,
+        "resource_upload_bounds": 3
+      },
+      "creation": {
+        "passed": 11,
+        "failed": 1,
+        "ignored": 0,
+        "case": "corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
+        "assertion": "Original store.db-wal, store.db-shm and store.db-journal missing after NOTADB refusal; store.db and unrelated resource preserved.",
+        "classification": "IMPL_BUG"
+      },
+      "skipped_groups": [
+        "human_creation_storage3",
+        "sharebox1",
+        "forward_journal12",
+        "Agent4",
+        "credential3",
+        "forward_http1"
+      ],
+      "concurrent_fix_record": "creation-owner-fix/evidence.json",
+      "next_run": "exact9b9cadd7d5b7cc3b7a294568fa26a3919c35021f / 41528369271; not yet qualified"
+    },
+    "ui": {
+      "job_id": 125559290742,
+      "conclusion": "failure",
+      "passed_groups": [
+        33,
+        17,
+        5,
+        16
+      ],
+      "actual_renderer_build": "success",
+      "production_renderer_playwright": {
+        "passed": 2,
+        "failed": 9,
+        "skipped": 0,
+        "retries": 0,
+        "cause_observed": "All 9 failing cases wait in openAlice line47 for pending.older == 1; each actual failure reports Received: 2, proving a duplicate in-flight older request. Earlier f75's Received: 0 is a different, historical symptom."
+      },
+      "production_transcript_node8": "skipped",
+      "classification": "IMPL_BUG: reselecting the already active conversation reinstalls its cached cursor and releases the existing in-flight request boundary; concurrent 9b9 fix preserves current-scope pagination state.",
+      "concurrent_fix": {
+        "head_sha": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+        "production_blob_sha": "3ba10ab2e4e67082ec09df3f6a51cc7a58fcf363",
+        "test_blob_sha": "c0dc8a1ed85e5ccdd7dab854b882cdfbdd9e0438",
+        "change": "Install cached initial cursor only when the active controller cursor is unprobed; new explicit test wait guarantees Alice is already auto-open with one older request before reselecting.",
+        "execution": "Pending exact-containing-H GitHub Actions; no pass inferred from static diff."
+      }
+    }
+  },
+  "remaining_gates": [
+    "macOS shipping job125559290320 queued with zero steps: no current AppHost/build/package-hash negative acceptance",
+    "Human creation failure requires exact containing-fix execution",
+    "Actual production renderer Playwright9/11 failures require exact containing-fix execution",
+    "Formal publisher authority, signed real packages, real service/platform/upgrade/rollback/Bot/full source/legal and independent ACCEPT remain open"
+  ]
+}

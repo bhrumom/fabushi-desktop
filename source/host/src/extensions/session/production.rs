@@ -1,7 +1,13 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
+
+pub use super::legacy_telegram_retirement::{
+    LegacyTelegramRetirementError, LegacyTelegramRetirementReport, RetiredTelegramMarker,
+    TelegramKeyClearHook,
+};
+use super::legacy_telegram_retirement::retire_legacy_telegram_data_internal;
 
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
@@ -24,7 +30,12 @@ use super::agent_db::{
     SessionWorkResultCommitOutcome,
 };
 use super::agent_db_serde::UnreadState;
+use super::forward_batch_journal::{
+    HumanForwardBatch, load_forward_batches, read_forward_attachment_bytes,
+    snapshot_forward_attachments, store_forward_batch,
+};
 use super::agent_db_transcript_pages::{
+    HumanTranscriptPage, HumanTranscriptPageQuery,
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
 use super::agent_session::{
@@ -98,9 +109,39 @@ use super::session_mutations::{
 use super::typed_replay::{TypedReplayEntry, project_typed_replay_entries};
 use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
 use super::native_messaging::{
-    FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
-    FabushiRemoteHumanCallEvent, FabushiRemoteHumanMessage, fabushi_identity_text,
+    FabushiHumanReactionError, FabushiHumanSendError, FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
+    FabushiRemoteHumanCallEvent, FabushiRemoteHumanMessage, FabushiRemoteHumanReaction,
+    fabushi_identity_text, fabushi_message_identity_text,
 };
+
+#[derive(Debug, thiserror::Error)]
+enum ForwardSourceFailure {
+    #[error("{0}")]
+    Policy(String),
+    #[error("{0}")]
+    Storage(String),
+}
+
+// One invocation keeps its original credential binding and first qualified
+// reaction refusal. This is not another durable message or credential owner.
+pub(crate) struct HumanSyncRecoveryContext {
+    local_human_id: String,
+    credential_fingerprint: String,
+    first_reaction_refusal: Option<String>,
+}
+
+impl HumanSyncRecoveryContext {
+    fn is_continuing(&self) -> bool {
+        self.first_reaction_refusal.is_some()
+    }
+
+    fn finish<T>(self, value: T) -> Result<T, String> {
+        match self.first_reaction_refusal {
+            Some(error) => Err(error),
+            None => Ok(value),
+        }
+    }
+}
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 
@@ -151,6 +192,24 @@ impl ProductionMaterializedSession {
     }
 }
 
+// Use the existing lock registry without retaining one entry forever for each
+// retried nonce. A waiter owns its Arc before locking; under the registry lock,
+// releasing this scope under the registry lock makes final-waiter cleanup
+// atomic with lookup and with another finishing scope's cleanup.
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum HumanCreationStage {
+    BeforeLock,
+    Locked,
+    BeforeInitialize,
+    BeforePublish,
+}
+
+#[cfg(test)]
+pub(crate) type HumanCreationHook = Arc<
+    dyn Fn(HumanCreationStage, &str, Option<&Arc<SandAgentDb>>) + Send + Sync,
+>;
+
 /// Shipping Host owner for the Grok session materialization worker boundary.
 ///
 /// The pool is retained for the Host lifetime so per-agent blob workers are
@@ -167,6 +226,9 @@ pub struct ProductionSessionWorkers {
     pub(crate) memory_service: Arc<MemoryService>,
     pub(crate) mint_queue: SessionMintQueue,
     pub(crate) db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
+    pub(crate) human_message_locks: Mutex<BTreeMap<String, Arc<Mutex<()>>>>,
+    #[cfg(test)]
+    pub(crate) human_creation_hook: Option<HumanCreationHook>,
     pub(crate) agent_store_owners: Mutex<BTreeMap<String, Arc<ProductionAgentStore>>>,
     pub(crate) filesystem_mutation_locks: Mutex<BTreeMap<String, Arc<Mutex<()>>>>,
     pub(crate) deleting_agents: Mutex<BTreeSet<String>>,
@@ -180,6 +242,14 @@ pub struct ProductionSessionWorkers {
     pub(crate) call_session_store_error: Option<String>,
     pub(crate) provider_review_capabilities: Mutex<BTreeMap<String, ProviderReviewCapabilityState>>,
     pub(crate) busy_timeout_ms: u64,
+    pub(crate) mini_app_package_verifier: Mutex<Option<MiniAppPackageVerifier>>,
+    pub(crate) miniapp_launch_sessions: Mutex<BTreeMap<String, HostMiniAppLaunchSession>>,
+    pub(crate) miniapp_grants: Mutex<BTreeMap<(String, String), fabushi_messaging_core::MiniAppGrant>>,
+    pub(crate) has_valid_native_credential: Arc<AtomicBool>,
+    pub(crate) account_data_root: Arc<Mutex<Option<PathBuf>>>,
+    pub(crate) telegram_key_clear_callback: Arc<Mutex<Option<TelegramKeyClearHook>>>,
+    pub(crate) media_cache: Arc<Mutex<fabushi_messaging_core::MediaCache>>,
+    pub(crate) miniapp_service_calls: Arc<Mutex<std::collections::HashMap<String, fabushi_messaging_core::MiniAppServiceCallSession>>>,
 }
 
 #[derive(Debug)]
@@ -196,6 +266,41 @@ struct ProviderReviewCapabilityState {
 pub struct ProviderReviewAcknowledgment {
     token: String,
 }
+
+
+#[path = "tdrp_forum_topics.rs"]
+pub mod tdrp_forum_topics;
+pub use tdrp_forum_topics::*;
+#[path = "tdrp_chat_admin_moderation.rs"]
+pub mod tdrp_chat_admin_moderation;
+pub use tdrp_chat_admin_moderation::*;
+#[path = "tdrp_calls_media.rs"]
+pub mod tdrp_calls_media;
+pub use tdrp_calls_media::*;
+#[path = "tdrp_miniapp_bridge.rs"]
+pub mod tdrp_miniapp_bridge;
+pub use tdrp_miniapp_bridge::*;
+#[path = "tdrp_settings_credentials.rs"]
+pub mod tdrp_settings_credentials;
+pub use tdrp_settings_credentials::*;
+#[path = "tdrp_dialog_state.rs"]
+pub mod tdrp_dialog_state;
+pub use tdrp_dialog_state::*;
+#[path = "tdrp_forward_share.rs"]
+pub mod tdrp_forward_share;
+pub use tdrp_forward_share::*;
+#[path = "tdrp_share_link.rs"]
+pub mod tdrp_share_link;
+pub use tdrp_share_link::*;
+#[path = "tdrp_message_retry.rs"]
+pub mod tdrp_message_retry;
+pub use tdrp_message_retry::*;
+#[path = "tdrp_message_mutations.rs"]
+pub mod tdrp_message_mutations;
+pub use tdrp_message_mutations::*;
+#[path = "tdrp_reactions_sync.rs"]
+pub mod tdrp_reactions_sync;
+pub use tdrp_reactions_sync::*;
 
 impl ProductionSessionWorkers {
     pub fn bind_memory_synthesis_gate(self: &Arc<Self>) {
@@ -357,6 +462,9 @@ impl ProductionSessionWorkers {
                 Ok(store) => (Some(Arc::new(store)), None),
                 Err(error) => (None, Some(error)),
             };
+        let default_has_valid_native = local_human_id.is_some()
+            && native_messaging_error.is_none()
+            && (native_messaging.is_some() || !native_messaging_required);
         Self {
             memory_service,
             agents_root,
@@ -369,6 +477,9 @@ impl ProductionSessionWorkers {
             session_turns_controller: SessionTurnsController::new(),
             mint_queue: SessionMintQueue::default(),
             db_owners: Mutex::new(BTreeMap::new()),
+            human_message_locks: Mutex::new(BTreeMap::new()),
+            #[cfg(test)]
+            human_creation_hook: None,
             agent_store_owners: Mutex::new(BTreeMap::new()),
             filesystem_mutation_locks: Mutex::new(BTreeMap::new()),
             deleting_agents: Mutex::new(BTreeSet::new()),
@@ -382,6 +493,17 @@ impl ProductionSessionWorkers {
             call_session_store_error,
             provider_review_capabilities: Mutex::new(BTreeMap::new()),
             busy_timeout_ms,
+            mini_app_package_verifier: Mutex::new(None),
+            miniapp_launch_sessions: Mutex::new(BTreeMap::new()),
+            miniapp_grants: Mutex::new(BTreeMap::new()),
+            has_valid_native_credential: Arc::new(AtomicBool::new(default_has_valid_native)),
+            account_data_root: Arc::new(Mutex::new(None)),
+            telegram_key_clear_callback: Arc::new(Mutex::new(None)),
+            media_cache: Arc::new(Mutex::new(
+                fabushi_messaging_core::MediaCache::new(64 * 1024 * 1024)
+                    .expect("default media cache budget of 64 MiB must be valid"),
+            )),
+            miniapp_service_calls: Arc::new(Mutex::new(std::collections::HashMap::new())),
         }
     }
 
@@ -429,60 +551,6 @@ impl ProductionSessionWorkers {
 
     pub fn agents_root(&self) -> &Path {
         &self.agents_root
-    }
-
-    pub fn session_db_path(&self, agent_id: &str) -> Result<PathBuf, String> {
-        get_agent_db_path(&self.agents_root, agent_id).map_err(|error| error.to_string())
-    }
-
-    pub fn list_agent_record_ids(&self) -> Result<Vec<String>, String> {
-        list_agent_record_ids(&self.agents_root).map_err(|error| error.to_string())
-    }
-
-    pub fn count_owned_agents(&self) -> Result<usize, String> {
-        count_owned_agents(&self.agents_root).map_err(|error| error.to_string())
-    }
-
-    pub fn is_agent_cap_reached(&self) -> Result<bool, String> {
-        is_agent_cap_reached(&self.agents_root).map_err(|error| error.to_string())
-    }
-
-    pub fn reclaim_pruned_placeholders(
-        &self,
-        active_agent_id: Option<&str>,
-    ) -> Result<Vec<String>, String> {
-        let visible_agent_ids = self
-            .list_agent_summaries(active_agent_id)?
-            .into_iter()
-            .map(|summary| summary.id)
-            .collect::<BTreeSet<_>>();
-        let candidates = list_pruned_placeholder_ids(
-            &self.agents_root,
-            active_agent_id,
-            &visible_agent_ids,
-        )
-        .map_err(|error| error.to_string())?;
-        let mut reclaimed = Vec::new();
-        for agent_id in candidates {
-            let result = self.with_agent_filesystem_mutation(&agent_id, || {
-                self.retire_agent_owners_locked(&agent_id, false)?;
-                match fs::remove_dir_all(self.agents_root.join(&agent_id)) {
-                    Ok(()) => Ok(true),
-                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
-                    Err(error) => Err(format!("io::{:?}", error.kind())),
-                }
-            });
-            match result {
-                Ok(true) => reclaimed.push(agent_id),
-                Ok(false) => {}
-                Err(error) => report_materialization_failure(
-                    "placeholder_reclaim_failed",
-                    &agent_id,
-                    &error,
-                ),
-            }
-        }
-        Ok(reclaimed)
     }
 
     pub fn is_agent_cap_reached_after_reclaim(
@@ -2520,6 +2588,28 @@ impl ProductionSessionWorkers {
         format!("conversation:{conversation_id}")
     }
 
+    // Every Human row writer holds the existing conversation mutation lane.
+    // Reconcile activity after the durable row write, and also on replay so a
+    // crash between the two commits cannot leave the roster permanently stale.
+    pub(crate) fn update_human_activity(owner: &SandAgentDb, timestamp_ms: f64) -> Result<(), String> {
+        if owner.is_closed() {
+            return Err("Human conversation owner is closed".into());
+        }
+        if !timestamp_ms.is_finite() {
+            return Err("Human message activity timestamp must be finite".into());
+        }
+        let latest = owner.get_metadata("lastActivityAt")
+            .map_err(|error| error.to_string())?
+            .as_ref().and_then(serde_json::Value::as_f64)
+            .filter(|value| value.is_finite())
+            .unwrap_or(timestamp_ms).max(timestamp_ms);
+        if !owner.set_metadata("lastActivityAt", serde_json::json!(latest))
+            .map_err(|error| error.to_string())?
+        {
+            return Err("Human message activity was not durably updated".into());
+        }
+        Ok(())
+    }
     pub(crate) fn shipping_native_messaging(&self) -> Result<Option<&FabushiNativeMessagingClient>, String> {
         match (&self.native_messaging, self.native_messaging_required) {
             (Some(client), _) => Ok(Some(client.as_ref())),
@@ -2548,13 +2638,758 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "Human conversation is missing its peer identity".to_string())
     }
 
-    // Human conversations sync moved to ocrm_production_human_conversations.rs
+    fn validate_human_attachment_resource(attachment: &FabushiRemoteHumanAttachment) -> Result<(), String> {
+        let resource_id = attachment.resource_id.trim();
+        if resource_id.is_empty()
+            || resource_id.len() > 128
+            || !resource_id
+                .chars()
+                .all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
+        {
+            return Err("remote Human attachment resource id is invalid".into());
+        }
+        if attachment.size == 0 || attachment.size > 32 * 1024 * 1024 {
+            return Err("remote Human attachment size exceeds the supported limit".into());
+        }
+        Ok(())
+    }
 
+    fn materialize_remote_human_attachment(
+        &self,
+        attachment: &FabushiRemoteHumanAttachment,
+    ) -> Result<serde_json::Value, String> {
+        Self::validate_human_attachment_resource(attachment)?;
+        let resource_id = attachment.resource_id.trim();
+        let mut name = attachment
+            .name
+            .chars()
+            .map(|character| match character {
+                '/' | '\\' | '\0' => '_',
+                character if character.is_control() => '_',
+                character => character,
+            })
+            .take(255)
+            .collect::<String>();
+        if name.trim().is_empty() {
+            name = "attachment".into();
+        }
+        let resource_root = self
+            .agents_root
+            .join("human-message-resources")
+            .join(resource_id);
+        fs::create_dir_all(&resource_root).map_err(|error| {
+            format!(
+                "remote Human attachment directory could not be created: {error}"
+            )
+        })?;
+        let path = resource_root.join(name);
+        let ready = fs::metadata(&path)
+            .ok()
+            .is_some_and(|metadata| metadata.is_file() && metadata.len() == attachment.size);
+        if !ready {
+            let client = self
+                .shipping_native_messaging()?
+                .ok_or_else(|| "remote Human attachment requires shipping native messaging".to_string())?;
+            let bytes = client.download_direct_message_resource_for_user(
+                resource_id, attachment.size, self.local_human_id()?,
+            )?;
+            let temporary_path = resource_root.join(".download.tmp");
+            fs::write(&temporary_path, &bytes).map_err(|error| {
+                format!("remote Human attachment could not be staged: {error}")
+            })?;
+            if let Err(error) = fs::rename(&temporary_path, &path) {
+                let _ = fs::remove_file(&temporary_path);
+                return Err(format!(
+                    "remote Human attachment could not be committed atomically: {error}"
+                ));
+            }
+        }
+        Ok(serde_json::json!({
+            "path": path.to_string_lossy(),
+            "name": attachment.name,
+            "size": attachment.size,
+            "mimeType": attachment.content_type,
+            "resourceId": attachment.resource_id,
+            "remoteCreatedAt": attachment.created_at,
+        }))
+    }
 
+    fn validate_remote_human_message(
+        &self,
+        remote: &FabushiRemoteHumanMessage,
+        local_human_id: &str,
+        peer_human_id: &str,
+        existing: &[serde_json::Value],
+    ) -> Result<(), String> {
+        let remote_id = fabushi_message_identity_text(&remote.id)?;
+        let sender_id = fabushi_identity_text(&remote.sender_user_id)?;
+        let recipient_id = fabushi_identity_text(&remote.recipient_user_id)?;
+        if !((sender_id == local_human_id && recipient_id == peer_human_id)
+            || (sender_id == peer_human_id && recipient_id == local_human_id))
+        {
+            return Err("remote Human message does not belong to the selected Human conversation".into());
+        }
+        if let Some(read_at) = remote.read_at.as_deref()
+            .map(str::trim).filter(|value| !value.is_empty())
+        {
+            chrono::DateTime::parse_from_rfc3339(read_at)
+                .map_err(|error| format!("remote Human message read timestamp is invalid: {error}"))?;
+        }
 
-    // Human recipients and messaging moved to ocrm_production_human_recipients.rs & ocrm_production_human_messaging.rs
+        let canonical_id = format!("human-server-message:{remote_id}");
+        let by_id = existing.iter().find(|row| {
+            row.get("id").and_then(serde_json::Value::as_str) == Some(canonical_id.as_str())
+        });
+        if by_id.is_some_and(|row| {
+            row.get("authorId").and_then(serde_json::Value::as_str) != Some(sender_id.as_str())
+        }) {
+            return Err("remote Human canonical identity conflicts with the persisted sender".into());
+        }
+        if let Some(reactions) = remote.reactions.as_deref() {
+            Self::validate_remote_human_reactions(reactions)?;
+        }
 
+        // Peer request provenance can never acknowledge a local intent. On our own
+        // outgoing echo, both canonical-ID and nonce lookups must pass the same
+        // immutable local-send checks, even when a replay omits/changes the nonce.
+        if sender_id != local_human_id {
+            return Ok(());
+        }
+        let nonce = remote.client_request_id.as_deref()
+            .map(str::trim).filter(|value| !value.is_empty());
+        let by_nonce = nonce.and_then(|nonce| existing.iter().find(|row| {
+            row.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id)
+                && row.get("clientNonce").and_then(serde_json::Value::as_str) == Some(nonce)
+        }));
+        for current in [by_id, by_nonce].into_iter().flatten() {
+            if current.get("authorId").and_then(serde_json::Value::as_str) != Some(local_human_id)
+                || current.get("clientNonce").and_then(serde_json::Value::as_str) != nonce
+                || nonce.is_none()
+                || current.get("content").and_then(serde_json::Value::as_str)
+                    != Some(remote.text.trim())
+            {
+                return Err("remote Human acknowledgement conflicts with the local send identity or text".into());
+            }
+            if let Some(prior_remote) = current.get("remoteMessageId") {
+                if fabushi_identity_text(prior_remote)? != remote_id {
+                    return Err("remote Human acknowledgement changed a settled remote identity".into());
+                }
+            }
+            let expected_reply = if let Some(id) = current.get("remoteReplyToMessageId") {
+                Some(fabushi_identity_text(id)?)
+            } else if let Some(reply_id) = current.get("replyToId")
+                .and_then(serde_json::Value::as_str)
+            {
+                let target = existing.iter().find(|row| {
+                    row.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
+                }).ok_or_else(|| "remote Human acknowledgement reply target disappeared".to_string())?;
+                Some(fabushi_identity_text(target.get("remoteMessageId").ok_or_else(|| {
+                    "remote Human acknowledgement reply has no settled remote identity".to_string()
+                })?)?)
+            } else {
+                None
+            };
+            let actual_reply = remote.reply_to_message_id.as_ref()
+                .map(fabushi_identity_text).transpose()?;
+            if expected_reply != actual_reply {
+                return Err("remote Human acknowledgement changed the dispatched reply".into());
+            }
 
+            let previously_dispatched = current.get("remoteDispatchAttachments")
+                .or_else(|| current.get("attachments"));
+            let mut expected_resources = Vec::new();
+            if let Some(attachments) = previously_dispatched {
+                let attachments = attachments.as_array().ok_or_else(|| {
+                    "persisted Human dispatched resources are not an array".to_string()
+                })?;
+                for attachment in attachments {
+                    expected_resources.push(
+                        attachment.get("resourceId")
+                            .and_then(serde_json::Value::as_str)
+                            .ok_or_else(|| "persisted Human attachment lacks dispatched resource identity".to_string())?
+                            .to_string()
+                    );
+                }
+            }
+            let actual_resources = remote.attachments.iter()
+                .map(|attachment| attachment.resource_id.as_str()).collect::<Vec<_>>();
+            if expected_resources.iter().map(String::as_str).collect::<Vec<_>>() != actual_resources {
+                return Err("remote Human acknowledgement changed dispatched resources".into());
+            }
+        }
+        Ok(())
+    }
+
+    fn materialize_remote_human_message(
+        &self,
+        owner: &SandAgentDb,
+        remote: &FabushiRemoteHumanMessage,
+    ) -> Result<serde_json::Value, String> {
+        let existing = owner.get_transcript_entries().map_err(|error| error.to_string())?;
+        self.materialize_remote_human_message_with_snapshot(owner, remote, &existing)
+    }
+
+    // The caller owns the conversation mutation lane and updates this snapshot
+    // only after each durable write. Avoid reparsing the entire SQLite transcript
+    // for every row of a bounded history page.
+    fn materialize_remote_human_message_with_snapshot(
+        &self,
+        owner: &SandAgentDb,
+        remote: &FabushiRemoteHumanMessage,
+        existing: &[serde_json::Value],
+    ) -> Result<serde_json::Value, String> {
+        let local_human_id = self.local_human_id()?;
+        let remote_id = fabushi_message_identity_text(&remote.id)?;
+        let sender_id = fabushi_identity_text(&remote.sender_user_id)?;
+        let recipient_id = fabushi_identity_text(&remote.recipient_user_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+        self.validate_remote_human_message(remote, local_human_id, &peer_human_id, existing)?;
+        let timestamp_ms = chrono::DateTime::parse_from_rfc3339(&remote.created_at)
+            .map_err(|error| format!("remote Human message timestamp is invalid: {error}"))?
+            .timestamp_millis() as f64;
+        let entry_id = format!("human-server-message:{remote_id}");
+        if sender_id == local_human_id {
+            // Validate only this message's existing local provenance. A corrupt
+            // intent is retained; it cannot be overwritten by a remote snapshot
+            // that carries no evidence of the original queue observation.
+            let local_origin = existing.iter().find(|candidate|
+                candidate.get("id").and_then(serde_json::Value::as_str) == Some(entry_id.as_str())
+                    && candidate.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id))
+                .or_else(|| remote.client_request_id.as_deref().map(str::trim)
+                    .filter(|nonce| !nonce.is_empty()).and_then(|nonce| existing.iter().find(|candidate|
+                        candidate.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id)
+                            && candidate.get("clientNonce").and_then(serde_json::Value::as_str) == Some(nonce))));
+            if let Some(current) = local_origin {
+                Self::validate_human_queue_origin(current)?;
+            }
+        }
+        let mut entry = serde_json::json!({
+            "id": entry_id,
+            "kind": "message",
+            "role": "user",
+            "authorKind": "human",
+            "authorId": sender_id,
+            "content": remote.text,
+            "timestampMs": timestamp_ms,
+            "delivery": "sent",
+            "remoteMessageId": remote_id,
+            "remoteCreatedAt": remote.created_at,
+        });
+        let object = entry
+            .as_object_mut()
+            .ok_or_else(|| "remote Human message projection failed".to_string())?;
+        if let Some(author_name) = remote
+            .sender_username
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            object.insert("authorName".into(), serde_json::json!(author_name));
+        }
+        if let Some(client_nonce) = remote
+            .client_request_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            if sender_id == local_human_id {
+                object.insert("clientNonce".into(), serde_json::json!(client_nonce));
+            } else {
+                object.insert("remoteClientRequestId".into(), serde_json::json!(client_nonce));
+            }
+        }
+        if let Some(read_at) = remote
+            .read_at
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            object.insert("readAt".into(), serde_json::json!(read_at));
+        }
+        if let Some(reply_to_message_id) = remote
+            .reply_to_message_id
+            .as_ref()
+            .map(fabushi_identity_text)
+            .transpose()?
+        {
+            object.insert(
+                "replyToId".into(),
+                serde_json::json!(format!("human-server-message:{reply_to_message_id}")),
+            );
+            object.insert(
+                "remoteReplyToMessageId".into(),
+                serde_json::json!(reply_to_message_id),
+            );
+        }
+        if !remote.attachments.is_empty() {
+            let attachments = remote
+                .attachments
+                .iter()
+                .map(|attachment| self.materialize_remote_human_attachment(attachment))
+                .collect::<Result<Vec<_>, _>>()?;
+            object.insert("attachments".into(), serde_json::Value::Array(attachments));
+        }
+        let peer_human_id = if sender_id == local_human_id {
+            recipient_id.as_str()
+        } else {
+            sender_id.as_str()
+        };
+        if let Some(reactions) = remote.reactions.as_deref() {
+            let projected_reactions =
+                Self::project_remote_human_reactions(reactions, peer_human_id);
+            object.insert("remoteReactions".into(), serde_json::to_value(reactions)
+                .map_err(|error| format!("remote Human reactions could not be projected: {error}"))?);
+            object.insert("reactions".into(), serde_json::Value::Array(projected_reactions));
+        }
+        if let Some(current) = existing.iter().find(|candidate| {
+            candidate.get("id").and_then(serde_json::Value::as_str)
+                == entry.get("id").and_then(serde_json::Value::as_str)
+        }) {
+            // A remote refresh must not erase local identity or delivery context.
+            if let (Some(next), Some(prior)) = (entry.as_object_mut(), current.as_object()) {
+                for (key, value) in prior {
+                    if !next.contains_key(key) {
+                        next.insert(key.clone(), value.clone());
+                    }
+                }
+            }
+            if let Some(read_at) = current.get("readAt").and_then(serde_json::Value::as_str) {
+                let prior = chrono::DateTime::parse_from_rfc3339(read_at).ok();
+                let newer = remote.read_at.as_deref()
+                    .map(str::trim).filter(|value| !value.is_empty())
+                    .and_then(|value| chrono::DateTime::parse_from_rfc3339(value).ok())
+                    .is_some_and(|incoming| prior.is_none_or(|prior| incoming > prior));
+                if !newer {
+                    entry.as_object_mut().expect("entry is an object")
+                        .insert("readAt".into(), serde_json::json!(read_at));
+                }
+            }
+            if current == &entry {
+                Self::update_human_activity(owner, timestamp_ms)?;
+                return Ok(current.clone());
+            }
+            let refreshed = owner
+                .update_transcript_entry(
+                    entry
+                        .get("id")
+                        .and_then(serde_json::Value::as_str)
+                        .ok_or_else(|| "remote Human message projection omitted its id".to_string())?,
+                    &entry,
+                )
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "remote Human message could not be durably refreshed".to_string())?;
+            Self::update_human_activity(owner, timestamp_ms)?;
+            return Ok(refreshed);
+        }
+        if let Some(client_nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) {
+            if let Some(current) = existing.iter().find(|candidate| {
+                candidate.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id)
+                    && candidate.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
+            }) {
+                if let Some(context) = current.get("forwardContext").cloned() {
+                    entry
+                        .as_object_mut()
+                        .ok_or_else(|| "remote Human message projection failed".to_string())?
+                        .insert("forwardContext".into(), context);
+                }
+                let current_id = current.get("id").and_then(serde_json::Value::as_str)
+                    .ok_or_else(|| "local Human settlement row omitted its id".to_string())?;
+                let current_remote = current.get("remoteMessageId").and_then(serde_json::Value::as_str);
+                if let Some(current_remote) = current_remote {
+                    if current_remote != remote_id {
+                        return Err("local Human settlement row conflicts with a different remote identity".into());
+                    }
+                } else if !matches!(
+                    current.get("delivery").and_then(serde_json::Value::as_str),
+                    Some("pending" | "dispatching")
+                ) {
+                    return Err("local Human message already uses the server clientRequestId without a retryable settlement state".into());
+                }
+                let origin = Self::validate_human_queue_origin(current)?;
+                let object = entry.as_object_mut().expect("remote Human message is an object");
+                if let Some(origin) = origin {
+                    object.insert("queuedOffline".into(), serde_json::json!(origin));
+                }
+                if let Some(composed) = current.get("composedAtMs").filter(|value|
+                    value.as_f64().is_some_and(f64::is_finite))
+                {
+                    object.insert("composedAtMs".into(), composed.clone());
+                }
+                let settled = owner
+                    .settle_transcript_entry_identity(current_id, &entry)
+                    .map_err(|error| error.to_string())?
+                    .ok_or_else(|| "local Human message disappeared before remote identity settlement".to_string())?;
+                Self::update_human_activity(owner, timestamp_ms)?;
+                return Ok(settled);
+            }
+        }
+        if !owner
+            .append_transcript_entry(&entry)
+            .map_err(|error| error.to_string())?
+        {
+            let replay = owner
+                .get_transcript_entries()
+                .map_err(|error| error.to_string())?
+                .into_iter()
+                .find(|candidate| candidate.get("id") == entry.get("id"))
+                .ok_or_else(|| "remote Human message was not durably materialized".to_string())?;
+            let timestamp = replay.get("timestampMs").and_then(serde_json::Value::as_f64)
+                .unwrap_or(timestamp_ms);
+            Self::update_human_activity(owner, timestamp)?;
+            return Ok(replay);
+        }
+        Self::update_human_activity(owner, timestamp_ms)?;
+        Ok(entry)
+    }
+
+    pub(crate) fn human_message_lock(&self, conversation_id: &str) -> Result<Arc<Mutex<()>>, String> {
+        let mut locks = self.human_message_locks.lock()
+            .map_err(|_| "Human conversation mutation lock registry poisoned".to_string())?;
+        Ok(Arc::clone(locks.entry(conversation_id.to_string())
+            .or_insert_with(|| Arc::new(Mutex::new(())))))
+    }
+
+    pub(crate) fn acquire_human_send_settlement_guard<'a>(
+        client: &FabushiNativeMessagingClient,
+        serial: &'a Mutex<()>,
+        held_conversation_guard: Option<&std::sync::MutexGuard<'_, ()>>,
+        request_credential_fingerprint: &str,
+        response: &Result<FabushiRemoteHumanMessage, FabushiHumanSendError>,
+    ) -> Result<Option<std::sync::MutexGuard<'a, ()>>, String> {
+        let guard = if held_conversation_guard.is_none() {
+            Some(serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?)
+        } else {
+            None
+        };
+        // A completed HTTP/credential rejection already has a causal refusal.
+        // It cannot enter transport recovery or be replaced by a later lease
+        // error while waiting for this conversation's mutation lane.
+        if let Err(FabushiHumanSendError::Rejected(error)) = response {
+            return Err(error.clone());
+        }
+        // Successful and ambiguous transport outcomes may settle only while
+        // every private credential field still matches the dispatch snapshot.
+        if client.request_credential_fingerprint()? != request_credential_fingerprint {
+            return Err("Fabushi native messaging credential changed before Human settlement".into());
+        }
+        Ok(guard)
+    }
+
+    pub(crate) fn update_human_replay_snapshot(
+        snapshot: &mut Vec<serde_json::Value>,
+        settled: serde_json::Value,
+    ) {
+        let prior = snapshot.iter().position(|entry| {
+            entry.get("id") == settled.get("id")
+                || (settled.get("clientNonce").is_some()
+                    && entry.get("clientNonce") == settled.get("clientNonce")
+                    && entry.get("authorId") == settled.get("authorId"))
+        });
+        if let Some(index) = prior {
+            snapshot[index] = settled;
+        } else {
+            snapshot.push(settled);
+        }
+    }
+
+    pub fn sync_human_conversations(&self) -> Result<Vec<serde_json::Value>, String> {
+        let Some(client) = self.shipping_native_messaging()? else {
+            return self.list_human_conversations();
+        };
+        let local_human_id = self.local_human_id()?;
+        let identity = client.identity()?;
+        if identity.user_id != local_human_id {
+            return Err(format!(
+                "Fabushi native messaging credential user {} does not match active Human identity {}",
+                identity.user_id,
+                local_human_id
+            ));
+        }
+        let mut recovery = self.capture_human_sync_recovery(client)?;
+        self.resume_human_forward_batches()?;
+        self.check_human_sync_binding(client, &recovery)?;
+        let friends = client.list_friends_for_user(local_human_id)?;
+        self.check_human_sync_continuation(Some(&recovery))?;
+        let mut synced_conversations = BTreeSet::new();
+        for friend in friends {
+            // Conversation discovery itself can create a durable store.
+            self.check_human_sync_continuation(Some(&recovery))?;
+            let peer_human_id = fabushi_identity_text(&friend.user_id)?;
+            let expected_id = Self::human_direct_conversation_id(local_human_id, &peer_human_id);
+            // Duplicate roster rows cannot grant another reaction attempt or
+            // another 32-page history budget for the same canonical scope.
+            if !synced_conversations.insert(expected_id) { continue; }
+            let title = friend.display_name.trim();
+            let conversation = self.create_human_conversation_with_recovery(
+                &peer_human_id,
+                if title.is_empty() { &friend.username } else { title },
+                Some(&recovery),
+            )?;
+            let conversation_id = conversation
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "synced Human conversation omitted its id".to_string())?;
+            // The top-level roster invocation already recovered the outbox.
+            // A failed target gets one attempt per invocation, not per friend.
+            self.sync_human_conversation_history(conversation_id, Some(&mut recovery))?;
+        }
+        self.check_human_sync_continuation(Some(&recovery))?;
+        self.sync_human_calls_with_recovery(Some(&recovery))?;
+        self.check_human_sync_continuation(Some(&recovery))?;
+        recovery.finish(self.list_human_conversations()?)
+    }
+
+    fn human_direct_conversation_id(first: &str, second: &str) -> String {
+        let mut participants = [first, second];
+        participants.sort();
+        let mut digest = Sha256::new();
+        for participant in participants {
+            digest.update((participant.len() as u64).to_be_bytes());
+            digest.update(participant.as_bytes());
+        }
+        format!("human-direct-{:x}", digest.finalize())
+    }
+
+    fn sync_human_calls_with_recovery(
+        &self,
+        recovery: Option<&HumanSyncRecoveryContext>,
+    ) -> Result<Vec<CallSession>, String> {
+        self.check_human_sync_continuation(recovery)?;
+        let synced = self.sync_human_calls()?;
+        self.check_human_sync_continuation(recovery)?;
+        Ok(synced)
+    }
+
+    pub fn append_human_agent_message(
+        &self,
+        conversation_id: &str,
+        agent_id: &str,
+        stream_id: &str,
+        content: &str,
+        completed_at_ms: f64,
+    ) -> Result<serde_json::Value, String> {
+        let local_human_id = self.local_human_id()?;
+        let conversation_id = conversation_id.trim();
+        let agent_id = agent_id.trim();
+        let stream_id = stream_id.trim();
+        let content = content.trim();
+        if conversation_id.is_empty()
+            || agent_id.is_empty()
+            || stream_id.is_empty()
+            || content.is_empty()
+        {
+            return Err(
+                "Human handoff Agent result requires conversationId, agentId, streamId, and content"
+                    .into(),
+            );
+        }
+        if !completed_at_ms.is_finite() {
+            return Err("Human handoff Agent activity timestamp must be finite".into());
+        }
+        let serial = self.human_message_lock(conversation_id)?;
+        let _exclusive = serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?;
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let is_participant = metadata
+            .get("participantIds")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|ids| ids.iter().any(|id| id.as_str() == Some(local_human_id)));
+        if !is_participant {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+
+        let entry_id = format!("human-agent-message:{stream_id}");
+        let existing = owner
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?;
+        if let Some(entry) = existing.iter().find(|entry| {
+            entry.get("id").and_then(serde_json::Value::as_str) == Some(entry_id.as_str())
+        }) {
+            let same_agent =
+                entry.get("authorId").and_then(serde_json::Value::as_str) == Some(agent_id);
+            let same_content =
+                entry.get("content").and_then(serde_json::Value::as_str) == Some(content);
+            let same_stream =
+                entry.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
+            if same_agent && same_content && same_stream {
+                let timestamp = entry.get("timestampMs").and_then(serde_json::Value::as_f64)
+                    .unwrap_or(completed_at_ms);
+                Self::update_human_activity(&owner, timestamp)?;
+                return Ok(entry.clone());
+            }
+            return Err("Human handoff stream already identifies different Agent content".into());
+        }
+
+        let entry = serde_json::json!({
+            "id": entry_id,
+            "kind": "message",
+            "role": "assistant",
+            "authorKind": "agent",
+            "authorId": agent_id,
+            "authorName": agent_id,
+            "content": content,
+            "sourceStreamId": stream_id,
+            "timestampMs": completed_at_ms,
+            "delivery": "sent",
+        });
+        if !owner
+            .append_transcript_entry(&entry)
+            .map_err(|error| error.to_string())?
+        {
+            let replay = owner
+                .get_transcript_entries()
+                .map_err(|error| error.to_string())?
+                .into_iter()
+                .find(|candidate| candidate.get("id") == entry.get("id"))
+                .ok_or_else(|| "Human handoff Agent result was not durably appended".to_string())?;
+            let same_agent =
+                replay.get("authorId").and_then(serde_json::Value::as_str) == Some(agent_id);
+            let same_content =
+                replay.get("content").and_then(serde_json::Value::as_str) == Some(content);
+            let same_stream =
+                replay.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
+            if same_agent && same_content && same_stream {
+                let timestamp = replay.get("timestampMs").and_then(serde_json::Value::as_f64)
+                    .unwrap_or(completed_at_ms);
+                Self::update_human_activity(&owner, timestamp)?;
+                return Ok(replay);
+            }
+            return Err("Human handoff stream already identifies different Agent content".into());
+        }
+        Self::update_human_activity(&owner, completed_at_ms)?;
+        Ok(entry)
+    }
+
+    pub fn search_human_messages(
+        &self,
+        conversation_id: &str,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        let query = query.trim().to_lowercase();
+        if query.is_empty() {
+            return Err("searchHumanMessages requires a non-empty query".into());
+        }
+        let transcript = self.read_human_conversation_transcript(conversation_id)?;
+        let limit = limit.clamp(1, 200);
+        let mut matches = Vec::new();
+        for entry in transcript.into_iter().rev() {
+            let mut fields = Vec::new();
+            if let Some(author_name) = entry
+                .get("authorName")
+                .and_then(serde_json::Value::as_str)
+            {
+                fields.push(author_name);
+            }
+            if let Some(origin_author) = Self::human_entry_visible_forward_origin_author(&entry) {
+                fields.push(origin_author);
+            }
+            if let Some(content) = entry.get("content").and_then(serde_json::Value::as_str) {
+                fields.push(content);
+            }
+            if let Some(attachments) = entry
+                .get("attachments")
+                .and_then(serde_json::Value::as_array)
+            {
+                for attachment in attachments {
+                    if let Some(name) = attachment
+                        .get("name")
+                        .and_then(serde_json::Value::as_str)
+                    {
+                        fields.push(name);
+                    }
+                }
+            }
+            if fabushi_messaging_core::query_matches_fields(&query, &fields) {
+                matches.push(entry);
+                if matches.len() >= limit {
+                    break;
+                }
+            }
+        }
+        Ok(matches)
+    }
+
+    // Post-commit projection may run while the writer still owns the Human
+    // conversation mutation lane. Read only its already registered SQLite
+    // owner; a notification must never open/create a store or replay history.
+    pub(crate) fn read_human_transcript_mutation_entries(
+        &self,
+        conversation_id: &str,
+        origin_db_path: &str,
+        entry_ids: &[String],
+    ) -> Result<Vec<serde_json::Value>, String> {
+        if origin_db_path.is_empty() {
+            return Err("Human transcript mutation has no qualified origin".into());
+        }
+        let expected_path = get_native_conversation_db_path(&self.agents_root, conversation_id)
+            .map_err(|error| error.to_string())?;
+        let key = Self::native_conversation_owner_key(conversation_id);
+        let owner = {
+            let owners = self.db_owners.lock()
+                .map_err(|_| "conversation db owner map poisoned".to_string())?;
+            owners.get(&key).cloned()
+        }.ok_or_else(|| "Human transcript mutation has no registered owner".to_string())?;
+        // Both paths originate in this Session, never in the notification.
+        let expected_origin =
+            crate::transcript_mutation_events::transcript_mutation_origin(&expected_path)
+                .ok_or_else(|| "Human transcript owner origin is unavailable".to_string())?;
+        if origin_db_path != expected_origin.as_str()
+            || crate::transcript_mutation_events::transcript_mutation_origin(owner.db_path())
+                .as_deref() != Some(expected_origin.as_str())
+        {
+            return Err("Human transcript mutation belongs to a different database".into());
+        }
+        let metadata = Self::read_human_conversation_metadata(&owner, conversation_id, true)?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let mut seen = BTreeSet::new();
+        let mut current = Vec::new();
+        for entry_id in entry_ids {
+            if entry_id.is_empty() || entry_id.trim() != entry_id.as_str() {
+                return Err("Human transcript mutation has an invalid entry identity".into());
+            }
+            if !seen.insert(entry_id.as_str()) {
+                continue;
+            }
+            let Some(entry) = owner.get_transcript_entry_by_id(entry_id)
+                .map_err(|error| error.to_string())? else {
+                continue;
+            };
+            if entry.get("id").and_then(serde_json::Value::as_str) != Some(entry_id.as_str()) {
+                return Err("Human transcript entry conflicts with its persisted identity".into());
+            }
+            current.push(entry);
+        }
+        Ok(current)
+    }
+
+    pub fn read_human_conversation_transcript(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        self.read_human_conversation_transcript_for_topic(conversation_id, None)
+    }
+
+    pub fn read_human_conversation_transcript_tail(
+        &self,
+        conversation_id: &str,
+        query: impl Into<HumanTranscriptPageQuery>,
+    ) -> Result<HumanTranscriptPage, String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        owner
+            .get_human_transcript_tail(query.into())
+            .map_err(|error| error.to_string())
+    }
 
     pub fn list_agent_summaries(
         &self,
@@ -2844,6 +3679,10 @@ impl ProductionSessionWorkers {
 
 
 #[cfg(test)]
+#[path = "human_creation_tests.rs"]
+mod human_creation_tests;
+
+#[cfg(test)]
 mod sharebox_shipping_tests {
     use super::*;
 
@@ -2909,13 +3748,8 @@ mod sharebox_shipping_tests {
 
         let changed = workers
             .forward_human_message(&source, source_entry_id, &[alpha.clone()], "forward-request-1", false, false)
-            .unwrap();
-        assert_eq!(
-            changed.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
-            Some("failed"),
-        );
-        assert!(changed.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
-            .is_some_and(|error| error.contains("forward context")));
+            .expect_err("privacy reuse cannot change a persisted batch");
+        assert!(changed.contains("different privacy"));
 
         workers.shutdown();
 
@@ -2928,7 +3762,293 @@ mod sharebox_shipping_tests {
             Some("sent"),
         );
         assert_eq!(restarted.read_human_conversation_transcript(&alpha).unwrap().len(), 1);
+
+        // Destination permission & typed-share policy enforcement across searchHumanRecipients and forwardHumanMessage
+        let gamma = conversation_id(&restarted.create_human_conversation("human-gamma", "Gamma Blocked").unwrap());
+        let gamma_owner = restarted.open_human_conversation_db_owner(&gamma).unwrap();
+        assert!(gamma_owner.set_metadata("permissions", serde_json::json!({ "canSendMessages": false })).unwrap());
+
+        let delta = conversation_id(&restarted.create_human_conversation("human-delta", "Delta NoOther").unwrap());
+        let delta_owner = restarted.open_human_conversation_db_owner(&delta).unwrap();
+        assert!(delta_owner.set_metadata("permissions", serde_json::json!({ "canSendOther": false })).unwrap());
+
+        let source_owner = restarted.open_human_conversation_db_owner(&source).unwrap();
+        assert!(source_owner.append_transcript_entry(&serde_json::json!({
+            "id": "human-server-message:901",
+            "kind": "message",
+            "role": "user",
+            "authorKind": "human",
+            "authorId": "human-source",
+            "content": "shared link with send-other requirement",
+            "requireSendOther": true,
+            "delivery": "sent",
+            "timestampMs": 25.0,
+            "remoteMessageId": "901",
+            "remoteCreatedAt": "1970-01-01T00:00:25Z"
+        })).unwrap());
+
+        let ordinary_recipients = restarted
+            .search_human_recipients(&source, source_entry_id, "", 50)
+            .unwrap();
+        assert!(
+            ordinary_recipients.iter().all(|item| item.get("id").and_then(serde_json::Value::as_str) != Some(gamma.as_str())),
+            "canSendMessages=false destination must be excluded before exposure",
+        );
+        assert!(
+            ordinary_recipients.iter().any(|item| item.get("id").and_then(serde_json::Value::as_str) == Some(delta.as_str())),
+            "canSendOther=false destination remains eligible for ordinary text forwards",
+        );
+
+        let other_recipients = restarted
+            .search_human_recipients(&source, "human-server-message:901", "", 50)
+            .unwrap();
+        assert!(
+            other_recipients.iter().all(|item| item.get("id").and_then(serde_json::Value::as_str) != Some(gamma.as_str())),
+            "canSendMessages=false destination must remain excluded",
+        );
+        assert!(
+            other_recipients.iter().all(|item| item.get("id").and_then(serde_json::Value::as_str) != Some(delta.as_str())),
+            "canSendOther=false destination must be excluded when requireSendOther=true",
+        );
+        assert!(
+            other_recipients.iter().any(|item| item.get("id").and_then(serde_json::Value::as_str) == Some(beta.as_str())),
+            "unrestricted destination remains eligible when requireSendOther=true",
+        );
+
+        let policy_settlement = restarted
+            .forward_human_message(
+                &source,
+                "human-server-message:901",
+                &[beta.clone(), gamma.clone(), delta.clone()],
+                "forward-request-policy-1",
+                false,
+                false,
+            )
+            .unwrap();
+        let policy_dests = policy_settlement.get("destinations").and_then(serde_json::Value::as_array).unwrap();
+        assert_eq!(policy_dests.len(), 3);
+        let status_for = |conv_id: &str| {
+            policy_dests
+                .iter()
+                .find(|item| item.get("conversationId").and_then(serde_json::Value::as_str) == Some(conv_id))
+                .unwrap()
+        };
+        assert_eq!(status_for(&beta).get("status").and_then(serde_json::Value::as_str), Some("sent"));
+        assert_eq!(status_for(&gamma).get("status").and_then(serde_json::Value::as_str), Some("failed"));
+        let gamma_err = status_for(&gamma).get("error").and_then(serde_json::Value::as_str).unwrap_or_default();
+        assert!(gamma_err.contains("rejected the source message policy"));
+        assert!(gamma_err.contains("MessageSendPermissionDenied"));
+        assert_eq!(status_for(&delta).get("status").and_then(serde_json::Value::as_str), Some("failed"));
+        let delta_err = status_for(&delta).get("error").and_then(serde_json::Value::as_str).unwrap_or_default();
+        assert!(delta_err.contains("rejected the source message policy"));
+        assert!(delta_err.contains("OtherSendPermissionDenied"));
+        assert_eq!(restarted.read_human_conversation_transcript(&beta).unwrap().len(), 1);
+        assert_eq!(restarted.read_human_conversation_transcript(&gamma).unwrap().len(), 0);
+        assert_eq!(restarted.read_human_conversation_transcript(&delta).unwrap().len(), 0);
+
+        // Source-eligibility forward-options clamp (CanHideForwardAuthor / NormalizeForwardOptions):
+        // when the source entry requires preserving forward attribution (forcedForwardInfo=true),
+        // requested drop_sender_names/drop_captions are clamped to PreserveInfo and origin is retained.
+        assert!(source_owner.append_transcript_entry(&serde_json::json!({
+            "id": "human-server-message:902",
+            "kind": "message",
+            "role": "user",
+            "authorKind": "human",
+            "authorId": "human-source",
+            "authorName": "Forced Source Author",
+            "content": "mandatory attribution message",
+            "forcedForwardInfo": true,
+            "delivery": "sent",
+            "timestampMs": 30.0,
+            "remoteMessageId": "902",
+            "remoteCreatedAt": "1970-01-01T00:00:30Z"
+        })).unwrap());
+        let clamped = restarted
+            .forward_human_message(
+                &source,
+                "human-server-message:902",
+                &[beta.clone()],
+                "forward-request-forced-preserve-1",
+                true,
+                true,
+            )
+            .unwrap();
+        assert_eq!(
+            clamped.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("sent"),
+        );
+        let beta_entries = restarted.read_human_conversation_transcript(&beta).unwrap();
+        assert_eq!(beta_entries.len(), 2);
+        let forced_forwarded = &beta_entries[1];
+        let forced_context = forced_forwarded.get("forwardContext").unwrap();
+        assert_eq!(
+            forced_context.pointer("/privacy/dropSenderNames").and_then(serde_json::Value::as_bool),
+            Some(false),
+        );
+        assert_eq!(
+            forced_context.pointer("/privacy/dropCaptions").and_then(serde_json::Value::as_bool),
+            Some(false),
+        );
+        assert_eq!(
+            forced_context.pointer("/privacy/forcedPreserveInfo").and_then(serde_json::Value::as_bool),
+            Some(true),
+        );
+        assert_eq!(
+            forced_context.pointer("/origin/authorName").and_then(serde_json::Value::as_str),
+            Some("Forced Source Author"),
+        );
+        let clamped_replay = restarted
+            .forward_human_message(
+                &source,
+                "human-server-message:902",
+                &[beta.clone()],
+                "forward-request-forced-preserve-1",
+                true,
+                true,
+            )
+            .unwrap();
+        assert_eq!(
+            clamped_replay.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("sent"),
+        );
+        assert_eq!(restarted.read_human_conversation_transcript(&beta).unwrap().len(), 2);
+
+        // Temporal recipient policy refresh (TEMP-TDRP-SHARE-RECIPIENT-POLICY-REFRESH-001):
+        // A legacy persisted ConversationPermissions snapshot missing can_send_other/can_send_inline/can_send_games
+        // fails closed for content-derived sticker/inline/game source entries until authoritative policy refresh
+        // updates the canonical permissions in SandAgentDb, and the refreshed policy survives restart.
+        let epsilon = conversation_id(
+            &restarted
+                .create_human_conversation("human-epsilon", "Epsilon LegacyPolicy")
+                .unwrap(),
+        );
+        let epsilon_owner = restarted.open_human_conversation_db_owner(&epsilon).unwrap();
+        assert!(epsilon_owner
+            .set_metadata(
+                "permissions",
+                serde_json::json!({
+                    "canSendMessages": true,
+                    "canSendMedia": true,
+                    "canSendPolls": true,
+                    "canAddMembers": true,
+                    "canPinMessages": true,
+                    "canManageTopics": true,
+                    "canManageCalls": true
+                }),
+            )
+            .unwrap());
+
+        assert!(source_owner
+            .append_transcript_entry(&serde_json::json!({
+                "id": "human-server-message:903",
+                "kind": "message",
+                "role": "user",
+                "authorKind": "human",
+                "authorId": "human-source",
+                "content": "inline game message",
+                "game": { "shortName": "chess" },
+                "viaBotId": "bot-inline-1",
+                "delivery": "sent",
+                "timestampMs": 35.0,
+                "remoteMessageId": "903",
+                "remoteCreatedAt": "1970-01-01T00:00:35Z"
+            }))
+            .unwrap());
+
+        let before_refresh = restarted
+            .search_human_recipients(&source, "human-server-message:903", "", 50)
+            .unwrap();
+        assert!(
+            before_refresh
+                .iter()
+                .all(|item| item.get("id").and_then(serde_json::Value::as_str) != Some(epsilon.as_str())),
+            "legacy permissions missing can_send_other/can_send_inline/can_send_games must fail closed before policy refresh",
+        );
+
+        restarted
+            .refresh_human_conversation_recipient_policy(
+                &epsilon,
+                fabushi_messaging_core::ConversationPermissions::default(),
+                None,
+            )
+            .unwrap();
+
+        let after_refresh = restarted
+            .search_human_recipients(&source, "human-server-message:903", "", 50)
+            .unwrap();
+        assert!(
+            after_refresh
+                .iter()
+                .any(|item| item.get("id").and_then(serde_json::Value::as_str) == Some(epsilon.as_str())),
+            "authoritative policy refresh must expose the destination for inline/game/send-other forwards",
+        );
+
+        // Secret-content vs standard-destination compatibility fails closed before exposure and at forward boundary
+        let secret_dest = conversation_id(
+            &restarted
+                .create_human_conversation("human-secret", "Secret Peer")
+                .unwrap(),
+        );
+        let secret_dest_owner = restarted.open_human_conversation_db_owner(&secret_dest).unwrap();
+        assert!(secret_dest_owner
+            .set_metadata("secret", serde_json::json!(true))
+            .unwrap());
+        let standard_for_secret_check = restarted
+            .search_human_recipients(&source, source_entry_id, "", 50)
+            .unwrap();
+        assert!(
+            standard_for_secret_check
+                .iter()
+                .all(|item| item.get("id").and_then(serde_json::Value::as_str) != Some(secret_dest.as_str())),
+            "secret destination must be excluded for standard non-secret source messages",
+        );
+
         restarted.shutdown();
+
+        let restarted_after_policy = test_workers(&root);
+        let after_restart_refresh = restarted_after_policy
+            .search_human_recipients(&source, "human-server-message:903", "", 50)
+            .unwrap();
+        assert!(
+            after_restart_refresh
+                .iter()
+                .any(|item| item.get("id").and_then(serde_json::Value::as_str) == Some(epsilon.as_str())),
+            "refreshed recipient policy must survive restart",
+        );
+        let refreshed_settlement = restarted_after_policy
+            .forward_human_message(
+                &source,
+                "human-server-message:903",
+                &[epsilon.clone(), secret_dest.clone()],
+                "forward-request-refreshed-policy-1",
+                false,
+                false,
+            )
+            .unwrap();
+        let refreshed_dests = refreshed_settlement
+            .get("destinations")
+            .and_then(serde_json::Value::as_array)
+            .unwrap();
+        assert_eq!(refreshed_dests[0].get("status").and_then(serde_json::Value::as_str), Some("sent"));
+        assert_eq!(refreshed_dests[1].get("status").and_then(serde_json::Value::as_str), Some("failed"));
+        assert_eq!(
+            restarted_after_policy
+                .read_human_conversation_transcript(&epsilon)
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            restarted_after_policy
+                .read_human_conversation_transcript(&secret_dest)
+                .unwrap()
+                .len(),
+            0
+        );
+
+        restarted_after_policy.shutdown();
         let _ = fs::remove_dir_all(root);
     }
 }
+
+

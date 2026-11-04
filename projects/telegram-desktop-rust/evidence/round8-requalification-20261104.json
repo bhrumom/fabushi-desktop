@@ -1,0 +1,24 @@
+{
+  "id": "round8-requalification-20261104",
+  "scope": "Round8 current-entry UI and retained-forward repair qualification at a containing H",
+  "fixed_u": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "head": "5682bec433fc5f42051db978ed627754be244d3f",
+  "contains_repairs": ["3a4af377451d915795466362b084247e05975101", "39d0e7555", "a0e6cd2ded523f59add3a7ade6bd43890b448300"],
+  "workflow": "Native service contracts",
+  "run_id": 41743964197,
+  "event": "workflow_dispatch",
+  "conclusion": "success",
+  "jobs": {
+    "native-message-ui": "success (actual ProductionRenderer history/account/restart 13 passed; author/draft recovery 23 passed; 0 failed, 0 skipped, 0 retries, 0 flaky)",
+    "native-message-reconciliation": "success (all cargo test groups ok, 0 failed)",
+    "native-message-shipping-compile": "success (credential/proxy boundary ok, package resource # skipped 0)",
+    "native-message-electron": "success",
+    "retained-direct-ffi-compatibility": "success",
+    "gateway-peer-durability": "success on ubuntu-24.04 and windows-2025",
+    "desktop-social-owner-behaviors": "success",
+    "windows-update-publisher": "success",
+    "native-auth-and-journal": "skipped by workflow conditions"
+  },
+  "limits": "Batch qualification for this H only. Does not qualify later heads (8fba69123, a5fe907e8 runs in progress at recording), signed packages, real services, soak or independent acceptance. native-auth-and-journal was skipped and is not a pass.",
+  "recorded_at": "2026-11-04T08:57:00+08:00"
+}

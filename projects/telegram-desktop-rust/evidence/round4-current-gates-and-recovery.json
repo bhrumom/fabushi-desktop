@@ -1,0 +1,4429 @@
+{
+  "schema": "fabushi-round4-current-gates-and-recovery-v1",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 4,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "scope": "Complete causal evidence for subsequent exactf544/e4 failures and current containing-H corrective verification; this evidence is linked from the existing FBCP-NMR-001 evidence path, not a second ledger or acceptance authority.",
+  "prior_full_gates": {
+    "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+    "run_id": 41513767498,
+    "scope": "All five NMR48 jobs succeeded at94 only; no later-input promotion."
+  },
+  "failure_and_concurrent_fixes": {
+    "schema": "fabushi.current_exact_gate_observation.v1",
+    "repository": "bhrumom/fabushi-desktop",
+    "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+    "run_id": 41526852400,
+    "observed_at_utc": "2026-11-02T21:22:36Z",
+    "workflow": {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "blob_sha": "ccfbf53d858ba23ac20f188168a6c20cc66c7214"
+    },
+    "status": "terminal_failures_with_shipping_queued",
+    "acceptance": false,
+    "jobs": [
+      {
+        "id": 125556685749,
+        "run_id": 41526852400,
+        "workflow_name": "Native service contracts",
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41526852400",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUfmb_c8AAAAdO8L7tQ",
+        "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125556685749",
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526852400/job/125556685749",
+        "status": "completed",
+        "conclusion": "failure",
+        "created_at": "2026-11-02T21:16:36Z",
+        "started_at": "2026-11-02T21:16:56Z",
+        "completed_at": "2026-11-02T21:20:53Z",
+        "name": "native-message-ui",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:16:56Z",
+            "completed_at": "2026-11-02T21:16:58Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:16:58Z",
+            "completed_at": "2026-11-02T21:17:01Z"
+          },
+          {
+            "name": "Bind exact renderer source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:17:01Z",
+            "completed_at": "2026-11-02T21:17:01Z"
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:17:01Z",
+            "completed_at": "2026-11-02T21:17:03Z"
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:17:03Z",
+            "completed_at": "2026-11-02T21:17:15Z"
+          },
+          {
+            "name": "Transcript pagination and refresh behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:17:15Z",
+            "completed_at": "2026-11-02T21:17:15Z"
+          },
+          {
+            "name": "Durable Human cursor and canonical pagination consumers",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:17:15Z",
+            "completed_at": "2026-11-02T21:17:16Z"
+          },
+          {
+            "name": "Compile actual production renderer",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-02T21:17:16Z",
+            "completed_at": "2026-11-02T21:17:31Z"
+          },
+          {
+            "name": "Forward settlement account and roster boundaries",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-02T21:17:31Z",
+            "completed_at": "2026-11-02T21:17:31Z"
+          },
+          {
+            "name": "Install locked Chromium for actual forward dialog",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-11-02T21:17:31Z",
+            "completed_at": "2026-11-02T21:17:58Z"
+          },
+          {
+            "name": "Actual forward dialog account and lifetime behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-11-02T21:17:58Z",
+            "completed_at": "2026-11-02T21:18:08Z"
+          },
+          {
+            "name": "Actual ProductionRenderer history, account and restart projection behaviors",
+            "status": "completed",
+            "conclusion": "failure",
+            "number": 12,
+            "started_at": "2026-11-02T21:18:08Z",
+            "completed_at": "2026-11-02T21:20:49Z"
+          },
+          {
+            "name": "Actual ProductionRenderer Transcript cache and continuation behaviors",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 13,
+            "started_at": "2026-11-02T21:20:49Z",
+            "completed_at": "2026-11-02T21:20:49Z"
+          },
+          {
+            "name": "Preserve exact renderer evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:20:49Z",
+            "completed_at": "2026-11-02T21:20:51Z"
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 27,
+            "started_at": "2026-11-02T21:20:51Z",
+            "completed_at": "2026-11-02T21:20:51Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 28,
+            "started_at": "2026-11-02T21:20:51Z",
+            "completed_at": "2026-11-02T21:20:51Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 29,
+            "started_at": "2026-11-02T21:20:51Z",
+            "completed_at": "2026-11-02T21:20:51Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/check-runs/125556685749",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000260040,
+        "runner_name": "GitHub Actions 1000260040",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 125556685929,
+        "run_id": 41526852400,
+        "workflow_name": "Native service contracts",
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41526852400",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUfmb_c8AAAAdO8L8aQ",
+        "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125556685929",
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526852400/job/125556685929",
+        "status": "queued",
+        "conclusion": null,
+        "created_at": "2026-11-02T21:16:36Z",
+        "started_at": "2026-11-02T21:16:36Z",
+        "completed_at": null,
+        "name": "native-message-shipping-compile",
+        "steps": [],
+        "check_run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/check-runs/125556685929",
+        "labels": [
+          "macos-15"
+        ],
+        "runner_id": 0,
+        "runner_name": "",
+        "runner_group_id": 0,
+        "runner_group_name": ""
+      },
+      {
+        "id": 125556686041,
+        "run_id": 41526852400,
+        "workflow_name": "Native service contracts",
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41526852400",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUfmb_c8AAAAdO8L82Q",
+        "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125556686041",
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526852400/job/125556686041",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-02T21:16:36Z",
+        "started_at": "2026-11-02T21:16:45Z",
+        "completed_at": "2026-11-02T21:18:03Z",
+        "name": "native-message-electron",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:16:46Z",
+            "completed_at": "2026-11-02T21:16:46Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:16:46Z",
+            "completed_at": "2026-11-02T21:16:50Z"
+          },
+          {
+            "name": "Bind exact Electron carrier source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:16:50Z",
+            "completed_at": "2026-11-02T21:16:50Z"
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:16:50Z",
+            "completed_at": "2026-11-02T21:16:51Z"
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:16:51Z",
+            "completed_at": "2026-11-02T21:16:58Z"
+          },
+          {
+            "name": "Native carrier command, event and disposal contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:16:58Z",
+            "completed_at": "2026-11-02T21:16:58Z"
+          },
+          {
+            "name": "Native auth lifecycle and retained legacy secret behavior",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:16:58Z",
+            "completed_at": "2026-11-02T21:16:59Z"
+          },
+          {
+            "name": "Native package resources exclude retained FFI libraries",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-02T21:16:59Z",
+            "completed_at": "2026-11-02T21:16:59Z"
+          },
+          {
+            "name": "Explicit approved update source and recovery behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-02T21:16:59Z",
+            "completed_at": "2026-11-02T21:16:59Z"
+          },
+          {
+            "name": "Windows publisher authorization and candidate recovery behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-11-02T21:16:59Z",
+            "completed_at": "2026-11-02T21:16:59Z"
+          },
+          {
+            "name": "Final macOS update metadata and blockmap behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-11-02T21:16:59Z",
+            "completed_at": "2026-11-02T21:17:01Z"
+          },
+          {
+            "name": "Explicit artifact-only scope and side-effect admission contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12,
+            "started_at": "2026-11-02T21:17:01Z",
+            "completed_at": "2026-11-02T21:17:01Z"
+          },
+          {
+            "name": "Existing installer promotion consumer contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-02T21:17:01Z",
+            "completed_at": "2026-11-02T21:17:02Z"
+          },
+          {
+            "name": "Reconcile immutable historical installer metadata without changing package bytes",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:17:02Z",
+            "completed_at": "2026-11-02T21:17:59Z"
+          },
+          {
+            "name": "Compile actual Electron main, preload and carrier",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-02T21:17:59Z",
+            "completed_at": "2026-11-02T21:17:59Z"
+          },
+          {
+            "name": "Preserve exact Electron evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-11-02T21:17:59Z",
+            "completed_at": "2026-11-02T21:18:01Z"
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 31,
+            "started_at": "2026-11-02T21:18:01Z",
+            "completed_at": "2026-11-02T21:18:01Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 32,
+            "started_at": "2026-11-02T21:18:01Z",
+            "completed_at": "2026-11-02T21:18:01Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 33,
+            "started_at": "2026-11-02T21:18:01Z",
+            "completed_at": "2026-11-02T21:18:01Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/check-runs/125556686041",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000260036,
+        "runner_name": "GitHub Actions 1000260036",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 125556686045,
+        "run_id": 41526852400,
+        "workflow_name": "Native service contracts",
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41526852400",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUfmb_c8AAAAdO8L83Q",
+        "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125556686045",
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526852400/job/125556686045",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-02T21:16:36Z",
+        "started_at": "2026-11-02T21:16:45Z",
+        "completed_at": "2026-11-02T21:17:12Z",
+        "name": "retained-direct-ffi-compatibility",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:16:46Z",
+            "completed_at": "2026-11-02T21:16:47Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:16:47Z",
+            "completed_at": "2026-11-02T21:16:50Z"
+          },
+          {
+            "name": "Bind retained direct C wrapper scope",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:16:50Z",
+            "completed_at": "2026-11-02T21:16:50Z"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:16:50Z",
+            "completed_at": "2026-11-02T21:16:59Z"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:16:59Z",
+            "completed_at": "2026-11-02T21:17:03Z"
+          },
+          {
+            "name": "Execute retained direct C lifecycle and rollback-reader contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:17:03Z",
+            "completed_at": "2026-11-02T21:17:09Z"
+          },
+          {
+            "name": "Preserve retained C wrapper evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:17:09Z",
+            "completed_at": "2026-11-02T21:17:10Z"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-02T21:17:10Z",
+            "completed_at": "2026-11-02T21:17:11Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:17:11Z",
+            "completed_at": "2026-11-02T21:17:11Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-02T21:17:11Z",
+            "completed_at": "2026-11-02T21:17:11Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/check-runs/125556686045",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000260037,
+        "runner_name": "GitHub Actions 1000260037",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 125556686140,
+        "run_id": 41526852400,
+        "workflow_name": "Native service contracts",
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41526852400",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUfmb_c8AAAAdO8L9PA",
+        "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125556686140",
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526852400/job/125556686140",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-02T21:16:36Z",
+        "started_at": "2026-11-02T21:16:47Z",
+        "completed_at": "2026-11-02T21:18:11Z",
+        "name": "windows-update-publisher",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:16:48Z",
+            "completed_at": "2026-11-02T21:16:49Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:16:49Z",
+            "completed_at": "2026-11-02T21:16:59Z"
+          },
+          {
+            "name": "Bind exact Windows publisher source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:16:59Z",
+            "completed_at": "2026-11-02T21:17:00Z"
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:17:00Z",
+            "completed_at": "2026-11-02T21:17:15Z"
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:17:15Z",
+            "completed_at": "2026-11-02T21:17:38Z"
+          },
+          {
+            "name": "Actual Windows signature and Unicode publisher contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:17:38Z",
+            "completed_at": "2026-11-02T21:18:07Z"
+          },
+          {
+            "name": "Preserve native API evidence only",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:18:07Z",
+            "completed_at": "2026-11-02T21:18:08Z"
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-02T21:18:08Z",
+            "completed_at": "2026-11-02T21:18:08Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:18:08Z",
+            "completed_at": "2026-11-02T21:18:10Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-02T21:18:10Z",
+            "completed_at": "2026-11-02T21:18:10Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/check-runs/125556686140",
+        "labels": [
+          "windows-2025"
+        ],
+        "runner_id": 1000260038,
+        "runner_name": "GitHub Actions 1000260038",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 125556686433,
+        "run_id": 41526852400,
+        "workflow_name": "Native service contracts",
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41526852400",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUfmb_c8AAAAdO8L-YQ",
+        "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125556686433",
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526852400/job/125556686433",
+        "status": "completed",
+        "conclusion": "failure",
+        "created_at": "2026-11-02T21:16:36Z",
+        "started_at": "2026-11-02T21:17:20Z",
+        "completed_at": "2026-11-02T21:21:23Z",
+        "name": "native-message-reconciliation",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:17:21Z",
+            "completed_at": "2026-11-02T21:17:22Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:17:22Z",
+            "completed_at": "2026-11-02T21:17:25Z"
+          },
+          {
+            "name": "Bind exact source and batch",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:17:25Z",
+            "completed_at": "2026-11-02T21:17:25Z"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:17:25Z",
+            "completed_at": "2026-11-02T21:17:34Z"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:17:34Z",
+            "completed_at": "2026-11-02T21:17:41Z"
+          },
+          {
+            "name": "Install existing Linux Host native dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:17:41Z",
+            "completed_at": "2026-11-02T21:17:54Z"
+          },
+          {
+            "name": "Transcript compaction and recovery registration contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:17:54Z",
+            "completed_at": "2026-11-02T21:18:39Z"
+          },
+          {
+            "name": "Human ingress, settlement and restart contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-02T21:18:39Z",
+            "completed_at": "2026-11-02T21:21:19Z"
+          },
+          {
+            "name": "Human resource upload size and bounded-read contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-02T21:21:19Z",
+            "completed_at": "2026-11-02T21:21:20Z"
+          },
+          {
+            "name": "Concurrent Human creation and non-destructive initialization recovery",
+            "status": "completed",
+            "conclusion": "failure",
+            "number": 10,
+            "started_at": "2026-11-02T21:21:20Z",
+            "completed_at": "2026-11-02T21:21:20Z"
+          },
+          {
+            "name": "Durable forwarding sharebox owner contract",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 11,
+            "started_at": "2026-11-02T21:21:20Z",
+            "completed_at": "2026-11-02T21:21:20Z"
+          },
+          {
+            "name": "Durable forwarding journal and stale-write CAS contracts",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 12,
+            "started_at": "2026-11-02T21:21:20Z",
+            "completed_at": "2026-11-02T21:21:20Z"
+          },
+          {
+            "name": "Preserve Agent send nonce boundary",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 13,
+            "started_at": "2026-11-02T21:21:20Z",
+            "completed_at": "2026-11-02T21:21:20Z"
+          },
+          {
+            "name": "Prove completed HTTP credential fencing at settlement",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 14,
+            "started_at": "2026-11-02T21:21:20Z",
+            "completed_at": "2026-11-02T21:21:20Z"
+          },
+          {
+            "name": "Authenticated forward recipient gateway HTTP contract",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 15,
+            "started_at": "2026-11-02T21:21:20Z",
+            "completed_at": "2026-11-02T21:21:20Z"
+          },
+          {
+            "name": "Diagnose locked Session dependency drift (no acceptance)",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-11-02T21:21:20Z",
+            "completed_at": "2026-11-02T21:21:20Z"
+          },
+          {
+            "name": "Preserve exact batch evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17,
+            "started_at": "2026-11-02T21:21:20Z",
+            "completed_at": "2026-11-02T21:21:21Z"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 33,
+            "started_at": "2026-11-02T21:21:21Z",
+            "completed_at": "2026-11-02T21:21:21Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 34,
+            "started_at": "2026-11-02T21:21:21Z",
+            "completed_at": "2026-11-02T21:21:22Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 35,
+            "started_at": "2026-11-02T21:21:22Z",
+            "completed_at": "2026-11-02T21:21:22Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/check-runs/125556686433",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000260046,
+        "runner_name": "GitHub Actions 1000260046",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 125556686458,
+        "run_id": 41526852400,
+        "workflow_name": "Native service contracts",
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41526852400",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUfmb_c8AAAAdO8L-eg",
+        "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125556686458",
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526852400/job/125556686458",
+        "status": "completed",
+        "conclusion": "failure",
+        "created_at": "2026-11-02T21:16:36Z",
+        "started_at": "2026-11-02T21:17:40Z",
+        "completed_at": "2026-11-02T21:21:47Z",
+        "name": "desktop-social-owner-behaviors",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:17:41Z",
+            "completed_at": "2026-11-02T21:17:42Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:17:42Z",
+            "completed_at": "2026-11-02T21:17:45Z"
+          },
+          {
+            "name": "Bind exact Desktop Social behavior input",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:17:45Z",
+            "completed_at": "2026-11-02T21:17:45Z"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:17:45Z",
+            "completed_at": "2026-11-02T21:17:53Z"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:17:53Z",
+            "completed_at": "2026-11-02T21:17:54Z"
+          },
+          {
+            "name": "Install existing Linux native dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:17:54Z",
+            "completed_at": "2026-11-02T21:18:06Z"
+          },
+          {
+            "name": "Execute actual FeatureHost Social and retained messaging boundaries",
+            "status": "completed",
+            "conclusion": "failure",
+            "number": 7,
+            "started_at": "2026-11-02T21:18:06Z",
+            "completed_at": "2026-11-02T21:21:45Z"
+          },
+          {
+            "name": "Execute real SQLite retained Social recovery",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 8,
+            "started_at": "2026-11-02T21:21:45Z",
+            "completed_at": "2026-11-02T21:21:45Z"
+          },
+          {
+            "name": "Execute existing session-owned HTTP boundary",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 9,
+            "started_at": "2026-11-02T21:21:45Z",
+            "completed_at": "2026-11-02T21:21:45Z"
+          },
+          {
+            "name": "Preserve exact Desktop Social behavior evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-11-02T21:21:45Z",
+            "completed_at": "2026-11-02T21:21:45Z"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 19,
+            "started_at": "2026-11-02T21:21:45Z",
+            "completed_at": "2026-11-02T21:21:45Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 20,
+            "started_at": "2026-11-02T21:21:45Z",
+            "completed_at": "2026-11-02T21:21:46Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21,
+            "started_at": "2026-11-02T21:21:46Z",
+            "completed_at": "2026-11-02T21:21:46Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/check-runs/125556686458",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000260049,
+        "runner_name": "GitHub Actions 1000260049",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 125556687993,
+        "run_id": 41526852400,
+        "workflow_name": "Native service contracts",
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41526852400",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUfmb_c8AAAAdO8MEeQ",
+        "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125556687993",
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526852400/job/125556687993",
+        "status": "completed",
+        "conclusion": "skipped",
+        "created_at": "2026-11-02T21:16:37Z",
+        "started_at": "2026-11-02T21:16:37Z",
+        "completed_at": "2026-11-02T21:16:36Z",
+        "name": "native-auth-and-journal",
+        "steps": [],
+        "check_run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/check-runs/125556687993",
+        "labels": [],
+        "runner_id": null,
+        "runner_name": null,
+        "runner_group_id": null,
+        "runner_group_name": null
+      }
+    ],
+    "terminal_log_audits": {
+      "native-message-ui": {
+        "job_id": 125556685749,
+        "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+        "status": "completed",
+        "conclusion": "failure",
+        "checkout_sha_lines": [
+          107,
+          135
+        ],
+        "rust": [],
+        "tap": [
+          {
+            "result_line": 412,
+            "metrics": {
+              "tests": 33,
+              "suites": 0,
+              "pass": 33,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 121.013413
+            },
+            "named_cases": [
+              {
+                "name": "NMR-49 dispatching Human text and attachments stay pending until settlement",
+                "outcome": "ok",
+                "line": 214
+              },
+              {
+                "name": "NMR-49 existing Human and Agent delivery projections remain unchanged",
+                "outcome": "ok",
+                "line": 220
+              },
+              {
+                "name": "NMR-26 late initial tail keeps a same-ID edit, reaction, and newer append",
+                "outcome": "ok",
+                "line": 226
+              },
+              {
+                "name": "NMR-26 duplicate initial IDs and nonce acknowledgement retain one canonical send",
+                "outcome": "ok",
+                "line": 232
+              },
+              {
+                "name": "NMR-26 feed baseline cannot roll back a same-ID Agent terminal event",
+                "outcome": "ok",
+                "line": 238
+              },
+              {
+                "name": "NMR-26 tail merge preserves cached older updates in canonical order",
+                "outcome": "ok",
+                "line": 244
+              },
+              {
+                "name": "NMR-26 disjoint tail stays between cached history and events first seen during the read",
+                "outcome": "ok",
+                "line": 250
+              },
+              {
+                "name": "NMR-26 complete refresh updates unchanged rows but preserves post-request events",
+                "outcome": "ok",
+                "line": 256
+              },
+              {
+                "name": "NMR-26 older page overlap deduplicates IDs without reverting current row state",
+                "outcome": "ok",
+                "line": 262
+              },
+              {
+                "name": "NMR-26 accepted pages commit to the root cache and resume the exclusive cursor on reopen",
+                "outcome": "ok",
+                "line": 268
+              },
+              {
+                "name": "NMR-26 update of an unloaded old row wins over an in-flight page",
+                "outcome": "ok",
+                "line": 274
+              },
+              {
+                "name": "NMR-26 loaded older row refresh retains order and the next-page cursor",
+                "outcome": "ok",
+                "line": 280
+              },
+              {
+                "name": "NMR-26 account and conversation changes fence stale rows and request completion",
+                "outcome": "ok",
+                "line": 286
+              },
+              {
+                "name": "NMR-26 clear/reset prevents a late page from repopulating the transcript",
+                "outcome": "ok",
+                "line": 292
+              },
+              {
+                "name": "NMR-26 authoritative complete refresh supersedes an older request",
+                "outcome": "ok",
+                "line": 298
+              },
+              {
+                "name": "NMR-26 failed history load preserves rows and retries the same cursor once",
+                "outcome": "ok",
+                "line": 304
+              },
+              {
+                "name": "NMR-26 synchronous fetch failure cannot leave pagination permanently busy",
+                "outcome": "ok",
+                "line": 310
+              },
+              {
+                "name": "NMR-26 viewport anchoring and disposal reject stale asynchronous effects",
+                "outcome": "ok",
+                "line": 316
+              },
+              {
+                "name": "Human transcript correlation isolates authors while retaining Host and optimistic send settlement",
+                "outcome": "ok",
+                "line": 322
+              },
+              {
+                "name": "Human older pages cannot resurrect a settled pending row in the root cache",
+                "outcome": "ok",
+                "line": 328
+              },
+              {
+                "name": "NMR-26 an intermediate row commit cannot consume an older-page viewport anchor",
+                "outcome": "ok",
+                "line": 334
+              },
+              {
+                "name": "NMR-26 a late first reaction response cannot replace a later mutation settlement",
+                "outcome": "ok",
+                "line": 340
+              },
+              {
+                "name": "NMR-26 an authoritative event wins over an outstanding reaction RPC response",
+                "outcome": "ok",
+                "line": 346
+              },
+              {
+                "name": "NMR-26 account generation fences a reaction across logout and return to the same identity",
+                "outcome": "ok",
+                "line": 352
+              },
+              {
+                "name": "NMR-26 independent conversation and message reactions retain their completion scope",
+                "outcome": "ok",
+                "line": 358
+              },
+              {
+                "name": "NMR-26 current reaction failures report once and obsolete failures cannot replace recovery feedback",
+                "outcome": "ok",
+                "line": 364
+              },
+              {
+                "name": "NMR-26 deferred reaction state and error updates recheck events, clear and account generation",
+                "outcome": "ok",
+                "line": 370
+              },
+              {
+                "name": "NMR-26 Human reaction settlement and a later event refresh an older row without moving it",
+                "outcome": "ok",
+                "line": 376
+              },
+              {
+                "name": "NMR-26 disposed reaction completion cannot mutate the renderer or show a stale error",
+                "outcome": "ok",
+                "line": 382
+              },
+              {
+                "name": "NMR-26 Human empty snapshots clear content and resources while Agent partial echoes retain them",
+                "outcome": "ok",
+                "line": 388
+              },
+              {
+                "name": "NMR-26 peer and missing-author nonces cannot reconcile a local Human placeholder",
+                "outcome": "ok",
+                "line": 394
+              },
+              {
+                "name": "NMR-26 before-ID canonicalization and a delayed receipt preserve one newer settled Human row",
+                "outcome": "ok",
+                "line": 400
+              },
+              {
+                "name": "NMR-26 overlapping older windows preserve canonical anchors and loaded/in-flight identity updates",
+                "outcome": "ok",
+                "line": 406
+              }
+            ]
+          },
+          {
+            "result_line": 553,
+            "metrics": {
+              "tests": 17,
+              "suites": 0,
+              "pass": 17,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 120.276008
+            },
+            "named_cases": [
+              {
+                "name": "Human transcript cursors preserve the opaque traversal beside the physical anchor",
+                "outcome": "ok",
+                "line": 451
+              },
+              {
+                "name": "Human transcript cursor admission rejects malformed scope and continuation without coercion",
+                "outcome": "ok",
+                "line": 457
+              },
+              {
+                "name": "Telegram authorization projection accepts typed challenge, issue, and bounded backoff",
+                "outcome": "ok",
+                "line": 463
+              },
+              {
+                "name": "Telegram authorization projection rejects malformed or unbounded state",
+                "outcome": "ok",
+                "line": 469
+              },
+              {
+                "name": "remaining Telegram auth lifecycle methods share the canonical projection contract",
+                "outcome": "ok",
+                "line": 475
+              },
+              {
+                "name": "timeline event registry validates protocol rows and descriptions",
+                "outcome": "ok",
+                "line": 481
+              },
+              {
+                "name": "transcript feed fanout shares one subscription and validates entry identity",
+                "outcome": "ok",
+                "line": 487
+              },
+              {
+                "name": "hidden chat mutations rollback permanent failures and hold transport failures for reconnect",
+                "outcome": "ok",
+                "line": 493
+              },
+              {
+                "name": "find-in-chat searches visible text, wraps navigation and resets on scope",
+                "outcome": "ok",
+                "line": 499
+              },
+              {
+                "name": "routine history formats status and relative/zoned timestamps",
+                "outcome": "ok",
+                "line": 505
+              },
+              {
+                "name": "composer draft restore does not overwrite a staged attachment added while persistence is loading",
+                "outcome": "ok",
+                "line": 511
+              },
+              {
+                "name": "forward recipient keyboard policy preserves picker boundaries and submit semantics",
+                "outcome": "ok",
+                "line": 517
+              },
+              {
+                "name": "Human opaque history cursors survive projection, root-cache commits and cached conversation reopen",
+                "outcome": "ok",
+                "line": 523
+              },
+              {
+                "name": "Human failed history retries preserve the exact token and the latest committed row overlay",
+                "outcome": "ok",
+                "line": 529
+              },
+              {
+                "name": "Human opaque history rejects stale account ABA results and their buffered updates",
+                "outcome": "ok",
+                "line": 535
+              },
+              {
+                "name": "Human replacement initial history clears the prior token and failed-read overlays",
+                "outcome": "ok",
+                "line": 541
+              },
+              {
+                "name": "Agent pagination retains its sequence-only request and viewport anchor",
+                "outcome": "ok",
+                "line": 547
+              }
+            ]
+          },
+          {
+            "result_line": 657,
+            "metrics": {
+              "tests": 5,
+              "suites": 0,
+              "pass": 5,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 161.248356
+            },
+            "named_cases": [
+              {
+                "name": "current forward success projects notice and roster",
+                "outcome": "ok",
+                "line": 627
+              },
+              {
+                "name": "mixed settlement retains failed count and current roster",
+                "outcome": "ok",
+                "line": 633
+              },
+              {
+                "name": "account switch before settlement prevents every projection",
+                "outcome": "ok",
+                "line": 639
+              },
+              {
+                "name": "late successful roster response cannot repopulate a new account",
+                "outcome": "ok",
+                "line": 645
+              },
+              {
+                "name": "late rejected roster request cannot alter a new account or rollback notice",
+                "outcome": "ok",
+                "line": 651
+              }
+            ]
+          },
+          {
+            "result_line": 993,
+            "metrics": {
+              "tests": 16,
+              "suites": 0,
+              "pass": 16,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 9569.496151
+            },
+            "named_cases": [
+              {
+                "name": "current forward closes and settles exactly once",
+                "outcome": "ok",
+                "line": 897
+              },
+              {
+                "name": "account switch prevents old success from closing B dialog",
+                "outcome": "ok",
+                "line": 903
+              },
+              {
+                "name": "logout prevents late error from being displayed",
+                "outcome": "ok",
+                "line": 909
+              },
+              {
+                "name": "A B A reuse still rejects old settlement",
+                "outcome": "ok",
+                "line": 915
+              },
+              {
+                "name": "closed dialog discards old search",
+                "outcome": "ok",
+                "line": 921
+              },
+              {
+                "name": "replaced source discards old search",
+                "outcome": "ok",
+                "line": 927
+              },
+              {
+                "name": "unmount synchronously invalidates root generation",
+                "outcome": "ok",
+                "line": 933
+              },
+              {
+                "name": "late rejected search cannot display error in reopened dialog",
+                "outcome": "ok",
+                "line": 939
+              },
+              {
+                "name": "rapid double-submit dispatches only once",
+                "outcome": "ok",
+                "line": 945
+              },
+              {
+                "name": "partial retry only sends failed destination with stable identity",
+                "outcome": "ok",
+                "line": 951
+              },
+              {
+                "name": "query change does not invalidate valid submit",
+                "outcome": "ok",
+                "line": 957
+              },
+              {
+                "name": "credential refresh does not replace account dialog lifetime",
+                "outcome": "ok",
+                "line": 963
+              },
+              {
+                "name": "ambiguous missing duplicate and unexpected settlements retain the frozen retry intent",
+                "outcome": "ok",
+                "line": 969
+              },
+              {
+                "name": "recipient limit stays editable and counts selections outside the current search",
+                "outcome": "ok",
+                "line": 975
+              },
+              {
+                "name": "closing a pending forward retires presentation without cancelling or settling a reopened intent",
+                "outcome": "ok",
+                "line": 981
+              },
+              {
+                "name": "late searches preserve send failure and retry destinations even when selected rows are hidden",
+                "outcome": "ok",
+                "line": 987
+              }
+            ]
+          }
+        ],
+        "artifact": {
+          "id": 13179359485,
+          "node_id": "MDg6QXJ0aWZhY3QxMzE3OTM1OTQ4NQ==",
+          "name": "native-message-ui-f544e9b3161d758141e1b419bcdab22cc522952e",
+          "size_in_bytes": 21425274,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179359485",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179359485/zip",
+          "expired": false,
+          "digest": "sha256:61f45649a7d0ab891761326f38bf5fbae9614baf9b786ad16d5627a06c5848c1",
+          "created_at": "2026-11-02T21:20:51Z",
+          "updated_at": "2026-11-02T21:20:51Z",
+          "expires_at": "2027-01-31T21:16:36Z",
+          "workflow_run": {
+            "id": 41526852400,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e"
+          }
+        },
+        "upload_digest_matches": true,
+        "upload_id_matches": true,
+        "errors": [
+          {
+            "line": 1467,
+            "text": "##[error]Process completed with exit code 1."
+          }
+        ],
+        "production_renderer": {
+          "total": 11,
+          "passed": 1,
+          "failed": 10,
+          "summary_lines": [
+            1455,
+            1466
+          ],
+          "tests": [
+            {
+              "ordinal": 1,
+              "title": "e2e/native-message-projection.spec.ts:73:3 › NMR-26 production transcript preserves paged edits and empty rows through tail refresh and switching (light)",
+              "line": 1035,
+              "outcome": "failed",
+              "failure_line": 1036
+            },
+            {
+              "ordinal": 2,
+              "title": "e2e/native-message-projection.spec.ts:73:3 › NMR-26 production transcript preserves paged edits and empty rows through tail refresh and switching (dark)",
+              "line": 1077,
+              "outcome": "failed",
+              "failure_line": 1078
+            },
+            {
+              "ordinal": 3,
+              "title": "e2e/native-message-projection.spec.ts:116:1 › NMR-26 an initial tail cannot overwrite an identity remap and later empty-row mutation",
+              "line": 1119,
+              "outcome": "failed",
+              "failure_line": 1120
+            },
+            {
+              "ordinal": 4,
+              "title": "e2e/native-message-projection.spec.ts:145:1 › NMR-26 a canonical clear fences an initial tail that returns after the fresh empty page",
+              "line": 1160,
+              "outcome": "passed_by_exclusion_from_explicit_failure_list"
+            },
+            {
+              "ordinal": 5,
+              "title": "e2e/native-message-projection.spec.ts:162:3 › NMR-26 an older page and full refresh arriving after mutations cannot restore stale content (page-first)",
+              "line": 1161,
+              "outcome": "failed",
+              "failure_line": 1162
+            },
+            {
+              "ordinal": 6,
+              "title": "e2e/native-message-projection.spec.ts:162:3 › NMR-26 an older page and full refresh arriving after mutations cannot restore stale content (refresh-first)",
+              "line": 1203,
+              "outcome": "failed",
+              "failure_line": 1204
+            },
+            {
+              "ordinal": 7,
+              "title": "e2e/native-message-projection.spec.ts:189:1 › NMR-26 a peer nonce collision, delayed receipt and roster failure preserve the successful canonical send",
+              "line": 1245,
+              "outcome": "failed",
+              "failure_line": 1246
+            },
+            {
+              "ordinal": 8,
+              "title": "e2e/native-message-projection.spec.ts:228:3 › NMR-26 logout cancels the in-flight renderer epoch before another account sends in the same conversation",
+              "line": 1287,
+              "outcome": "failed",
+              "failure_line": 1288
+            },
+            {
+              "ordinal": 9,
+              "title": "e2e/native-message-projection.spec.ts:228:3 › NMR-26 logout cancels the queued renderer epoch before another account sends in the same conversation",
+              "line": 1329,
+              "outcome": "failed",
+              "failure_line": 1330
+            },
+            {
+              "ordinal": 10,
+              "title": "e2e/native-message-projection.spec.ts:280:1 › NMR-26 old-row reaction commands settle the page cache and cannot overwrite a later empty-row mutation",
+              "line": 1371,
+              "outcome": "failed",
+              "failure_line": 1372
+            },
+            {
+              "ordinal": 11,
+              "title": "e2e/native-message-projection.spec.ts:305:1 › NMR-26 a disconnected Human send queues and reconnect dispatches it exactly once",
+              "line": 1413,
+              "outcome": "failed",
+              "failure_line": 1414
+            }
+          ],
+          "production_transcript8": {
+            "status": "skipped",
+            "actual_executed": 0
+          },
+          "retry_policy": "--retries=0; no rerun"
+        }
+      },
+      "native-message-electron": {
+        "job_id": 125556686041,
+        "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+        "status": "completed",
+        "conclusion": "success",
+        "checkout_sha_lines": [
+          108,
+          136
+        ],
+        "rust": [],
+        "tap": [
+          {
+            "result_line": 270,
+            "metrics": {
+              "tests": 10,
+              "suites": 0,
+              "pass": 10,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 111.76322
+            },
+            "named_cases": [
+              {
+                "name": "NMR-ELECTRON-01: bootstrap binds one native child and all three existing ports",
+                "outcome": "ok",
+                "line": 210
+              },
+              {
+                "name": "NMR-ELECTRON-02: transcript windows preserve cursor, stable IDs and channel identity",
+                "outcome": "ok",
+                "line": 216
+              },
+              {
+                "name": "NMR-ELECTRON-03: opaque native replies/events retain identity, reactions and receipts; unsupported edits/deletes stay errors",
+                "outcome": "ok",
+                "line": 222
+              },
+              {
+                "name": "NMR-ELECTRON-04: cancellation and native failure outcomes remain explicit",
+                "outcome": "ok",
+                "line": 228
+              },
+              {
+                "name": "NMR-ELECTRON-05: invalid output cannot reach a subscriber or log private payloads",
+                "outcome": "ok",
+                "line": 234
+              },
+              {
+                "name": "NMR-ELECTRON-06: closed subscriptions fence late traffic and all-port disposal retires the child once",
+                "outcome": "ok",
+                "line": 240
+              },
+              {
+                "name": "NMR-ELECTRON-07: child errors close subscriptions and reject late delivery",
+                "outcome": "ok",
+                "line": 246
+              },
+              {
+                "name": "NMR-ELECTRON-08: native child exit preserves failure status without killing an exited process",
+                "outcome": "ok",
+                "line": 252
+              },
+              {
+                "name": "NMR-ELECTRON-09: signal termination remains non-successful",
+                "outcome": "ok",
+                "line": 258
+              },
+              {
+                "name": "NMR-ELECTRON-10: absent bootstrap or incomplete port handoff cannot launch a child",
+                "outcome": "ok",
+                "line": 264
+              }
+            ]
+          },
+          {
+            "result_line": 343,
+            "metrics": {
+              "tests": 8,
+              "suites": 0,
+              "pass": 8,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 178.500231
+            },
+            "named_cases": [
+              {
+                "name": "NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves valid retained storage/application secrets",
+                "outcome": "ok",
+                "line": 295
+              },
+              {
+                "name": "NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves corrupt retained storage and non-JSON application secret",
+                "outcome": "ok",
+                "line": 301
+              },
+              {
+                "name": "NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves corrupt retained storage and invalid application credential",
+                "outcome": "ok",
+                "line": 307
+              },
+              {
+                "name": "NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves new account without legacy secrets",
+                "outcome": "ok",
+                "line": 313
+              },
+              {
+                "name": "NMR-NATIVE-ACCOUNT: account switch replaces Native identity without touching either legacy account",
+                "outcome": "ok",
+                "line": 319
+              },
+              {
+                "name": "NMR-NATIVE-ACCOUNT: restart denies another issuer before isolated login establishes its own Native identity",
+                "outcome": "ok",
+                "line": 325
+              },
+              {
+                "name": "NMR-NATIVE-ACCOUNT: rejected refresh clears Native authority and preserves malformed legacy data",
+                "outcome": "ok",
+                "line": 331
+              },
+              {
+                "name": "NMR-NATIVE-ACCOUNT: logout fences a delayed refresh before it can republish any credential",
+                "outcome": "ok",
+                "line": 337
+              }
+            ]
+          },
+          {
+            "result_line": 389,
+            "metrics": {
+              "tests": 3,
+              "suites": 0,
+              "pass": 3,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 169.431596
+            },
+            "named_cases": [
+              {
+                "name": "NMR-39 Unix: actual resource copy retains only canonical executable bytes and permissions",
+                "outcome": "ok",
+                "line": 368
+              },
+              {
+                "name": "NMR-39 Windows-named: actual resource copy retains only canonical executable bytes and permissions",
+                "outcome": "ok",
+                "line": 375
+              },
+              {
+                "name": "NMR-39 an approved executable name used as a directory cannot smuggle nested payload",
+                "outcome": "ok",
+                "line": 382
+              }
+            ]
+          },
+          {
+            "result_line": 511,
+            "metrics": {
+              "tests": 16,
+              "suites": 0,
+              "pass": 16,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 180.026966
+            },
+            "named_cases": [
+              {
+                "name": "EUS-01/03 no implicit feed for startup, manual, track, minimum-version or backend checks",
+                "outcome": "ok",
+                "line": 415
+              },
+              {
+                "name": "EUS-02 invalid and foreign sources fail before requests without echoing configuration",
+                "outcome": "ok",
+                "line": 421
+              },
+              {
+                "name": "EUS-02 approved production, isolated CI and loopback origins retain explicit paths",
+                "outcome": "ok",
+                "line": 427
+              },
+              {
+                "name": "EUS-01 primary configuration is authoritative including blank and invalid values",
+                "outcome": "ok",
+                "line": 433
+              },
+              {
+                "name": "EUS-01/05 actual production wiring uses the same source precedence and service",
+                "outcome": "ok",
+                "line": 439
+              },
+              {
+                "name": "EUS-03 existing disabled reasons retain precedence and clearing them cannot bypass source gating",
+                "outcome": "ok",
+                "line": 445
+              },
+              {
+                "name": "EUS-05 source gating reaches the actual Settings projection and non-retryable telemetry",
+                "outcome": "ok",
+                "line": 451
+              },
+              {
+                "name": "EUS-04 approved explicit feed preserves request contract and genuine 204 no-update settlement",
+                "outcome": "ok",
+                "line": 457
+              },
+              {
+                "name": "EUS-02/04 approved feed HTTP failure is an error with no fallback or private request URL",
+                "outcome": "ok",
+                "line": 463
+              },
+              {
+                "name": "EUS-02 real loopback manifest redirect is refused before reaching the redirect target",
+                "outcome": "ok",
+                "line": 469
+              },
+              {
+                "name": "EUS-04 approved source retains startup and periodic timers",
+                "outcome": "ok",
+                "line": 475
+              },
+              {
+                "name": "EUS-03/04 disabling an approved service aborts its exact in-flight check and allows explicit recovery",
+                "outcome": "ok",
+                "line": 481
+              },
+              {
+                "name": "EUS-03 disposal blocks later manual checks and startup timers",
+                "outcome": "ok",
+                "line": 487
+              },
+              {
+                "name": "EUS-03/04 a new service recovers after explicit configuration is corrected",
+                "outcome": "ok",
+                "line": 493
+              },
+              {
+                "name": "EUS-04 real persisted apply markers settle on disabled restart without touching user data",
+                "outcome": "ok",
+                "line": 499
+              },
+              {
+                "name": "EUS-04 approved explicit feed retains verified download, installer staging and apply marker owner",
+                "outcome": "ok",
+                "line": 505
+              }
+            ]
+          },
+          {
+            "result_line": 706,
+            "metrics": {
+              "tests": 28,
+              "suites": 0,
+              "pass": 28,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 179.618454
+            },
+            "named_cases": [
+              {
+                "name": "EUS-WIN-01 absent and blank authority are distinct from every malformed policy",
+                "outcome": "ok",
+                "line": 538
+              },
+              {
+                "name": "EUS-WIN-01 explicit rotation and the 16-entry bound normalize only certificate hexadecimal case",
+                "outcome": "ok",
+                "line": 544
+              },
+              {
+                "name": "EUS-WIN-01/03 an installer snapshots startup authority and denies absent authority before the native probe",
+                "outcome": "ok",
+                "line": 550
+              },
+              {
+                "name": "EUS-WIN-02 valid native trust requires the subject and certificate pin from one authorized entry",
+                "outcome": "ok",
+                "line": 556
+              },
+              {
+                "name": "EUS-WIN-02 explicit certificate rotation accepts each approved pin without learning a new pin",
+                "outcome": "ok",
+                "line": 562
+              },
+              {
+                "name": "EUS-WIN-02 historical Anysphere common-name and certificate-only shortcuts never authorize an installer",
+                "outcome": "ok",
+                "line": 568
+              },
+              {
+                "name": "EUS-WIN-02 malformed, unsigned, untrusted and catalog probe output fails with fixed non-disclosing errors",
+                "outcome": "ok",
+                "line": 574
+              },
+              {
+                "name": "EUS-WIN-02 native timeout, native failure and file-read failure deny receipts without disclosing native output",
+                "outcome": "ok",
+                "line": 580
+              },
+              {
+                "name": "EUS-WIN-02 the native command treats apostrophes and metacharacters as a literal file path",
+                "outcome": "ok",
+                "line": 586
+              },
+              {
+                "name": "EUS-WIN-03 exact-path receipts belong to one installer instance and permit only one spawn",
+                "outcome": "ok",
+                "line": 592
+              },
+              {
+                "name": "EUS-WIN-04 a file changed during the native probe cannot receive an install receipt",
+                "outcome": "ok",
+                "line": 598
+              },
+              {
+                "name": "EUS-WIN-04 failed re-verification revokes that path even when its bytes remain unchanged",
+                "outcome": "ok",
+                "line": 604
+              },
+              {
+                "name": "EUS-WIN-03/04 an older in-flight probe cannot resurrect a receipt after a newer verification fails",
+                "outcome": "ok",
+                "line": 610
+              },
+              {
+                "name": "EUS-WIN-03/04 an older superseded probe cannot revoke a newer successful path receipt",
+                "outcome": "ok",
+                "line": 616
+              },
+              {
+                "name": "EUS-WIN-04 changed or missing bytes at launch fail through the callback and consume the old receipt",
+                "outcome": "ok",
+                "line": 622
+              },
+              {
+                "name": "EUS-WIN-03/05 spawn errors use the existing callback and cannot reuse a consumed receipt",
+                "outcome": "ok",
+                "line": 628
+              },
+              {
+                "name": "EUS-WIN-03 service admission and all later gates cannot bypass missing or invalid publisher authority",
+                "outcome": "ok",
+                "line": 634
+              },
+              {
+                "name": "EUS-WIN-03 Windows ports without an authority method cannot silently opt into update admission",
+                "outcome": "ok",
+                "line": 640
+              },
+              {
+                "name": "EUS-WIN-03 runtime and feed gates retain precedence while non-Windows behavior remains unchanged",
+                "outcome": "ok",
+                "line": 646
+              },
+              {
+                "name": "EUS-WIN-01/03 actual production wiring reads only the explicit publisher variable and preserves its raw value",
+                "outcome": "ok",
+                "line": 652
+              },
+              {
+                "name": "EUS-WIN-01/03 changing startup environment requires reconstruction and preserves user Settings",
+                "outcome": "ok",
+                "line": 658
+              },
+              {
+                "name": "EUS-WIN-05 publisher gating reaches actual Settings and distinct non-retryable telemetry without raw policy",
+                "outcome": "ok",
+                "line": 664
+              },
+              {
+                "name": "EUS-WIN-03/05 disabled restart settles persisted apply markers before the publisher gate without touching sessions",
+                "outcome": "ok",
+                "line": 670
+              },
+              {
+                "name": "EUS-WIN-04/05 real installer authorization preserves service staging, one-use launch and marker ownership",
+                "outcome": "ok",
+                "line": 676
+              },
+              {
+                "name": "EUS-WIN-02/05 a rejected downloaded publisher cannot become ready or quit and cleanup preserves user data",
+                "outcome": "ok",
+                "line": 682
+              },
+              {
+                "name": "EUS-WIN-04/05 a newer candidate failing authorization preserves the previously ready candidate receipt",
+                "outcome": "ok",
+                "line": 688
+              },
+              {
+                "name": "EUS-WIN-04/05 cancelling a newly verified track candidate preserves the previous candidate receipt",
+                "outcome": "ok",
+                "line": 694
+              },
+              {
+                "name": "EUS-WIN-04/05 rejected launch bytes and spawn failures retain spawn_failed restart evidence",
+                "outcome": "ok",
+                "line": 700
+              }
+            ]
+          },
+          {
+            "result_line": 841,
+            "metrics": {
+              "tests": 18,
+              "suites": 0,
+              "pass": 18,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 1771.085044
+            },
+            "named_cases": [
+              {
+                "name": "final ZIP and DMG metadata uses the locked generator and verify leaves all candidate bytes unchanged",
+                "outcome": "ok",
+                "line": 732
+              },
+              {
+                "name": "ticket append rejects pre-staple metadata then reconciles final hashes, sizes and maps without altering packages",
+                "outcome": "ok",
+                "line": 739
+              },
+              {
+                "name": "equivalent gzip envelopes verify read-only and receipts hash the actual accepted sidecars",
+                "outcome": "ok",
+                "line": 745
+              },
+              {
+                "name": "valid gzip cannot conceal changes to decoded blockmap checksums, sizes or structure",
+                "outcome": "ok",
+                "line": 751
+              },
+              {
+                "name": "malformed, truncated, CRC-corrupt and oversized decoded maps fail closed without candidate writes",
+                "outcome": "ok",
+                "line": 757
+              },
+              {
+                "name": "a same-size byte change with manually refreshed hash still rejects its stale differential map",
+                "outcome": "ok",
+                "line": 763
+              },
+              {
+                "name": "a nonempty but unrelated blockmap is rejected and rebuilt from its own package",
+                "outcome": "ok",
+                "line": 769
+              },
+              {
+                "name": "missing package, sidecar or metadata fails preflight without touching the remaining files",
+                "outcome": "ok",
+                "line": 775
+              },
+              {
+                "name": "duplicate file entries cannot omit one of the required package identities",
+                "outcome": "ok",
+                "line": 781
+              },
+              {
+                "name": "a metadata or expected-version mismatch cannot rewrite another release",
+                "outcome": "ok",
+                "line": 787
+              },
+              {
+                "name": "file and legacy paths cannot escape the canonical arm64 release filenames",
+                "outcome": "ok",
+                "line": 793
+              },
+              {
+                "name": "symlinked package, sidecar and metadata inputs are refused before writes",
+                "outcome": "ok",
+                "line": 799
+              },
+              {
+                "name": "directories and empty files cannot stand in for regular package inputs",
+                "outcome": "ok",
+                "line": 805
+              },
+              {
+                "name": "duplicate YAML keys and malformed digest fields fail before sidecar mutation",
+                "outcome": "ok",
+                "line": 811
+              },
+              {
+                "name": "receipt identity must be an exact complete source SHA",
+                "outcome": "ok",
+                "line": 817
+              },
+              {
+                "name": "partly replaced sidecars from an interrupted reconciliation remain repairable",
+                "outcome": "ok",
+                "line": 823
+              },
+              {
+                "name": "legacy ZIP hash is checked independently and reconciles without changing release fields",
+                "outcome": "ok",
+                "line": 829
+              },
+              {
+                "name": "production CLI writes an exact-source receipt only on success and exposes a read-only verify mode",
+                "outcome": "ok",
+                "line": 835
+              }
+            ]
+          },
+          {
+            "result_line": 927,
+            "metrics": {
+              "tests": 10,
+              "suites": 0,
+              "pass": 10,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 361.506797
+            },
+            "named_cases": [
+              {
+                "name": "push defaults and canonical false inputs retain full acceptance scope",
+                "outcome": "ok",
+                "line": 867
+              },
+              {
+                "name": "full dispatch leaves every existing release and candidate route combination to its owner",
+                "outcome": "ok",
+                "line": 873
+              },
+              {
+                "name": "explicit dispatch artifact-only accepts only disabled existing routes",
+                "outcome": "ok",
+                "line": 879
+              },
+              {
+                "name": "every boolean rejects noncanonical raw strings and nonstring values",
+                "outcome": "ok",
+                "line": 885
+              },
+              {
+                "name": "missing, unknown and noncanonical events cannot select a scope",
+                "outcome": "ok",
+                "line": 891
+              },
+              {
+                "name": "push cannot opt out of full acceptance",
+                "outcome": "ok",
+                "line": 897
+              },
+              {
+                "name": "artifact-only rejects each conflicting route and their combined request",
+                "outcome": "ok",
+                "line": 903
+              },
+              {
+                "name": "actual CLI appends exactly the canonical outputs for full and artifact-only scopes",
+                "outcome": "ok",
+                "line": 909
+              },
+              {
+                "name": "actual CLI failures do not create or alter output or unrelated files",
+                "outcome": "ok",
+                "line": 915
+              },
+              {
+                "name": "importing the helper never reads CLI policy or writes workflow output",
+                "outcome": "ok",
+                "line": 921
+              }
+            ]
+          },
+          {
+            "result_line": 995,
+            "metrics": {
+              "tests": 7,
+              "suites": 0,
+              "pass": 7,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 50.48146
+            },
+            "named_cases": [
+              {
+                "name": "only the same immutable main binary accepted by both independent gates promotes",
+                "outcome": "ok",
+                "line": 953
+              },
+              {
+                "name": "missing or skipped source, production lifecycle and cleanup assertions cannot pass",
+                "outcome": "ok",
+                "line": 959
+              },
+              {
+                "name": "public Desktop version must strictly exceed every other published version",
+                "outcome": "ok",
+                "line": 965
+              },
+              {
+                "name": "promotion never rebuilds or deletes an existing release on uncertain outcome",
+                "outcome": "ok",
+                "line": 971
+              },
+              {
+                "name": "published installer checksum manifest exactly covers the immutable delivery assets",
+                "outcome": "ok",
+                "line": 977
+              },
+              {
+                "name": "promotion binds the isolated factory to the current deployed Backend/Core sources",
+                "outcome": "ok",
+                "line": 983
+              },
+              {
+                "name": "artifact-only candidates cannot substitute for full immutable promotion evidence",
+                "outcome": "ok",
+                "line": 989
+              }
+            ]
+          }
+        ],
+        "artifact": {
+          "id": 13179992683,
+          "node_id": "MDg6QXJ0aWZhY3QxMzE3OTk5MjY4Mw==",
+          "name": "native-message-electron-f544e9b3161d758141e1b419bcdab22cc522952e",
+          "size_in_bytes": 14796,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179992683",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179992683/zip",
+          "expired": false,
+          "digest": "sha256:c33f1b14c64e279adfc864b9b94e9ee9e4254a6118c0c2be7a4cff0db2561272",
+          "created_at": "2026-11-02T21:18:00Z",
+          "updated_at": "2026-11-02T21:18:00Z",
+          "expires_at": "2027-01-31T21:16:36Z",
+          "workflow_run": {
+            "id": 41526852400,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e"
+          }
+        },
+        "upload_digest_matches": true,
+        "upload_id_matches": true,
+        "errors": []
+      },
+      "retained-direct-ffi-compatibility": {
+        "job_id": 125556686045,
+        "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+        "status": "completed",
+        "conclusion": "success",
+        "checkout_sha_lines": [
+          108,
+          136
+        ],
+        "rust": [
+          {
+            "running": 16,
+            "start_line": 515,
+            "result_line": 533,
+            "result": "test result: ok. 15 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+            "named_cases": [
+              {
+                "name": "api_connection_initialization_requires_product_configuration_and_transport",
+                "outcome": "ok",
+                "line": 516
+              },
+              {
+                "name": "authorization_projection_exposes_canonical_self_identity_field",
+                "outcome": "ok",
+                "line": 517
+              },
+              {
+                "name": "closed_or_unknown_clients_return_structured_errors",
+                "outcome": "ok",
+                "line": 518
+              },
+              {
+                "name": "each_client_has_isolated_core_and_authorization_state",
+                "outcome": "ok",
+                "line": 519
+              },
+              {
+                "name": "exported_c_execute_rejects_null_non_utf8_and_invalid_json",
+                "outcome": "ok",
+                "line": 520
+              },
+              {
+                "name": "exported_c_lifecycle_returns_owned_json_and_rejects_closed_handles",
+                "outcome": "ok",
+                "line": 521
+              },
+              {
+                "name": "exported_c_persistent_client_restores_committed_state_after_close",
+                "outcome": "ok",
+                "line": 522
+              },
+              {
+                "name": "exported_c_persistent_create_rejects_invalid_key_lengths_before_storage",
+                "outcome": "ok",
+                "line": 523
+              },
+              {
+                "name": "exported_c_persistent_create_rejects_null_and_non_utf8_inputs_before_storage",
+                "outcome": "ok",
+                "line": 524
+              },
+              {
+                "name": "ffi_boundary_returns_owned_json_and_handles_null_input",
+                "outcome": "ok",
+                "line": 525
+              },
+              {
+                "name": "flutter_friend_chat_payload_is_accepted_without_shape_translation",
+                "outcome": "ok",
+                "line": 526
+              },
+              {
+                "name": "lifecycle_commands_share_the_same_runtime_identity_projection",
+                "outcome": "ok",
+                "line": 527
+              },
+              {
+                "name": "live_runtime_bootstrap_keeps_an_encrypted_transport_session",
+                "outcome": "ignored",
+                "line": 528
+              },
+              {
+                "name": "persistent_authorization_machine_state_is_restored_without_running_network",
+                "outcome": "ok",
+                "line": 529
+              },
+              {
+                "name": "persistent_client_restores_committed_core_state",
+                "outcome": "ok",
+                "line": 530
+              },
+              {
+                "name": "recovery_and_challenge_commands_do_not_fabricate_ready_without_required_state",
+                "outcome": "ok",
+                "line": 531
+              }
+            ]
+          }
+        ],
+        "tap": [],
+        "artifact": {
+          "id": 13179368848,
+          "node_id": "MDg6QXJ0aWZhY3QxMzE3OTM2ODg0OA==",
+          "name": "retained-direct-ffi-compatibility-f544e9b3161d758141e1b419bcdab22cc522952e",
+          "size_in_bytes": 2545,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179368848",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179368848/zip",
+          "expired": false,
+          "digest": "sha256:5e88a1732423395c5a2172a62d5f440f3593af3469916e1d2d96a22ba917f3da",
+          "created_at": "2026-11-02T21:17:10Z",
+          "updated_at": "2026-11-02T21:17:10Z",
+          "expires_at": "2027-01-31T21:16:36Z",
+          "workflow_run": {
+            "id": 41526852400,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e"
+          }
+        },
+        "upload_digest_matches": true,
+        "upload_id_matches": true,
+        "errors": []
+      },
+      "windows-update-publisher": {
+        "job_id": 125556686140,
+        "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+        "status": "completed",
+        "conclusion": "success",
+        "checkout_sha_lines": [
+          94,
+          178
+        ],
+        "rust": [],
+        "tap": [
+          {
+            "result_line": 325,
+            "metrics": {
+              "tests": 11,
+              "suites": 0,
+              "pass": 11,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 28220.7236
+            },
+            "named_cases": [
+              {
+                "name": "native Windows: exact CI certificate subject and SHA256 authorize an embedded signed candidate",
+                "outcome": "ok",
+                "line": 257
+              },
+              {
+                "name": "native Windows: an actually trusted signed file cannot supply missing publisher authorization",
+                "outcome": "ok",
+                "line": 263
+              },
+              {
+                "name": "native Windows: a valid certificate hash cannot authorize a different subject",
+                "outcome": "ok",
+                "line": 269
+              },
+              {
+                "name": "native Windows: the exact subject cannot authorize a different certificate SHA256",
+                "outcome": "ok",
+                "line": 275
+              },
+              {
+                "name": "native Windows: a real unsigned PE is refused and cannot receive launch permission",
+                "outcome": "ok",
+                "line": 281
+              },
+              {
+                "name": "native Windows: modifying a signed PE section produces HashMismatch and is refused",
+                "outcome": "ok",
+                "line": 287
+              },
+              {
+                "name": "native Windows: replacing the file after native verification prevents the spawn callback",
+                "outcome": "ok",
+                "line": 293
+              },
+              {
+                "name": "native Windows: a native verification permits exactly one captured launch",
+                "outcome": "ok",
+                "line": 299
+              },
+              {
+                "name": "native Windows: failed native reverification revokes the prior receipt even when signed bytes return",
+                "outcome": "ok",
+                "line": 305
+              },
+              {
+                "name": "native Windows: actual PowerShell literal paths retain spaces, apostrophes and wildcard characters",
+                "outcome": "ok",
+                "line": 311
+              },
+              {
+                "name": "native Windows: Unicode publisher identity survives a controlled CP437 native prelude and matches strictly",
+                "outcome": "ok",
+                "line": 318
+              }
+            ]
+          }
+        ],
+        "artifact": {
+          "id": 13180630596,
+          "node_id": "MDg6QXJ0aWZhY3QxMzE4MDYzMDU5Ng==",
+          "name": "windows-update-publisher-f544e9b3161d758141e1b419bcdab22cc522952e",
+          "size_in_bytes": 1829,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180630596",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180630596/zip",
+          "expired": false,
+          "digest": "sha256:edfe92fde3624c9562801932fc85e29a61e78f136d3dcfe9554ba4bb62cc91fe",
+          "created_at": "2026-11-02T21:18:08Z",
+          "updated_at": "2026-11-02T21:18:08Z",
+          "expires_at": "2027-01-31T21:16:36Z",
+          "workflow_run": {
+            "id": 41526852400,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e"
+          }
+        },
+        "upload_digest_matches": true,
+        "upload_id_matches": true,
+        "errors": []
+      },
+      "native-message-reconciliation": {
+        "job_id": 125556686433,
+        "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+        "status": "completed",
+        "conclusion": "failure",
+        "checkout_sha_lines": [
+          108,
+          136
+        ],
+        "rust": [
+          {
+            "running": 3,
+            "start_line": 1063,
+            "result_line": 1068,
+            "result": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 159 filtered out; finished in 0.00s",
+            "named_cases": [
+              {
+                "name": "transcript_mirror::conversation_state_binary::tests::stale_token_details_can_be_removed_without_reencoding_other_fields",
+                "outcome": "ok",
+                "line": 1064
+              },
+              {
+                "name": "transcript_mirror::conversation_state_binary::tests::recovery_fields_decode_token_details_and_turn_timing",
+                "outcome": "ok",
+                "line": 1065
+              },
+              {
+                "name": "transcript_mirror::conversation_state_binary::tests::conversation_compaction_epoch_counts_external_and_self_summaries",
+                "outcome": "ok",
+                "line": 1066
+              }
+            ]
+          },
+          {
+            "running": 63,
+            "start_line": 1509,
+            "result_line": 1599,
+            "result": "test result: ok. 63 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 106.26s",
+            "named_cases": [
+              {
+                "name": "shipping_human_activity_write_failure_keeps_committed_rows_and_repairs_after_restart",
+                "outcome": "ok",
+                "line": 1510
+              },
+              {
+                "name": "shipping_human_after_id_checkpoint_resumes_after_restart_without_replaying_committed_page",
+                "outcome": "ok",
+                "line": 1511
+              },
+              {
+                "name": "shipping_human_concurrent_reactions_serialize_one_conversation_without_blocking_another",
+                "outcome": "ok",
+                "line": 1512
+              },
+              {
+                "name": "shipping_human_agent_handoff_and_history_download_keep_activity_monotonic",
+                "outcome": "ok",
+                "line": 1513
+              },
+              {
+                "name": "shipping_human_equal_timestamp_pagination_keeps_cursor_through_refresh_reaction_and_restart",
+                "outcome": "ok",
+                "line": 1516
+              },
+              {
+                "name": "shipping_human_direct_reply_targets_reject_corrupt_identity_before_staging",
+                "outcome": "ok",
+                "line": 1519
+              },
+              {
+                "name": "shipping_human_forward_attachment_snapshot_respects_source_policy_and_normalized_privacy",
+                "outcome": "ok",
+                "line": 1520
+              },
+              {
+                "name": "shipping_human_forward_attachment_bytes_survive_process_kill_and_source_cache_replacement",
+                "outcome": "ok",
+                "line": 1521
+              },
+              {
+                "name": "shipping_human_forward_idempotent_replay_rejects_changed_scope_and_expanded_destinations",
+                "outcome": "ok",
+                "line": 1522
+              },
+              {
+                "name": "shipping_human_forward_legacy_unpinned_attachments_fail_without_blocking_history_or_rebinding_bytes",
+                "outcome": "ok",
+                "line": 1527
+              },
+              {
+                "name": "shipping_human_forward_invalid_attachment_inputs_and_snapshot_staging_fail_before_post",
+                "outcome": "ok",
+                "line": 1530
+              },
+              {
+                "name": "shipping_human_forward_process_kill_preserves_complete_intent_before_first_post",
+                "outcome": "ok",
+                "line": 1535
+              },
+              {
+                "name": "shipping_human_forward_pending_ownership_survives_missing_versions_and_rejects_unreadable_sources",
+                "outcome": "ok",
+                "line": 1538
+              },
+              {
+                "name": "shipping_human_forward_restart_rechecks_source_permissions_and_credential_scope",
+                "outcome": "ok",
+                "line": 1543
+              },
+              {
+                "name": "shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal",
+                "outcome": "ok",
+                "line": 1544
+              },
+              {
+                "name": "shipping_human_forward_restart_sync_recovers_unsubmitted_target_and_original_snapshot",
+                "outcome": "ok",
+                "line": 1547
+              },
+              {
+                "name": "shipping_human_forward_sqlite_failures_stop_initial_and_progress_dispatch",
+                "outcome": "ok",
+                "line": 1550
+              },
+              {
+                "name": "shipping_human_forward_missing_or_corrupt_snapshot_retains_intent_until_exact_byte_repair",
+                "outcome": "ok",
+                "line": 1551
+              },
+              {
+                "name": "shipping_human_history_rejects_damaged_checkpoint_before_any_network_request",
+                "outcome": "ok",
+                "line": 1552
+              },
+              {
+                "name": "shipping_human_history_cursor_echo_rejects_legacy_and_conflicting_backend_pages",
+                "outcome": "ok",
+                "line": 1553
+              },
+              {
+                "name": "shipping_human_history_rejects_oversized_page_before_persisting_coverage",
+                "outcome": "ok",
+                "line": 1554
+              },
+              {
+                "name": "shipping_human_history_unversioned_checkpoint_rebuilds_only_after_qualified_page",
+                "outcome": "ok",
+                "line": 1555
+              },
+              {
+                "name": "shipping_human_known_refresh_preserves_omitted_reactions_and_clears_explicit_empty",
+                "outcome": "ok",
+                "line": 1556
+              },
+              {
+                "name": "shipping_human_invalid_persisted_reaction_intents_are_retained_without_http_after_restart",
+                "outcome": "ok",
+                "line": 1557
+              },
+              {
+                "name": "shipping_human_late_send_acknowledgement_preserves_newer_reaction_and_read_receipt",
+                "outcome": "ok",
+                "line": 1558
+              },
+              {
+                "name": "shipping_human_late_invalid_send_acknowledgements_stay_rejected_without_rolling_back_settlement",
+                "outcome": "ok",
+                "line": 1559
+              },
+              {
+                "name": "shipping_human_legacy_peer_nonce_is_safe_in_reactions_and_local_send",
+                "outcome": "ok",
+                "line": 1560
+              },
+              {
+                "name": "shipping_human_late_send_transport_failure_returns_durable_settlement_after_restart",
+                "outcome": "ok",
+                "line": 1561
+              },
+              {
+                "name": "shipping_human_historical_reply_aliases_require_unique_local_canonical_parent",
+                "outcome": "ok",
+                "line": 1562
+              },
+              {
+                "name": "shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce",
+                "outcome": "ok",
+                "line": 1563
+              },
+              {
+                "name": "shipping_human_midpage_resource_failure_replays_durable_prefix_after_restart",
+                "outcome": "ok",
+                "line": 1564
+              },
+              {
+                "name": "shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order",
+                "outcome": "ok",
+                "line": 1565
+              },
+              {
+                "name": "shipping_human_reaction_intent_survives_failed_http_and_replays_once_after_restart",
+                "outcome": "ok",
+                "line": 1566
+              },
+              {
+                "name": "shipping_human_reaction_missing_summary_does_not_acknowledge_intent",
+                "outcome": "ok",
+                "line": 1567
+              },
+              {
+                "name": "shipping_human_malformed_history_ids_preserve_page_checkpoint_and_recover_after_restart",
+                "outcome": "ok",
+                "line": 1568
+              },
+              {
+                "name": "shipping_human_reaction_gateway_rejects_invalid_targets_and_emoji_before_staging_intent",
+                "outcome": "ok",
+                "line": 1569
+              },
+              {
+                "name": "shipping_human_reaction_rejects_credential_change_while_response_body_is_streaming",
+                "outcome": "ok",
+                "line": 1570
+              },
+              {
+                "name": "shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling",
+                "outcome": "ok",
+                "line": 1571
+              },
+              {
+                "name": "shipping_human_reaction_rechecks_current_target_after_http_without_overwriting_newer_fields",
+                "outcome": "ok",
+                "line": 1572
+              },
+              {
+                "name": "shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_after_restart",
+                "outcome": "ok",
+                "line": 1573
+              },
+              {
+                "name": "shipping_human_reaction_toggles_backend_truth_and_updates_canonical_transcript",
+                "outcome": "ok",
+                "line": 1574
+              },
+              {
+                "name": "shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart",
+                "outcome": "ok",
+                "line": 1575
+              },
+              {
+                "name": "shipping_human_reaction_unconfirmed_success_keeps_intent_until_restart_replay",
+                "outcome": "ok",
+                "line": 1576
+              },
+              {
+                "name": "shipping_human_reaction_rejects_midflight_credential_rotation_and_recovers_after_restart",
+                "outcome": "ok",
+                "line": 1577
+              },
+              {
+                "name": "shipping_human_read_receipts_compare_rfc3339_instants_and_reject_invalid_ingress_before_resources",
+                "outcome": "ok",
+                "line": 1578
+              },
+              {
+                "name": "shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen",
+                "outcome": "ok",
+                "line": 1579
+              },
+              {
+                "name": "shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
+                "outcome": "ok",
+                "line": 1580
+              },
+              {
+                "name": "shipping_human_send_fences_credential_rotation_while_waiting_to_settle_after_http",
+                "outcome": "ok",
+                "line": 1581
+              },
+              {
+                "name": "shipping_human_send_rejects_changed_account_before_message_or_resource_dispatch",
+                "outcome": "ok",
+                "line": 1582
+              },
+              {
+                "name": "shipping_human_reaction_waits_for_inflight_history_before_deriving_desired_state",
+                "outcome": "ok",
+                "line": 1583
+              },
+              {
+                "name": "shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
+                "outcome": "ok",
+                "line": 1584
+              },
+              {
+                "name": "shipping_human_snapshot_cursor_survives_pending_settlement_and_authoritative_anchor_refresh",
+                "outcome": "ok",
+                "line": 1585
+              },
+              {
+                "name": "shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_restart",
+                "outcome": "ok",
+                "line": 1586
+              },
+              {
+                "name": "shipping_human_send_rejects_midflight_credential_changes_and_recovers_after_restart",
+                "outcome": "ok",
+                "line": 1587
+              },
+              {
+                "name": "shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce",
+                "outcome": "ok",
+                "line": 1588
+              },
+              {
+                "name": "shipping_human_sync_rejects_conflicting_local_acknowledgements_before_resource_access",
+                "outcome": "ok",
+                "line": 1589
+              },
+              {
+                "name": "shipping_human_sync_rejects_foreign_participants_before_resources_or_overlap",
+                "outcome": "ok",
+                "line": 1590
+              },
+              {
+                "name": "shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap",
+                "outcome": "ok",
+                "line": 1591
+              },
+              {
+                "name": "shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap",
+                "outcome": "ok",
+                "line": 1592
+              },
+              {
+                "name": "shipping_human_tail_keeps_physical_anchors_stable_during_backfill_and_equal_time_inserts",
+                "outcome": "ok",
+                "line": 1593
+              },
+              {
+                "name": "shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_overlap",
+                "outcome": "ok",
+                "line": 1594
+              },
+              {
+                "name": "shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restart",
+                "outcome": "ok",
+                "line": 1595
+              },
+              {
+                "name": "shipping_human_short_32nd_page_defers_latest_refresh_to_next_sync",
+                "outcome": "ok",
+                "line": 1597
+              }
+            ]
+          },
+          {
+            "running": 3,
+            "start_line": 1999,
+            "result_line": 2004,
+            "result": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 159 filtered out; finished in 0.21s",
+            "named_cases": [
+              {
+                "name": "extensions::session::native_messaging::native_message_resource_upload_tests::byte_upload_rejects_empty_and_oversize_before_credentials_or_http",
+                "outcome": "ok",
+                "line": 2000
+              },
+              {
+                "name": "extensions::session::native_messaging::native_message_resource_upload_tests::growth_after_metadata_observation_consumes_at_most_limit_plus_one",
+                "outcome": "ok",
+                "line": 2001
+              },
+              {
+                "name": "extensions::session::native_messaging::native_message_resource_upload_tests::exact_service_limit_is_readable_but_empty_and_read_errors_are_rejected",
+                "outcome": "ok",
+                "line": 2002
+              }
+            ]
+          },
+          {
+            "running": 12,
+            "start_line": 2406,
+            "result_line": 2431,
+            "result": "test result: FAILED. 11 passed; 1 failed; 0 ignored; 0 measured; 150 filtered out; finished in 0.13s",
+            "named_cases": [
+              {
+                "name": "extensions::session::production::human_creation_tests::corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
+                "outcome": "FAILED",
+                "line": 2413
+              },
+              {
+                "name": "extensions::session::production::human_creation_tests::distinct_worker_creators_keep_first_committed_metadata_and_independent_owners",
+                "outcome": "ok",
+                "line": 2414
+              },
+              {
+                "name": "extensions::session::production::human_creation_tests::existing_empty_directory_and_schema_only_store_resume_without_replacing_files",
+                "outcome": "ok",
+                "line": 2415
+              },
+              {
+                "name": "extensions::session::production::human_creation_tests::busy_initializer_after_schema_open_preserves_directory_and_allows_same_worker_retry",
+                "outcome": "ok",
+                "line": 2416
+              },
+              {
+                "name": "extensions::session::production::human_creation_tests::cached_owner_with_missing_identity_never_relabels_retained_data",
+                "outcome": "ok",
+                "line": 2417
+              },
+              {
+                "name": "extensions::session::production::human_creation_tests::initializer_refusal_reuses_valid_metadata_and_an_already_published_reader_owner",
+                "outcome": "ok",
+                "line": 2418
+              },
+              {
+                "name": "extensions::session::production::human_creation_tests::reader_published_after_initialization_keeps_its_arc_and_durable_state",
+                "outcome": "ok",
+                "line": 2419
+              },
+              {
+                "name": "extensions::session::production::human_creation_tests::first_initializer_refuses_identityless_kv_transcript_or_blob_without_adoption",
+                "outcome": "ok",
+                "line": 2420
+              },
+              {
+                "name": "extensions::session::production::human_creation_tests::refused_initializer_after_schema_open_preserves_directory_and_allows_same_worker_retry",
+                "outcome": "ok",
+                "line": 2421
+              },
+              {
+                "name": "extensions::session::production::human_creation_tests::storage_error_at_initializer_preserves_directory_and_allows_same_worker_retry",
+                "outcome": "ok",
+                "line": 2422
+              },
+              {
+                "name": "extensions::session::production::human_creation_tests::same_pair_waits_before_open_while_other_pair_progresses_and_state_survives_restart",
+                "outcome": "ok",
+                "line": 2423
+              },
+              {
+                "name": "extensions::session::production::human_creation_tests::malformed_or_foreign_metadata_is_preserved_and_rejected_with_or_without_cached_owner",
+                "outcome": "ok",
+                "line": 2424
+              }
+            ]
+          }
+        ],
+        "tap": [],
+        "artifact": {
+          "id": 13180716147,
+          "node_id": "MDg6QXJ0aWZhY3QxMzE4MDcxNjE0Nw==",
+          "name": "native-message-reconciliation-f544e9b3161d758141e1b419bcdab22cc522952e",
+          "size_in_bytes": 20983,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180716147",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180716147/zip",
+          "expired": false,
+          "digest": "sha256:06e016a46c28af61d45f7bf1693526f054e34d75c58a5fa10bd908da206876ed",
+          "created_at": "2026-11-02T21:21:21Z",
+          "updated_at": "2026-11-02T21:21:21Z",
+          "expires_at": "2027-01-31T21:16:36Z",
+          "workflow_run": {
+            "id": 41526852400,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e"
+          }
+        },
+        "upload_digest_matches": true,
+        "upload_id_matches": true,
+        "errors": [
+          {
+            "line": 2434,
+            "text": "##[error]Process completed with exit code 101."
+          }
+        ]
+      },
+      "desktop-social-owner-behaviors": {
+        "job_id": 125556686458,
+        "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+        "status": "completed",
+        "conclusion": "failure",
+        "checkout_sha_lines": [
+          110,
+          138
+        ],
+        "rust": [
+          {
+            "running": 10,
+            "start_line": 2312,
+            "result_line": 2331,
+            "result": "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 35 filtered out; finished in 0.04s",
+            "named_cases": [
+              {
+                "name": "implementation::desktop_messaging_boundary_tests::automation_store_preserves_reserved_messaging_tree_and_normal_agent_lifecycle",
+                "outcome": "ok",
+                "line": 2313
+              },
+              {
+                "name": "implementation::desktop_messaging_boundary_tests::desktop_entries_refuse_before_auth_parse_io_and_event_publication",
+                "outcome": "ok",
+                "line": 2314
+              },
+              {
+                "name": "implementation::desktop_messaging_boundary_tests::desktop_refusal_does_not_touch_poisoned_owner_state",
+                "start_line": 2315,
+                "outcome": "ok",
+                "completion_line": 2319,
+                "split_by_fixture_output": true
+              },
+              {
+                "name": "implementation::desktop_messaging_boundary_tests::desktop_refusal_leaves_corrupt_and_unknown_stores_byte_identical",
+                "outcome": "ok",
+                "line": 2320
+              },
+              {
+                "name": "implementation::desktop_messaging_boundary_tests::desktop_refusal_retains_original_stores_and_unfinished_uploads_across_reconstruction",
+                "outcome": "ok",
+                "line": 2321
+              },
+              {
+                "name": "implementation::desktop_messaging_boundary_tests::desktop_social_intents_refuse_before_auth_runtime_context_io_and_events",
+                "outcome": "ok",
+                "line": 2322
+              },
+              {
+                "name": "implementation::desktop_messaging_boundary_tests::desktop_social_refusal_does_not_lock_state_or_touch_retained_context",
+                "start_line": 2323,
+                "outcome": "ok",
+                "completion_line": 2326,
+                "split_by_fixture_output": true
+              },
+              {
+                "name": "implementation::desktop_messaging_boundary_tests::explicit_test_mode_still_executes_persists_issues_access_and_reads_blobs",
+                "outcome": "ok",
+                "line": 2327
+              },
+              {
+                "name": "implementation::desktop_messaging_boundary_tests::non_desktop_production_retains_blob_reads_and_existing_validation_boundaries",
+                "outcome": "ok",
+                "line": 2328
+              },
+              {
+                "name": "implementation::desktop_messaging_boundary_tests::social_boundary_keeps_explicit_test_non_desktop_and_other_namespaces",
+                "outcome": "ok",
+                "line": 2329
+              }
+            ]
+          }
+        ],
+        "tap": [],
+        "artifact": {
+          "id": 13180940474,
+          "node_id": "MDg6QXJ0aWZhY3QxMzE4MDk0MDQ3NA==",
+          "name": "desktop-social-owner-behaviors-f544e9b3161d758141e1b419bcdab22cc522952e",
+          "size_in_bytes": 14768,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180940474",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180940474/zip",
+          "expired": false,
+          "digest": "sha256:6b327d06f2bd81fdae0a0fc36408d23b584afbbd240547cf972a17e9eb4811a2",
+          "created_at": "2026-11-02T21:21:45Z",
+          "updated_at": "2026-11-02T21:21:45Z",
+          "expires_at": "2027-01-31T21:16:36Z",
+          "workflow_run": {
+            "id": 41526852400,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e"
+          }
+        },
+        "upload_digest_matches": true,
+        "upload_id_matches": true,
+        "errors": [
+          {
+            "line": 2334,
+            "text": "##[error]Process completed with exit code 1."
+          }
+        ]
+      }
+    },
+    "source_readbacks": [
+      {
+        "path": "source/host/src/extensions/session/human_creation_tests.rs",
+        "sha": "6f59c6249a3c9be84fa36a22b1a79bc8c9d2b4ab"
+      },
+      {
+        "path": "source/host/tests/session_gateway_contract.rs",
+        "sha": "4aae6ab5a6f5c9e32d6e91f6977c734ea0d9f7b6"
+      },
+      {
+        "path": "desktop/e2e/native-message-projection.spec.ts",
+        "sha": "ecbeb5b9f4091da33bf4da87608811310cf58856"
+      },
+      {
+        "path": "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+        "sha": "0929f54e3a836c6d90a2e8ee059c75fec0aca986"
+      }
+    ],
+    "fixture_fix": {
+      "commit": "f544e9b3161d758141e1b419bcdab22cc522952e",
+      "parent": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+      "path": "source/host/src/extensions/session/human_creation_tests.rs",
+      "blob_sha": "6f59c6249a3c9be84fa36a22b1a79bc8c9d2b4ab",
+      "changes": "page_size/root_page are read as i64, page_size>0/root_page>1 are required, conversion to usize and product multiplication are checked.",
+      "preserved_oracle": "Actual corrupt B-tree/NOTADB bytes plus sidecars/siblings stay byte-identical on first refusal, same-worker retry and restarted owner; no cached owner or live DB handle.",
+      "currently_no_terminal_failure_observed": false
+    },
+    "next_action": "Read the exact f95a33b13672095d68c6ca731f2f42e6c10b9890 run41528598989 UI/Social/FFI/Electron/Windows/shipping terminal logs and actual gates without rerun. This candidate preserves 9b's UI/NOTADB production repair and adds the short-header subcase; reconciliation is independently audited by current_ledger_reconcile_audit. Preserve all f544/e4 failures and do not transfer earlier passes to f95.",
+    "activity": {
+      "read_only": true,
+      "local_tests_builds_validators": false,
+      "github_writes_dispatch_rerun": false
+    },
+    "human63_named_checks": {
+      "authored_count": 63,
+      "actual_count": 63,
+      "missing": [],
+      "extra": [],
+      "original10": [
+        {
+          "name": "shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
+          "outcome": "ok",
+          "line": 1584
+        },
+        {
+          "name": "shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
+          "outcome": "ok",
+          "line": 1580
+        },
+        {
+          "name": "shipping_human_reaction_toggles_backend_truth_and_updates_canonical_transcript",
+          "outcome": "ok",
+          "line": 1574
+        },
+        {
+          "name": "shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap",
+          "outcome": "ok",
+          "line": 1591
+        },
+        {
+          "name": "shipping_human_sync_rejects_foreign_participants_before_resources_or_overlap",
+          "outcome": "ok",
+          "line": 1590
+        },
+        {
+          "name": "shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_restart",
+          "outcome": "ok",
+          "line": 1586
+        },
+        {
+          "name": "shipping_human_sync_rejects_conflicting_local_acknowledgements_before_resource_access",
+          "outcome": "ok",
+          "line": 1589
+        },
+        {
+          "name": "shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce",
+          "outcome": "ok",
+          "line": 1588
+        },
+        {
+          "name": "shipping_human_legacy_peer_nonce_is_safe_in_reactions_and_local_send",
+          "outcome": "ok",
+          "line": 1560
+        },
+        {
+          "name": "shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap",
+          "outcome": "ok",
+          "line": 1592
+        }
+      ],
+      "nmr48_five": [
+        {
+          "name": "shipping_human_forward_attachment_bytes_survive_process_kill_and_source_cache_replacement",
+          "outcome": "ok",
+          "line": 1521
+        },
+        {
+          "name": "shipping_human_forward_missing_or_corrupt_snapshot_retains_intent_until_exact_byte_repair",
+          "outcome": "ok",
+          "line": 1551
+        },
+        {
+          "name": "shipping_human_forward_invalid_attachment_inputs_and_snapshot_staging_fail_before_post",
+          "outcome": "ok",
+          "line": 1530
+        },
+        {
+          "name": "shipping_human_forward_legacy_unpinned_attachments_fail_without_blocking_history_or_rebinding_bytes",
+          "outcome": "ok",
+          "line": 1527
+        },
+        {
+          "name": "shipping_human_forward_attachment_snapshot_respects_source_policy_and_normalized_privacy",
+          "outcome": "ok",
+          "line": 1520
+        }
+      ],
+      "corruption": {
+        "name": "shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal",
+        "outcome": "ok",
+        "line": 1544
+      }
+    },
+    "evidence_files": [
+      {
+        "path": "audit/run-41526852400/artifacts.json",
+        "bytes": 5739,
+        "lines": 125,
+        "sha256": "b2330ddd56d46da0d82b5397a47d538f87774b2cfdff508ba2b7884deb6028cf"
+      },
+      {
+        "path": "audit/run-41526852400/desktop-social-owner-behaviors-125556686458.log",
+        "bytes": 207475,
+        "lines": 2397,
+        "sha256": "dd588b54508f5cd8afb2338b313b340dd2afeba5b5cb4f54d544046f44d25987"
+      },
+      {
+        "path": "audit/run-41526852400/exact-agent-db-recovery.rs",
+        "bytes": 12126,
+        "lines": 373,
+        "sha256": "2ef17aba9ed14b980847288e1144feff123d45b7eca14a7f3dfca0457b64fccf"
+      },
+      {
+        "path": "audit/run-41526852400/exact-pagination.ts",
+        "bytes": 11843,
+        "lines": 329,
+        "sha256": "32fcc10d2fbaaa18aa23108807c01ea493400aefc1b374376a970292a826ce36"
+      },
+      {
+        "path": "audit/run-41526852400/exact-transcript.tsx",
+        "bytes": 52251,
+        "lines": 817,
+        "sha256": "db947b555e030cb51d28e7a38d823c3f2c762980f8971f1f6d5b1c26e59b02c4"
+      },
+      {
+        "path": "audit/run-41526852400/exact-ui-fixture.tsx",
+        "bytes": 14446,
+        "lines": 256,
+        "sha256": "bfe45e0dc8f8a94145d85f8898fb69988ed00df3cea0b7921284582c264d3531"
+      },
+      {
+        "path": "audit/run-41526852400/fixture-repair-commit.json",
+        "bytes": 5864,
+        "lines": 101,
+        "sha256": "28272ad765b18de20842aa8a03196d1050e5275faf752de3d48675f6de3ce331"
+      },
+      {
+        "path": "audit/run-41526852400/fresh-ui-test.ts",
+        "bytes": 23527,
+        "lines": 346,
+        "sha256": "610081d1a2844fcf706fadca26ab129b1f84e578964f8c47eba682545da99d92"
+      },
+      {
+        "path": "audit/run-41526852400/jobs-initial.json",
+        "bytes": 31073,
+        "lines": 905,
+        "sha256": "cc7fdd2b0044702d3dd030032e768885b85868c47d6215687a4f48cfa3daf4ee"
+      },
+      {
+        "path": "audit/run-41526852400/jobs-terminal-with-shipping-queued.json",
+        "bytes": 33292,
+        "lines": 937,
+        "sha256": "8fd9dd6fe56aabcb75ecd32e6a961a8b2fa93d73b3d433bd793728dc1c7a2ff1"
+      },
+      {
+        "path": "audit/run-41526852400/native-message-electron-125556686041.log",
+        "bytes": 92434,
+        "lines": 1221,
+        "sha256": "02aeada75ceffabe8943075067c6600662c9aa24feffb73c530b92ee5858cd30"
+      },
+      {
+        "path": "audit/run-41526852400/native-message-reconciliation-125556686433.log",
+        "bytes": 230953,
+        "lines": 2510,
+        "sha256": "a37a592f0edb8f59036c63f261850d457cb6bc4fd4f1e42a872913b88e55183b"
+      },
+      {
+        "path": "audit/run-41526852400/native-message-ui-125556685749.log",
+        "bytes": 139297,
+        "lines": 1530,
+        "sha256": "fafd199a0992a510c7b5f63ed9d509ccb315eb7017b128077cb67d77280d0841"
+      },
+      {
+        "path": "audit/run-41526852400/native-service-contracts.yml",
+        "bytes": 71750,
+        "lines": 1083,
+        "sha256": "37018f428e980828e3cb50cd366e7f1961d7fbc67919ab233539a4fa02afda2e"
+      },
+      {
+        "path": "audit/run-41526852400/retained-direct-ffi-compatibility-125556686045.log",
+        "bytes": 55818,
+        "lines": 604,
+        "sha256": "0fe22cfd4ec1cf0a1b1ad8c08b18d50c8b265f2b1734ddd0bfcab5ec6bd94226"
+      },
+      {
+        "path": "audit/run-41526852400/run-initial.json",
+        "bytes": 13734,
+        "lines": 224,
+        "sha256": "928ded85156eba9fd286cca4dc0da5d78b96e7ce4917af073810ff29f55a6754"
+      },
+      {
+        "path": "audit/run-41526852400/windows-update-publisher-125556686140.log",
+        "bytes": 35006,
+        "lines": 400,
+        "sha256": "c55e1a1075fce3ced8f800a1e09939a101abc4d1bf1a7d8f9763c2b1beb903be"
+      },
+      {
+        "path": "audit/run-41527256827/native-message-ui-125558078887.log",
+        "bytes": 134361,
+        "lines": 1489,
+        "sha256": "d105cb5e3eafbc24fb76bd3276d54f713ed869a0d1d9875c48aefdb046141108"
+      }
+    ],
+    "failures": [
+      {
+        "job": "native-message-ui",
+        "classification": "PRODUCTION_READINESS_HANDOFF_DEFECT_WITH_TEST_SCROLL_ASSUMPTION",
+        "actual": {
+          "transcript": 33,
+          "consumer": 17,
+          "settlement": 5,
+          "forward_chromium": 16,
+          "production_renderer": {
+            "passed": 1,
+            "failed": 10
+          },
+          "production_transcript": {
+            "executed": 0,
+            "status": "skipped"
+          }
+        },
+        "root_cause": "Fixture correctly returns entries m3..m5, nextBeforeSeq=3 and opaque nextBeforeCursor. Production passes snapshot.hasOlder, which stays true for unprobed and more. ConversationTranscript effect runs before cursor readiness, loadOlder returns resolved without a request, then none of the effect dependencies changes when the initial page installs the real cursor. Older queue stays empty absent a scroll. All ten failures are the same pending().older expected1/received0 timeout; no install/browser/compile failure.",
+        "evidence": {
+          "fixture": {
+            "path": "desktop/e2e/fixtures/native-message-projection.tsx",
+            "blob": "eea793d99ffa7dd825cdca31b25d1d04dcc4a5de",
+            "lines": [
+              76,
+              86
+            ]
+          },
+          "pagination": {
+            "path": "frontend/src/recovered/features/conversation/workspace/pagination.ts",
+            "blob": "8a9e536fd567b0c90013cc5c6240279e281f3840",
+            "lines": [
+              135,
+              143,
+              195,
+              205,
+              220,
+              229
+            ]
+          },
+          "transcript": {
+            "path": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+            "blob": "dc872faf27520f839e0ab79c58ec4e2b216cdbaf",
+            "lines": [
+              625,
+              689
+            ]
+          },
+          "renderer_old": {
+            "path": "frontend/src/production/ProductionRenderer.tsx",
+            "blob": "43bb7c21609f9a822801b0f23e86652863ace69a",
+            "lines": [
+              1056,
+              1082,
+              1639,
+              1671,
+              2743,
+              2837,
+              4268,
+              4276
+            ]
+          },
+          "failure_log_lines": [
+            1033,
+            1036,
+            1038,
+            1040,
+            1041,
+            1048,
+            1455,
+            1466
+          ]
+        },
+        "fresh_already_fixed": {
+          "observed_head": "c5f60507919b53b38690a05cd430c653f5f986dd",
+          "production_commit": "441425cd65a661f95d8b629c388281c77115d2b2",
+          "renderer_blob": "e6449278d2b45a40cfbd3537ef3a6590680dce82",
+          "change": "hasOlder={transcriptPaginationSnapshot.cursor.kind === \"more\"}",
+          "test_commit": "e4f91d1cae92ef32e6299c683248bf32ddafa073",
+          "test_blob": "b46404da5567673cec2fb4a7a3a116dc433eb290",
+          "test_change": "Scroll actual mounted viewport after rows/React effects settle; original assertions and all eleven cases retained.",
+          "fixture_unchanged": true
+        },
+        "recommendation": "Preserve both already-published fixes; qualify the specified e4f91d1c run rather than edit or rerun obsolete f544."
+      },
+      {
+        "job": "native-message-reconciliation",
+        "classification": "PRODUCTION_NONDESTRUCTIVE_OPEN_DEFECT",
+        "actual": {
+          "transcript_recovery": 3,
+          "human": 63,
+          "resource": 3,
+          "creation": {
+            "passed": 11,
+            "failed": 1
+          },
+          "storage3": "not executed",
+          "sharebox1": "not executed",
+          "journal12": "not executed",
+          "agent4": "not executed",
+          "private_credential3": "not executed",
+          "gateway1": "not executed"
+        },
+        "case": "extensions::session::production::human_creation_tests::corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
+        "failure": {
+          "source_line": 777,
+          "log_lines": [
+            2408,
+            2409,
+            2410,
+            2411,
+            2413,
+            2431
+          ],
+          "observation": "NOTADB main and unrelated-resource.bin preserved, but original store.db-journal, store.db-shm and store.db-wal absent after refusal."
+        },
+        "source": {
+          "path": "source/host/src/extensions/session/agent_db_recovery.rs",
+          "blob": "fee9c2f3f88e713edea0d6f03c70763a8dd8072d",
+          "caller_path": "source/host/src/extensions/session/agent_db.rs",
+          "caller_blob": "0b396511ce827f38377b252ec6e05466be1d8564",
+          "probe_lines": [
+            122,
+            157
+          ],
+          "caller_lines": [
+            256,
+            268
+          ],
+          "mutating_opener_lines": [
+            88,
+            113
+          ]
+        },
+        "root_cause": "probe_human_conversation_store returns Ok immediately for nonempty -wal/-journal before inspecting NOTADB main. open_human_conversation_store then enters Connection::open, journal-mode and schema work; recover_on_corruption=false cannot prevent SQLite sidecar cleanup during this open. Current observed fresh cbb53155 retains the identical recovery blob.",
+        "minimal_repair_suggestion": "Read and reject a definitely invalid nonempty SQLite main-file header before any sidecar early-return or SQLite connection. Keep valid WAL-aware stores on the existing authority path; do not use immutable main-only checks as WAL truth. Preserve original file bytes and all twelve creation plus three storage oracles; inspect current head again before CAS because parallel owners are active.",
+        "fresh_repair_observed": false,
+        "fresh_source_head": "cbb531552160f8ba5f098be50318b4c8739f86d7"
+      },
+      {
+        "job": "desktop-social-owner-behaviors",
+        "classification": "TEST_LOG_ORACLE_DEFECT",
+        "actual": {
+          "featurehost": {
+            "passed": 10,
+            "failed": 0,
+            "ignored": 0
+          },
+          "sqlite_recovery9": "not executed",
+          "http_owner6": "not executed"
+        },
+        "root_cause": "Intentional catch_unwind poison test prints its case prefix, panic diagnostics and standalone ok on separate lines. Cargo's actual summary is 10 passed/0 failed; fixed same-line '... ok' grep at workflow L363 exits1 after previous grep success. Both intentional panics completed ok, not Rust assertion failures.",
+        "evidence_lines": [
+          2315,
+          2316,
+          2317,
+          2319,
+          2323,
+          2324,
+          2325,
+          2326,
+          2331,
+          2333,
+          2334
+        ],
+        "fresh_already_fixed": {
+          "observed_head": "cbb531552160f8ba5f098be50318b4c8739f86d7",
+          "commit": "f2903f53ded5b07faea73e7f07d780eda0423283",
+          "workflow_blob": "cf888c52e7860a766d8f41caaada3338e8fc1dbf",
+          "change": "Require exact fully-qualified case-start; retain unchanged10pass/0fail/0ignored outcome and all other named gates."
+        },
+        "recommendation": "Do not repeat the already-published grep fix. Later containing-H Feature10/Social9/HTTP6 execution remains required; this audit has not qualified parent-mentioned successor run41527613857."
+      }
+    ],
+    "e4_ui_followup": {
+      "head_sha": "e4f91d1cae92ef32e6299c683248bf32ddafa073",
+      "run_id": 41527256827,
+      "job_id": 125558078887,
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-02T21:22:14Z",
+      "completed_at": "2026-11-02T21:25:14Z",
+      "workflow_blob": "ccfbf53d858ba23ac20f188168a6c20cc66c7214",
+      "checkout": {
+        "full_sha_printed_log_line": 135,
+        "exact_sha_guard_log_line": 138,
+        "matched": true
+      },
+      "full_log": {
+        "path": "audit/run-41527256827/native-message-ui-125558078887.log",
+        "bytes": 134361,
+        "lines": 1489,
+        "sha256": "d105cb5e3eafbc24fb76bd3276d54f713ed869a0d1d9875c48aefdb046141108"
+      },
+      "node_actual_groups": [
+        {
+          "name": "Transcript33",
+          "actual_named_ok": [
+            "NMR-49 dispatching Human text and attachments stay pending until settlement",
+            "NMR-49 existing Human and Agent delivery projections remain unchanged",
+            "NMR-26 late initial tail keeps a same-ID edit, reaction, and newer append",
+            "NMR-26 duplicate initial IDs and nonce acknowledgement retain one canonical send",
+            "NMR-26 feed baseline cannot roll back a same-ID Agent terminal event",
+            "NMR-26 tail merge preserves cached older updates in canonical order",
+            "NMR-26 disjoint tail stays between cached history and events first seen during the read",
+            "NMR-26 complete refresh updates unchanged rows but preserves post-request events",
+            "NMR-26 older page overlap deduplicates IDs without reverting current row state",
+            "NMR-26 accepted pages commit to the root cache and resume the exclusive cursor on reopen",
+            "NMR-26 update of an unloaded old row wins over an in-flight page",
+            "NMR-26 loaded older row refresh retains order and the next-page cursor",
+            "NMR-26 account and conversation changes fence stale rows and request completion",
+            "NMR-26 clear/reset prevents a late page from repopulating the transcript",
+            "NMR-26 authoritative complete refresh supersedes an older request",
+            "NMR-26 failed history load preserves rows and retries the same cursor once",
+            "NMR-26 synchronous fetch failure cannot leave pagination permanently busy",
+            "NMR-26 viewport anchoring and disposal reject stale asynchronous effects",
+            "Human transcript correlation isolates authors while retaining Host and optimistic send settlement",
+            "Human older pages cannot resurrect a settled pending row in the root cache",
+            "NMR-26 an intermediate row commit cannot consume an older-page viewport anchor",
+            "NMR-26 a late first reaction response cannot replace a later mutation settlement",
+            "NMR-26 an authoritative event wins over an outstanding reaction RPC response",
+            "NMR-26 account generation fences a reaction across logout and return to the same identity",
+            "NMR-26 independent conversation and message reactions retain their completion scope",
+            "NMR-26 current reaction failures report once and obsolete failures cannot replace recovery feedback",
+            "NMR-26 deferred reaction state and error updates recheck events, clear and account generation",
+            "NMR-26 Human reaction settlement and a later event refresh an older row without moving it",
+            "NMR-26 disposed reaction completion cannot mutate the renderer or show a stale error",
+            "NMR-26 Human empty snapshots clear content and resources while Agent partial echoes retain them",
+            "NMR-26 peer and missing-author nonces cannot reconcile a local Human placeholder",
+            "NMR-26 before-ID canonicalization and a delayed receipt preserve one newer settled Human row",
+            "NMR-26 overlapping older windows preserve canonical anchors and loaded/in-flight identity updates"
+          ],
+          "actual_summary": [
+            "# tests 33",
+            "# pass 33",
+            "# fail 0",
+            "# cancelled 0",
+            "# skipped 0",
+            "# todo 0"
+          ],
+          "log_lines": [
+            210,
+            419
+          ]
+        },
+        {
+          "name": "consumer17",
+          "actual_named_ok": [
+            "Human transcript cursors preserve the opaque traversal beside the physical anchor",
+            "Human transcript cursor admission rejects malformed scope and continuation without coercion",
+            "Telegram authorization projection accepts typed challenge, issue, and bounded backoff",
+            "Telegram authorization projection rejects malformed or unbounded state",
+            "remaining Telegram auth lifecycle methods share the canonical projection contract",
+            "timeline event registry validates protocol rows and descriptions",
+            "transcript feed fanout shares one subscription and validates entry identity",
+            "hidden chat mutations rollback permanent failures and hold transport failures for reconnect",
+            "find-in-chat searches visible text, wraps navigation and resets on scope",
+            "routine history formats status and relative/zoned timestamps",
+            "composer draft restore does not overwrite a staged attachment added while persistence is loading",
+            "forward recipient keyboard policy preserves picker boundaries and submit semantics",
+            "Human opaque history cursors survive projection, root-cache commits and cached conversation reopen",
+            "Human failed history retries preserve the exact token and the latest committed row overlay",
+            "Human opaque history rejects stale account ABA results and their buffered updates",
+            "Human replacement initial history clears the prior token and failed-read overlays",
+            "Agent pagination retains its sequence-only request and viewport anchor"
+          ],
+          "actual_summary": [
+            "# tests 17",
+            "# pass 17",
+            "# fail 0",
+            "# cancelled 0",
+            "# skipped 0",
+            "# todo 0"
+          ],
+          "log_lines": [
+            444,
+            560
+          ]
+        },
+        {
+          "name": "settlement5",
+          "actual_named_ok": [
+            "current forward success projects notice and roster",
+            "mixed settlement retains failed count and current roster",
+            "account switch before settlement prevents every projection",
+            "late successful roster response cannot repopulate a new account",
+            "late rejected roster request cannot alter a new account or rollback notice"
+          ],
+          "actual_summary": [
+            "# tests 5",
+            "# pass 5",
+            "# fail 0",
+            "# cancelled 0",
+            "# skipped 0",
+            "# todo 0"
+          ],
+          "log_lines": [
+            626,
+            664
+          ]
+        },
+        {
+          "name": "forwardChromium16",
+          "actual_named_ok": [
+            "current forward closes and settles exactly once",
+            "account switch prevents old success from closing B dialog",
+            "logout prevents late error from being displayed",
+            "A B A reuse still rejects old settlement",
+            "closed dialog discards old search",
+            "replaced source discards old search",
+            "unmount synchronously invalidates root generation",
+            "late rejected search cannot display error in reopened dialog",
+            "rapid double-submit dispatches only once",
+            "partial retry only sends failed destination with stable identity",
+            "query change does not invalidate valid submit",
+            "credential refresh does not replace account dialog lifetime",
+            "ambiguous missing duplicate and unexpected settlements retain the frozen retry intent",
+            "recipient limit stays editable and counts selections outside the current search",
+            "closing a pending forward retires presentation without cancelling or settling a reopened intent",
+            "late searches preserve send failure and retry destinations even when selected rows are hidden"
+          ],
+          "actual_summary": [
+            "# tests 16",
+            "# pass 16",
+            "# fail 0",
+            "# cancelled 0",
+            "# skipped 0",
+            "# todo 0"
+          ],
+          "log_lines": [
+            894,
+            1000
+          ]
+        }
+      ],
+      "production_renderer_compile": "success",
+      "playwright": {
+        "expected": 11,
+        "actual_executed": 11,
+        "passed": 2,
+        "failed": 9,
+        "skipped": 0,
+        "retries_configured": 0,
+        "actual_run_count": 11,
+        "cases": [
+          {
+            "name": "NMR-26 production transcript preserves paged edits and empty rows through tail refresh and switching (light)",
+            "status": "failed"
+          },
+          {
+            "name": "NMR-26 production transcript preserves paged edits and empty rows through tail refresh and switching (dark)",
+            "status": "failed"
+          },
+          {
+            "name": "NMR-26 an initial tail cannot overwrite an identity remap and later empty-row mutation",
+            "status": "passed_by_complete_runner_summary"
+          },
+          {
+            "name": "NMR-26 a canonical clear fences an initial tail that returns after the fresh empty page",
+            "status": "passed_by_complete_runner_summary"
+          },
+          {
+            "name": "NMR-26 an older page and full refresh arriving after mutations cannot restore stale content (page-first)",
+            "status": "failed"
+          },
+          {
+            "name": "NMR-26 an older page and full refresh arriving after mutations cannot restore stale content (refresh-first)",
+            "status": "failed"
+          },
+          {
+            "name": "NMR-26 a peer nonce collision, delayed receipt and roster failure preserve the successful canonical send",
+            "status": "failed"
+          },
+          {
+            "name": "NMR-26 logout cancels the in-flight renderer epoch before another account sends in the same conversation",
+            "status": "failed"
+          },
+          {
+            "name": "NMR-26 logout cancels the queued renderer epoch before another account sends in the same conversation",
+            "status": "failed"
+          },
+          {
+            "name": "NMR-26 old-row reaction commands settle the page cache and cannot overwrite a later empty-row mutation",
+            "status": "failed"
+          },
+          {
+            "name": "NMR-26 a disconnected Human send queues and reconnect dispatches it exactly once",
+            "status": "failed"
+          }
+        ],
+        "summary_log_lines": [
+          1415,
+          1425
+        ],
+        "assertion": {
+          "expected": 1,
+          "received": 2,
+          "property": "window.nativeMessageFixture.pending().older",
+          "location": "openAlice desktop/e2e/native-message-projection.spec.ts:47",
+          "first_failure_log_lines": [
+            1036,
+            1054
+          ]
+        },
+        "note": "Quoted console.log('11 passed') at line1026 is the unexecuted post-run script, not a successful result."
+      },
+      "pagination8": {
+        "step": "Actual ProductionRenderer Transcript cache and continuation behaviors",
+        "status": "skipped",
+        "actual_executed": 0,
+        "expected": 8
+      },
+      "artifact": {
+        "id": 13181570073,
+        "size_in_bytes": 19978130,
+        "digest": "sha256:f4a644d3d84b938cd9f887364aa0977b8ecf43611d4b6acd622700543ba4543f",
+        "api_matches_upload_log": true,
+        "upload_digest_log_line": 1451,
+        "upload_id_log_line": 1453,
+        "verification_scope": "API metadata digest equals decoded upload log; archive bytes were not independently rehashed."
+      },
+      "root_cause": {
+        "classification": "IMPLEMENTATION_DEFECT",
+        "description": "Automatic roster selection opens Alice and starts one older request. Selecting the already-current conversation again entered hasLoadedEntries and unconditionally installed its cached page. installInitialPage increments request/page generations and clears inFlight even though setScope was unchanged; the still-held first transport request plus a new automatic older request produces pending.older=2. The controller already coalesces loadOlder when inFlight is retained.",
+        "anchors": [
+          {
+            "path": "frontend/src/production/ProductionRenderer.tsx",
+            "prior_blob": "e6449278d2b45a40cfbd3537ef3a6590680dce82",
+            "sections": "openAgent 2735-2770 and automatic missing-entry effect3212-3214"
+          },
+          {
+            "path": "frontend/src/recovered/features/conversation/workspace/pagination.ts",
+            "blob": "8a9e536fd567b0c90013cc5c6240279e281f3840",
+            "sections": "setScope183-193; installInitialPage195-206; loadOlder220-285"
+          }
+        ]
+      },
+      "concurrent_causal_repair": {
+        "head": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+        "parent": "5d1b04368e33d209dd025f37db35de4a33c125c2",
+        "renderer_blob": "3ba10ab2e4e67082ec09df3f6a51cc7a58fcf363",
+        "test_blob": "c0dc8a1ed85e5ccdd7dab854b882cdfbdd9e0438",
+        "description": "Restore a cached cursor only for an unprobed scope. Same-scope reselect now preserves its in-flight page and failure overlays; a changed scope still restores its cached cursor. Existing eleven scenarios explicitly wait for the auto-open older request before clicking Alice, then retain before/after-scroll ==1 assertions.",
+        "reviewed_via": "GitHub commit full TS diff and exact file readbacks",
+        "runtime_qualified": false,
+        "files": [
+          "audit/run-41527256827/concurrent-repair-9b-commit.json",
+          "audit/run-41527256827/concurrent-repair-9b-test.ts",
+          "audit/run-41527256827/concurrent-repair-9b-renderer-excerpt.txt"
+        ]
+      },
+      "unqualified_later_run_reference": {
+        "head": "f2903f53ded5b07faea73e7f07d780eda0423283",
+        "run_id": 41527613857,
+        "note": "Recorded as a later successor only; not qualified by e4 logs."
+      },
+      "execution_not_yet_qualified": true
+    },
+    "workflow_expected_counts": {
+      "reconciliation": {
+        "transcript_recovery": 3,
+        "human": 63,
+        "resource": 3,
+        "human_creation": 12,
+        "human_creation_storage": 3,
+        "sharebox": 1,
+        "journal": 12,
+        "agent": 4,
+        "private_credential": 3,
+        "gateway": 1
+      },
+      "ui": {
+        "transcript": 33,
+        "consumer": 17,
+        "settlement": 5,
+        "forward_chromium": 16,
+        "production_renderer": 11,
+        "production_transcript": 8
+      },
+      "social": {
+        "featurehost": 10,
+        "sqlite_recovery": 9,
+        "http_owner": 6
+      }
+    }
+  },
+  "independent_ui_causal_review": {
+    "schema": "fabushi-round4-pagination-ui-causal-review-v1",
+    "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 4,
+    "repository": "bhrumom/fabushi-desktop",
+    "scope": "Read-only static production callgraph and fixture review; no tests/builds/validators/GitHub or product changes.",
+    "observed_head": "cbb531552160f8ba5f098be50318b4c8739f86d7",
+    "failed_head": "f544e9b3161d758141e1b419bcdab22cc522952e",
+    "failed_run": 41526852400,
+    "failed_job": 125556685749,
+    "failure_observation": {
+      "source": "Parent/sibling complete-log audit",
+      "production_renderer_expected": 11,
+      "passed": 1,
+      "failed": 10,
+      "common_boundary": "openAlice waits for pending().older == 1; actual0",
+      "round10_8": "not run after preceding failure"
+    },
+    "spec_scope": [
+      "NMR-26a/b requires11 actual-root Chromium scenarios without retries/skips and retained paging/event/identity/async behavior",
+      "NMR-UI-01 preserves author/lifetime/settlement/canonical-empty contracts",
+      "Round10 NMR-AC-17 adds8 real-viewport pagination/retry/clear/account/cache/Find cases; does not replace the11-case gate"
+    ],
+    "files": [
+      {
+        "path": "frontend/src/production/ProductionRenderer.tsx",
+        "blob": "e6449278d2b45a40cfbd3537ef3a6590680dce82"
+      },
+      {
+        "path": "frontend/src/recovered/features/conversation/workspace/pagination.ts",
+        "blob": "8a9e536fd567b0c90013cc5c6240279e281f3840"
+      },
+      {
+        "path": "desktop/e2e/native-message-projection.spec.ts",
+        "blob": "b46404da5567673cec2fb4a7a3a116dc433eb290"
+      },
+      {
+        "path": "desktop/e2e/fixtures/native-message-projection.tsx",
+        "blob": "eea793d99ffa7dd825cdca31b25d1d04dcc4a5de"
+      },
+      {
+        "path": "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+        "blob": "0929f54e3a836c6d90a2e8ee059c75fec0aca986"
+      },
+      {
+        "path": "frontend/src/production/ProductionRenderer.transcript.fixture.tsx",
+        "blob": "98f981a808f83bb2cb2f03c5131bb2db99e401ee"
+      },
+      {
+        "path": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "blob": "dc872faf27520f839e0ab79c58ec4e2b216cdbaf"
+      },
+      {
+        "path": "docs/specs/fbcp-native-message-reconciliation.md",
+        "blob": "bd545bf38a7577a55ff0fecece1932a44df30ada"
+      }
+    ],
+    "existing_fixes": [
+      {
+        "commit": "441425cd65a661f95d8b629c388281c77115d2b2",
+        "path": "frontend/src/production/ProductionRenderer.tsx",
+        "blob": "e6449278d2b45a40cfbd3537ef3a6590680dce82",
+        "change": "hasOlder={snapshot.hasOlder} -> hasOlder={snapshot.cursor.kind === \"more\"}",
+        "review": "Causally fixes ready-state activation for real users; not merely a fixture change."
+      },
+      {
+        "commit": "e4f91d1cae92ef32e6299c683248bf32ddafa073",
+        "path": "desktop/e2e/native-message-projection.spec.ts",
+        "blob": "b46404da5567673cec2fb4a7a3a116dc433eb290",
+        "change": "After visible tail, settle8 animation frames then set the actual transcript DOM scrollTop=0 and dispatch scroll; also at reload and held-initial release.",
+        "review": "Exercises the real mounted viewport listener; does not manufacture the older request/response or delete the11 assertions."
+      }
+    ],
+    "only_root_change_since_failure": true,
+    "callgraph": [
+      {
+        "path": "ProductionRenderer.tsx",
+        "lines": [
+          2748,
+          2825
+        ],
+        "relation": "openAgent scopes controller, fetches initial Human tail through Coordinator, records nextBeforeSeq/nextBeforeCursor, then installInitialPage(entries:[]) while root owns visible entries."
+      },
+      {
+        "path": "pagination.ts",
+        "lines": [
+          82,
+          93,
+          135,
+          143,
+          195,
+          205,
+          220,
+          252
+        ],
+        "relation": "unprobed initially; snapshot.hasOlder is true for unprobed and more; installInitialPage converts cursor to more on finite nextBeforeSeq; loadOlder refuses all cursor states other than more and coalesces an existing inFlight request."
+      },
+      {
+        "path": "ProductionRenderer.tsx",
+        "lines": [
+          1639,
+          1671,
+          2290,
+          4268,
+          4276
+        ],
+        "relation": "useSyncExternalStore receives controller updates; stable loadOlder callback and viewport-binding callback feed the real ConversationTranscript. Current root exposes actionable more-state to the component."
+      },
+      {
+        "path": "transcript.tsx",
+        "lines": [
+          627,
+          630,
+          664,
+          689
+        ],
+        "relation": "DOM callback binds the viewport. Pagination effect runs on hasOlder/isLoadingOlder/olderLoadFailed/loadOlder, installs a scroll listener and calls maybeLoadOlder once; it stops above scrollTop600 or during in-flight/error state."
+      },
+      {
+        "path": "ProductionRenderer.tsx",
+        "lines": [
+          1056,
+          1082
+        ],
+        "relation": "fetchPage calls getHumanConversationTranscriptTail with conversationId, limit, beforeSeq and opaque beforeCursor; response is projected into controller/cache and committed into the existing root."
+      }
+    ],
+    "fixture_match": {
+      "path": "desktop/e2e/fixtures/native-message-projection.tsx",
+      "anchors": [
+        27,
+        35,
+        37,
+        76,
+        86,
+        183,
+        189,
+        256
+      ],
+      "actual_root": true,
+      "initial_data": "Alice has5 canonical rows; initial response contains last3 rows m3/m4/m5 with nextBeforeSeq3 and fixture-human-walk:3.",
+      "older_request": "Only a real tail request carrying numeric beforeSeq queues one pending older response; holdOlder=true keeps it in flight.",
+      "older_response": "Returns first2 canonical rows after releaseOlder; selected test verifies all5 IDs and every older request's opaque beforeCursor.",
+      "geometry_limit": "The3-row tail and visiblem3 do not by themselves prove the viewport crossed the loading threshold or fired scroll. No browser geometry was measured in this static audit."
+    },
+    "causal_conclusion": "With old root wiring the effect could run while cursor was unprobed and loadOlder immediately resolved. Arrival of a real more cursor kept exposed hasOlder=true and other effect dependencies unchanged, so no second automatic probe was guaranteed. A sparse/non-scrolling viewport could leave older0 indefinitely. New cursor-kind wiring makes ready-state false→true and reruns the effect. The explicit DOM scroll in tests separately expresses the older-history user action when viewport geometry/scroll position does not auto-trigger.",
+    "duplicate_request_safety": "ConversationTranscript olderLoadInFlightRef plus controller.inFlight coalesce the automatic probe and explicit scroll. The held older response remains pending until the test releases it, so the expected1 is retained.",
+    "minimal_recommendation": "Keep both already-published fixes; do not duplicate code changes or remove assertions. Read their containing-H Actions result for all11 production-renderer cases and subsequent8 Round10 cases, plus retained gates.",
+    "remaining_risks": [
+      "Static causal proof is not execution proof; exact-H11/8 gates and complete logs remain required.",
+      "The explicit scroll helper no longer independently proves automatic unprobed→more activation; preserve the production ready-state fix and review actual-root results without treating fixture-only success as proof of automatic loading.",
+      "Eight animation frames are a synchronization assumption, not a browser-readiness guarantee. Only change it if actual logs identify a remaining race; keep visible-tail and pending-request assertions.",
+      "Viewport replacement after initial-error Retry, pendingAnchor.ready behavior, account/clear/disposal fencing and Find failure stopping still depend on the retained Round10 cases.",
+      "The helper comment describing unchanged hasOlder refers to the controller snapshot; current component prop now changes false→true. This wording is historical context, not an additional product defect."
+    ],
+    "classification": {
+      "production": "Readiness/effect dependency implementation defect",
+      "fixture": "Missing explicit older-history interaction and assumption that automatic probing always reruns",
+      "acceptance": "pending exact containing-H results"
+    }
+  },
+  "independent_sidecar_causal_review": {
+    "audit_kind": "independent_static_review",
+    "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 4,
+    "observed_at_utc": "2026-11-02T21:26:44Z",
+    "repository": "bhrumom/fabushi-desktop",
+    "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "scope": "NOTADB and nonempty short-header refusal before SQLite may alter original sidecars; audit only",
+    "decision": {
+      "blocking_static_findings": [],
+      "conclusion": "Preserve concurrently published production blob 91105c4c23fd18cb2da1ec9ef7d81fedd5e0f167; publish only the previously reviewed short-header test blob 7ce0914f9010d7d7fda0676929d57b154fa38f45 through fresh-base CAS, then require exact-containing-H Actions. There are no blocking static findings. This is not execution or acceptance evidence.",
+      "product_acceptance": false,
+      "candidate_tests_executed_by_reviewer": false,
+      "local_product_validation_executed": false,
+      "github_writes_by_reviewer": false
+    },
+    "identities": {
+      "baseline_head": "27058348051d8160937bf072e2d0766cf8eeeacf",
+      "independently_read_spec_and_source_head": "9eec8e01b2bbf9707ba6d6633877ec66c55eaa6d",
+      "spec_blob": "bd545bf38a7577a55ff0fecece1932a44df30ada",
+      "spec_lines": "NMR-CREATE-01d and NMR-AC-CREATE-01, lines 1781-1819",
+      "source_tree_not_truncated": true,
+      "files": {
+        "audit/current-recovery/agent_db_recovery.rs": {
+          "bytes": 12126,
+          "sha256": "2ef17aba9ed14b980847288e1144feff123d45b7eca14a7f3dfca0457b64fccf",
+          "git_blob": "fee9c2f3f88e713edea0d6f03c70763a8dd8072d"
+        },
+        "audit/current-recovery/human_creation_tests.rs": {
+          "bytes": 37178,
+          "sha256": "adcadcce6c7ee8e09a15f0f962bb4a24d37a7adac785e52cf54562f929c5655a",
+          "git_blob": "6f59c6249a3c9be84fa36a22b1a79bc8c9d2b4ab"
+        },
+        "audit/current-recovery/agent_db.rs": {
+          "bytes": 114956,
+          "sha256": "4c7e9197cb850ef70a611a52c70deb883011ccd6a3d101a30de799df46fffde6",
+          "git_blob": "0b396511ce827f38377b252ec6e05466be1d8564"
+        },
+        "current-recovery/source/host/src/extensions/session/agent_db_recovery.rs": {
+          "bytes": 12828,
+          "sha256": "681445fce3dfec4c7c836f133eb80ef95bb9192e2f34d7d8f2d4cf943397ce9b",
+          "git_blob": "d6174d72dd62e5bf39d3db3caeb3f8838d390d60"
+        },
+        "current-recovery/source/host/src/extensions/session/human_creation_tests.rs": {
+          "bytes": 37395,
+          "sha256": "f9ad655f433804b264946ee53e31a3b9a3ef664a396f9921d9799ebb5072d37f",
+          "git_blob": "7ce0914f9010d7d7fda0676929d57b154fa38f45"
+        },
+        "audit/run-41526852400/native-message-reconciliation-125556686433.log": {
+          "bytes": 230953,
+          "sha256": "a37a592f0edb8f59036c63f261850d457cb6bc4fd4f1e42a872913b88e55183b",
+          "git_blob": "34fec054ac3b5f60a8862024d25bedd28599a552"
+        }
+      },
+      "unchanged_remote_inputs": {
+        "source/host/src/extensions/session/agent_db.rs": "0b396511ce827f38377b252ec6e05466be1d8564",
+        "source/host/src/extensions/session/production.rs": "1ab341949c21cc20b2c6c9ee03b7140535ba7bd7",
+        "source/host/src/extensions/session/human_creation_storage_tests.rs": "7be79bc692a857775ef68c0494642ef58f305481"
+      },
+      "candidate_remote_publication": "The initial d617 production blob and the parent-reported unattached 7f95 commit were NOT published. A CAS conflict exposed a concurrent production fix; root abandoned the stale production candidate. Only the reviewed short-header test remains a publication candidate."
+    },
+    "observed_failure": {
+      "head": "f544e9b3161d758141e1b419bcdab22cc522952e",
+      "run_id": 41526852400,
+      "job_id": 125556686433,
+      "full_log": "audit/run-41526852400/native-message-reconciliation-125556686433.log",
+      "log_sha256": "a37a592f0edb8f59036c63f261850d457cb6bc4fd4f1e42a872913b88e55183b",
+      "creation_result": {
+        "passed": 11,
+        "failed": 1,
+        "ignored": 0,
+        "filtered_out": 150
+      },
+      "failed_test": "extensions::session::production::human_creation_tests::corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
+      "assertion_location": "human_creation_tests.rs:777 in the failing H; log lines 2406-2434",
+      "actual_files": [
+        "store.db",
+        "unrelated-resource.bin"
+      ],
+      "expected_files": [
+        "store.db",
+        "store.db-journal",
+        "store.db-shm",
+        "store.db-wal",
+        "unrelated-resource.bin"
+      ],
+      "deleted_sidecars": [
+        "store.db-journal",
+        "store.db-shm",
+        "store.db-wal"
+      ],
+      "retained_main_and_sibling_bytes_identical": true,
+      "first_subscenario": "notadb",
+      "later_schema_and_data_page_subscenarios_executed": false,
+      "following_atomic_storage_group_executed_in_this_job": false,
+      "preceding_verified_groups": {
+        "transcript_recovery": 3,
+        "human_gateway": 63,
+        "resource_upload_bounds": 3
+      }
+    },
+    "causal_analysis": {
+      "baseline": "probe_human_conversation_store returned Ok immediately for nonempty WAL/journal before inspecting the main file. The NOTADB fixture intentionally supplied all three nonempty sidecars, so it reached init_configured_db.",
+      "sqlite_boundary": "init_configured_db opens SQLite, sets busy_timeout and journal_mode/synchronous, then executes schema. Failed configuration/connection cleanup can touch sidecars even though Human recovery is disabled. The observed log proves sidecar removal; the precise SQLite internal deletion call was not traced.",
+      "candidate": "File::open, metadata and read_exact execute before the sidecar early-return and before any SQLite handle. A mismatching 16-byte header returns Integrity; a nonempty file shorter than 16 bytes returns the IO UnexpectedEof through ?. Neither path opens SQLite, quarantines, restores, deletes or replaces data.",
+      "production_error_propagation": [
+        "production.rs:2744-2751 calls open_human_conversation_store and propagates its error before constructing the Arc or reaching owner-map publication at 2789-2793.",
+        "agent_db.rs:262-268 propagates probe errors before open_with_options_and_seed; live-handle registration occurs only after open_configured_db succeeds at 289-295.",
+        "agent_db_recovery.rs:64-70 provides #[from] std::io::Error; the new Read import supplies file.read_exact without introducing dependencies.",
+        "The existing Human options still disable recovery and require integrity verification. General Agent open/recovery behavior is unchanged by the exact two-file diff."
+      ],
+      "current_production": "Concurrent published blob 91105c4 implements the same pre-SQLite read_exact guard. The early static review of d617 remains design evidence only; all delivery and new-run attribution must use the actual concurrent production plus test-only containing commit."
+    },
+    "case_boundaries": [
+      {
+        "case": "missing main file",
+        "result": "In current published 91105c4, NotFound continues through the original sidecar/metadata handling; absent main metadata returns Ok and the existing opener retains creation responsibility. The superseded d617 candidate returned immediately."
+      },
+      {
+        "case": "empty main file",
+        "result": "Header read is skipped; original sidecar detection and immutable/main-only probe behavior are preserved."
+      },
+      {
+        "case": "nonempty short main file",
+        "result": "read_exact returns UnexpectedEof before SQLite; no owner publication or sidecar mutation by this path."
+      },
+      {
+        "case": "non-SQLite main file at least 16 bytes",
+        "result": "Magic mismatch returns Integrity before SQLite; original main/sibling/sidecar bytes are untouched by this path."
+      },
+      {
+        "case": "valid SQLite header and nonempty WAL/journal",
+        "result": "The original WAL-aware owner remains authoritative. No immutable main-only quick_check is introduced for this snapshot."
+      },
+      {
+        "case": "valid header with corrupt schema/data page and no nonempty WAL/journal",
+        "result": "The original immutable read-only quick_check remains in place before journal-mode/schema writes; both unchanged corruption subscenarios must actually execute at the new H."
+      },
+      {
+        "case": "permission, metadata or read error",
+        "result": "Error propagates before owner creation; no silent policy success or fallback recovery is added."
+      }
+    ],
+    "test_oracle_preservation": {
+      "creation_top_level_tests_before": 12,
+      "creation_top_level_tests_after": 12,
+      "creation_test_names_unchanged": true,
+      "existing_assertion_and_expect_err_lines_unchanged": true,
+      "assertion_and_expect_err_line_count": 143,
+      "prior_subscenarios_retained": [
+        "notadb",
+        "schema",
+        "data-page-delete-mode"
+      ],
+      "added_subscenario": "short-header: b\"SQLite\" plus original -wal/-shm/-journal sentinels",
+      "preserved_checks": [
+        "full directory byte equality",
+        "no added recovery directory",
+        "no cached successful owner",
+        "zero live handles",
+        "same-worker retry refusal",
+        "restarted-worker refusal",
+        "original sibling retention"
+      ],
+      "atomic_storage_top_level_tests": 3,
+      "atomic_storage_source_unchanged": true,
+      "valid_wal_control": "human_creation_storage_tests.rs:97-164 disables autocheckpoint, checkpoints the empty schema, commits one winning identity across distinct SQLite handles, requires WAL>32 bytes and SHM>0, opens a new Human owner while original handles remain live, checks the exact winning bytes/metadata and refused replacement, then verifies reopen.",
+      "no_deleted_assertions": true,
+      "no_changed_workflow_gates": true,
+      "no_result_claimed_for_candidate": true
+    },
+    "remaining_limits_and_required_evidence": [
+      "Exact newly published containing-H Actions must actually pass creation12 and atomic-storage3, including all four corruption-loop subscenarios and the live-WAL identity control; earlier H results cannot substitute.",
+      "Arbitrary hot/corrupt-sidecar recovery remains open exactly as stated by NMR-CREATE-01d. This patch does not establish acceptance for every malformed WAL, journal or repairable-corrupt-header combination.",
+      "The header check is not a cross-process inode fence: replacement/truncation between header read and SQLite open is not proven safe by this review or test. No restoration of stale sidecars is introduced.",
+      "No package, exported-C, live-account, restart-crash recovery, platform shipping, full-source or independent ACCEPT conclusion is implied.",
+      "The prior f544 failed at the first NOTADB scenario. Schema/data-page branches and the following atomic-storage group remain execution obligations for the new H."
+    ],
+    "related_ui_review": "audit/round4-pagination-ui-causal-review.json",
+    "superseding_concurrent_publication": {
+      "head": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+      "head_source": "parent CAS/readback report; source snapshot independently read and hashed by reviewer",
+      "production_path": "source/host/src/extensions/session/agent_db_recovery.rs",
+      "production_blob": "91105c4c23fd18cb2da1ec9ef7d81fedd5e0f167",
+      "snapshot": "audit/current-recovery/remote-agent-db-recovery-9b9cadd.rs",
+      "bytes": 12909,
+      "sha256": "7a7a3a9f611959636ef946c5999bfe94aa1d56a5a907e1fa975bf3e9236aea73",
+      "test_baseline_blob": "6f59c6249a3c9be84fa36a22b1a79bc8c9d2b4ab",
+      "test_candidate_blob": "7ce0914f9010d7d7fda0676929d57b154fa38f45",
+      "differences_from_unpublished_d617": [
+        "Comment wording describes invalid journal cleanup.",
+        "Header comparison uses header != *b\"SQLite format 3\\0\", semantically equivalent to comparing the references.",
+        "NotFound continues to original sidecar/metadata checks instead of returning immediately. This retains the original missing-main decision flow."
+      ],
+      "same_pre_sqlite_nonempty_read_exact_guard": true,
+      "short_header_regression_directly_exercises_concurrent_owner": true,
+      "preserve_concurrent_production": true,
+      "no_new_product_write_requested_by_this_review": true,
+      "static_blockers": [],
+      "publication_instruction": "Fresh-base force=false expected_sha CAS for the test-only delta; do not reuse the unpublished d617 production blob or stale tree."
+    }
+  },
+  "own_short_header_test_delivery": {
+    "sha": "f95a33b13672095d68c6ca731f2f42e6c10b9890",
+    "parent": "78c8493f9e53f1c3db2493de18995c05d68ac9ed",
+    "tree": "947e9382e20e6fdc58a019b6030a3253bfbc9311",
+    "commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/f95a33b13672095d68c6ca731f2f42e6c10b9890",
+    "verified": true,
+    "full_test_content_equal": true,
+    "test_blob": "7ce0914f9010d7d7fda0676929d57b154fa38f45",
+    "preserved_production_blob": "91105c4c23fd18cb2da1ec9ef7d81fedd5e0f167",
+    "preserved_concurrent_production_commit": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "files": [
+      {
+        "path": "source/host/src/extensions/session/human_creation_tests.rs",
+        "sha": "7ce0914f9010d7d7fda0676929d57b154fa38f45",
+        "status": "modified",
+        "additions": 8,
+        "deletions": 3
+      }
+    ],
+    "scope": "Test-only extension; no product code changed in this commit",
+    "runs": [
+      {
+        "id": 41528598989,
+        "name": "Native service contracts",
+        "head_sha": "f95a33b13672095d68c6ca731f2f42e6c10b9890",
+        "status": "queued",
+        "conclusion": null,
+        "created_at": "2026-11-02T21:28:04Z",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41528598989"
+      }
+    ],
+    "unpublished_old_candidate": "d6174d72dd62e5bf39d3db3caeb3f8838d390d60 production /7f95a8e37d1d43c030a085da134be738d7b79f5b commit not applied"
+  },
+  "own_redundant_production_candidate_disposition": {
+    "blob": "d6174d72dd62e5bf39d3db3caeb3f8838d390d60",
+    "commit": "7f95a8e37d1d43c030a085da134be738d7b79f5b",
+    "published": false,
+    "reason": "Expected-sha CAS refused because another session published9b9cadd production91105. The retry detected the protected-file change and stopped. Only the7ce short-header regression was subsequently published atf95."
+  },
+  "current_reconciliation": {
+    "audit_kind": "exact_H_reconciliation_execution_review",
+    "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 4,
+    "repository": "bhrumom/fabushi-desktop",
+    "head": "f95a33b13672095d68c6ca731f2f42e6c10b9890",
+    "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "observed_at_utc": "2026-11-02T21:29:09Z",
+    "status": "queued",
+    "run_id": 41528598989,
+    "run_attempt": 1,
+    "job_id": 125562666933,
+    "job_name": "native-message-reconciliation",
+    "actual_execution_passed": false,
+    "exact_head_bound_by_api": true,
+    "input_tree_not_truncated": true,
+    "inputs": [
+      {
+        "path": ".github/workflows/native-service-contracts.yml",
+        "sha": "f467018b45c9dc699dfacdf64c58f182d142d8f9",
+        "size": 74289
+      },
+      {
+        "path": "source/host/Cargo.lock",
+        "sha": "59748a9d9f865f4bc910f582ce7814aac59807a9",
+        "size": 117524
+      },
+      {
+        "path": "source/host/src/extensions/session/agent_db.rs",
+        "sha": "0b396511ce827f38377b252ec6e05466be1d8564",
+        "size": 114956
+      },
+      {
+        "path": "source/host/src/extensions/session/agent_db_recovery.rs",
+        "sha": "91105c4c23fd18cb2da1ec9ef7d81fedd5e0f167",
+        "size": 12909
+      },
+      {
+        "path": "source/host/src/extensions/session/human_creation_storage_tests.rs",
+        "sha": "7be79bc692a857775ef68c0494642ef58f305481",
+        "size": 12579
+      },
+      {
+        "path": "source/host/src/extensions/session/human_creation_tests.rs",
+        "sha": "7ce0914f9010d7d7fda0676929d57b154fa38f45",
+        "size": 37395
+      },
+      {
+        "path": "source/host/src/extensions/session/production.rs",
+        "sha": "1ab341949c21cc20b2c6c9ee03b7140535ba7bd7",
+        "size": 213696
+      }
+    ],
+    "required_groups": [
+      {
+        "key": "compaction",
+        "step": "Transcript compaction and recovery registration contracts",
+        "filter": "conversation_state_binary::tests",
+        "expected": 3,
+        "artifact_log": "transcript-recovery.log",
+        "actual": null
+      },
+      {
+        "key": "human",
+        "step": "Human ingress, settlement and restart contracts",
+        "filter": "shipping_human_",
+        "expected": 63,
+        "artifact_log": "session-gateway.log",
+        "actual": null
+      },
+      {
+        "key": "resource",
+        "step": "Human resource upload size and bounded-read contracts",
+        "filter": "native_message_resource_upload_tests",
+        "expected": 3,
+        "artifact_log": "resource-upload-bounds.log",
+        "actual": null
+      },
+      {
+        "key": "creation",
+        "step": "Concurrent Human creation and non-destructive initialization recovery",
+        "filter": "human_creation_tests",
+        "expected": 12,
+        "artifact_log": "human-creation.log",
+        "actual": null
+      },
+      {
+        "key": "atomic_storage",
+        "step": "Concurrent Human creation and non-destructive initialization recovery",
+        "filter": "human_creation_storage_tests",
+        "expected": 3,
+        "artifact_log": "human-creation-storage.log",
+        "actual": null
+      },
+      {
+        "key": "sharebox",
+        "step": "Durable forwarding sharebox owner contract",
+        "filter": "sharebox_shipping_tests",
+        "expected": 1,
+        "artifact_log": "forward-sharebox.log",
+        "actual": null
+      },
+      {
+        "key": "journal",
+        "step": "Durable forwarding journal and stale-write CAS contracts",
+        "filter": "forward_batch_journal::tests",
+        "expected": 12,
+        "artifact_log": "forward-batches.log",
+        "actual": null
+      },
+      {
+        "key": "agent_nonce",
+        "step": "Preserve Agent send nonce boundary",
+        "filter": "send_pipeline_nonce_boundary_contract",
+        "expected": 4,
+        "artifact_log": "agent-send-nonce.log",
+        "actual": null
+      },
+      {
+        "key": "settlement_private_credential",
+        "step": "Prove completed HTTP credential fencing at settlement",
+        "filter": "shipping_human_settlement_credential_",
+        "expected": 3,
+        "artifact_log": "settlement-credential.log",
+        "actual": null
+      },
+      {
+        "key": "gateway",
+        "step": "Authenticated forward recipient gateway HTTP contract",
+        "filter": "gateway_forward_recipient_methods_are_authenticated_and_unknown_methods_stay_closed",
+        "expected": 1,
+        "artifact_log": "forward-http.log",
+        "actual": null
+      }
+    ],
+    "subscenario_evidence_boundary": "The test's four subscenarios have no separate printed names. Once executed successfully, evidence must combine exact blob 7ce0914's unconditional four-element loop and unchanged per-iteration byte/no-owner/retry/restart assertions with the actual named parent test success and actual creation12 summary. This is a control-flow inference, not four independently printed test results.",
+    "live_wal_evidence_boundary": "Storage group must actually execute its distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen test, whose exact 7be79 source requires a nonempty uncheckpointed WAL/SHM, reads the winning identity through a new Human owner, refuses replacement, and reopens successfully.",
+    "scope_limits": [
+      "No local test/build/validator execution by reviewer.",
+      "No GitHub mutation or rerun by reviewer.",
+      "No full-run shipping, product acceptance or final migration acceptance is implied by this single-job review."
+    ],
+    "artifacts": null,
+    "full_log": null,
+    "publication_manifest": "audit/round4-short-header-publication-verified.json",
+    "static_review": "audit/round4-human-creation-sidecar-static-review.json"
+  },
+  "current_other_gates": {
+    "schema": "MAHAYANA_EXACT_NATIVE_OTHER_GATES_AUDIT_V1",
+    "repository": "bhrumom/fabushi-desktop",
+    "head_sha": "f95a33b13672095d68c6ca731f2f42e6c10b9890",
+    "run_id": 41528598989,
+    "workflow": {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "blob": "f467018b45c9dc699dfacdf64c58f182d142d8f9"
+    },
+    "observed_at_utc": "2026-11-02T21:29:19Z",
+    "run_status": "queued",
+    "run_conclusion": null,
+    "qualification": false,
+    "read_only": true,
+    "no_local_product_execution": true,
+    "no_dispatch_or_rerun": true,
+    "reconciliation": {
+      "job_id": 125562666933,
+      "audited_by": "current_ledger_reconcile_audit",
+      "duplicate_log_fetch": false
+    },
+    "jobs": [
+      {
+        "job_id": 125562666933,
+        "name": "native-message-reconciliation",
+        "status": "queued",
+        "conclusion": null,
+        "runner_id": 0,
+        "steps_observed": 0
+      },
+      {
+        "job_id": 125562667295,
+        "name": "native-message-ui",
+        "status": "queued",
+        "conclusion": null,
+        "runner_id": 0,
+        "steps_observed": 0
+      },
+      {
+        "job_id": 125562667373,
+        "name": "desktop-social-owner-behaviors",
+        "status": "queued",
+        "conclusion": null,
+        "runner_id": null,
+        "steps_observed": 0
+      },
+      {
+        "job_id": 125562667419,
+        "name": "retained-direct-ffi-compatibility",
+        "status": "queued",
+        "conclusion": null,
+        "runner_id": 0,
+        "steps_observed": 0
+      },
+      {
+        "job_id": 125562667490,
+        "name": "gateway-peer-durability (windows-2025)",
+        "status": "queued",
+        "conclusion": null,
+        "runner_id": null,
+        "steps_observed": 0
+      },
+      {
+        "job_id": 125562667535,
+        "name": "gateway-peer-durability (ubuntu-24.04)",
+        "status": "queued",
+        "conclusion": null,
+        "runner_id": null,
+        "steps_observed": 0
+      },
+      {
+        "job_id": 125562667564,
+        "name": "native-message-shipping-compile",
+        "status": "queued",
+        "conclusion": null,
+        "runner_id": 0,
+        "steps_observed": 0
+      },
+      {
+        "job_id": 125562667590,
+        "name": "windows-update-publisher",
+        "status": "queued",
+        "conclusion": null,
+        "runner_id": 0,
+        "steps_observed": 0
+      },
+      {
+        "job_id": 125562667609,
+        "name": "native-message-electron",
+        "status": "queued",
+        "conclusion": null,
+        "runner_id": 0,
+        "steps_observed": 0
+      },
+      {
+        "job_id": 125562669565,
+        "name": "native-auth-and-journal",
+        "status": "completed",
+        "conclusion": "skipped",
+        "runner_id": null,
+        "steps_observed": 0
+      }
+    ],
+    "workflow_expected_counts": {
+      "ui": {
+        "transcript": 33,
+        "consumer": 17,
+        "settlement": 5,
+        "forward_chromium": 16,
+        "production_renderer": 11,
+        "production_transcript": 8,
+        "renderer_compile": true
+      },
+      "social": {
+        "featurehost": 10,
+        "retained_runtime": 9,
+        "http_owner": 6
+      },
+      "retained_direct_ffi": {
+        "passed": 15,
+        "ignored": 1,
+        "ignored_name": "live_runtime_bootstrap_keeps_an_encrypted_transport_session",
+        "independent_live_evidence": "audit/round4-retained-runtime-live-execution.json"
+      },
+      "gateway_peer_matrix": {
+        "ubuntu": 23,
+        "windows": 23
+      },
+      "electron": [
+        10,
+        8,
+        3,
+        16,
+        28,
+        18,
+        10,
+        7
+      ],
+      "windows_native_publisher": 11,
+      "shipping": {
+        "gateway_peer": 23,
+        "composition": 12,
+        "account_handoff": 7,
+        "featurehost": 10,
+        "social_runtime": 9,
+        "social_http": 6,
+        "host_legacy": 6,
+        "ffi_legacy": 7,
+        "cli_owner": 3,
+        "gateway_owner": 9,
+        "gateway_lib": 13,
+        "dns": 6,
+        "future_salts": 2,
+        "protocol": 122,
+        "tcp_including_live": 9,
+        "proxy": 4,
+        "credential": 1,
+        "package_positive": 4
+      }
+    },
+    "terminal_log_audits": {},
+    "prior_failures_preserved": "audit/round4-exactf544-current-gates.json",
+    "scope_limits": [
+      "Queued jobs do not qualify any gate.",
+      "Exact f40 live runtime bootstrap success is independently scoped, not f95 C ABI or account-message evidence.",
+      "Reconciliation is audited separately; do not substitute older63/62 case results.",
+      "No complete shipping/service/platform/independent acceptance is claimed."
+    ],
+    "next_action": "Wait for terminal f95 UI/Social/FFI/Electron/Windows/peer/shipping jobs, then fetch full logs once and compare actual case counts, exact checkout SHA and API artifact digests with upload logs."
+  },
+  "original_requirements_check": {
+    "complete_allowed": false,
+    "required_report_status": "next",
+    "source_closed": false,
+    "current_required_gates_all_passed": false,
+    "full_product_implemented": false,
+    "signed_platform_packages_accepted": false,
+    "real_Fabushi_account_service_accepted": false,
+    "complete_Bot_regression_accepted": false,
+    "independent_acceptance": false
+  },
+  "local_executable_validation": "not-run",
+  "no_rerun_until_green": true,
+  "no_user_data_deleted": true
+}

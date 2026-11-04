@@ -43,19 +43,13 @@ members = [
     "mahayana-runtime",
     "mahayana-secrets",
     "mahayana-social",
-    "mahayana-telegram",
     "mahayana-test-driver-protocol",
     "mahayana-tool-host",
     "mahayana-unified-app-host",
     "mahayana-web",
     "mahayana-workspace-engine",
     "providers/telegram-core",
-    "providers/telegram-media",
-    "providers/telegram-network",
-    "providers/telegram-protocol",
-    "providers/telegram-runtime",
     "providers/telegram-storage",
-    "providers/telegram-wasm",
     "providers/official-miniapps",
 ]
 resolver = "2"
@@ -127,7 +121,6 @@ mahayana-product = { package = "mahayana-platform-client", path = "mahayana-prod
 mahayana-runtime = { path = "mahayana-runtime" }
 mahayana-secrets = { path = "mahayana-secrets" }
 mahayana-social = { path = "mahayana-social" }
-mahayana-telegram = { path = "mahayana-telegram" }
 mahayana-test-driver-protocol = { path = "mahayana-test-driver-protocol" }
 mahayana-tool-host = { path = "mahayana-tool-host" }
 mahayana-workspace-engine = { path = "mahayana-workspace-engine" }

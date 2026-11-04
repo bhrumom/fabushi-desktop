@@ -11,7 +11,7 @@ use mahayana_gateway_protocol::{GATEWAY_PROTOCOL_VERSION, GatewayEvent, GatewayE
 use serde_json::{Map, Value, json};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs::{self, File, OpenOptions};
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
@@ -20,7 +20,6 @@ const STATE_SCHEMA_VERSION: u64 = 1;
 const STATE_FILE_NAME: &str = "gateway-state-v1.json";
 const STATE_LOCK_WAIT_ATTEMPTS: usize = 200;
 const STATE_LOCK_WAIT: Duration = Duration::from_millis(10);
-const STATE_LOCK_STALE_AFTER: Duration = Duration::from_secs(30);
 
 /// Rust-owned gateway state with a durable replay journal.
 ///
@@ -44,7 +43,7 @@ impl GatewayState {
         Self::with_path(limits, default_state_path())
     }
 
-    fn with_path(limits: ReplayLimits, state_path: Option<PathBuf>) -> Self {
+    pub fn with_path(limits: ReplayLimits, state_path: Option<PathBuf>) -> Self {
         let mut state = Self {
             inner: base::GatewayState::new(limits),
             limits,
@@ -307,9 +306,11 @@ fn read_state_document(path: &Path) -> Result<Value, String> {
 
 fn read_state_document_unlocked(path: &Path) -> Result<Value, String> {
     let backup = backup_path(path);
-    let source = if path.exists() {
+    let primary_exists = regular_file_exists(path)?;
+    let backup_exists = regular_file_exists(&backup)?;
+    let source = if primary_exists {
         Some(path)
-    } else if backup.exists() {
+    } else if backup_exists {
         Some(backup.as_path())
     } else {
         None
@@ -317,56 +318,70 @@ fn read_state_document_unlocked(path: &Path) -> Result<Value, String> {
     let Some(source) = source else {
         return Ok(Value::Object(Map::new()));
     };
-    let bytes = fs::read(source)
+    let mut file = File::open(source)
+        .map_err(|error| format!("failed to open gateway state {}: {error}", source.display()))?;
+    verify_open_regular_file(source, &file)?;
+    let mut bytes = Vec::new();
+    file.read_to_end(&mut bytes)
         .map_err(|error| format!("failed to read gateway state {}: {error}", source.display()))?;
+    verify_open_regular_file(source, &file)?;
     let document: Value = serde_json::from_slice(&bytes)
         .map_err(|error| format!("failed to parse gateway state {}: {error}", source.display()))?;
     let object = document
         .as_object()
         .ok_or_else(|| "gateway state root must be an object".to_string())?;
-    if let Some(version) = object.get("schemaVersion").and_then(Value::as_u64)
-        && version != STATE_SCHEMA_VERSION
-    {
-        return Err(format!(
-            "unsupported gateway state schema version {version}; expected {STATE_SCHEMA_VERSION}"
-        ));
+    if let Some(version) = object.get("schemaVersion") {
+        if version.as_u64() != Some(STATE_SCHEMA_VERSION) {
+            return Err(format!(
+                "unsupported gateway state schema version {version}; expected {STATE_SCHEMA_VERSION}"
+            ));
+        }
     }
     Ok(document)
 }
 
 fn write_state_document_unlocked(path: &Path, document: &Value) -> Result<(), String> {
     ensure_parent(path)?;
-    let temporary = temporary_path(path);
     let backup = backup_path(path);
+    regular_file_exists(path)?;
+    regular_file_exists(&backup)?;
     let bytes = serde_json::to_vec_pretty(document)
         .map_err(|error| format!("failed to encode gateway state: {error}"))?;
-    let mut file = OpenOptions::new()
-        .create_new(true)
-        .write(true)
-        .open(&temporary)
-        .map_err(|error| format!("failed to create gateway state temp file: {error}"))?;
+    let mut temporary = TemporaryStateFile::create(temporary_path(path))?;
+    let file = temporary.file.as_mut().expect("owned temporary file is open");
+    set_private_file_permissions(file)?;
     file.write_all(&bytes)
         .and_then(|_| file.write_all(b"\n"))
         .and_then(|_| file.sync_all())
         .map_err(|error| format!("failed to flush gateway state: {error}"))?;
-    set_private_file_permissions(&temporary)?;
+    drop(temporary.file.take());
 
-    if backup.exists() {
-        fs::remove_file(&backup)
-            .map_err(|error| format!("failed to remove stale gateway state backup: {error}"))?;
-    }
-    if path.exists() {
+    let primary_exists = regular_file_exists(path)?;
+    let backup_exists = regular_file_exists(&backup)?;
+    if primary_exists {
+        // If only the backup exists it is the sole recoverable committed
+        // document, so it must survive until the new primary is installed.
+        if backup_exists {
+            fs::remove_file(&backup)
+                .map_err(|error| format!("failed to remove stale gateway state backup: {error}"))?;
+        }
         fs::rename(path, &backup)
             .map_err(|error| format!("failed to stage gateway state backup: {error}"))?;
     }
-    if let Err(error) = fs::rename(&temporary, path) {
-        if backup.exists() && !path.exists() {
-            let _ = fs::rename(&backup, path);
+    if let Err(error) = fs::rename(&temporary.path, path) {
+        if primary_exists && !regular_file_exists(path)? && regular_file_exists(&backup)? {
+            if let Err(restore_error) = fs::rename(&backup, path) {
+                return Err(format!(
+                    "failed to install gateway state: {error}; prior state remains in backup after restore failed: {restore_error}"
+                ));
+            }
         }
-        let _ = fs::remove_file(&temporary);
         return Err(format!("failed to install gateway state: {error}"));
     }
-    if backup.exists() {
+    temporary.installed = true;
+    // The primary is the commit point. Backup cleanup is not a failed commit;
+    // leaving a regular backup is safe because reads prefer the valid primary.
+    if regular_file_exists(&backup).unwrap_or(false) {
         let _ = fs::remove_file(backup);
     }
     Ok(())
@@ -380,26 +395,32 @@ fn with_state_lock<T>(path: &Path, action: impl FnOnce() -> Result<T, String>) -
 }
 
 fn acquire_state_lock(path: &Path) -> Result<StateFileLock, String> {
+    regular_file_exists(path)?;
+    let mut options = OpenOptions::new();
+    options.create(true).read(true).write(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let file = options.open(path)
+        .map_err(|error| format!("failed to open gateway state lock: {error}"))?;
+    verify_open_regular_file(path, &file)?;
+    if file.metadata().map_err(|error| format!("failed to inspect gateway state lock: {error}"))?.len() != 0 {
+        return Err("nonempty legacy gateway state lock requires verified owner shutdown".into());
+    }
     for _ in 0..STATE_LOCK_WAIT_ATTEMPTS {
-        match OpenOptions::new().create_new(true).write(true).open(path) {
-            Ok(mut file) => {
-                let _ = writeln!(file, "{}", std::process::id());
-                let _ = file.sync_all();
-                set_private_file_permissions(path)?;
-                return Ok(StateFileLock {
-                    path: path.to_path_buf(),
-                });
-            }
-            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
-                let stale = fs::metadata(path)
-                    .and_then(|metadata| metadata.modified())
-                    .ok()
-                    .and_then(|modified| modified.elapsed().ok())
-                    .is_some_and(|elapsed| elapsed > STATE_LOCK_STALE_AFTER);
-                if stale {
-                    let _ = fs::remove_file(path);
-                    continue;
+        match fs2::FileExt::try_lock_exclusive(&file) {
+            Ok(()) => {
+                let lock = StateFileLock { file };
+                verify_open_regular_file(path, &lock.file)?;
+                if lock.file.metadata().map_err(|error| format!("failed to inspect gateway state lock: {error}"))?.len() != 0 {
+                    return Err("nonempty legacy gateway state lock requires verified owner shutdown".into());
                 }
+                set_private_file_permissions(&lock.file)?;
+                return Ok(lock);
+            }
+            Err(error) if error.raw_os_error() == fs2::lock_contended_error().raw_os_error() => {
                 thread::sleep(STATE_LOCK_WAIT);
             }
             Err(error) => {
@@ -411,22 +432,87 @@ fn acquire_state_lock(path: &Path) -> Result<StateFileLock, String> {
 }
 
 struct StateFileLock {
-    path: PathBuf,
+    file: File,
 }
 
 impl Drop for StateFileLock {
     fn drop(&mut self) {
-        let _ = fs::remove_file(&self.path);
+        let _ = fs2::FileExt::unlock(&self.file);
     }
 }
 
 fn ensure_parent(path: &Path) -> Result<(), String> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)
+    if let Some(parent) = path.parent().filter(|parent| !parent.as_os_str().is_empty()) {
+        let mut builder = fs::DirBuilder::new();
+        builder.recursive(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::DirBuilderExt;
+            builder.mode(0o700);
+        }
+        // DirBuilder only applies this mode to newly created directories.
+        // Never chmod an existing shared parent such as a temp directory.
+        builder.create(parent)
             .map_err(|error| format!("failed to create gateway state directory: {error}"))?;
-        set_private_directory_permissions(parent)?;
     }
     Ok(())
+}
+
+fn regular_file_exists(path: &Path) -> Result<bool, String> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.is_file() && !metadata.file_type().is_symlink() => Ok(true),
+        Ok(_) => Err(format!("gateway state path must be a regular non-symlink file: {}", path.display())),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(error) => Err(format!("failed to inspect gateway state path {}: {error}", path.display())),
+    }
+}
+
+fn verify_open_regular_file(path: &Path, file: &File) -> Result<(), String> {
+    let entry = fs::symlink_metadata(path)
+        .map_err(|error| format!("failed to inspect gateway state path {}: {error}", path.display()))?;
+    let opened = file.metadata()
+        .map_err(|error| format!("failed to inspect open gateway state file: {error}"))?;
+    if !entry.is_file() || entry.file_type().is_symlink() || !opened.is_file() {
+        return Err(format!("gateway state path must be a regular non-symlink file: {}", path.display()));
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        if entry.dev() != opened.dev() || entry.ino() != opened.ino() {
+            return Err("gateway state file identity changed while opening".into());
+        }
+    }
+    Ok(())
+}
+
+struct TemporaryStateFile {
+    path: PathBuf,
+    file: Option<File>,
+    installed: bool,
+}
+
+impl TemporaryStateFile {
+    fn create(path: PathBuf) -> Result<Self, String> {
+        let mut options = OpenOptions::new();
+        options.create_new(true).write(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        let file = options.open(&path)
+            .map_err(|error| format!("failed to create gateway state temp file: {error}"))?;
+        Ok(Self { path, file: Some(file), installed: false })
+    }
+}
+
+impl Drop for TemporaryStateFile {
+    fn drop(&mut self) {
+        drop(self.file.take());
+        if !self.installed {
+            let _ = fs::remove_file(&self.path);
+        }
+    }
 }
 
 fn temporary_path(path: &Path) -> PathBuf {
@@ -443,26 +529,14 @@ fn backup_path(path: &Path) -> PathBuf {
 }
 
 #[cfg(unix)]
-fn set_private_file_permissions(path: &Path) -> Result<(), String> {
+fn set_private_file_permissions(file: &File) -> Result<(), String> {
     use std::os::unix::fs::PermissionsExt;
-    fs::set_permissions(path, fs::Permissions::from_mode(0o600))
+    file.set_permissions(fs::Permissions::from_mode(0o600))
         .map_err(|error| format!("failed to restrict gateway state permissions: {error}"))
 }
 
 #[cfg(not(unix))]
-fn set_private_file_permissions(_path: &Path) -> Result<(), String> {
-    Ok(())
-}
-
-#[cfg(unix)]
-fn set_private_directory_permissions(path: &Path) -> Result<(), String> {
-    use std::os::unix::fs::PermissionsExt;
-    fs::set_permissions(path, fs::Permissions::from_mode(0o700))
-        .map_err(|error| format!("failed to restrict gateway state directory: {error}"))
-}
-
-#[cfg(not(unix))]
-fn set_private_directory_permissions(_path: &Path) -> Result<(), String> {
+fn set_private_file_permissions(_file: &File) -> Result<(), String> {
     Ok(())
 }
 
@@ -471,22 +545,47 @@ mod durability_tests {
     use super::*;
     use mahayana_gateway_protocol::{MessageDeltaPayload, MessageStartPayload};
 
-    fn temp_state_path() -> PathBuf {
-        std::env::temp_dir().join(format!(
-            "mahayana-gateway-state-{}.json",
-            uuid::Uuid::new_v4().simple()
-        ))
+    struct StateFixture {
+        root: PathBuf,
     }
 
-    fn cleanup(path: &Path) {
-        let _ = fs::remove_file(path);
-        let _ = fs::remove_file(backup_path(path));
-        let _ = fs::remove_file(PathBuf::from(format!("{}.lock", path.display())));
+    impl StateFixture {
+        fn new() -> Self {
+            let root = std::env::temp_dir().join(format!(
+                "mahayana-gateway-state-{}",
+                uuid::Uuid::new_v4().simple()
+            ));
+            let mut builder = fs::DirBuilder::new();
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::DirBuilderExt;
+                builder.mode(0o700);
+            }
+            builder.create(&root).expect("create an exclusively owned fixture directory");
+            Self { root }
+        }
+
+        fn state_path(&self) -> PathBuf {
+            self.root.join(STATE_FILE_NAME)
+        }
+
+        fn assert_no_temporary_files(&self) {
+            assert!(fs::read_dir(&self.root).unwrap().all(|entry| {
+                !entry.unwrap().file_name().to_string_lossy().contains(".tmp-")
+            }));
+        }
+    }
+
+    impl Drop for StateFixture {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.root);
+        }
     }
 
     #[test]
     fn restart_rehydrates_replay_under_a_fresh_epoch() {
-        let path = temp_state_path();
+        let fixture = StateFixture::new();
+        let path = fixture.state_path();
         let first_epoch;
         {
             let mut state = GatewayState::with_path(ReplayLimits::default(), Some(path.clone()));
@@ -509,6 +608,7 @@ mod durability_tests {
                 }),
             );
             assert_eq!(state.replay_since("session-1", 0, None).events.len(), 2);
+            assert!(state.durability_info()["lastError"].is_null());
         }
 
         let restored = GatewayState::with_path(ReplayLimits::default(), Some(path.clone()));
@@ -519,12 +619,13 @@ mod durability_tests {
         assert_eq!(replay.events[0].kind(), "message.start");
         assert_eq!(replay.events[1].kind(), "message.delta");
         assert_eq!(restored.restored_events, 2);
-        cleanup(&path);
+        assert!(restored.durability_info()["lastError"].is_null());
     }
 
     #[test]
     fn shared_state_writer_preserves_non_replay_sections() {
-        let path = temp_state_path();
+        let fixture = StateFixture::new();
+        let path = fixture.state_path();
         ensure_parent(&path).unwrap();
         fs::write(
             &path,
@@ -544,6 +645,111 @@ mod durability_tests {
         let document: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
         assert_eq!(document["peer"]["requests"][0]["id"], "srq-test");
         assert_eq!(document["replay"]["events"].as_array().unwrap().len(), 1);
-        cleanup(&path);
+        assert!(state.durability_info()["lastError"].is_null());
+    }
+
+    #[test]
+    fn shared_writer_rejects_invalid_schema_and_lock_inputs_without_writes() {
+        let fixture = StateFixture::new();
+        let path = fixture.state_path();
+        let backup = backup_path(&path);
+        let lock = PathBuf::from(format!("{}.lock", path.display()));
+        let events = VecDeque::new();
+        for version in [Value::Null, json!("1"), json!(-1), json!(1.0), json!(2), json!({})] {
+            let bytes = serde_json::to_vec(&json!({
+                "schemaVersion": version,
+                "peer": { "requests": [] },
+                "retained": "untouched",
+            })).unwrap();
+            fs::write(&path, &bytes).unwrap();
+            assert!(update_replay_events(&path, &events).is_err());
+            assert_eq!(fs::read(&path).unwrap(), bytes);
+            fixture.assert_no_temporary_files();
+        }
+
+        let valid = br#"{"schemaVersion":1,"peer":{"requests":[]},"retained":"untouched"}"#;
+        fs::write(&path, valid).unwrap();
+        fs::write(&lock, b"12345\n").unwrap();
+        assert!(update_replay_events(&path, &events).is_err());
+        assert_eq!(fs::read(&path).unwrap(), valid);
+        assert_eq!(fs::read(&lock).unwrap(), b"12345\n");
+        fs::write(&lock, b"").unwrap();
+
+        fs::create_dir(&backup).unwrap();
+        assert!(update_replay_events(&path, &events).is_err());
+        assert_eq!(fs::read(&path).unwrap(), valid);
+        assert!(backup.is_dir());
+        fs::remove_dir(&backup).unwrap();
+        fs::remove_file(&path).unwrap();
+        fs::create_dir(&path).unwrap();
+        assert!(update_replay_events(&path, &events).is_err());
+        assert!(path.is_dir());
+        fs::remove_dir(&path).unwrap();
+        fs::write(&path, valid).unwrap();
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::{PermissionsExt, symlink};
+            let target = fixture.root.join("unchanged-target");
+            fs::write(&target, valid).unwrap();
+            for candidate in [&path, &backup, &lock] {
+                if candidate.exists() {
+                    fs::remove_file(candidate).unwrap();
+                }
+                symlink(&target, candidate).unwrap();
+                assert!(update_replay_events(&path, &events).is_err());
+                assert_eq!(fs::read(&target).unwrap(), valid);
+                assert!(fs::symlink_metadata(candidate).unwrap().file_type().is_symlink());
+                fs::remove_file(candidate).unwrap();
+                if candidate == &path {
+                    fs::write(&path, valid).unwrap();
+                }
+            }
+
+            let existing_parent = fixture.root.join("existing-parent");
+            fs::create_dir(&existing_parent).unwrap();
+            File::open(&existing_parent).unwrap()
+                .set_permissions(fs::Permissions::from_mode(0o755)).unwrap();
+            update_replay_events(&existing_parent.join(STATE_FILE_NAME), &events).unwrap();
+            assert_eq!(fs::metadata(&existing_parent).unwrap().permissions().mode() & 0o777, 0o755);
+        }
+        fixture.assert_no_temporary_files();
+    }
+
+    #[test]
+    fn shared_writer_retains_only_backup_on_failure_then_recovers() {
+        let fixture = StateFixture::new();
+        let path = fixture.state_path();
+        let backup = backup_path(&path);
+        let lock = PathBuf::from(format!("{}.lock", path.display()));
+        let committed = br#"{"schemaVersion":1,"peer":{"requests":[{"id":"srq-retained"}]},"replay":{"events":[]},"retained":{"value":true}}"#;
+        fs::write(&backup, committed).unwrap();
+        fs::write(&lock, b"12345\n").unwrap();
+        let mut state = GatewayState::with_path(ReplayLimits::default(), Some(path.clone()));
+        assert!(!state.durability_info()["lastError"].is_null());
+        state.emit("session-1", "turn-1", 1_700_000_000_000,
+            GatewayEvent::MessageDelta(MessageDeltaPayload { text: "before repair".into(), rendered: None }));
+        assert!(!state.durability_info()["lastError"].is_null());
+        assert!(!path.exists());
+        assert_eq!(fs::read(&backup).unwrap(), committed);
+        assert_eq!(fs::read(&lock).unwrap(), b"12345\n");
+        fixture.assert_no_temporary_files();
+
+        // This sentinel belongs exclusively to this fixture; clearing it is
+        // the controlled repair, never automatic cleanup of a production lock.
+        fs::write(&lock, b"").unwrap();
+        state.emit("session-1", "turn-1", 1_700_000_000_001,
+            GatewayEvent::MessageDelta(MessageDeltaPayload { text: "after repair".into(), rendered: None }));
+        assert!(state.durability_info()["lastError"].is_null());
+        let document: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        assert_eq!(document["peer"]["requests"][0]["id"], "srq-retained");
+        assert_eq!(document["retained"]["value"], true);
+        assert_eq!(document["replay"]["events"].as_array().unwrap().len(), 2);
+        assert!(!backup.exists());
+        drop(state);
+        let restored = GatewayState::with_path(ReplayLimits::default(), Some(path));
+        assert!(restored.durability_info()["lastError"].is_null());
+        assert_eq!(restored.restored_events, 2);
+        fixture.assert_no_temporary_files();
     }
 }

@@ -1,10 +1,23 @@
 name: TDRP source review contract
 on:
   push:
-    branches: [codex/tdrp-risk-based-source-review-20261102]
+    branches: [codex/tdrp-risk-based-source-review-20261102, checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
     paths:
       - scripts/tdrp-source-review*.mjs
+      - scripts/tdrp-source-review*.py
+      - scripts/tdrp-nested-pin-identity*.mjs
       - scripts/validate-tdrp-revision9-authority.mjs
+      - scripts/validate-tdrp-source-candidate.mjs
+      - scripts/tdrp-summarize-protocol-artifact.py
+      - projects/telegram-desktop-rust/upstream.lock.json
+      - projects/telegram-desktop-rust/inventory/index.json
+      - projects/telegram-desktop-rust/inventory/build-time-acquisitions.json
+      - projects/telegram-desktop-rust/inventory/root-mutable-authorities.json
+      - projects/telegram-desktop-rust/inventory/root-tool-authorities.json
+      - projects/telegram-desktop-rust/contracts/parity-ledger.schema.json
+      - projects/telegram-desktop-rust/parity-ledger.json
+      - docs/specs/telegram-desktop-rust-equivalence-migration.md
+      - projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md
       - .github/workflows/tdrp-source-review-contract.yml
   workflow_dispatch:
 permissions:
@@ -12,10 +25,221 @@ permissions:
 jobs:
   contract:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/source-review
+          git rev-parse HEAD > artifacts/source-review/target-sha.txt
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test scripts/tdrp-source-review.test.mjs
+      - name: Exact source relation and frozen upstream contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test scripts/tdrp-source-review.test.mjs scripts/tdrp-nested-pin-identity.test.mjs 2>&1 | tee artifacts/source-review/contracts.log
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate schema behavior with pinned validator
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'jsonschema==4.25.1'
+          python -m pip freeze > artifacts/source-review/python-dependencies.txt
+          python scripts/tdrp-source-review-schema.test.py 2>&1 | tee artifacts/source-review/schema.log
+      - name: Check current ledger shape without granting source acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from jsonschema import Draft202012Validator
+          root = Path('projects/telegram-desktop-rust')
+          schema = json.loads((root / 'contracts/parity-ledger.schema.json').read_text())
+          ledger = json.loads((root / 'parity-ledger.json').read_text())
+          Draft202012Validator.check_schema(schema)
+          errors = list(Draft202012Validator(schema).iter_errors(ledger))
+          details = [{'path': list(error.absolute_path), 'schema_path': list(error.absolute_schema_path),
+                      'message': error.message} for error in errors]
+          Path('artifacts/source-review/ledger-schema.json').write_text(
+              json.dumps({'valid': not errors, 'source_accepted': False, 'errors': details}, indent=2) + '\n')
+          print(f'Canonical ledger schema errors: {len(errors)}; source acceptance is not granted.')
+          for error in details[:100]:
+              print(json.dumps(error)[:2048])
+          raise SystemExit(1 if errors else 0)
+          PY
+      - name: Validate row-level target paths, literal symbols, and single-owner invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, re
+          from pathlib import Path
+          root = Path('.')
+          ledger = json.loads((root / 'projects/telegram-desktop-rust/parity-ledger.json').read_text())
+          errors = []
+          owners = {}
+          parallel_re = re.compile(
+              r'Telegram(Core|Runtime|Provider|Messaging|Search|Contacts|Media|Workspace|ConversationRoot|MessageStore|DraftStore|ReactionStore)',
+              re.IGNORECASE,
+          )
+          for row in ledger['rows']:
+              rid = row.get('responsibility_id', '<unknown>')
+              sap = row.get('source_analysis_path', '')
+              if not sap or ':' in sap or not (root / sap).is_file():
+                  errors.append(f'{rid}: missing or nonlocal source_analysis_path {sap!r}')
+              parallel_text = ' '.join(
+                  filter(None, [row.get('existing_owner'), row.get('composition_root'), row.get('search_provider'), *(row.get('fabushi_target_paths') or [])])
+              )
+              if parallel_re.search(parallel_text):
+                  errors.append(f'{rid}: source-named parallel owner/root detected')
+              tpaths = row.get('fabushi_target_paths') or []
+              tsyms = row.get('fabushi_target_symbols') or []
+              if not tpaths or not tsyms:
+                  errors.append(f'{rid}: empty fabushi_target_paths or fabushi_target_symbols')
+                  continue
+              texts = []
+              for p in tpaths:
+                  if ':' in p or not (root / p).is_file():
+                      errors.append(f'{rid}: missing or nonlocal target path {p!r}')
+                  else:
+                      texts.append((root / p).read_text(errors='replace'))
+              combined = '\n'.join(texts)
+              key_prefix = ','.join(tpaths) + '#'
+              for sym in tsyms:
+                  if sym not in combined:
+                      errors.append(f'{rid}: target symbol not found in target paths: {sym!r}')
+                  k = key_prefix + sym
+                  prior = owners.get(k)
+                  if prior and prior != rid:
+                      errors.append(f'{rid}: duplicate target symbol owner with {prior}: {k}')
+                  owners[k] = rid
+          Path('artifacts/source-review/ledger-targets.json').write_text(
+              json.dumps({'rows_checked': len(ledger['rows']), 'valid': not errors, 'errors': errors}, indent=2) + '\n'
+          )
+          print(f'Row-level target path/symbol errors: {len(errors)} across {len(ledger["rows"])} rows.')
+          for err in errors[:100]:
+              print(err)
+          raise SystemExit(1 if errors else 0)
+          PY
       - run: node --check scripts/validate-tdrp-revision9-authority.mjs
+      - name: Preserve exact checker evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-source-review-contract-${{ github.sha }}
+          path: artifacts/source-review
+          if-no-files-found: error
+  fixed-source-candidate:
+    needs: contract
+    if: github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Bind exact candidate source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/source-candidate/downloads
+          git rev-parse HEAD > artifacts/source-candidate/target-sha.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read the two immutable evidence artifacts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13118749668 > artifacts/source-candidate/downloads/git.metadata.json
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13118749668/zip > artifacts/source-candidate/downloads/git.zip
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13121721589 > artifacts/source-candidate/downloads/export.metadata.json
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13121721589/zip > artifacts/source-candidate/downloads/export.zip
+      - name: Recover complete pinned Git evidence at this H
+        shell: bash
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          python scripts/tdrp-summarize-protocol-artifact.py \
+            --metadata artifacts/source-candidate/downloads/git.metadata.json \
+            --archive artifacts/source-candidate/downloads/git.zip \
+            --output-dir artifacts/candidate-git \
+            --repository bhrumom/fabushi-desktop \
+            --head-sha 9f77bb2389cba6a65d589eb309d1392501ed308d \
+            --artifact-id 13118749668 \
+            --run-id 41397005716 \
+            --expected-digest sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60 \
+            2>&1 | tee artifacts/source-candidate/git-recovery.log
+      - name: Recover complete pinned build-input observations at this H
+        shell: bash
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          python scripts/tdrp-summarize-protocol-artifact.py \
+            --metadata artifacts/source-candidate/downloads/export.metadata.json \
+            --archive artifacts/source-candidate/downloads/export.zip \
+            --output-dir artifacts/candidate-export \
+            --repository bhrumom/fabushi-desktop \
+            --head-sha 1cd59bb01513624d26e12f77bfab66729ab72694 \
+            --artifact-id 13121721589 \
+            --run-id 41401970993 \
+            --expected-digest sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc \
+            2>&1 | tee artifacts/source-candidate/export-recovery.log
+      - name: Check actual complete inventory and current candidate records
+        shell: bash
+        env:
+          TDRP_TARGET_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          node scripts/validate-tdrp-source-candidate.mjs \
+            --git-recovery-dir artifacts/candidate-git \
+            --export-recovery-dir artifacts/candidate-export \
+            --output artifacts/source-candidate/report.json \
+            2>&1 | tee artifacts/source-candidate/candidate.log
+      - name: Prove open candidates cannot enter accepted mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          if node scripts/validate-tdrp-revision9-authority.mjs --require-accepted > artifacts/source-candidate/accepted.log 2>&1; then
+            echo 'Open source candidate unexpectedly accepted' >&2
+            exit 1
+          fi
+          grep -Fx 'Error: accepted source accounting cannot contain a rebaseline candidate' artifacts/source-candidate/accepted.log
+      - name: Preserve candidate consistency and rejection evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-source-candidate-${{ github.sha }}
+          path: |
+            artifacts/source-candidate/*.json
+            artifacts/source-candidate/*.log
+            artifacts/source-candidate/target-sha.txt
+            artifacts/candidate-git/index.json
+            artifacts/candidate-git/metadata.json
+            artifacts/candidate-export/index.json
+            artifacts/candidate-export/metadata.json
+          if-no-files-found: error

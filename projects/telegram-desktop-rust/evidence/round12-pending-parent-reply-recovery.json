@@ -1,0 +1,1354 @@
+{
+  "schema": "fabushi-nmr49-prepared-batch-evidence-v1",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 12,
+  "repository": "bhrumom/fabushi-desktop",
+  "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "integration_base": "3c9995a97c59d89824b2f6e0e49e72cef4825439",
+  "main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "requirements": [
+    "NMR-49a",
+    "NMR-49b",
+    "NMR-49c",
+    "NMR-AC-40",
+    "FMEP-SOURCE-01",
+    "NMR-47e",
+    "NMR-AC-38"
+  ],
+  "original_requested_run": {
+    "head": "34b71fbd2b76a31380406c73c7b4a915f21a40e7",
+    "run": 41428797981,
+    "status": "completed",
+    "conclusion": "failure",
+    "human": {
+      "passed": 31,
+      "failed": 1,
+      "ignored": 0
+    },
+    "agent_nonce": "not-run after Human assertion failed",
+    "classification": "TEST_FLAW: issuer denial was correct; substring credential oracle excluded approved-Native-issuer error. Workflow also expected old Human30 instead of32.",
+    "repair_commit": "dbe1e237a4416ba50fadc4b5d9cfab6a2da1bd7a",
+    "repair_run": 41429614398,
+    "repair_result": "completed/success; Human32 Agent4 and selected message gates. Full logs/artifacts and exact remote readback recorded earlier in this task.",
+    "receipt": "projects/telegram-desktop-rust/evidence/fbcp-native-message-round12-20261102.json"
+  },
+  "scope": {
+    "entry": "existing Composer/Reply -> sendHumanMessage Session gateway",
+    "state_owner": "SandAgentDb per-conversation Human transcript and durable outbox",
+    "service_owner": "existing FabushiNativeMessagingClient and canonical native social service",
+    "consumer": "existing transcript deletion/upserts -> production model -> current action guard",
+    "behavior": "Explicit SQLite parent/child identity transaction; scoped historical alias normalization on both nonce-comparison operands; current durable reply reload in pending replay; dispatching projects as existing pending.",
+    "public_schema_changed": false,
+    "new_owner": false,
+    "data_deleted": false,
+    "live_production_modified": false
+  },
+  "frozen_implementation": {
+    "source/host/src/extensions/session/production.rs": {
+      "blob": "0d0641f1a9e51db4e27f8394d47cad576ab68f48",
+      "sha256": "06286ddb1c9d7eb8d04ab793a00b73222724b7eebbc7cc45817198d41f2af816",
+      "bytes": 196554
+    },
+    "source/host/src/extensions/session/agent_db.rs": {
+      "blob": "c524059244573e4be87d61e0e303613c3916ec23",
+      "sha256": "c734f80ba9347264bfd6ec64b3aaafe92ef84a2084a367d6c39faacf59b8d1ca",
+      "bytes": 110379
+    },
+    "source/host/tests/session_gateway_contract.rs": {
+      "blob": "885d0d2894bb8c70512d73e698d0aa197bca4cb9",
+      "sha256": "b1b4aab99981570a1390d6bd093037ed9a804f730f91ca21e6e1e1d6f1f01a68",
+      "bytes": 283007
+    },
+    "frontend/src/production/model.ts": {
+      "blob": "dd0a5167382616faa9d087687c8173d67bed8502",
+      "sha256": "b466eb8fab5fa9320340e3cf28e7aafdc96bcc2dcacec8affe4e6655381ae781",
+      "bytes": 32327
+    },
+    "frontend/src/production/transcript-projection.contract.test.ts": {
+      "blob": "c35d12c2c64a20728804d3df7da8ed0a3d0abc76",
+      "sha256": "62c2dd0b7d0bb48c365bccf6d1403752a9cc4d19eb72c4a70148a5de4957c756",
+      "bytes": 21384
+    },
+    ".github/workflows/native-service-contracts.yml": {
+      "blob": "a9122dae4e9973b314045def942eb5c6a5701e60",
+      "sha256": "8f65d5d1489d071dfc6cd62bbd81995e09f225f63424acca92a951fc3513e53d",
+      "bytes": 47650
+    }
+  },
+  "authored_checks": {
+    "human_total": 47,
+    "new_human_tests": [
+      "shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order",
+      "shipping_human_historical_reply_aliases_require_unique_local_canonical_parent",
+      "shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen"
+    ],
+    "alias_variants": 11,
+    "sqlite_fault_variants": [
+      "parent ABORT",
+      "parent IGNORE",
+      "second child ABORT",
+      "second child IGNORE"
+    ],
+    "projection_total": 18,
+    "new_projection_tests": 2,
+    "instrument": "real existing gateway, SQLite, loopback HTTP, shutdown/reopen, immutable row and post-commit events; actual production projectTranscriptEntry bundled with already locked esbuild"
+  },
+  "independent_static_review": {
+    "result": "No blocking issue observed after final parent-kind/unique-candidate increment. Static review is not execution or independent whole-product ACCEPT.",
+    "reviewed_sha256": {
+      "source/host/src/extensions/session/production.rs": "06286ddb1c9d7eb8d04ab793a00b73222724b7eebbc7cc45817198d41f2af816",
+      "source/host/src/extensions/session/agent_db.rs": "c734f80ba9347264bfd6ec64b3aaafe92ef84a2084a367d6c39faacf59b8d1ca",
+      "source/host/tests/session_gateway_contract.rs": "b1b4aab99981570a1390d6bd093037ed9a804f730f91ca21e6e1e1d6f1f01a68",
+      "frontend/src/production/model.ts": "b466eb8fab5fa9320340e3cf28e7aafdc96bcc2dcacec8affe4e6655381ae781",
+      "frontend/src/production/transcript-projection.contract.test.ts": "62c2dd0b7d0bb48c365bccf6d1403752a9cc4d19eb72c4a70148a5de4957c756",
+      ".github/workflows/native-service-contracts.yml": "8f65d5d1489d071dfc6cd62bbd81995e09f225f63424acca92a951fc3513e53d"
+    },
+    "local_project_validation_executed": false,
+    "concurrent_rebase": "Final independent static review preserves exactc438 cold/cached Human source identity checks, valid-JSON corruption matrix, ff6 fixture repair and inherited journal7590d6cba0bbe14bdc93a76946967d086193ba4a. All NMR49 reply changes remain; final47/12/18/16 workflow reviewed. No local project execution.",
+    "final_review_receipt_sha256": "db7b4949005229725ac42892f0582ee27d6da70bbf4da673ea07947fcc76ce60"
+  },
+  "execution_at_preparation": {
+    "status": "not-run",
+    "workflow": ".github/workflows/native-service-contracts.yml",
+    "binding": "Push workflow must checkout and record the containing commit exact github.sha; expected counts do not constitute execution.",
+    "required": [
+      "Human47",
+      "Agent4",
+      "settlement-credential3",
+      "sharebox1",
+      "journal12",
+      "forward-HTTP1",
+      "Transcript18",
+      "forward-projection5",
+      "Chromium16",
+      "actual renderer",
+      "selected shipping/Electron/Windows gates",
+      "affected source ledger schema/candidate gates"
+    ]
+  },
+  "runtime_prerequisite": {
+    "head": "59f5fa24827812f78336c464995d161f403dedfb",
+    "run": 41508537631,
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 125494010641,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": null,
+        "completedAt": null,
+        "actualPassed": {
+          "transcriptProjection": 16,
+          "forwardSettlement": 5,
+          "actualChromiumForwardDialog": 12
+        },
+        "failed": 0,
+        "ignoredOrSkippedTests": 0
+      },
+      {
+        "id": 125494011030,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": null,
+        "completedAt": null,
+        "actualPassed": {
+          "carrier": 10,
+          "nativeAccountRetention": 8,
+          "packageResourceFilter": 3,
+          "updateSource": 16,
+          "windowsPublisherPolicy": 28,
+          "macosMetadata": 18
+        },
+        "failed": 0,
+        "ignoredOrSkippedTests": 0
+      },
+      {
+        "id": 125494011040,
+        "name": "native-message-reconciliation",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": null,
+        "completedAt": null,
+        "actualPassed": {
+          "humanIntegration": 38,
+          "forwardShareboxOwner": 1,
+          "forwardJournal": 3,
+          "agentNonce": 4,
+          "settlementCredential": 3,
+          "authenticatedForwardHttp": 1
+        },
+        "failed": 0,
+        "ignoredOrSkippedTests": 0
+      },
+      {
+        "id": 125494011097,
+        "name": "native-message-shipping-compile",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": null,
+        "completedAt": null,
+        "actualPassed": {
+          "nativeComposition": 12,
+          "nativeStartupRetentionParentCases": 7,
+          "featureHostMessagingBoundary": 7,
+          "retainedSocialRecovery": 9,
+          "socialHttpOwner": 6,
+          "directHostLegacyHandoff": 6,
+          "ffiLegacyHandoff": 7,
+          "cliNativeOwner": 3,
+          "gatewayExecutable": 5,
+          "gatewayLibrary": 11,
+          "normalization": 6,
+          "futureSalts": 2,
+          "protocol": 122,
+          "tcpIncludingLive": 9,
+          "proxy": 4,
+          "nativeCredentialSchema": 1,
+          "actualPackageResourceCopy": 4
+        },
+        "requiredPositiveSuitesFailed": 0,
+        "ignoredTests": 0,
+        "appHostBuild": "success --locked --profile ci",
+        "expectedNegativeOracles": {
+          "missingInput": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "expectedRejected": true
+          },
+          "malformedDigest": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "expectedRejected": true
+          },
+          "wellFormedWrongDigest": {
+            "tests": 1,
+            "pass": 0,
+            "fail": 1,
+            "expectedRejected": true
+          }
+        },
+        "countBoundary": "Native startup7 top-level cases spawn19 one-case child processes; keep parent count7 distinct rather than mechanically adding every log result line."
+      },
+      {
+        "id": 125494011118,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": null,
+        "completedAt": null,
+        "actualPassed": {
+          "windowsNativePublisher": 11
+        },
+        "failed": 0,
+        "ignoredOrSkippedTests": 0
+      },
+      {
+        "id": 125494013875,
+        "name": "native-auth-and-journal",
+        "status": "completed",
+        "conclusion": "skipped",
+        "startedAt": null,
+        "completedAt": null,
+        "acceptance": "not-selected-not-a-pass"
+      }
+    ],
+    "actual_artifacts": [
+      {
+        "id": 13173116303,
+        "bytes": 28844,
+        "digest": "sha256:355e5450874705830cf72a96c057fb3809fdf0ac24dd69f65d10dfc84ccd0e22",
+        "digest_matched": true,
+        "all_members_read": true
+      },
+      {
+        "id": 13172586742,
+        "bytes": 13384,
+        "digest": "sha256:e0e79f55e371aea4c35b813fb6f828a1c2d4017e8664ed05d9b7baa4207881b1",
+        "digest_matched": true,
+        "all_members_read": true
+      },
+      {
+        "id": 13172281518,
+        "bytes": 110471,
+        "digest": "sha256:0d4273fe211f1cac1b64cc55b4c991274d6b9f586bf228685ac7651113ae0998",
+        "digest_matched": true,
+        "all_members_read": true
+      },
+      {
+        "id": 13171043513,
+        "bytes": 1831,
+        "digest": "sha256:fff7082f8e3fdcc907bf379d978b4b2f17dbd0511079d57797b86e9203024f25",
+        "digest_matched": true,
+        "all_members_read": true
+      },
+      {
+        "id": 13173112803,
+        "bytes": 81430492,
+        "digest": "sha256:a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f",
+        "digest_matched": true,
+        "all_members_read": true
+      }
+    ],
+    "actual_apphost": {
+      "targetSha": "59f5fa24827812f78336c464995d161f403dedfb",
+      "bytes": 160061040,
+      "sourceAndCopiedSha256": "5681ae74e541dcc73144504a5c82f17530c45b84830469653180b145b1526dbb",
+      "bothArchiveMembersIndependentlyHashed": true,
+      "artifactId": 13173112803,
+      "scope": "Actual resource-copy boundary, not complete application or signed installer; no artifact executable was run locally."
+    },
+    "limit": "This earlier runtime H has no NMR48 changes; cannot qualify new code."
+  },
+  "concurrent_source_contract": {
+    "head": "43d70a62d6fd47785f15b85a70e9e3350a17cef4",
+    "run": {
+      "id": 41511543050,
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41511543050",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "updated_at": "2026-11-02T19:37:49Z"
+    },
+    "actual_tests": {
+      "javascript": {
+        "passed": 150,
+        "total": 150,
+        "failed": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "pythonSchema": {
+        "passed": 37,
+        "total": 37
+      },
+      "canonicalLedgerSchemaErrors": 0,
+      "acceptedCandidateNegative": "Error: accepted source accounting cannot contain a rebaseline candidate"
+    },
+    "compatibility": "Source relation extraction preserves existing exact repository/commit/path/object checks. Source-review completeness gate retains its same relation helper, while full authority now validates pre-acceptance mappings against the actually acquired pinned recursive inventory. Existing NMR primary/additional source identities unchanged by the product batch remain compatible; changes to implementation and behavior evidence do not declare source acceptance.",
+    "source_accepted": false
+  },
+  "backend": {
+    "repository": "bhrumom/fabushi-backend",
+    "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "pr": {
+      "number": 137,
+      "url": "https://github.com/bhrumom/fabushi-backend/pull/137",
+      "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "base": "687718ce9e0083aa124d29005bcce4051d357919",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergedAt": null,
+      "updatedAt": "2026-11-02T19:32:19Z",
+      "reviewCount": 0,
+      "issueCommentCount": 0,
+      "reviewCommentCount": 0,
+      "reviews": [],
+      "issueComments": [],
+      "reviewComments": [],
+      "approvalObservedInTheseRecords": false
+    },
+    "actual_artifacts": [
+      {
+        "id": 13171519672,
+        "run": 41510852280,
+        "bytes": 5433,
+        "sha256": "4c67b8b8e4f7fce10dc263cc0d862f1f1e95dad7d511ae31804077b61a4c3463",
+        "target": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+        "members": 8,
+        "tests": 63,
+        "passed": 63,
+        "actual_log_names_and_count_files_agree": true
+      },
+      {
+        "id": 13172293999,
+        "run": 41510861859,
+        "bytes": 5432,
+        "sha256": "823587410fe31018a7cdea60f47ff608cf461828ea8726112d8aa1f1d8ba00bb",
+        "target": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+        "members": 8,
+        "tests": 63,
+        "passed": 63,
+        "actual_log_names_and_count_files_agree": true
+      }
+    ],
+    "production_readiness": "skipped; not a pass; no authorized production dispatch performed",
+    "historical_delivery": {
+      "runId": 40047409890,
+      "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/40047409890",
+      "workflow": ".github/workflows/production-worker-delivery.yml",
+      "event": "workflow_dispatch",
+      "branch": "main",
+      "head": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "createdAt": "2026-10-24T00:56:05Z",
+      "updatedAt": "2026-10-24T00:56:50Z",
+      "fullJobLogRead": true,
+      "fullJobLogCharacterCount": 30368,
+      "worker": "fabushi-flutter-web-prod",
+      "emittedVersionId": "3ad1a889-4c28-4344-8472-8c8adc225a3c",
+      "domain": "api.ombhrum.com",
+      "currentMainWorkflowGate": {
+        "source": "687718ce9e0083aa124d29005bcce4051d357919",
+        "trigger": "workflow_dispatch",
+        "requiredRef": "refs/heads/main",
+        "environment": "production",
+        "exactCheckoutShaCheck": true
+      },
+      "liveActiveWorkerVersionAttested": false,
+      "thisRunDeployedCurrentPullRequestHead": false,
+      "interpretation": "Historical canonical GitHub delivery evidence only. No live Cloudflare active-version/domain query or production service request was performed. This run does not attest the current live Worker, a compatible H52 deployment, authenticated afterId=0 production pagination, or production recovery."
+    },
+    "limitations": "Current live Cloudflare Worker/source and identity-service deployment, authorized compatible deployment, ordinary existing account/fixture, production afterId=0 multipage/origin-empty/terminal-empty/denial and durable recovery remain unproved. In-memory checkpoint reread is not Worker/D1 restart or restore.",
+    "authorization_refresh": {
+      "file_sha256": "b82faee09437953e8c8615ce0df482a9bd84aaaff689dd253c78dd1a42305f7b",
+      "pr_unchanged": true,
+      "current_head_exact_runs_unchanged": true,
+      "reviews_issuecomments_reviewcomments": 0,
+      "run_approvals_and_pending_deployments": "All four queried current-run endpoints returned empty arrays. No formal authorization observed.",
+      "coverage_limit": "Repository deployments-list endpoint unsupported by connector; no claim of exhaustive absence of authorization.",
+      "production_mutated": false
+    }
+  },
+  "source_accounting": {
+    "inventory": "projects/telegram-desktop-rust/inventory/index.json",
+    "ledger": "projects/telegram-desktop-rust/parity-ledger.json",
+    "rtm": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+    "identities_observed": 16381,
+    "unknown": null,
+    "unread": null,
+    "review_complete": false,
+    "accepted": false,
+    "change": "Only existing FBCP-NMR-001 implementation/test/evidence mapping extended; source identities and completion counters unchanged.",
+    "source_reviews_observed": 6,
+    "preservation": "Preserve all six source-review records and concurrent round1 forward-intent responsibility updates from canonical blob81e9d4009231b07d78a851cbdff3a4cc0ef29796. Extend only existing FBCP-NMR-001 append-only behavior and evidence fields; no source completion or acceptance declaration.",
+    "source_reviews_complete_observed": 2,
+    "source_closure_ready": false
+  },
+  "acceptance": {
+    "full_migration": false,
+    "live_service": false,
+    "source_legal": false,
+    "signed_supported_platform_packages": false,
+    "full_bot_regression": false,
+    "independent_accept": false
+  },
+  "concurrent_forward_recovery": {
+    "head": "4f1070d73958a1275160c2590d31fbe6507008ee",
+    "paths": [
+      "source/host/src/extensions/session/forward_batch_journal.rs",
+      "source/host/src/extensions/session/production.rs#resume_human_forward_batches"
+    ],
+    "preserved": "Strict persisted-source scan and both added real owner tests; no overwritten implementation. Journal source functions now5 so same-H workflow assertion is5.",
+    "execution": "not-run at integration preparation",
+    "additional_minimal_repair": "Historical uncommitted preparation only: the local draft guard was superseded by94 before any branch update. Current delivery retains94 journal unchanged.",
+    "newer_base": "06fb24c4963f35d1450c122e7222ee39e21b4192",
+    "retained_additional_case": "shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal",
+    "retained_auxiliary_scope": "77d8a251eb453eb0c7260717f576c20fecc6fd8a staged-runtime workflow, source-lock spec and round16 evidence are retained without editing its workflow/evidence.",
+    "final_preserved_base": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+    "superseded_unpublished_guard": "The local draft guard was never attached to the branch before94 published its guard and metadata-object protection. Integrate its unchanged journal blob416012a301d70a3e0cedebe74bb1d600c7b92a05/native client and Human44/journal12, preserving attachment pin/preflight exact-buffer logic.",
+    "final_retained_journal_blob": "7590d6cba0bbe14bdc93a76946967d086193ba4a",
+    "retained_latest_commits": [
+      "c438df8390f60c044afbd37f511d35bbc0fdb58e",
+      "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2"
+    ],
+    "spec_only_nmr50_preserved": "3c9995a97c59d89824b2f6e0e49e72cef4825439"
+  },
+  "ledger_delivery": {
+    "state": "exact_object_created_and_read_back_for_containing_commit",
+    "base_blob": "81e9d4009231b07d78a851cbdff3a4cc0ef29796",
+    "target_blob": "eddd11c7db0e8be8cfa26a58fb177901ce09b55e",
+    "temporary_workflow": ".github/workflows/nmr49-ledger-object.yml",
+    "scope": "Temporary object-only transfer; main agent must read back and CAS integrate the one canonical ledger, then remove the temporary workflow.",
+    "preparation_commit": "d3d28ac4dba2d288d8c7146265e498f042f82ab3",
+    "preparation_run": 41515676039,
+    "job": 125518511737,
+    "artifact": {
+      "artifact": 13174887721,
+      "bytes": 448,
+      "sha256": "0aa710e1e08dc64206802530bfe50193dfaf67fe2176ab0f1500c88197671f69",
+      "digest_matches": true
+    },
+    "full_log_read": true,
+    "complete_remote_blob_content_equal": true,
+    "temporary_workflow_removed_by_containing_commit": true
+  },
+  "concurrent_forward_ui": {
+    "head": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+    "integration_base": "b25c2003a8e76779f2535fc3dfa90e4fe5bde149",
+    "preserved": "Immutable forward-intent UI, all new forward path triggers, Chromium16 and cancelled0, canonical ledger six source_reviews and current source-review contracts retained. No overlap with the five frozen reply production/test files."
+  },
+  "implementation_base": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+  "concurrent_lock_diagnostics": {
+    "head": "d78ba3c1f026130d2494ddce3c11adf610069aa1",
+    "preserved": "Conditional failure-only Cargo metadata lock diagnostics preserve existing versions. All locked acceptance commands and all test gates retained; no local project validation."
+  },
+  "publication_retry": {
+    "unattached_candidate": "922b0b7405f5f0f93c1e3ed022eb1e214cb36032",
+    "update_result": "GitHub GraphQL error; immediate ref readback found concurrentd78, not this candidate. Candidate never counted as delivery. Rebase preserves d78 workflow diagnostics, spec and evidence."
+  },
+  "publication": {
+    "code_head": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+    "parent": "b37eeea1a905773c382a416d9e0e8b91a34d7618",
+    "tree": "c5654feecad7b1a79872199162f900b7aefe8689",
+    "force": false,
+    "expected_sha": "b37eeea1a905773c382a416d9e0e8b91a34d7618",
+    "remote_ref_commit_tree_and_all_eleven_file_contents_verified": true,
+    "temporary_object_workflow_removal_verified": true,
+    "qualification_binding": "Results below bind only to code H936. This evidence-only update does not qualify later concurrently published production changes."
+  },
+  "qualification_snapshot": {
+    "recorded_at": "2026-11-02 20:21:05 UTC",
+    "native_run": {
+      "id": 41517084885,
+      "head": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+      "attempt": 1,
+      "status": "queued",
+      "conclusion": null,
+      "createdAt": "2026-11-02T20:12:29Z",
+      "updatedAt": "2026-11-02T20:12:29Z",
+      "runStartedAt": "2026-11-02T20:12:29Z"
+    },
+    "job_statuses": [
+      {
+        "id": 125523272327,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125523272512,
+        "name": "native-message-shipping-compile",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 125523272587,
+        "name": "native-message-reconciliation",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 125523272600,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125523272728,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125523274921,
+        "name": "native-auth-and-journal",
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    ],
+    "overall_native_acceptance": false,
+    "native_summary": {
+      "ui": {
+        "transcript": 18,
+        "forwardSettlement": 5,
+        "chromium": 16,
+        "tests": 39,
+        "passed": 39,
+        "actualRendererBuild": "success"
+      },
+      "electron": {
+        "carrier": 10,
+        "nativeAuthRetention": 8,
+        "packageResources": 3,
+        "updateSource": 16,
+        "windowsPublisherContracts": 28,
+        "macosMetadataContracts": 18,
+        "tests": 83,
+        "passed": 83,
+        "actualMainPreloadCarrierBuild": "success",
+        "historicalMetadataReconciliation": "success"
+      },
+      "windows": {
+        "nativeSignatureUnicode": 11,
+        "tests": 11,
+        "passed": 11
+      },
+      "totalSelectedTests": 133,
+      "totalPassed": 133,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "new_projection_cases": {
+      "names": [
+        "NMR-49 dispatching Human text and attachments stay pending until settlement",
+        "NMR-49 existing Human and Agent delivery projections remain unchanged"
+      ],
+      "actualFullLogMatched": true,
+      "actualArtifactTranscriptLogMatched": true
+    },
+    "terminal_native_full_logs": [
+      {
+        "id": 125523272327,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "success",
+        "utf8Bytes": 72222,
+        "sha256": "bd29d9682d5ab8b9b4904a297d8630c21012500198b9e9749ca67596183b02d0",
+        "exactCheckoutShaObserved": true,
+        "testGroups": [
+          {
+            "namedPassingTests": [
+              "NMR-49 dispatching Human text and attachments stay pending until settlement",
+              "NMR-49 existing Human and Agent delivery projections remain unchanged",
+              "NMR-26 late initial tail keeps a same-ID edit, reaction, and newer append",
+              "NMR-26 duplicate initial IDs and nonce acknowledgement retain one canonical send",
+              "NMR-26 feed baseline cannot roll back a same-ID Agent terminal event",
+              "NMR-26 tail merge preserves cached older updates in canonical order",
+              "NMR-26 disjoint tail stays between cached history and events first seen during the read",
+              "NMR-26 complete refresh updates unchanged rows but preserves post-request events",
+              "NMR-26 older page overlap deduplicates IDs without reverting current row state",
+              "NMR-26 accepted pages commit to the root cache and resume the exclusive cursor on reopen",
+              "NMR-26 update of an unloaded old row wins over an in-flight page",
+              "NMR-26 loaded older row refresh retains order and the next-page cursor",
+              "NMR-26 account and conversation changes fence stale rows and request completion",
+              "NMR-26 clear/reset prevents a late page from repopulating the transcript",
+              "NMR-26 authoritative complete refresh supersedes an older request",
+              "NMR-26 failed history load preserves rows and retries the same cursor once",
+              "NMR-26 synchronous fetch failure cannot leave pagination permanently busy",
+              "NMR-26 viewport anchoring and disposal reject stale asynchronous effects"
+            ],
+            "counts": {
+              "tests": 18,
+              "pass": 18,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          },
+          {
+            "namedPassingTests": [
+              "current forward success projects notice and roster",
+              "mixed settlement retains failed count and current roster",
+              "account switch before settlement prevents every projection",
+              "late successful roster response cannot repopulate a new account",
+              "late rejected roster request cannot alter a new account or rollback notice"
+            ],
+            "counts": {
+              "tests": 5,
+              "pass": 5,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          },
+          {
+            "namedPassingTests": [
+              "current forward closes and settles exactly once",
+              "account switch prevents old success from closing B dialog",
+              "logout prevents late error from being displayed",
+              "A B A reuse still rejects old settlement",
+              "closed dialog discards old search",
+              "replaced source discards old search",
+              "unmount synchronously invalidates root generation",
+              "late rejected search cannot display error in reopened dialog",
+              "rapid double-submit dispatches only once",
+              "partial retry only sends failed destination with stable identity",
+              "query change does not invalidate valid submit",
+              "credential refresh does not replace account dialog lifetime",
+              "ambiguous missing duplicate and unexpected settlements retain the frozen retry intent",
+              "recipient limit stays editable and counts selections outside the current search",
+              "closing a pending forward retires presentation without cancelling or settling a reopened intent",
+              "late searches preserve send failure and retry destinations even when selected rows are hidden"
+            ],
+            "counts": {
+              "tests": 16,
+              "pass": 16,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          }
+        ]
+      },
+      {
+        "id": 125523272600,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success",
+        "utf8Bytes": 82388,
+        "sha256": "14970ebc5151f37bd2dd2f3932a8a0ea01fa870986502f2f5d111f4c26c74d6c",
+        "exactCheckoutShaObserved": true,
+        "testGroups": [
+          {
+            "namedPassingTests": [
+              "NMR-ELECTRON-01: bootstrap binds one native child and all three existing ports",
+              "NMR-ELECTRON-02: transcript windows preserve cursor, stable IDs and channel identity",
+              "NMR-ELECTRON-03: opaque native replies/events retain identity, reactions and receipts; unsupported edits/deletes stay errors",
+              "NMR-ELECTRON-04: cancellation and native failure outcomes remain explicit",
+              "NMR-ELECTRON-05: invalid output cannot reach a subscriber or log private payloads",
+              "NMR-ELECTRON-06: closed subscriptions fence late traffic and all-port disposal retires the child once",
+              "NMR-ELECTRON-07: child errors close subscriptions and reject late delivery",
+              "NMR-ELECTRON-08: native child exit preserves failure status without killing an exited process",
+              "NMR-ELECTRON-09: signal termination remains non-successful",
+              "NMR-ELECTRON-10: absent bootstrap or incomplete port handoff cannot launch a child"
+            ],
+            "counts": {
+              "tests": 10,
+              "pass": 10,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          },
+          {
+            "namedPassingTests": [
+              "NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves valid retained storage/application secrets",
+              "NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves corrupt retained storage and non-JSON application secret",
+              "NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves corrupt retained storage and invalid application credential",
+              "NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves new account without legacy secrets",
+              "NMR-NATIVE-ACCOUNT: account switch replaces Native identity without touching either legacy account",
+              "NMR-NATIVE-ACCOUNT: restart denies another issuer before isolated login establishes its own Native identity",
+              "NMR-NATIVE-ACCOUNT: rejected refresh clears Native authority and preserves malformed legacy data",
+              "NMR-NATIVE-ACCOUNT: logout fences a delayed refresh before it can republish any credential"
+            ],
+            "counts": {
+              "tests": 8,
+              "pass": 8,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          },
+          {
+            "namedPassingTests": [
+              "NMR-39 Unix: actual resource copy retains only canonical executable bytes and permissions",
+              "NMR-39 Windows-named: actual resource copy retains only canonical executable bytes and permissions",
+              "NMR-39 an approved executable name used as a directory cannot smuggle nested payload"
+            ],
+            "counts": {
+              "tests": 3,
+              "pass": 3,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          },
+          {
+            "namedPassingTests": [
+              "EUS-01/03 no implicit feed for startup, manual, track, minimum-version or backend checks",
+              "EUS-02 invalid and foreign sources fail before requests without echoing configuration",
+              "EUS-02 approved production, isolated CI and loopback origins retain explicit paths",
+              "EUS-01 primary configuration is authoritative including blank and invalid values",
+              "EUS-01/05 actual production wiring uses the same source precedence and service",
+              "EUS-03 existing disabled reasons retain precedence and clearing them cannot bypass source gating",
+              "EUS-05 source gating reaches the actual Settings projection and non-retryable telemetry",
+              "EUS-04 approved explicit feed preserves request contract and genuine 204 no-update settlement",
+              "EUS-02/04 approved feed HTTP failure is an error with no fallback or private request URL",
+              "EUS-02 real loopback manifest redirect is refused before reaching the redirect target",
+              "EUS-04 approved source retains startup and periodic timers",
+              "EUS-03/04 disabling an approved service aborts its exact in-flight check and allows explicit recovery",
+              "EUS-03 disposal blocks later manual checks and startup timers",
+              "EUS-03/04 a new service recovers after explicit configuration is corrected",
+              "EUS-04 real persisted apply markers settle on disabled restart without touching user data",
+              "EUS-04 approved explicit feed retains verified download, installer staging and apply marker owner"
+            ],
+            "counts": {
+              "tests": 16,
+              "pass": 16,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          },
+          {
+            "namedPassingTests": [
+              "EUS-WIN-01 absent and blank authority are distinct from every malformed policy",
+              "EUS-WIN-01 explicit rotation and the 16-entry bound normalize only certificate hexadecimal case",
+              "EUS-WIN-01/03 an installer snapshots startup authority and denies absent authority before the native probe",
+              "EUS-WIN-02 valid native trust requires the subject and certificate pin from one authorized entry",
+              "EUS-WIN-02 explicit certificate rotation accepts each approved pin without learning a new pin",
+              "EUS-WIN-02 historical Anysphere common-name and certificate-only shortcuts never authorize an installer",
+              "EUS-WIN-02 malformed, unsigned, untrusted and catalog probe output fails with fixed non-disclosing errors",
+              "EUS-WIN-02 native timeout, native failure and file-read failure deny receipts without disclosing native output",
+              "EUS-WIN-02 the native command treats apostrophes and metacharacters as a literal file path",
+              "EUS-WIN-03 exact-path receipts belong to one installer instance and permit only one spawn",
+              "EUS-WIN-04 a file changed during the native probe cannot receive an install receipt",
+              "EUS-WIN-04 failed re-verification revokes that path even when its bytes remain unchanged",
+              "EUS-WIN-03/04 an older in-flight probe cannot resurrect a receipt after a newer verification fails",
+              "EUS-WIN-03/04 an older superseded probe cannot revoke a newer successful path receipt",
+              "EUS-WIN-04 changed or missing bytes at launch fail through the callback and consume the old receipt",
+              "EUS-WIN-03/05 spawn errors use the existing callback and cannot reuse a consumed receipt",
+              "EUS-WIN-03 service admission and all later gates cannot bypass missing or invalid publisher authority",
+              "EUS-WIN-03 Windows ports without an authority method cannot silently opt into update admission",
+              "EUS-WIN-03 runtime and feed gates retain precedence while non-Windows behavior remains unchanged",
+              "EUS-WIN-01/03 actual production wiring reads only the explicit publisher variable and preserves its raw value",
+              "EUS-WIN-01/03 changing startup environment requires reconstruction and preserves user Settings",
+              "EUS-WIN-05 publisher gating reaches actual Settings and distinct non-retryable telemetry without raw policy",
+              "EUS-WIN-03/05 disabled restart settles persisted apply markers before the publisher gate without touching sessions",
+              "EUS-WIN-04/05 real installer authorization preserves service staging, one-use launch and marker ownership",
+              "EUS-WIN-02/05 a rejected downloaded publisher cannot become ready or quit and cleanup preserves user data",
+              "EUS-WIN-04/05 a newer candidate failing authorization preserves the previously ready candidate receipt",
+              "EUS-WIN-04/05 cancelling a newly verified track candidate preserves the previous candidate receipt",
+              "EUS-WIN-04/05 rejected launch bytes and spawn failures retain spawn_failed restart evidence"
+            ],
+            "counts": {
+              "tests": 28,
+              "pass": 28,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          },
+          {
+            "namedPassingTests": [
+              "final ZIP and DMG metadata uses the locked generator and verify leaves all candidate bytes unchanged",
+              "ticket append rejects pre-staple metadata then reconciles final hashes, sizes and maps without altering packages",
+              "equivalent gzip envelopes verify read-only and receipts hash the actual accepted sidecars",
+              "valid gzip cannot conceal changes to decoded blockmap checksums, sizes or structure",
+              "malformed, truncated, CRC-corrupt and oversized decoded maps fail closed without candidate writes",
+              "a same-size byte change with manually refreshed hash still rejects its stale differential map",
+              "a nonempty but unrelated blockmap is rejected and rebuilt from its own package",
+              "missing package, sidecar or metadata fails preflight without touching the remaining files",
+              "duplicate file entries cannot omit one of the required package identities",
+              "a metadata or expected-version mismatch cannot rewrite another release",
+              "file and legacy paths cannot escape the canonical arm64 release filenames",
+              "symlinked package, sidecar and metadata inputs are refused before writes",
+              "directories and empty files cannot stand in for regular package inputs",
+              "duplicate YAML keys and malformed digest fields fail before sidecar mutation",
+              "receipt identity must be an exact complete source SHA",
+              "partly replaced sidecars from an interrupted reconciliation remain repairable",
+              "legacy ZIP hash is checked independently and reconciles without changing release fields",
+              "production CLI writes an exact-source receipt only on success and exposes a read-only verify mode"
+            ],
+            "counts": {
+              "tests": 18,
+              "pass": 18,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          }
+        ]
+      },
+      {
+        "id": 125523272728,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success",
+        "utf8Bytes": 35556,
+        "sha256": "b15486dddbc0f6dee21d7979411bf6f3d14f6f843a99af03e07431187a18ad25",
+        "exactCheckoutShaObserved": true,
+        "testGroups": [
+          {
+            "namedPassingTests": [
+              "native Windows: exact CI certificate subject and SHA256 authorize an embedded signed candidate",
+              "native Windows: an actually trusted signed file cannot supply missing publisher authorization",
+              "native Windows: a valid certificate hash cannot authorize a different subject",
+              "native Windows: the exact subject cannot authorize a different certificate SHA256",
+              "native Windows: a real unsigned PE is refused and cannot receive launch permission",
+              "native Windows: modifying a signed PE section produces HashMismatch and is refused",
+              "native Windows: replacing the file after native verification prevents the spawn callback",
+              "native Windows: a native verification permits exactly one captured launch",
+              "native Windows: failed native reverification revokes the prior receipt even when signed bytes return",
+              "native Windows: actual PowerShell literal paths retain spaces, apostrophes and wildcard characters",
+              "native Windows: Unicode publisher identity survives a controlled CP437 native prelude and matches strictly"
+            ],
+            "counts": {
+              "tests": 11,
+              "pass": 11,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          }
+        ]
+      }
+    ],
+    "terminal_native_actual_artifacts": [
+      {
+        "id": 13176370515,
+        "runId": 41517084885,
+        "name": "native-message-ui-936115b0aa578c340c74dd6aa7c71c362572bd72",
+        "bytes": 200336,
+        "sha256": "d59984705b4d3beb6a50eb74ecf42a459ba975f1f3f721e2f8727792d9341dc2",
+        "digestAndSizeVerified": true,
+        "targetShaVerified": true,
+        "memberCount": 31
+      },
+      {
+        "id": 13175866607,
+        "runId": 41517084885,
+        "name": "windows-update-publisher-936115b0aa578c340c74dd6aa7c71c362572bd72",
+        "bytes": 1825,
+        "sha256": "da094023f9399b319678f4d013839290ff12030ab750492192a44753267e34fc",
+        "digestAndSizeVerified": true,
+        "targetShaVerified": true,
+        "memberCount": 3
+      },
+      {
+        "id": 13175193548,
+        "runId": 41517084885,
+        "name": "native-message-electron-936115b0aa578c340c74dd6aa7c71c362572bd72",
+        "bytes": 13375,
+        "sha256": "7db7ee64ffa399e5ba0f26d72f6e62aef22865b66441ac14c50f50ef5d3c4356",
+        "digestAndSizeVerified": true,
+        "targetShaVerified": true,
+        "memberCount": 17
+      }
+    ],
+    "actual_builds": {
+      "renderer": {
+        "jobId": 125523272327,
+        "step": "Compile actual production renderer",
+        "conclusion": "success",
+        "logPath": "/tmp/nmr49-ui-electron-windows-exact936/artifact-13176370515/renderer-build.log",
+        "observedMarkers": [
+          "✓ built in 3.45s",
+          "Desktop renderer bundle boundary passed across 45 emitted text assets."
+        ],
+        "warnings": [
+          "Vite reports an output chunk over 500 kB after minification; build still completed successfully."
+        ]
+      },
+      "electron": {
+        "jobId": 125523272600,
+        "step": "Compile actual Electron main, preload and carrier",
+        "conclusion": "success",
+        "logPath": "/tmp/nmr49-ui-electron-windows-exact936/artifact-13175193548/electron-build.log",
+        "observedMarkers": [
+          "built Fabushi product main/preload and Rust Coordinator carrier"
+        ],
+        "warnings": [
+          "Bundler direct-eval warnings for vnc-trust.ts and telemetry-report-sinks.ts; build completed successfully."
+        ]
+      }
+    },
+    "historical_macos_metadata": {
+      "harnessSha": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+      "packageSourceSha": "9d16483f70df9af06db97b17bb02a24dc507e459",
+      "historicalArtifactId": 13093546572,
+      "historicalArchiveSha256": "f17fc29681164e69507d24201c57a58c84651d66a65cc3d0ebf1faeeee0be225",
+      "staleMetadataRejectedWith": "MACOS_METADATA_ASSET_MISMATCH",
+      "finalReceiptEqualsVerifyReceipt": true,
+      "originalZipAndDmgSizesAndSha256Preserved": true,
+      "packageAssets": [
+        {
+          "name": "fabushi-1.2.78-macos-arm64.zip",
+          "size": 174991227,
+          "sha256": "ab4631db376331e723411ebd3b0e4ccfdd7d904a396fff60946bf0a441958953"
+        },
+        {
+          "name": "fabushi-1.2.78-macos-arm64.dmg",
+          "size": 174156394,
+          "sha256": "c59626591fefa2b7194961236cbbe00cb80fcc3fa78dded4f6c69cdf9053cd6b"
+        }
+      ],
+      "installedOrReleased": false,
+      "interpretation": "This exact-head CI exercised metadata repair against immutable historical package bytes. It does not make the historical installer a package built from H936."
+    },
+    "windows_native_evidence": {
+      "FABUSHI_WINDOWS_NATIVE_FIXTURE": {
+        "sourceSha": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+        "subject": "CN=Fabushi CI ONLY Inert Updater Fixture 测试签名 7cd2d564718d4533",
+        "certificateSha256": "96b6d794d283acab1a05036515409117034500bf5f46d8a31ce2c5b604580552",
+        "status": "Valid",
+        "signatureType": "Authenticode",
+        "scope": "CI-only inert fixture; no production publisher authorization or installation acceptance"
+      },
+      "FABUSHI_WINDOWS_NATIVE_UNICODE": {
+        "execution": "real-powershell-with-controlled-encoding-prelude",
+        "defaultNativeLauncherCases": 10,
+        "startingCodePages": [
+          437,
+          437
+        ],
+        "subject": "CN=Fabushi CI ONLY Inert Updater Fixture 测试签名 7cd2d564718d4533",
+        "certificateSha256": "96b6d794d283acab1a05036515409117034500bf5f46d8a31ce2c5b604580552",
+        "exactUnicodeIdentityAllowed": true,
+        "differentUnicodeSubjectDenied": true,
+        "capturedSpawns": 1,
+        "executedFixtureExecutables": 0
+      },
+      "FABUSHI_WINDOWS_NATIVE_CLEANUP": {
+        "fixtureCreated": true,
+        "remainingOwnedCertificates": 0,
+        "removedStores": [
+          "TrustedPublisher",
+          "Root",
+          "My"
+        ],
+        "privateKeyDeletionRequested": true
+      }
+    },
+    "pending_reconciliation": {
+      "job": 125523272587,
+      "runner": "macos-15",
+      "status": "queued",
+      "actual_counts": null,
+      "expected_counts_only": {
+        "human": 47,
+        "agent": 4,
+        "credential": 3,
+        "sharebox": 1,
+        "journal": 12,
+        "forward_http": 1
+      },
+      "meaning": "Unassigned queued job has no executed result; no rerun or code-failure inference."
+    },
+    "pending_shipping": {
+      "job": 125523272512,
+      "runner": "macos-15",
+      "status": "queued",
+      "actual_counts": null,
+      "apphost_compiled_at_this_head": false
+    },
+    "native_auth_and_journal": {
+      "job": 125523274921,
+      "status": "completed",
+      "conclusion": "skipped",
+      "passed": false
+    },
+    "source": {
+      "runId": 41517085015,
+      "runUrl": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41517085015",
+      "headSha": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "completedAt": "2026-11-02T20:13:30Z",
+      "counts": {
+        "nodeTests": 157,
+        "nodePass": 157,
+        "nodeFail": 0,
+        "nodeCancelled": 0,
+        "nodeSkipped": 0,
+        "pythonTests": 37,
+        "pythonResult": "OK",
+        "ledgerSchemaErrors": 0
+      },
+      "acceptedMode": "Correctly rejects retained rebaseline candidate; no source/product/independent acceptance.",
+      "candidateReport": {
+        "status": "unaccepted-candidate-consistent",
+        "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_entries_total": 16381,
+        "root_source_entries_total": 6895,
+        "responsibility_rows": 184,
+        "authored_source_review_records": 6,
+        "completed_source_review_records": 2,
+        "unknown": null,
+        "unread": null,
+        "lexical_observations": 333,
+        "counts_by_scope": {
+          "pinned-cmake-component": 2,
+          "legacy-root-paths": 331
+        },
+        "text_files_read": 203,
+        "opaque_inputs_unread": 2,
+        "unresolved_ref_observations": 76,
+        "baseline_accepted": false,
+        "source_closure_ready": false,
+        "product_accepted": false,
+        "independent_acceptance": false,
+        "target_commit": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+        "reused_git_artifact": {
+          "repository": "bhrumom/fabushi-desktop",
+          "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+          "artifact_id": 13118749668,
+          "run_id": 41397005716,
+          "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+        },
+        "reused_build_input_artifact": {
+          "repository": "bhrumom/fabushi-desktop",
+          "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+          "artifact_id": 13121721589,
+          "run_id": 41401970993,
+          "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+        }
+      },
+      "acceptedRejectionLog": "file:///home/runner/work/fabushi-desktop/fabushi-desktop/scripts/tdrp-source-review.mjs:31\n    throw Error('accepted source accounting cannot contain a rebaseline candidate');\n          ^\n\nError: accepted source accounting cannot contain a rebaseline candidate\n    at assertNoOpenSourceCandidate (file:///home/runner/work/fabushi-desktop/fabushi-desktop/scripts/tdrp-source-review.mjs:31:11)\n    at file:///home/runner/work/fabushi-desktop/fabushi-desktop/scripts/validate-tdrp-revision9-authority.mjs:69:22\n\nNode.js v22.23.4\n",
+      "recoveryEvidence": [
+        {
+          "member": "candidate-git/index.json",
+          "archive": {
+            "bytes": 4582365,
+            "complete": true,
+            "path": "artifact.zip",
+            "sha256": "77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60",
+            "verified": true
+          },
+          "complete": true,
+          "completed_members": 137,
+          "declared_uncompressed_bytes": 29681262,
+          "expected": {
+            "artifact_id": 13118749668,
+            "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60",
+            "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+            "repository": "bhrumom/fabushi-desktop",
+            "run_id": 41397005716
+          },
+          "metadata": {
+            "artifact_name": "tdrp-fixed-upstream-git-9f77bb2389cba6a65d589eb309d1392501ed308d",
+            "bytes": 784,
+            "path": "metadata.json",
+            "sha256": "af0482f1b1d5b07afb2b5891be8dda876b936ec84cff0a2c94ca2757e3d73875",
+            "verified": true
+          },
+          "purpose": "diagnostic recovery, not test execution or acceptance",
+          "recovery_execution": {
+            "GITHUB_REPOSITORY": "bhrumom/fabushi-desktop",
+            "GITHUB_RUN_ATTEMPT": "1",
+            "GITHUB_RUN_ID": "41517085015",
+            "GITHUB_SHA": "936115b0aa578c340c74dd6aa7c71c362572bd72"
+          },
+          "schema": "tdrp-protocol-artifact-recovery/v1",
+          "uncompressed_bytes_read": 29681262
+        },
+        {
+          "member": "candidate-export/index.json",
+          "archive": {
+            "bytes": 9756692,
+            "complete": true,
+            "path": "artifact.zip",
+            "sha256": "7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc",
+            "verified": true
+          },
+          "complete": true,
+          "completed_members": 486,
+          "declared_uncompressed_bytes": 37553682,
+          "expected": {
+            "artifact_id": 13121721589,
+            "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc",
+            "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+            "repository": "bhrumom/fabushi-desktop",
+            "run_id": 41401970993
+          },
+          "metadata": {
+            "artifact_name": "tdrp-fixed-build-inputs-1cd59bb01513624d26e12f77bfab66729ab72694",
+            "bytes": 784,
+            "path": "metadata.json",
+            "sha256": "94dadccda9452b11905bbad665b08662b0ef4552eab833efca682c0d77e76159",
+            "verified": true
+          },
+          "purpose": "diagnostic recovery, not test execution or acceptance",
+          "recovery_execution": {
+            "GITHUB_REPOSITORY": "bhrumom/fabushi-desktop",
+            "GITHUB_RUN_ATTEMPT": "1",
+            "GITHUB_RUN_ID": "41517085015",
+            "GITHUB_SHA": "936115b0aa578c340c74dd6aa7c71c362572bd72"
+          },
+          "schema": "tdrp-protocol-artifact-recovery/v1",
+          "uncompressed_bytes_read": 37553682
+        }
+      ]
+    },
+    "source_full_logs": [
+      {
+        "jobId": 125523271939,
+        "bytes": 89837,
+        "sha256": "37bc87723c1826b49bd15dc79e8b32d286f13ec60fd129c1840600388edecc76"
+      },
+      {
+        "jobId": 125523437310,
+        "bytes": 146052,
+        "sha256": "1bbc0119246aff07d0424b73022b6fd5ff51f0363b36aa838375c931d05eb3c5"
+      }
+    ],
+    "source_actual_artifacts": [
+      {
+        "artifact_id": 13176470369,
+        "bytes": 6783,
+        "sha256": "582f0007dce2a386089ffbedc892645eede01e6ed4264a913262534bbd0080a2"
+      },
+      {
+        "artifact_id": 13176270981,
+        "bytes": 79136,
+        "sha256": "e5f4b99476b032c5db873bf5fe16f1f30130f9e004f0d8a3b84a87e54ee4997d"
+      }
+    ]
+  },
+  "focused_source_followup": {
+    "schema": "fbcp-nmr49-focused-source-and-visual-followup-v1",
+    "target_sha": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+    "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "source_scope": "Focused symbol and call-chain review only. Full files were retrieved with exact Git blob identities; only the listed ranges were read for this follow-up. No whole-file/source completeness, legal closure or source_reviews promotion.",
+    "sources": [
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/api/api_updates.cpp",
+        "blob": "71c929cfe3c779c94719efef32a47a4d029e2c67",
+        "read_ranges": [
+          [
+            313,
+            369
+          ],
+          [
+            1655,
+            1747
+          ]
+        ],
+        "observations": [
+          "Message-ID updates resolve a registered random ID to its existing local owner; scheduled, business-shortcut and wallet transfer branches have separate admission behavior.",
+          "The normal branch resolves already-present server identity before setRealId, then retires random/sent correlation records. No claim that those special branches are implemented by this Human direct-message batch."
+        ]
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/data/data_session.cpp",
+        "blob": "baac09c9c320d748d008867dc4ec3ec560c6681b",
+        "read_ranges": [
+          [
+            2085,
+            2185
+          ],
+          [
+            3132,
+            3158
+          ],
+          [
+            3400,
+            3458
+          ],
+          [
+            3536,
+            3580
+          ]
+        ],
+        "observations": [
+          "changeMessageId updates the per-peer identity index and non-channel server lookup; notifyItemIdChange then emits the existing identity event and refreshes existing views.",
+          "Random-ID lookup and sent-data records belong to the existing Session. This is an in-memory pointer/index design; it does not itself prove Fabushi SQLite crash atomicity or pending reply persistence."
+        ]
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/history/history_item.cpp",
+        "blob": "b753d3ea7bd5fde15cdad206d17ab3eee6d68cab",
+        "read_ranges": [
+          [
+            3280,
+            3365
+          ],
+          [
+            4374,
+            4426
+          ],
+          [
+            4576,
+            4630
+          ],
+          [
+            5394,
+            5466
+          ]
+        ],
+        "observations": [
+          "setRealId requires a local sending/text-appearing item, changes its identity, clears local/sending flags and notifies the same owner plus existing visual dependents.",
+          "Reply fields carry peer/message, topic, story and quote semantics. This batch qualifies only the current Fabushi Human conversation reply contract; broader external-peer/topic/story/quote behavior remains separately unaccepted."
+        ]
+      }
+    ],
+    "target_mapping": {
+      "owner": "Existing ProductionSessionWorkers and SandAgentDb; existing native client and transcript consumers.",
+      "reviewed": "Current-row replay, account/author-scoped historical nonce alias admission, parent/child transaction rollback, and post-commit event publication.",
+      "qualification_boundary": "GitHub Actions must execute the three new real Host/SQLite/HTTP/reopen tests at this exact H; source analogy alone is not proof.",
+      "no_new_owner": true,
+      "no_source_counter_change": true
+    },
+    "visual_review": {
+      "run": 41517084885,
+      "artifact": 13176370515,
+      "artifact_sha256": "d59984705b4d3beb6a50eb74ecf42a459ba975f1f3f721e2f8727792d9341dc2",
+      "images_read": [
+        "forward-dark-narrow.png",
+        "forward-dark-wide.png",
+        "forward-light-narrow.png",
+        "forward-light-wide.png",
+        "forward-immutable-retry-narrow.png",
+        "forward-immutable-retry-wide.png"
+      ],
+      "observed": "All six actual Chromium fixture screenshots were opened and inspected. Narrow/wide light/dark dialog titles, recipient selection, focus outline, privacy controls and action footer remain visible without clipping. Retry screenshots show retained disabled privacy options, remaining recipient selection and retry/close explanatory text within the dialog.",
+      "limits": "Bounded screenshot inspection only, not complete installed-app UI, accessibility, localization or independent release ACCEPT. These are forward-dialog fixtures; reply pending projection is established by its separate actual production-model tests."
+    }
+  },
+  "concurrent_descendant_preservation": {
+    "checkpoint": "2d3515ebaec634eada32d96c7d7871c1b0782716",
+    "ledger_blob": "a95d76c46119474e36134456442aebe39f4e9760",
+    "nmr49_append_preserved": {
+      "requirement_ids": {
+        "introduced": 7,
+        "missing": []
+      },
+      "fabushi_target_paths": {
+        "introduced": 3,
+        "missing": []
+      },
+      "fabushi_target_symbols": {
+        "introduced": 3,
+        "missing": []
+      },
+      "contract_case_ids": {
+        "introduced": 6,
+        "missing": []
+      },
+      "integration_case_ids": {
+        "introduced": 3,
+        "missing": []
+      },
+      "fault_recovery_case_ids": {
+        "introduced": 6,
+        "missing": []
+      },
+      "security_case_ids": {
+        "introduced": 2,
+        "missing": []
+      },
+      "ui_functional_case_ids": {
+        "introduced": 2,
+        "missing": []
+      },
+      "test_evidence": {
+        "introduced": 6,
+        "missing": []
+      },
+      "production_evidence": {
+        "introduced": 1,
+        "missing": []
+      },
+      "test_execution_evidence": {
+        "introduced": 3,
+        "missing": []
+      },
+      "blockers": {
+        "introduced": 1,
+        "missing": []
+      }
+    },
+    "nmr49_note_preserved": true,
+    "source_reviews": 6,
+    "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "whole_source_accepted": false
+  }
+}

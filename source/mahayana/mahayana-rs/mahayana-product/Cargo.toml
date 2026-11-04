@@ -7,6 +7,7 @@ publish = false
 
 [dependencies]
 anyhow.workspace = true
+base64.workspace = true
 # Transitional source aliases keep the large product client diff narrow while
 # the actual packages are Mahayana-owned. The source-boundary gate verifies
 # these aliases never point back at upstream vendor crates.

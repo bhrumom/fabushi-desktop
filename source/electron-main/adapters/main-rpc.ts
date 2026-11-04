@@ -92,6 +92,16 @@ export function createElectronProductionMainRpcBinding(
           }
           return settings as Record<string, unknown>;
         },
+        readProductSettingsSnapshot: async () => {
+          const settings = await context.coordinatorLegs.legs["settings.snapshot"]!();
+          if (typeof settings !== "object" || settings == null || Array.isArray(settings)) throw new Error("Electron production MainEdge received an invalid product Settings snapshot.");
+          return settings as Record<string, unknown>;
+        },
+        mutateProductNetworkProxy: async (mutation) => {
+          const result = await context.coordinatorLegs.legs["settings.mutateNetworkProxy"]!({ mutation });
+          if (typeof result !== "object" || result == null || Array.isArray(result)) throw new Error("Electron production MainEdge received an invalid network-proxy mutation result.");
+          return result as Record<string, unknown>;
+        },
         emitEgressTunnelChanged: (enabled) => context.requireMainEdge().emit("egress-tunnel-changed", enabled),
         emitWebauthnProxyChanged: (enabled) => context.requireMainEdge().emit("webauthn-proxy-changed", enabled),
         getTrustedContents: () => {
@@ -241,6 +251,8 @@ function validateMainRpcDeps(deps: MainEdgeWiringDeps): MainEdgeWiringDeps {
     requireObject(deps[name], `mainRpc.${name}`);
   }
   requireFunction(deps.syncHostSettingsToBox, "mainRpc.syncHostSettingsToBox");
+  requireFunction(deps.readProductSettingsSnapshot, "mainRpc.readProductSettingsSnapshot");
+  requireFunction(deps.mutateProductNetworkProxy, "mainRpc.mutateProductNetworkProxy");
   if (typeof deps.platform !== "string") throw new TypeError("Missing Electron production adapter port: mainRpc.platform.");
   requireObject(deps.ipcMain, "mainRpc.ipcMain");
   requireFunction(deps.ipcMain.handle, "mainRpc.ipcMain.handle");

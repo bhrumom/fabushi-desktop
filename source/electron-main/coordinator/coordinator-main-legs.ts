@@ -1,7 +1,7 @@
 import { COORDINATOR_MAIN_METHOD_TABLE } from "../../shared/rpc/coordinator-main.js";
-import { createCoordinatorMainPortClient } from "./coordinator-main-port-client.js";
+import { createCoordinatorMainPortClient, type CoordinatorMainEventHandler } from "./coordinator-main-port-client.js";
 interface MessagePortLike { postMessage(frame: unknown): void; close(): void; on(event: "message" | "close", listener: (event: any) => void): void; start(): void }
-export function createCoordinatorMainLegs(options: { readonly onProblem: (problem: string) => void; readonly reportFailure?: (leg: string, error: unknown) => void }) {
+export function createCoordinatorMainLegs(options: { readonly onProblem: (problem: string) => void; readonly reportFailure?: (leg: string, error: unknown) => void; readonly onEvent?: CoordinatorMainEventHandler }) {
   let current: ReturnType<typeof createCoordinatorMainPortClient> | null = null; let disposed = false; const methods: Record<string, (first?: unknown) => Promise<unknown>> = {};
   for (const name of Object.keys(COORDINATOR_MAIN_METHOD_TABLE)) methods[name] = (first) => current == null ? Promise.reject(new Error(`Sand coordinator main-data leg "${name}" has no live coordinator session (coordinator not launched).`)) : current.legs[name]!(first);
   const revokeCurrent = () => { const previous = current; current = null; previous?.dispose(); };
@@ -28,7 +28,7 @@ export function createCoordinatorMainLegs(options: { readonly onProblem: (proble
               options.reportFailure?.("close", error);
             }
           },
-        });
+        }, options.onEvent);
       } catch {
         try {
           port.close();

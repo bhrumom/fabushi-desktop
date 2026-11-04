@@ -16,6 +16,7 @@ use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppRequest, MiniAppResponse, MiniAppSession,
 };
 use crate::payment::{CustomerInfo, Invoice, PaymentOrder};
+use crate::privacy::PrivacySettings;
 use crate::search::{RecipientSearchRequirements, SearchQuery, SearchResult};
 use crate::story::{Story, StoryId};
 use crate::wallet::{LedgerEntry, WalletAccount};
@@ -72,6 +73,9 @@ pub enum ClientCommand {
     },
     UpsertProfile {
         actor: Actor,
+    },
+    UpsertPrivacySettings {
+        settings: PrivacySettings,
     },
     SetPresence {
         presence: Presence,
@@ -141,6 +145,9 @@ pub enum ClientCommand {
         thread_root_message_id: Option<MessageId>,
         silent: bool,
         protected_content: bool,
+    },
+    CancelPresenceTriggeredSend {
+        client_message_id: ClientMessageId,
     },
     ForwardMessage {
         source_conversation_id: ConversationId,

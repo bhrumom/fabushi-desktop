@@ -1,0 +1,186 @@
+{
+  "schema": "fabushi-fbcp-nmr-round17-evidence-v1",
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 17,
+  "capturedDate": "2026-11-02",
+  "scope": "production AppHost legacy auth refusals, canonical Settings removal/restart recovery, real built executable resource copying, retained FFI caller boundary",
+  "fixedUpstream": {
+    "repo": "telegramdesktop/tdesktop",
+    "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "settingsSource": {
+      "path": "Telegram/SourceFiles/core/core_settings_proxy.cpp",
+      "blob": "18e7ab8ce60865409dbaff267ee192e272622d26",
+      "finding": "removeFromList rebases preferred indices before removing target index; target corrects inherited next-item preference loss without claiming literal byte-for-byte source behavior"
+    }
+  },
+  "startingDesktop": {
+    "repo": "bhrumom/fabushi-desktop",
+    "checkpoint": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "head": "23f737faba69b4f60eecb6ec1a031602f87f60dc",
+    "mainAtRead": "5528062177e3865eef60a073a066cca144f9e3e8"
+  },
+  "prerequisiteActions": {
+    "runId": 41451598911,
+    "headSha": "23f737faba69b4f60eecb6ec1a031602f87f60dc",
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": {
+      "native-message-reconciliation": {
+        "jobId": 125297875803,
+        "conclusion": "success",
+        "counts": {
+          "Human": 33,
+          "AgentNonce": 4,
+          "PrivateCredentialSettlement": 3
+        },
+        "artifactId": 13144099535,
+        "artifactSha256": "47a02f699a93c6dfc920b86bd97d36297ce7df39c03efbc153e34f072f7999d8"
+      },
+      "native-message-shipping-compile": {
+        "jobId": 125297875447,
+        "conclusion": "success",
+        "counts": {
+          "AppHostComposition": 11,
+          "NativeStartup": 6,
+          "FeatureHost": 7,
+          "Host": 6,
+          "C_ABI": 7,
+          "Normalization": 6,
+          "FutureSalts": 2,
+          "Protocol": 122,
+          "TCP_including_live": 9,
+          "Proxy": 4,
+          "NativeCredential": 1
+        },
+        "artifactId": 13145291819,
+        "artifactSha256": "f57ecf0f8c1fbb13d3f4b7a4a709d4c27a8f8dbfe301a8b3e17c8ed93ff57ada",
+        "builtExecutableSha256": "7d6dd995eb01fb4dd53c5e4195742d7294b8c0fd0c313d39fd6cdee848811818",
+        "checks": [
+          "actual locked AppHost production normal/build dependencies exclude legacy adapter/core",
+          "actual defined C symbols exclude direct legacy Telegram client exports",
+          "actual linked libraries exclude old shared Telegram runtime",
+          "generic Host direct dependency excludes legacy Telegram adapter"
+        ]
+      },
+      "native-message-ui": {
+        "conclusion": "success",
+        "counts": {
+          "Transcript": 16
+        },
+        "artifactId": 13144553912,
+        "artifactSha256": "1d48c2f7fa1c880855c53d14fa3d27eb95c7e92d036bfbdcfbba08af867eb328"
+      },
+      "native-message-electron": {
+        "conclusion": "success",
+        "counts": {
+          "Carrier": 10,
+          "NativeAccount": 8,
+          "PackagerFixture": 3
+        },
+        "artifactId": 13145001445,
+        "artifactSha256": "48498a72ceef810d91cec73f6083941982218041c829587d4db59819e3ee312a"
+      }
+    }
+  },
+  "round17Changes": {
+    "existingOwners": [
+      "mahayana-app-host::ProductProxySettings",
+      "mahayana-app-host native_desktop_account_handoff subprocess harness",
+      "desktop/scripts/native-package-resources.contract.test.mjs",
+      "desktop/package.json extraResources production FileSet"
+    ],
+    "newAuthMatrix": {
+      "recognizedLegacyMethods": 12,
+      "parameterFormsPerMethod": 9,
+      "additionalRegistrationVariants": 11,
+      "unknownMethodNegatives": 6,
+      "totalRequestsPerInvocation": 125,
+      "responseOracles": [
+        "original request ID",
+        "no result or event",
+        "exact unavailable error for 11 methods plus valid registration",
+        "registration firstName check precedence for malformed or missing input",
+        "unknown method invalid request"
+      ],
+      "processScenariosPreserved": 6
+    },
+    "settings": {
+      "typedMutationKinds": 15,
+      "publicDispatchCases": 17,
+      "compatibilityRetryVariants": 6,
+      "invalidTypedCases": 8,
+      "invalidCompatibilityCases": 6,
+      "injectedPersistenceFailures": 2,
+      "recoveryOperations": 2,
+      "restartedCompleteSnapshot": true,
+      "removalIdentitySubcases": 30,
+      "oldBug": "[A,B,C] preferred [0,1,2] remove A incorrectly retains only [1]",
+      "fixedInvariant": "drop deleted index before rebasing surviving endpoint indices",
+      "migration": "none; already-lost preferences are not reconstructed",
+      "persistentOwner": "feature-host/product-settings.json"
+    },
+    "actualResourceCopy": {
+      "mechanism": "locked app-builder-lib getFileMatchers + copyFiles with production extraResources FileSet",
+      "realInput": "same Actions job freshly built source/host/app/target/ci/mahayana-app-host",
+      "explicitBinding": [
+        "exact GitHub SHA",
+        "recorded build SHA256",
+        "absolute path",
+        "nonempty executable regular file"
+      ],
+      "oracles": [
+        "unrestricted copy control admits excluded sentinels",
+        "production copy contains only actual AppHost",
+        "source and copied SHA256/size/executable mode match",
+        "source and staging unchanged",
+        "invalid input and mismatched build hash fail closed",
+        "copied Mach-O actual symbol and dynamic library negatives"
+      ],
+      "expectedCopyTests": 4,
+      "negativePrechecks": 2,
+      "platform": "macos-15",
+      "notQualified": [
+        "complete installer",
+        "code signing",
+        "Windows/Linux installed runtime",
+        "automated upgrade/rollback"
+      ]
+    },
+    "ffiConsumers": {
+      "confirmed": [
+        "source/mahayana/mahayana-rs/mahayana-cli/src/main.rs",
+        "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs"
+      ],
+      "retained": "mahayana-ffi RuntimeHandle generic C ABI and old direct Telegram exports",
+      "externalConsumers": "not yet exhaustively verified"
+    }
+  },
+  "validation": {
+    "priorExactH": "passed",
+    "newRound17": "not-run (await exact containing-commit GitHub Actions)",
+    "localExecution": "none",
+    "finalIndependentAccept": false
+  },
+  "backendReadOnly": {
+    "repository": "bhrumom/fabushi-backend",
+    "pullRequest": 137,
+    "head": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "productionWorkerSha": "unverified",
+    "authenticatedAfterIdZeroPagination": "unverified",
+    "changesMade": false,
+    "mergeOrDeployAuthorized": false
+  },
+  "outstanding": [
+    "new H complete Actions results and artifacts",
+    "real signed and installed supported-platform packages",
+    "external FFI ABI consumer inventory and safe retirement decision",
+    "production Worker source/deployment and real afterId=0 protected pagination/denial/recovery",
+    "complete source/legal closure and full applicable responsibility implementation",
+    "complete Bot/UI/a11y/upgrade/rollback/security/performance/soak and independent ACCEPT"
+  ],
+  "rollback": "reviewed code-only revert without deleting old SQLite, sidecars, keys, incomplete messaging data or original readers"
+}

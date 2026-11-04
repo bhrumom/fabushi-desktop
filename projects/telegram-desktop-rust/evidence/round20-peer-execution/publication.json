@@ -1,0 +1,1330 @@
+{
+  "production": {
+    "sha": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+    "parent": "d81f749bb15ad5983f0daecd52688ad21135ef58",
+    "tree": "368398aa7675455479700b7740468e7e0ef42034",
+    "force": false,
+    "expected_sha": "d81f749bb15ad5983f0daecd52688ad21135ef58",
+    "remoteVerified": true,
+    "files": [
+      {
+        "path": ".github/workflows/native-service-contracts.yml",
+        "sha": "f467018b45c9dc699dfacdf64c58f182d142d8f9",
+        "expectedSha": "f467018b45c9dc699dfacdf64c58f182d142d8f9",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 74289
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/Cargo.toml",
+        "sha": "da5b1e098fd582714e91ab6fc31885600f0abe72",
+        "expectedSha": "da5b1e098fd582714e91ab6fc31885600f0abe72",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 402
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway/Cargo.toml",
+        "sha": "7192a22c6127c5d1929226541544006030a8f69c",
+        "expectedSha": "7192a22c6127c5d1929226541544006030a8f69c",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 359
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs",
+        "sha": "39cf3f07dd2d79e5e6a71fbaa542b2e4d501e47a",
+        "expectedSha": "39cf3f07dd2d79e5e6a71fbaa542b2e4d501e47a",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 19875
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib_v2.rs",
+        "sha": "b996054d584aaa26e757330e856e928e815373ba",
+        "expectedSha": "b996054d584aaa26e757330e856e928e815373ba",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 20902
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs",
+        "sha": "e7338a96323b7ccafe5e7ab1c45609c0b150ad87",
+        "expectedSha": "e7338a96323b7ccafe5e7ab1c45609c0b150ad87",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 32755
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway/src/lib_v2.rs",
+        "sha": "c826e6f52091d7727a3815edbfa5e76e2eb4a54c",
+        "expectedSha": "c826e6f52091d7727a3815edbfa5e76e2eb4a54c",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 28678
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs",
+        "sha": "f68aa7371113ec78d0997f46b087d5dbd314e574",
+        "expectedSha": "f68aa7371113ec78d0997f46b087d5dbd314e574",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 32662
+      },
+      {
+        "path": "projects/telegram-desktop-rust/STATUS.md",
+        "sha": "ea7c2d548ab1d72664fdc3144e4703d6cde00c30",
+        "expectedSha": "ea7c2d548ab1d72664fdc3144e4703d6cde00c30",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 28990
+      },
+      {
+        "path": "projects/fabushi-communication-platform/STATUS.md",
+        "sha": "338e1eb430e7eb065c913204c291b88ee02a574d",
+        "expectedSha": "338e1eb430e7eb065c913204c291b88ee02a574d",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 17931
+      },
+      {
+        "path": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+        "sha": "3876af107746e6acbd7161537c7b21b7ede80f3f",
+        "expectedSha": "3876af107746e6acbd7161537c7b21b7ede80f3f",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 76080
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-durable-mutations.json",
+        "sha": "ac48f25e78b0f42e6b84550eea5c944d9dabffd9",
+        "expectedSha": "ac48f25e78b0f42e6b84550eea5c944d9dabffd9",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 113490
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/Cargo.lock",
+        "sha": "b7f496064ca6ab758c6a2d325dfb96031776e5f4",
+        "expectedSha": "b7f496064ca6ab758c6a2d325dfb96031776e5f4",
+        "shaMatches": true,
+        "fullContentMatchesLocal": true,
+        "chars": 386573,
+        "bytes": 386573,
+        "sha256": "c6aa705678efab0841897dd58ecc30378aab565ff9b9c5dec2ad9c2bd27fb3da"
+      }
+    ],
+    "run": 41528207637,
+    "ledgerPhaseComplete": false,
+    "localExecutableValidation": false
+  },
+  "ledger": {
+    "head": "5c285452de88dcfba78bd5085f9833712eb3a459",
+    "ledgerBlob": "714a817763b6bcb6ed89a0e9e37f3ae728d4b906",
+    "bytes": 3671837,
+    "sha256": "cfd35f2a7da0f3a30d8d6ee8c73c2d51e2efc0836a2474bd97f41152a5a01678",
+    "fullRemoteContentHashMatchesIndependentArtifact": true,
+    "arrays": [
+      {
+        "key": "rows",
+        "count": 184
+      },
+      {
+        "key": "source_reviews",
+        "count": 14
+      }
+    ],
+    "receiptFullContentVerified": true,
+    "helperDeleted": true,
+    "commitParent": "286ea020a28e6ea46b0cbe56cdae9f00483c74bb",
+    "tree": "9f8dbb271dff4fc6c0d01e3d673d2ac2ccf17a33",
+    "force": false,
+    "expected_sha": "286ea020a28e6ea46b0cbe56cdae9f00483c74bb"
+  },
+  "independent_ledger_readback": {
+    "format": "FBCP-PEER-LEDGER-PUBLICATION-INDEPENDENT-READBACK-V1",
+    "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 20,
+    "repository": "bhrumom/fabushi-desktop",
+    "commit": {
+      "sha": "5c285452de88dcfba78bd5085f9833712eb3a459",
+      "node_id": "C_kwDOUfmb_doAKDVjMjg1NDUyZGU4OGRjZmJhNzhiZDUwODVmOTgzMzcxMmViM2E0NTk",
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/5c285452de88dcfba78bd5085f9833712eb3a459",
+      "html_url": "https://github.com/bhrumom/fabushi-desktop/commit/5c285452de88dcfba78bd5085f9833712eb3a459",
+      "author": {
+        "name": "bhrum",
+        "email": "bhrumom@gmail.com",
+        "date": "2026-11-02T21:34:12Z"
+      },
+      "committer": {
+        "name": "bhrum",
+        "email": "bhrumom@gmail.com",
+        "date": "2026-11-02T21:34:12Z"
+      },
+      "tree": {
+        "sha": "9f8dbb271dff4fc6c0d01e3d673d2ac2ccf17a33",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/trees/9f8dbb271dff4fc6c0d01e3d673d2ac2ccf17a33"
+      },
+      "message": "docs(gateway): reconcile peer durability with the canonical ledger\n\nBind verified production9bb1c85 to an append-only existing NMR responsibility record. Preserve all183 other rows, all14 source reviews and acceptance fields from the matching current input. Retain the installed Cargo lock and remove only the three temporary peer object helper files.\n\nThe attached artifact/input/output audit proves transport and preservation, not complete product or independent acceptance.",
+      "parents": [
+        {
+          "sha": "286ea020a28e6ea46b0cbe56cdae9f00483c74bb",
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/286ea020a28e6ea46b0cbe56cdae9f00483c74bb",
+          "html_url": "https://github.com/bhrumom/fabushi-desktop/commit/286ea020a28e6ea46b0cbe56cdae9f00483c74bb"
+        }
+      ],
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "tree": {
+      "sha": "9f8dbb271dff4fc6c0d01e3d673d2ac2ccf17a33",
+      "truncated": false,
+      "total_entries": 9982,
+      "selected": [
+        {
+          "path": "projects/telegram-desktop-rust/evidence/round20-peer-ledger-publication.json",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "65c46cd2d5da775375107b136fc05713b94fcf16",
+          "size": 26881,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/65c46cd2d5da775375107b136fc05713b94fcf16"
+        },
+        {
+          "path": "projects/telegram-desktop-rust/parity-ledger.json",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "714a817763b6bcb6ed89a0e9e37f3ae728d4b906",
+          "size": 3671837,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/714a817763b6bcb6ed89a0e9e37f3ae728d4b906"
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/Cargo.lock",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "b7f496064ca6ab758c6a2d325dfb96031776e5f4",
+          "size": 386573,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/b7f496064ca6ab758c6a2d325dfb96031776e5f4"
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib_v2.rs",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "b996054d584aaa26e757330e856e928e815373ba",
+          "size": 20902,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/b996054d584aaa26e757330e856e928e815373ba"
+        }
+      ]
+    },
+    "compare": {
+      "status": "ahead",
+      "total_commits": 1,
+      "files": [
+        {
+          "path": ".github/peer-durability-object-ops.json",
+          "status": "removed",
+          "sha": "6631537725a2196ebf623bc3a3ecb5c5c4fc8609",
+          "additions": 0,
+          "deletions": 105
+        },
+        {
+          "path": ".github/scripts/prepare-peer-durability-objects.py",
+          "status": "removed",
+          "sha": "7405b65bec66526fd05bd296d304ab28d423feed",
+          "additions": 0,
+          "deletions": 192
+        },
+        {
+          "path": ".github/workflows/peer-durability-object-prepare.yml",
+          "status": "removed",
+          "sha": "f0203774516b1be5b0eb402f0c10a9521eb10024",
+          "additions": 0,
+          "deletions": 37
+        },
+        {
+          "path": "projects/telegram-desktop-rust/evidence/round20-peer-ledger-publication.json",
+          "status": "added",
+          "sha": "65c46cd2d5da775375107b136fc05713b94fcf16",
+          "additions": 490,
+          "deletions": 0
+        },
+        {
+          "path": "projects/telegram-desktop-rust/parity-ledger.json",
+          "status": "modified",
+          "sha": "714a817763b6bcb6ed89a0e9e37f3ae728d4b906",
+          "additions": 77,
+          "deletions": 13
+        }
+      ]
+    },
+    "parent_ledger_blob": "fb32a0e0a86ce5226e20ddd5a668a30429bb68c2",
+    "expected_input": "fb32a0e0a86ce5226e20ddd5a668a30429bb68c2",
+    "expected_output": "714a817763b6bcb6ed89a0e9e37f3ae728d4b906",
+    "temporary_helpers_absent": true,
+    "unchanged_cargo": "b7f496064ca6ab758c6a2d325dfb96031776e5f4",
+    "artifact_audit": {
+      "path": "/workspace/scratch/b725a2794b30/peer-object-preparation-6f69230-round20-audit.json",
+      "bytes": 20075,
+      "sha256": "2eaa995ef3ee35dc1c4f4140ce35c5cf7f6795aac96a5c7987c27d32d07814ae",
+      "git_blob": "1fc25c4786d39f9639104faf75ec3c3b16f6164d"
+    },
+    "full_remote_ledger_bytes_previously_read_via_artifact": true,
+    "product_test_result_not_asserted": true,
+    "acceptance": false,
+    "remote_writes_by_auditor": false,
+    "publication_receipt_readback": {
+      "path": "/workspace/scratch/b725a2794b30/peer-object-audit-6f69230/published-65c46cd-receipt.json",
+      "bytes": 26881,
+      "sha256": "7068b14dc60f8372ea6813d134cbd95fd1d06bc9212552a04c36a628e2e04a9a",
+      "git_blob": "65c46cd2d5da775375107b136fc05713b94fcf16"
+    }
+  },
+  "interpretation": "Production receipt ledgerPhaseComplete=false is its historical first-phase state. The separate successful5c ledger publication and full-body remote verification complete that phase; neither phase confers product acceptance.",
+  "latest_source_read": {
+    "observedHead": "7201c8897dafb39bea92543d3ac447305348e17d",
+    "observedTree": "b314ce5e9ac9a3ac8605790565dfbe5fc3405361",
+    "observedAt": "2026-11-02 21:44:15 UTC",
+    "main": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "normative": [
+      {
+        "path": "AGENTS.md",
+        "blob": "9fe4010e3624d468c2eb23b1e1ab5e90ebf8be89"
+      },
+      {
+        "path": "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md",
+        "blob": "3f1408a1460a589eeffceba3c3404c0c151d1bfa"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md",
+        "blob": "da3455bff35978b41027d940213bf3fc6d9a496a"
+      },
+      {
+        "path": "docs/specs/fabushi-deferred-ci-migration.md",
+        "blob": "01dc632975eca100c9bdc80746efdc2b0b044a57"
+      },
+      {
+        "path": "docs/specs/fabushi-bot-communication-platform.md",
+        "blob": "93c543fafda43a0f84ecc13808dba9dd2ef71b42"
+      },
+      {
+        "path": "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+        "blob": "2b3873eb34a5e31ed2460c1a9f6b72df51583694"
+      },
+      {
+        "path": "docs/specs/fbcp-gateway-peer-durability.md",
+        "blob": "d4ed731306b1966d3738d777affa21103b3e9fed"
+      }
+    ],
+    "ledger": {
+      "path": "projects/telegram-desktop-rust/parity-ledger.json",
+      "blob": "09ae58962a743d8010e94906190fc054f878c28f",
+      "rows": 184,
+      "sourceReviews": 14,
+      "coverage": {
+        "source_entries_total": 16381,
+        "unknown": null,
+        "unread": null,
+        "omitted": 0,
+        "responsibilities_total": 184,
+        "unmapped_responsibilities": 2
+      },
+      "upstreamCommit": "f985723b552b30fe1c17d377d57f44e61a15a8c4"
+    },
+    "peerCodeBindings": [
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs",
+        "blob": "f68aa7371113ec78d0997f46b087d5dbd314e574"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/Cargo.toml",
+        "blob": "da5b1e098fd582714e91ab6fc31885600f0abe72"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs",
+        "blob": "e7338a96323b7ccafe5e7ab1c45609c0b150ad87"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs",
+        "blob": "39cf3f07dd2d79e5e6a71fbaa542b2e4d501e47a"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib_v2.rs",
+        "blob": "b996054d584aaa26e757330e856e928e815373ba"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway/Cargo.toml",
+        "blob": "7192a22c6127c5d1929226541544006030a8f69c"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-gateway/src/lib_v2.rs",
+        "blob": "c826e6f52091d7727a3815edbfa5e76e2eb4a54c"
+      }
+    ],
+    "jobs9bb": [
+      {
+        "id": 125561309973,
+        "name": "retained-direct-ffi-compatibility",
+        "status": "completed",
+        "conclusion": "success",
+        "runner_id": 1000260142,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:26:32Z",
+            "completed_at": "2026-11-02T21:26:33Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:26:33Z",
+            "completed_at": "2026-11-02T21:26:36Z"
+          },
+          {
+            "name": "Bind retained direct C wrapper scope",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:26:36Z",
+            "completed_at": "2026-11-02T21:26:36Z"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:26:36Z",
+            "completed_at": "2026-11-02T21:26:44Z"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:26:44Z",
+            "completed_at": "2026-11-02T21:26:52Z"
+          },
+          {
+            "name": "Execute retained direct C lifecycle and rollback-reader contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:26:52Z",
+            "completed_at": "2026-11-02T21:26:58Z"
+          },
+          {
+            "name": "Preserve retained C wrapper evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:26:58Z",
+            "completed_at": "2026-11-02T21:26:59Z"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-02T21:26:59Z",
+            "completed_at": "2026-11-02T21:27:16Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:27:16Z",
+            "completed_at": "2026-11-02T21:27:16Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-02T21:27:16Z",
+            "completed_at": "2026-11-02T21:27:16Z"
+          }
+        ]
+      },
+      {
+        "id": 125561310321,
+        "name": "gateway-peer-durability (windows-2025)",
+        "status": "completed",
+        "conclusion": "success",
+        "runner_id": 1000260148,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:27:48Z",
+            "completed_at": "2026-11-02T21:27:50Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:27:50Z",
+            "completed_at": "2026-11-02T21:27:59Z"
+          },
+          {
+            "name": "Bind exact peer source and platform scope",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:27:59Z",
+            "completed_at": "2026-11-02T21:27:59Z"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:27:59Z",
+            "completed_at": "2026-11-02T21:28:14Z"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:28:14Z",
+            "completed_at": "2026-11-02T21:28:25Z"
+          },
+          {
+            "name": "Complete peer state and actual filesystem contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:28:25Z",
+            "completed_at": "2026-11-02T21:28:52Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:28:52Z",
+            "completed_at": "2026-11-02T21:28:53Z"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-02T21:28:53Z",
+            "completed_at": "2026-11-02T21:30:54Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:30:54Z",
+            "completed_at": "2026-11-02T21:30:57Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-02T21:30:57Z",
+            "completed_at": "2026-11-02T21:30:57Z"
+          }
+        ]
+      },
+      {
+        "id": 125561310442,
+        "name": "native-message-shipping-compile",
+        "status": "queued",
+        "conclusion": null,
+        "runner_id": 0,
+        "steps": []
+      },
+      {
+        "id": 125561310455,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "failure",
+        "runner_id": 1000260168,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:30:08Z",
+            "completed_at": "2026-11-02T21:30:09Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:30:09Z",
+            "completed_at": "2026-11-02T21:30:12Z"
+          },
+          {
+            "name": "Bind exact renderer source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:30:12Z",
+            "completed_at": "2026-11-02T21:30:12Z"
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:30:12Z",
+            "completed_at": "2026-11-02T21:30:14Z"
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:30:14Z",
+            "completed_at": "2026-11-02T21:30:25Z"
+          },
+          {
+            "name": "Transcript pagination and refresh behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:30:25Z",
+            "completed_at": "2026-11-02T21:30:25Z"
+          },
+          {
+            "name": "Durable Human cursor and canonical pagination consumers",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:30:25Z",
+            "completed_at": "2026-11-02T21:30:25Z"
+          },
+          {
+            "name": "Compile actual production renderer",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-02T21:30:25Z",
+            "completed_at": "2026-11-02T21:30:41Z"
+          },
+          {
+            "name": "Forward settlement account and roster boundaries",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-02T21:30:41Z",
+            "completed_at": "2026-11-02T21:30:41Z"
+          },
+          {
+            "name": "Install locked Chromium for actual forward dialog",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-11-02T21:30:41Z",
+            "completed_at": "2026-11-02T21:31:03Z"
+          },
+          {
+            "name": "Actual forward dialog account and lifetime behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-11-02T21:31:03Z",
+            "completed_at": "2026-11-02T21:31:13Z"
+          },
+          {
+            "name": "Actual ProductionRenderer history, account and restart projection behaviors",
+            "status": "completed",
+            "conclusion": "failure",
+            "number": 12,
+            "started_at": "2026-11-02T21:31:13Z",
+            "completed_at": "2026-11-02T21:33:37Z"
+          },
+          {
+            "name": "Actual ProductionRenderer Transcript cache and continuation behaviors",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 13,
+            "started_at": "2026-11-02T21:33:37Z",
+            "completed_at": "2026-11-02T21:33:37Z"
+          },
+          {
+            "name": "Preserve exact renderer evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:33:37Z",
+            "completed_at": "2026-11-02T21:33:39Z"
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 27,
+            "started_at": "2026-11-02T21:33:39Z",
+            "completed_at": "2026-11-02T21:33:39Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 28,
+            "started_at": "2026-11-02T21:33:39Z",
+            "completed_at": "2026-11-02T21:33:39Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 29,
+            "started_at": "2026-11-02T21:33:39Z",
+            "completed_at": "2026-11-02T21:33:39Z"
+          }
+        ]
+      },
+      {
+        "id": 125561310486,
+        "name": "desktop-social-owner-behaviors",
+        "status": "completed",
+        "conclusion": "success",
+        "runner_id": 1000260159,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:29:28Z",
+            "completed_at": "2026-11-02T21:29:29Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:29:29Z",
+            "completed_at": "2026-11-02T21:29:33Z"
+          },
+          {
+            "name": "Bind exact Desktop Social behavior input",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:29:33Z",
+            "completed_at": "2026-11-02T21:29:33Z"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:29:33Z",
+            "completed_at": "2026-11-02T21:29:41Z"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:29:41Z",
+            "completed_at": "2026-11-02T21:29:54Z"
+          },
+          {
+            "name": "Install existing Linux native dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:29:54Z",
+            "completed_at": "2026-11-02T21:30:09Z"
+          },
+          {
+            "name": "Execute actual FeatureHost Social and retained messaging boundaries",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:30:09Z",
+            "completed_at": "2026-11-02T21:31:25Z"
+          },
+          {
+            "name": "Execute real SQLite retained Social recovery",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-02T21:31:25Z",
+            "completed_at": "2026-11-02T21:31:32Z"
+          },
+          {
+            "name": "Execute existing session-owned HTTP boundary",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-02T21:31:32Z",
+            "completed_at": "2026-11-02T21:31:41Z"
+          },
+          {
+            "name": "Preserve exact Desktop Social behavior evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-11-02T21:31:41Z",
+            "completed_at": "2026-11-02T21:31:42Z"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19,
+            "started_at": "2026-11-02T21:31:42Z",
+            "completed_at": "2026-11-02T21:32:03Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 20,
+            "started_at": "2026-11-02T21:32:03Z",
+            "completed_at": "2026-11-02T21:32:03Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21,
+            "started_at": "2026-11-02T21:32:03Z",
+            "completed_at": "2026-11-02T21:32:04Z"
+          }
+        ]
+      },
+      {
+        "id": 125561310509,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success",
+        "runner_id": 1000260149,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:28:03Z",
+            "completed_at": "2026-11-02T21:28:04Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:28:04Z",
+            "completed_at": "2026-11-02T21:28:07Z"
+          },
+          {
+            "name": "Bind exact Electron carrier source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:28:07Z",
+            "completed_at": "2026-11-02T21:28:07Z"
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:28:07Z",
+            "completed_at": "2026-11-02T21:28:09Z"
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:28:09Z",
+            "completed_at": "2026-11-02T21:28:15Z"
+          },
+          {
+            "name": "Native carrier command, event and disposal contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:28:15Z",
+            "completed_at": "2026-11-02T21:28:15Z"
+          },
+          {
+            "name": "Native auth lifecycle and retained legacy secret behavior",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:28:15Z",
+            "completed_at": "2026-11-02T21:28:15Z"
+          },
+          {
+            "name": "Native package resources exclude retained FFI libraries",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-02T21:28:15Z",
+            "completed_at": "2026-11-02T21:28:16Z"
+          },
+          {
+            "name": "Explicit approved update source and recovery behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-02T21:28:16Z",
+            "completed_at": "2026-11-02T21:28:16Z"
+          },
+          {
+            "name": "Windows publisher authorization and candidate recovery behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-11-02T21:28:16Z",
+            "completed_at": "2026-11-02T21:28:16Z"
+          },
+          {
+            "name": "Final macOS update metadata and blockmap behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-11-02T21:28:16Z",
+            "completed_at": "2026-11-02T21:28:17Z"
+          },
+          {
+            "name": "Explicit artifact-only scope and side-effect admission contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12,
+            "started_at": "2026-11-02T21:28:17Z",
+            "completed_at": "2026-11-02T21:28:18Z"
+          },
+          {
+            "name": "Existing installer promotion consumer contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-02T21:28:18Z",
+            "completed_at": "2026-11-02T21:28:18Z"
+          },
+          {
+            "name": "Reconcile immutable historical installer metadata without changing package bytes",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:28:18Z",
+            "completed_at": "2026-11-02T21:29:20Z"
+          },
+          {
+            "name": "Compile actual Electron main, preload and carrier",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-02T21:29:20Z",
+            "completed_at": "2026-11-02T21:29:21Z"
+          },
+          {
+            "name": "Preserve exact Electron evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-11-02T21:29:21Z",
+            "completed_at": "2026-11-02T21:29:22Z"
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 31,
+            "started_at": "2026-11-02T21:29:22Z",
+            "completed_at": "2026-11-02T21:29:22Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 32,
+            "started_at": "2026-11-02T21:29:22Z",
+            "completed_at": "2026-11-02T21:29:22Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 33,
+            "started_at": "2026-11-02T21:29:22Z",
+            "completed_at": "2026-11-02T21:29:22Z"
+          }
+        ]
+      },
+      {
+        "id": 125561310518,
+        "name": "gateway-peer-durability (ubuntu-24.04)",
+        "status": "completed",
+        "conclusion": "success",
+        "runner_id": 1000260166,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:30:10Z",
+            "completed_at": "2026-11-02T21:30:11Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:30:11Z",
+            "completed_at": "2026-11-02T21:30:16Z"
+          },
+          {
+            "name": "Bind exact peer source and platform scope",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:30:16Z",
+            "completed_at": "2026-11-02T21:30:16Z"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:30:16Z",
+            "completed_at": "2026-11-02T21:30:25Z"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:30:25Z",
+            "completed_at": "2026-11-02T21:30:26Z"
+          },
+          {
+            "name": "Complete peer state and actual filesystem contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:30:26Z",
+            "completed_at": "2026-11-02T21:30:41Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:30:41Z",
+            "completed_at": "2026-11-02T21:30:42Z"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-02T21:30:42Z",
+            "completed_at": "2026-11-02T21:31:01Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:31:01Z",
+            "completed_at": "2026-11-02T21:31:01Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-02T21:31:01Z",
+            "completed_at": "2026-11-02T21:31:01Z"
+          }
+        ]
+      },
+      {
+        "id": 125561310552,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success",
+        "runner_id": 1000260143,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:27:03Z",
+            "completed_at": "2026-11-02T21:27:04Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:27:04Z",
+            "completed_at": "2026-11-02T21:27:16Z"
+          },
+          {
+            "name": "Bind exact Windows publisher source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:27:16Z",
+            "completed_at": "2026-11-02T21:27:16Z"
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:27:16Z",
+            "completed_at": "2026-11-02T21:28:00Z"
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:28:00Z",
+            "completed_at": "2026-11-02T21:28:44Z"
+          },
+          {
+            "name": "Actual Windows signature and Unicode publisher contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:28:44Z",
+            "completed_at": "2026-11-02T21:29:12Z"
+          },
+          {
+            "name": "Preserve native API evidence only",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:29:12Z",
+            "completed_at": "2026-11-02T21:29:13Z"
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-02T21:29:13Z",
+            "completed_at": "2026-11-02T21:29:14Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:29:14Z",
+            "completed_at": "2026-11-02T21:29:17Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-02T21:29:17Z",
+            "completed_at": "2026-11-02T21:29:17Z"
+          }
+        ]
+      },
+      {
+        "id": 125561310648,
+        "name": "native-message-reconciliation",
+        "status": "completed",
+        "conclusion": "failure",
+        "runner_id": 1000260172,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:30:36Z",
+            "completed_at": "2026-11-02T21:30:37Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:30:37Z",
+            "completed_at": "2026-11-02T21:30:42Z"
+          },
+          {
+            "name": "Bind exact source and batch",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:30:42Z",
+            "completed_at": "2026-11-02T21:30:42Z"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:30:42Z",
+            "completed_at": "2026-11-02T21:30:51Z"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:30:51Z",
+            "completed_at": "2026-11-02T21:31:00Z"
+          },
+          {
+            "name": "Install existing Linux Host native dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:31:00Z",
+            "completed_at": "2026-11-02T21:31:18Z"
+          },
+          {
+            "name": "Transcript compaction and recovery registration contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:31:18Z",
+            "completed_at": "2026-11-02T21:32:11Z"
+          },
+          {
+            "name": "Human ingress, settlement and restart contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-02T21:32:11Z",
+            "completed_at": "2026-11-02T21:34:54Z"
+          },
+          {
+            "name": "Human resource upload size and bounded-read contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-02T21:34:54Z",
+            "completed_at": "2026-11-02T21:34:54Z"
+          },
+          {
+            "name": "Concurrent Human creation and non-destructive initialization recovery",
+            "status": "completed",
+            "conclusion": "failure",
+            "number": 10,
+            "started_at": "2026-11-02T21:34:54Z",
+            "completed_at": "2026-11-02T21:34:55Z"
+          },
+          {
+            "name": "Durable forwarding sharebox owner contract",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 11,
+            "started_at": "2026-11-02T21:34:55Z",
+            "completed_at": "2026-11-02T21:34:55Z"
+          },
+          {
+            "name": "Durable forwarding journal and stale-write CAS contracts",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 12,
+            "started_at": "2026-11-02T21:34:55Z",
+            "completed_at": "2026-11-02T21:34:55Z"
+          },
+          {
+            "name": "Preserve Agent send nonce boundary",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 13,
+            "started_at": "2026-11-02T21:34:55Z",
+            "completed_at": "2026-11-02T21:34:55Z"
+          },
+          {
+            "name": "Prove completed HTTP credential fencing at settlement",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 14,
+            "started_at": "2026-11-02T21:34:55Z",
+            "completed_at": "2026-11-02T21:34:55Z"
+          },
+          {
+            "name": "Authenticated forward recipient gateway HTTP contract",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 15,
+            "started_at": "2026-11-02T21:34:55Z",
+            "completed_at": "2026-11-02T21:34:55Z"
+          },
+          {
+            "name": "Diagnose locked Session dependency drift (no acceptance)",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-11-02T21:34:55Z",
+            "completed_at": "2026-11-02T21:34:55Z"
+          },
+          {
+            "name": "Preserve exact batch evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17,
+            "started_at": "2026-11-02T21:34:55Z",
+            "completed_at": "2026-11-02T21:34:56Z"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 33,
+            "started_at": "2026-11-02T21:34:56Z",
+            "completed_at": "2026-11-02T21:34:56Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 34,
+            "started_at": "2026-11-02T21:34:56Z",
+            "completed_at": "2026-11-02T21:34:56Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 35,
+            "started_at": "2026-11-02T21:34:56Z",
+            "completed_at": "2026-11-02T21:34:56Z"
+          }
+        ]
+      },
+      {
+        "id": 125561311675,
+        "name": "native-auth-and-journal",
+        "status": "completed",
+        "conclusion": "skipped",
+        "runner_id": null,
+        "steps": []
+      }
+    ]
+  }
+}

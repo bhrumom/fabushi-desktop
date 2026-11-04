@@ -1,0 +1,177 @@
+name: Plugins window Close pointer regression
+
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - source/host/src/extensions/session/production.rs
+      - source/host/src/extensions/session/agent_db.rs
+      - source/host/src/extensions/session/native_messaging.rs
+      - source/host/src/transcript_mutation_events.rs
+      - source/host/src/extensions/transcript/extension.rs
+      - source/host/src/extensions/transcript/roster_emit.rs
+      - frontend/src/production/ProductionRenderer.tsx
+      - frontend/src/production/coordinator-client.ts
+      - frontend/src/recovered/features/root-resilience/connection-state.ts
+      - frontend/src/production/model.ts
+      - frontend/src/production/transcript-projection.ts
+      - frontend/src/production/human-message-retry.ts
+      - frontend/src/production/human-message-submission.ts
+      - frontend/src/recovered/features/conversation/workspace/draft-state.ts
+      - frontend/src/recovered/features/conversation/workspace/model.ts
+      - frontend/src/recovered/features/conversation/workspace/transcript.tsx
+      - frontend/src/recovered/features/conversation/workspace/media-viewer.tsx
+      - frontend/src/recovered/features/conversation/workspace/pdf-viewer.css
+      - frontend/src/recovered/features/conversation/workspace/view.css
+      - frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer-provider.ts
+      - frontend/src/recovered/features/conversation/workspace/submission.ts
+      - source/shared/client-persistence-store.ts
+      - frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts
+      - frontend/src/recovered/features/plugins/overlay/browser.css
+      - desktop/e2e/agent-network-responsive.spec.ts
+      - desktop/e2e/openbot-packaged-acceptance.spec.ts
+      - .github/workflows/plugins-window-close.yml
+
+permissions:
+  contents: read
+
+jobs:
+  plugins-close-pointer:
+    runs-on: macos-14
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Bind exact source and controlled scope
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mkdir -p artifacts/plugins-close artifacts/native-human-electron
+          git rev-parse HEAD > artifacts/plugins-close/target-sha.txt
+          git rev-parse HEAD > artifacts/native-human-electron/target-sha.txt
+          printf '%s\n' 'NMR-ELECTRON-01; actual Electron/main/preload/utility/Rust Coordinator/Production Session/Native HTTP/SQLite with controlled loopback service; two real process-reopen cases; original A retirement and same-text new draft are required; kill-crash, deployed backend and signed acceptance remain open' > artifacts/native-human-electron/scope.txt
+          printf '%s\n' 'FPM-UI-CLOSE-01; real Electron production renderer; controlled Host and loopback auth; two viewport cases; not signed-package or live-service acceptance' > artifacts/plugins-close/scope.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Install locked Playwright video capture dependency
+        run: npx --no-install playwright install ffmpeg
+      - name: Verify installed Electron runtime
+        run: node -e "const fs=require('node:fs'); const electron=require('electron'); if (!electron || !fs.existsSync(electron)) process.exit(1)"
+      - run: npm run build:electron
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.1'
+          cache-dependency-path: source/fabushi-network-worker/go.mod
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            source/host/app -> target
+            source/mahayana/mahayana-rs -> target
+            source/node-agent-coordinator -> target
+            source/box-exec-daemon -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Build controlled network worker
+        working-directory: source/fabushi-network-worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target/ci
+          go build -mod=readonly -trimpath -ldflags='-s -w' -o target/ci/fabushi-network-worker .
+      - run: npm run build:host:ci
+      - run: npm run build:renderer
+      - run: npm run check:desktop-runtime
+      - name: Bind successfully built exact-H Human binaries
+        id: exact-human-build
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          shasum -a 256 desktop/dist/electron-main/main.cjs desktop/dist/electron-preload/preload.cjs desktop/dist/node-agent-coordinator/main.cjs desktop/resources/bin/mahayana-node-agent-coordinator desktop/resources/bin/mahayana-app-host > artifacts/native-human-electron/built-sha256.txt
+          printf '%s\n' 'ready=true' >> "$GITHUB_OUTPUT"
+      - name: Run only the two Plugins pointer regressions
+        shell: bash
+        env:
+          FABUSHI_FEATURE_HOST_MODE: test
+          MAHAYANA_APP_HOST_BIN: ${{ github.workspace }}/desktop/resources/bin/mahayana-app-host
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ github.workspace }}/artifacts/plugins-close/playwright.json
+          DEBUG: pw:api
+          ELECTRON_ENABLE_LOGGING: '1'
+          ELECTRON_ENABLE_STACK_DUMPING: '1'
+        run: |
+          set -euo pipefail
+          npx --no-install playwright test e2e/agent-network-responsive.spec.ts --grep 'shipping Plugins close [0-9]+x[0-9]+' --workers=1 --retries=0 --reporter=line,json 2>&1 | tee ../artifacts/plugins-close/pointer.log
+      - name: Require two executed passing cases with no retries or omissions
+        working-directory: .
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const report = JSON.parse(readFileSync('artifacts/plugins-close/playwright.json', 'utf8'));
+          assert.equal(report.stats.expected, 2);
+          assert.equal(report.stats.unexpected, 0);
+          assert.equal(report.stats.flaky, 0);
+          assert.equal(report.stats.skipped, 0);
+          assert.deepEqual(report.errors, []);
+          console.log('FPM-UI-CLOSE-01: 2 passed; 0 failed; 0 flaky; 0 skipped.');
+          NODE
+      - name: Actual Human IPC, offline history and same-directory process recovery
+        if: ${{ !cancelled() && steps.exact-human-build.outputs.ready == 'true' }}
+        shell: bash
+        env:
+          FABUSHI_FEATURE_HOST_MODE: test
+          FABUSHI_ELECTRON_EXECUTABLE: ''
+          MAHAYANA_APP_HOST_BIN: ${{ github.workspace }}/desktop/resources/bin/mahayana-app-host
+          NMR_ELECTRON_TARGET_SHA: ${{ github.sha }}
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ github.workspace }}/artifacts/native-human-electron/playwright.json
+          DEBUG: pw:api,pw:browser
+          ELECTRON_ENABLE_LOGGING: '1'
+          ELECTRON_ENABLE_STACK_DUMPING: '1'
+        run: |
+          set -euo pipefail
+          npx --no-install playwright test e2e/agent-network-responsive.spec.ts --grep 'NMR-ELECTRON-01 actual Human IPC' --output=human-electron-results --workers=1 --retries=0 --reporter=line,json 2>&1 | tee ../artifacts/native-human-electron/electron.log
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const report = JSON.parse(fs.readFileSync('../artifacts/native-human-electron/playwright.json', 'utf8'));
+          assert.equal(report.stats.expected, 2, 'both actual Human IPC cases must execute and pass');
+          for (const field of ['unexpected', 'flaky', 'skipped']) assert.equal(report.stats[field], 0, field);
+          assert.deepEqual(report.errors, []);
+          const cases = [];
+          const walk = suite => { for (const spec of suite.specs ?? []) cases.push(...spec.tests); for (const child of suite.suites ?? []) walk(child); };
+          for (const suite of report.suites) walk(suite);
+          assert.equal(cases.length, 2);
+          for (const item of cases) {
+            assert.equal(item.expectedStatus, 'passed');
+            assert.equal(item.results.length, 1);
+            assert.equal(item.results[0].status, 'passed');
+            assert.equal(item.results[0].retry, 0);
+          }
+          console.log('NMR-ELECTRON-01: 2 passed; 0 failed; 0 skipped; 0 retries; controlled actual IPC/SQLite process scope only.');
+          NODE
+      - name: Preserve exact-H pointer, geometry and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugins-close-pointer-${{ github.sha }}
+          path: |
+            artifacts/plugins-close
+            artifacts/native-human-electron
+            desktop/test-results
+            desktop/human-electron-results
+          if-no-files-found: error

@@ -118,6 +118,8 @@ test("main RPC runtime exposes the frozen shared registry", () => {
   assert.equal(isMainMethod("definitelyNotMain"), false);
   assert.equal(MAIN_RPC_METHOD_TABLE.openExternal.args, "object");
   assert.equal(MAIN_RPC_METHOD_TABLE.getWindowState.args, "none");
+  assert.equal(MAIN_RPC_METHOD_TABLE.getNetworkProxySettings.args, "none");
+  assert.equal(MAIN_RPC_METHOD_TABLE.mutateNetworkProxySettings.args, "object");
 });
 
 

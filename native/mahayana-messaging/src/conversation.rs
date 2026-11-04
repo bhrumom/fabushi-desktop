@@ -10,6 +10,10 @@ impl ConversationId {
         Self(value.into())
     }
 
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
     pub fn is_valid(&self) -> bool {
         let value = self.0.trim();
         !value.is_empty() && value.len() <= 200
@@ -59,6 +63,18 @@ pub struct ConversationPermissions {
     pub can_send_messages: bool,
     pub can_send_media: bool,
     pub can_send_polls: bool,
+    /// Canonical capability used by share/link recipient authorization.
+    /// Missing values from legacy persisted state fail closed.
+    #[serde(default)]
+    pub can_send_other: bool,
+    /// Canonical capability used by inline-result recipient authorization.
+    /// Missing values from legacy persisted state fail closed.
+    #[serde(default)]
+    pub can_send_inline: bool,
+    /// Canonical capability used by game recipient authorization.
+    /// Missing values from legacy persisted state fail closed.
+    #[serde(default)]
+    pub can_send_games: bool,
     pub can_add_members: bool,
     pub can_pin_messages: bool,
     pub can_manage_topics: bool,
@@ -71,6 +87,9 @@ impl Default for ConversationPermissions {
             can_send_messages: true,
             can_send_media: true,
             can_send_polls: true,
+            can_send_other: true,
+            can_send_inline: true,
+            can_send_games: true,
             can_add_members: true,
             can_pin_messages: true,
             can_manage_topics: true,
@@ -377,6 +396,70 @@ impl ConversationChildPaginationState {
     pub fn has_gap_after(&self) -> bool {
         self.skipped_after.is_none_or(|count| count > 0)
     }
+
+    pub fn remove_messages(
+        &mut self,
+        deleted_message_ids: &std::collections::BTreeSet<String>,
+    ) -> usize {
+        if deleted_message_ids.is_empty() || self.message_ids.is_empty() {
+            return 0;
+        }
+        let before_len = self.message_ids.len();
+        self.message_ids
+            .retain(|message_id| !deleted_message_ids.contains(message_id));
+        let removed = before_len.saturating_sub(self.message_ids.len());
+        if removed > 0 {
+            let removed_u32 = u32::try_from(removed).unwrap_or(u32::MAX);
+            self.full_count = self
+                .full_count
+                .map(|full_count| full_count.saturating_sub(removed_u32));
+        }
+        removed
+    }
+
+    /// Rekeys a settled local message identity to its canonical server message
+    /// identity (`data_history_messages.cpp:502-511`). If `to_id` is already
+    /// present in the window, collapses the duplicate `from_id` in place and
+    /// decrements `full_count` by 1 so the window remains deduplicated.
+    pub fn rekey_message_id(&mut self, from_id: &str, to_id: &str) -> bool {
+        let from_id = from_id.trim();
+        let to_id = to_id.trim();
+        if from_id.is_empty()
+            || to_id.is_empty()
+            || to_id.len() > 200
+            || from_id == to_id
+            || self.message_ids.is_empty()
+        {
+            return false;
+        }
+        let Some(from_index) = self.message_ids.iter().position(|id| id == from_id) else {
+            return false;
+        };
+        if self.message_ids.iter().any(|id| id == to_id) {
+            self.message_ids.remove(from_index);
+            self.full_count = self
+                .full_count
+                .map(|full_count| full_count.saturating_sub(1));
+        } else {
+            self.message_ids[from_index] = to_id.to_string();
+        }
+        true
+    }
+
+    /// Marks the newest end of the window as incomplete while retaining cached
+    /// `message_ids` and `skipped_before` (`SparseIdsList::invalidateBottom`).
+    pub fn invalidate_bottom(&mut self) {
+        self.skipped_after = None;
+        self.full_count = None;
+    }
+
+    /// Establishes a known complete empty window (`SparseIdsList::removeAll`).
+    pub fn clear_to_complete_empty(&mut self) {
+        self.message_ids.clear();
+        self.skipped_before = Some(0);
+        self.skipped_after = Some(0);
+        self.full_count = Some(0);
+    }
 }
 
 /// Account-scoped state for a typed child inside the canonical Conversation owner.
@@ -478,6 +561,92 @@ impl ConversationChildRuntimeState {
         self.draft_updated_at_ms = None;
     }
 
+    /// Clears `draft_reply_to_message_id` when the referenced reply target is
+    /// deleted, while preserving non-empty composer draft text (`ClearDraftReplyTo`).
+    pub fn clear_draft_reply_to(
+        &mut self,
+        deleted_message_ids: &std::collections::BTreeSet<String>,
+    ) -> bool {
+        if !self
+            .draft_reply_to_message_id
+            .as_ref()
+            .is_some_and(|reply_id| deleted_message_ids.contains(reply_id))
+        {
+            return false;
+        }
+        if self.draft_text.trim().is_empty() {
+            self.clear_draft();
+        } else {
+            self.draft_reply_to_message_id = None;
+        }
+        true
+    }
+
+    /// Reconciles child draft reply targets and pagination window accounting when
+    /// messages in the child's backing conversation are deleted.
+    pub fn remove_deleted_messages(
+        &mut self,
+        deleted_message_ids: &std::collections::BTreeSet<String>,
+    ) -> bool {
+        let cleared_reply = self.clear_draft_reply_to(deleted_message_ids);
+        let removed = self.pagination.remove_messages(deleted_message_ids);
+        if removed > 0 && self.pagination.message_ids.is_empty() {
+            self.note_locally_empty();
+        }
+        cleared_reply || removed > 0
+    }
+
+    /// Rekeys a settled local message identity across child draft reply targets,
+    /// pagination windows, and read watermarks (`data_history_messages.cpp:502-511`).
+    pub fn rekey_message_id(
+        &mut self,
+        from_id: &str,
+        to_id: &str,
+        accepted_at_ms: Option<i64>,
+    ) -> bool {
+        let from_id = from_id.trim();
+        let to_id = to_id.trim();
+        if from_id.is_empty() || to_id.is_empty() || to_id.len() > 200 || from_id == to_id {
+            return false;
+        }
+        let mut changed = false;
+        if self.draft_reply_to_message_id.as_deref() == Some(from_id) {
+            self.draft_reply_to_message_id = Some(to_id.to_string());
+            changed = true;
+        }
+        if self.pagination.rekey_message_id(from_id, to_id) {
+            changed = true;
+        }
+        if let Some(pos) = self.inbox_read_till.as_mut() {
+            if pos.message_id == from_id {
+                pos.message_id = to_id.to_string();
+                if let Some(ts) = accepted_at_ms {
+                    pos.created_at_ms = pos.created_at_ms.max(ts);
+                }
+                changed = true;
+            }
+        }
+        if let Some(pos) = self.outbox_read_till.as_mut() {
+            if pos.message_id == from_id {
+                pos.message_id = to_id.to_string();
+                if let Some(ts) = accepted_at_ms {
+                    pos.created_at_ms = pos.created_at_ms.max(ts);
+                }
+                changed = true;
+            }
+        }
+        changed
+    }
+
+    pub fn invalidate_bottom(&mut self) {
+        self.pagination.invalidate_bottom();
+    }
+
+    pub fn clear_to_complete_empty(&mut self) {
+        self.pagination.clear_to_complete_empty();
+        self.note_locally_empty();
+    }
+
     pub fn set_active(&mut self, active: bool) {
         self.active = active;
     }
@@ -556,6 +725,111 @@ impl ConversationDestinationSelection {
         });
         if matches {
             self.selected = None;
+        }
+        matches
+    }
+}
+
+/// Live forward draft state bound to a `ConversationDestination`
+/// (`ForwardPanel::update` / `itemRemoved` / `applyOptions` / `editToNextOption`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ForwardDraftState {
+    pub destination: ConversationDestination,
+    pub source_conversation_id: ConversationId,
+    pub source_message_ids: Vec<String>,
+    pub privacy: crate::message::ForwardPrivacy,
+    pub has_captions: bool,
+    pub hide_author_policy: crate::message::ForwardHideAuthorPolicy,
+}
+
+impl ForwardDraftState {
+    pub fn new(
+        destination: ConversationDestination,
+        source_conversation_id: ConversationId,
+        source_message_ids: Vec<String>,
+        requested_privacy: crate::message::ForwardPrivacy,
+        has_captions: bool,
+        hide_author_policy: crate::message::ForwardHideAuthorPolicy,
+    ) -> Option<Self> {
+        if !destination.is_valid() || !source_conversation_id.is_valid() {
+            return None;
+        }
+        let mut unique_ids = Vec::new();
+        let mut seen = std::collections::BTreeSet::new();
+        for raw in source_message_ids {
+            let trimmed = raw.trim();
+            if !trimmed.is_empty() && seen.insert(trimmed.to_string()) {
+                unique_ids.push(trimmed.to_string());
+            }
+        }
+        if unique_ids.is_empty() {
+            return None;
+        }
+        let mut draft = Self {
+            destination,
+            source_conversation_id,
+            source_message_ids: unique_ids,
+            privacy: crate::message::ForwardPrivacy::default(),
+            has_captions,
+            hide_author_policy,
+        };
+        draft.apply_options(requested_privacy);
+        Some(draft)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.source_message_ids.is_empty()
+    }
+
+    pub fn apply_options(
+        &mut self,
+        requested_privacy: crate::message::ForwardPrivacy,
+    ) -> crate::message::ForwardPrivacy {
+        let mut normalized = requested_privacy.normalized_for_policy(self.hide_author_policy);
+        if !self.has_captions && normalized.drop_captions {
+            normalized.drop_captions = false;
+        }
+        self.privacy = normalized;
+        self.privacy
+    }
+
+    pub fn cycle_to_next_option(&mut self) -> crate::message::ForwardPrivacy {
+        self.privacy = self
+            .privacy
+            .cycle_next(self.has_captions, self.hide_author_policy);
+        self.privacy
+    }
+
+    /// Removes deleted source message IDs from the live forward draft (`ForwardPanel::itemRemoved`).
+    pub fn remove_deleted_source_messages(
+        &mut self,
+        deleted_message_ids: &std::collections::BTreeSet<String>,
+    ) -> bool {
+        if deleted_message_ids.is_empty() || self.source_message_ids.is_empty() {
+            return false;
+        }
+        let before = self.source_message_ids.len();
+        self.source_message_ids
+            .retain(|id| !deleted_message_ids.contains(id));
+        if self.source_message_ids.is_empty() {
+            self.privacy = crate::message::ForwardPrivacy::default();
+        }
+        self.source_message_ids.len() != before
+    }
+
+    /// Clears the live forward draft when its typed `Topic`, `SavedSublist`, or
+    /// nested `Conversation` destination is destroyed.
+    pub fn clear_if_destination_destroyed(
+        &mut self,
+        parent_conversation_id: &ConversationId,
+        destroyed_child: &ConversationChildIdentity,
+    ) -> bool {
+        let matches = &self.destination.conversation_id == parent_conversation_id
+            && self.destination.child.as_ref() == Some(destroyed_child);
+        if matches {
+            self.source_message_ids.clear();
+            self.privacy = crate::message::ForwardPrivacy::default();
         }
         matches
     }
@@ -757,6 +1031,132 @@ mod child_destination_tests {
         assert!(!state.no_paid_messages);
         assert!(state.draft_text.is_empty());
         assert!(state.pagination.message_ids.is_empty());
+    }
+
+    #[test]
+    fn child_runtime_removes_deleted_messages_and_clears_matching_draft_reply_without_losing_text() {
+        let destination = ConversationDestination::topic(
+            ConversationId::new("conversation:parent"),
+            "topic:42",
+        );
+        let mut state =
+            ConversationChildRuntimeState::new(destination, ActorId::new("human:self"))
+                .expect("valid child state");
+        state.pinned = true;
+        state.set_draft("surviving draft text", Some("message:reply".into()), 99);
+        assert!(state.pagination.replace_window(
+            vec!["message:reply".into(), "message:keep".into()],
+            Some(1),
+            Some(0),
+            Some(3),
+        ));
+
+        let deleted = std::collections::BTreeSet::from(["message:reply".to_string()]);
+        assert!(state.remove_deleted_messages(&deleted));
+        assert_eq!(state.draft_text, "surviving draft text");
+        assert_eq!(state.draft_reply_to_message_id, None);
+        assert_eq!(state.draft_updated_at_ms, Some(99));
+        assert_eq!(state.pagination.message_ids, vec!["message:keep".to_string()]);
+        assert_eq!(state.pagination.full_count, Some(2));
+        assert!(state.pinned);
+
+        state.set_draft("   ", Some("message:keep".into()), 100);
+        let deleted_last = std::collections::BTreeSet::from(["message:keep".to_string()]);
+        assert!(state.remove_deleted_messages(&deleted_last));
+        assert!(state.draft_text.is_empty());
+        assert_eq!(state.draft_reply_to_message_id, None);
+        assert_eq!(state.draft_updated_at_ms, None);
+        assert!(state.pagination.message_ids.is_empty());
+        assert_eq!(state.pagination.full_count, Some(1));
+        assert!(!state.pinned);
+        assert!(state.restore_pinned_when_non_empty);
+    }
+
+    #[test]
+    fn child_runtime_rekeys_local_to_server_message_id_and_invalidates_bottom_window() {
+        let destination = ConversationDestination::topic(
+            ConversationId::new("conversation:parent"),
+            "topic:42",
+        );
+        let mut state =
+            ConversationChildRuntimeState::new(destination, ActorId::new("human:self"))
+                .expect("valid child state");
+        state.pinned = true;
+        state.set_draft("replying to pending", Some("local:pending:1".into()), 50);
+        assert!(state.advance_inbox_read_till(
+            ConversationMessagePosition::new(10, "local:pending:1"),
+            Some(0),
+        ));
+        assert!(state.advance_outbox_read_till(
+            ConversationMessagePosition::new(10, "local:pending:1"),
+        ));
+        assert!(state.pagination.replace_window(
+            vec!["msg:older".into(), "local:pending:1".into()],
+            Some(1),
+            Some(0),
+            Some(3),
+        ));
+
+        assert!(state.rekey_message_id("local:pending:1", "server:settled:100", Some(25)));
+        assert_eq!(
+            state.draft_reply_to_message_id.as_deref(),
+            Some("server:settled:100")
+        );
+        assert_eq!(
+            state.pagination.message_ids,
+            vec!["msg:older".to_string(), "server:settled:100".to_string()]
+        );
+        assert_eq!(state.pagination.full_count, Some(3));
+        assert_eq!(
+            state.inbox_read_till,
+            Some(ConversationMessagePosition::new(25, "server:settled:100"))
+        );
+        assert_eq!(
+            state.outbox_read_till,
+            Some(ConversationMessagePosition::new(25, "server:settled:100"))
+        );
+
+        // If the server ID was already inserted before rekeying a duplicate local ID,
+        // the window collapses the duplicate and decrements full_count by 1.
+        assert!(state.pagination.replace_window(
+            vec![
+                "msg:older".into(),
+                "local:dup:2".into(),
+                "server:settled:200".into(),
+            ],
+            Some(1),
+            Some(0),
+            Some(4),
+        ));
+        assert!(state.rekey_message_id("local:dup:2", "server:settled:200", Some(30)));
+        assert_eq!(
+            state.pagination.message_ids,
+            vec!["msg:older".to_string(), "server:settled:200".to_string()]
+        );
+        assert_eq!(state.pagination.full_count, Some(3));
+
+        // invalidate_bottom keeps cached message_ids and skipped_before while clearing
+        // skipped_after and full_count.
+        state.invalidate_bottom();
+        assert_eq!(
+            state.pagination.message_ids,
+            vec!["msg:older".to_string(), "server:settled:200".to_string()]
+        );
+        assert_eq!(state.pagination.skipped_before, Some(1));
+        assert_eq!(state.pagination.skipped_after, None);
+        assert_eq!(state.pagination.full_count, None);
+        assert!(state.pagination.has_gap_after());
+
+        // clear_to_complete_empty establishes a known complete empty range and notes locally empty.
+        state.clear_to_complete_empty();
+        assert!(state.pagination.message_ids.is_empty());
+        assert_eq!(state.pagination.skipped_before, Some(0));
+        assert_eq!(state.pagination.skipped_after, Some(0));
+        assert_eq!(state.pagination.full_count, Some(0));
+        assert!(!state.pagination.has_gap_before());
+        assert!(!state.pagination.has_gap_after());
+        assert!(!state.pinned);
+        assert!(state.restore_pinned_when_non_empty);
     }
 
 }

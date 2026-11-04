@@ -1,0 +1,390 @@
+{
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 2,
+  "requirement": "FMEP-SOURCE-01 / Auxiliary packaged executable source locks",
+  "fixed_telegram_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "independent_of_message_consumer_batch": true,
+  "acquisition": {
+    "head_sha": "565a4639f1b7efbd15937aff93f4e14168322389",
+    "run_id": 41514329200,
+    "artifact_id": 13175461007,
+    "artifact_name": "staged-runtime-inputs-565a4639f1b7efbd15937aff93f4e14168322389",
+    "artifact_digest": "sha256:85488acba970ec85e92327d8b5e1726061a69ffd1caf6b70c19cc83b8813c18b",
+    "input_mode": "capture",
+    "source": "Existing exact-H GitHub Actions acquisition; four input files copied from the artifact, not regenerated locally",
+    "limits": "Acquisition and checksum evidence only; no auxiliary executable, signed package, source or release acceptance"
+  },
+  "unchanged_direct_manifests": {
+    "source/node-agent-coordinator/Cargo.toml": "39cc53abc066a3e54da77fb3da10d8283a620d50ea4a47ad21a63a42d2f0a37d",
+    "source/box-exec-daemon/Cargo.toml": "7511a97ad45e71f7931285804ef77e36cd7f2b3c39b2973798ce2adde1814a01",
+    "go_module": "github.com/bhrumom/fabushi-desktop/source/fabushi-network-worker",
+    "go_version": "1.27.1",
+    "direct_go_requirement": "tailscale.com v1.104.1"
+  },
+  "captured_file_sha256": {
+    "source/node-agent-coordinator/Cargo.lock": "3d12f16605bda76fd7e4852cc8a837ba6204aeb5ba80867d16d3a10a20429358",
+    "source/box-exec-daemon/Cargo.lock": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+    "source/fabushi-network-worker/go.mod": "31a956329d877ddfc7261f19aeccfbf3e06c83e290b7472d1197e72139526c13",
+    "source/fabushi-network-worker/go.sum": "2e689a93f680062cbeeb8cb790bc7bcc09587e68a24c900d9b85a926319fa9a7"
+  },
+  "implementation": [
+    "Pin both previously untracked standalone Rust locks without modifying their direct manifests",
+    "Pin the captured Go indirect module requirements and checksums while preserving the existing direct Tailscale selection",
+    "Switch the existing staged-runtime workflow from capture to locked mode; existing normal-build dependency, binary and lifecycle gates now apply",
+    "Require --locked in normal desktop Host/Coordinator/box-exec build commands",
+    "Remove go mod tidy from the signed macOS worker build; require -mod=readonly and unchanged go.mod/go.sum"
+  ],
+  "execution": {
+    "pinned_head": "e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e",
+    "run_id": 41519264825,
+    "locked_inputs": {
+      "job_id": 125530755143,
+      "status": "completed",
+      "conclusion": "success",
+      "artifact_id": 13177840609,
+      "artifact_digest": "sha256:a19d5633945506439041c9ea3f659891c8df84265fb49bdef7e2a15a81635072"
+    },
+    "coordinator": {
+      "job_id": 125531715469,
+      "status": "completed",
+      "conclusion": "success",
+      "binary": "Actual Mach-O arm64 executable built with --locked and the ci profile",
+      "tests": "production_protocol 1, gateway_https 1, host_supervisor_health 4; all executed, zero failures or ignored tests",
+      "artifact_id": 13177226856,
+      "artifact_digest": "sha256:b0dee188f06143492fa236aff749e8b0f9d96fb7ecd6accbaa7b75554fc2260d",
+      "boundary": "Real Coordinator process with controlled Host/gateway fixtures; not real-service or installed-package acceptance"
+    },
+    "box_daemon": {
+      "job_id": 125531715363,
+      "status": "completed",
+      "conclusion": "success",
+      "binary": "Actual Mach-O arm64 executable built with --locked and the ci profile",
+      "raw_harness_result": "13 daemon owner tests and 3 Host supervisor tests actually ran and were reported passed, zero failed or ignored",
+      "invalidated_behavior": "disconnect_aborts_foreground_shell_process_group used echo $ and treated kill's illegal-PID failure as exit. This is TEST_FLAW: the disconnect claim is not qualified by that green result",
+      "artifact_id": 13179107618,
+      "artifact_digest": "sha256:db72cc0fcea7d363b90dbd7aed21c2268aa43f4e51d80acc49ceea5cf8b1a45f",
+      "boundary": "Preserve the actual binary and other test facts; rerun the corrected disconnect oracle at its containing H before claiming cancellation behavior"
+    },
+    "other_pinned_head_jobs": "Go worker 125531715570 was queued at the 2026-11-02 21:05 UTC API snapshot; no execution success is claimed",
+    "followup_workflow_validation": "Pending containing-H Actions; the pin-head results do not qualify changed workflow contexts or native tool inventory",
+    "required_jobs": [
+      "Acquire or verify auxiliary dependency inputs",
+      "Source and binary / mahayana-node-agent-coordinator",
+      "Source and binary / box-exec-daemon",
+      "Source and binary / fabushi-network-worker"
+    ],
+    "local_or_htch_runtime_validation": "not performed",
+    "message_gate": {
+      "head_sha": "d78ba3c1f026130d2494ddce3c11adf610069aa1",
+      "run_id": 41516733700,
+      "human_job_id": 125522093366,
+      "human_conclusion": "success",
+      "actual_passed_counts": "Human 44; sharebox 1; forward journal 12; Agent nonce 4; settlement credential 3; authenticated forward HTTP 1; zero failed or ignored",
+      "artifact_id": 13175737455,
+      "artifact_digest": "sha256:824eb82a9dab6fed36210a8251cb4e6861f20801ad84dd21df38cc2a6568a4f0",
+      "shipping_job_id": 125522093157,
+      "shipping_status": "queued at the last observed API snapshot; public-message prerequisite remains unqualified",
+      "dependent_message_batch_started_by_this_round": false
+    }
+  },
+  "normal_build_followup": {
+    "release_required_checks": [
+      "desktop-chat-parity-ci: remove Go tidy, build readonly and refuse changed tracked module inputs",
+      "rust-desktop-runtime: lock the existing Coordinator and box test/build commands"
+    ],
+    "independent_fdn_checks": [
+      "fdn-tsnet-worker: readonly module inspection/test/vet/build and tracked input preservation",
+      "fdn-g11-real-browser: use the tracked Host and box locks without regenerating Host input",
+      "fdn-g15-host-resource-privacy: consume exact-H tracked Go/Host inputs and retain their SHA256 receipt; never delete tracked locks after building"
+    ],
+    "native_tools": "The staged Rust job records visible Xcode, clang, SDK and optional CMake identities. This is runner inventory, not proof of every build-script invocation or generated/legal closure",
+    "preserved": "All existing behavior tests, real browser/resource/privacy probes, budgets, lifecycle owners, direct versions, dependency locks, permissions and release acceptance requirements"
+  },
+  "followup_input_execution": {
+    "head_sha": "1abefb6e48141bc753c856ddf92705591ad7e851",
+    "run_id": 41520738119,
+    "job_id": 125535763794,
+    "conclusion": "success",
+    "artifact_id": 13176499119,
+    "artifact_digest": "sha256:ade6ad02104d9d1149c3526cf3554712c9ac4763ac8049e1502b596fc33afee8",
+    "scope": "Locked input verification only. The three macOS binary jobs were queued when this record was prepared"
+  },
+  "bounded_dependency_review": {
+    "review_base": "e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e",
+    "scope": "Actual worker interfaces, configuration, listener lifetime and two upstream LICENSE texts; not a whole-package source or legal acceptance",
+    "fabushi_blobs": {
+      "source/fabushi-network-worker/main.go": "4d96dcb5f07f2f003beb5e3f348ad95d8fb93978",
+      "source/fabushi-network-worker/encrypted_store.go": "3451d310c77beba93a5ec83a08e624ad0a9f36a9",
+      "source/fabushi-network-worker/protocol.go": "b7e41b1847b039cbb01f4390b41c905a72dd8cf2"
+    },
+    "modules": [
+      {
+        "module": "tailscale.com",
+        "version": "v1.104.1",
+        "source_commit": "9a522a9786c97eb7910c01ccb7bd66557b04c910",
+        "sum": "h1:9GNOm9Izqll9RH5jA5NWcLiCzXi/WtqY4EHQY2Dy2zk=",
+        "go_mod_sum": "h1:Cb1XjScRgSOeRD7NW6uCEznme782WiOU9IxqyTWoRf0=",
+        "origin_source": "https://proxy.golang.org/tailscale.com/@v/v1.104.1.info",
+        "checksum_source": "https://sum.golang.org/lookup/tailscale.com@v1.104.1",
+        "license": "BSD-3-Clause",
+        "license_blob": "ed6e4bb6d6ba6a9eef28bc54b350adab57c12f14",
+        "license_source": "https://github.com/tailscale/tailscale/blob/9a522a9786c97eb7910c01ccb7bd66557b04c910/LICENSE"
+      },
+      {
+        "module": "github.com/tailscale/web-client-prebuilt",
+        "version": "v0.0.0-20260917222731-e0ed2d0d0fea",
+        "source_commit": "e0ed2d0d0fea36f1a3d11a2724eabed86e333bfd",
+        "sum": "h1:ah5jt6ZnxMvNclt6kBBoLcMpLLjMA44PTsnov2y7gpU=",
+        "go_mod_sum": "h1:agQPE6y6ldqCOui2gkIh7ZMztTkIQKH049tv8siLuNQ=",
+        "origin_source": "https://proxy.golang.org/github.com/tailscale/web-client-prebuilt/@v/v0.0.0-20260917222731-e0ed2d0d0fea.info",
+        "checksum_source": "https://sum.golang.org/lookup/github.com/tailscale/web-client-prebuilt@v0.0.0-20260917222731-e0ed2d0d0fea",
+        "license": "BSD-3-Clause",
+        "license_blob": "394db19e4aa5c648b2c73741f184134fe1f22f68",
+        "license_source": "https://github.com/tailscale/web-client-prebuilt/blob/e0ed2d0d0fea36f1a3d11a2724eabed86e333bfd/LICENSE"
+      }
+    ],
+    "identity_boundary": "The acquisition JSON had no Origin fields. Official Go proxy Origin and checksum lookup fields were read and compared with the captured inputs; no local cryptographic verification was performed",
+    "read_contracts": [
+      "Custom encryptedStateStore is passed to tsnet.Server.Store. Its mutex, ErrStateNotExist and nil-delete semantics match the read ipn.StateStore interface; this does not prove all StateDir files are encrypted or all platform/power-loss behavior",
+      "SetNoLogsNoSupport reaches the upstream noop logtail transport. This disables that upload path, not creation of all auxiliary log files",
+      "Start then ready means worker protocol initialization, not tailnet Running or real connectivity. G15 independently waits for Running",
+      "RunWebClient=false controls remote exposure. Default ipnlocal -> client/web -> prebuilt.FS -> embed build references remain; no actual binary resource exclusion is claimed",
+      "Fixed tsnet listener Close unregisters/closes the listener but does not reclaim a connection already returned by Accept"
+    ],
+    "upstream_blob_anchors": {
+      "tailscale/tsnet/tsnet.go": "8aaef641057285812ae59ebf320509de4951a349",
+      "tailscale/ipn/store.go": "49007c14e387b2fd124e155cb18f49a839365918",
+      "tailscale/ipn/ipnlocal/web_client.go": "6d4141ac5e5e98d8d4ac56544da477ec5ff4ed11",
+      "tailscale/client/web/assets.go": "bdbc8a42de2e130f044d56984b0ebb105703654c",
+      "web-client-prebuilt/embed.go": "fe30e16f9fb15ea0a8c222ea5faab159889cbe40"
+    },
+    "remaining": [
+      "Generated prebuilt JS/CSS/font contents and recursive third-party notices remain unreviewed. The original generating source/run and checkout JS lock were subsequently recovered below; post-install effective locks remain unproven",
+      "No supported-platform package license inclusion, real web exposure, complete registry/Go source disposition or legal acceptance is claimed",
+      "The existing Git-OID source review fields must not be populated with fabricated SHA256 or Go h1 identities; future registration must preserve these real external input identities in the existing acquisition authority"
+    ],
+    "accepted": false
+  },
+  "listener_ownership_repair": {
+    "requirement": "FDN-WORKER-LISTEN-01 / FDN-WORKER-LISTEN-AC-01",
+    "classification": "Source-observed implementation defect; no pre-fix behavioral run is claimed",
+    "failure": "The old buffered Accept result could retain an accepted connection after the timeout branch won; it never entered streams and listener Close did not reclaim it",
+    "production_wiring": "Existing main.go run streamListen -> acceptPeer -> existing streams map; no new protocol, permission, state or process owner",
+    "ownership": "Synchronous Accept with cancellation-driven listener Close; shared sync.Once serializes cleanup. Unadmitted connections close on cancellation, wrong peer or Accept error. Successful admission transfers the matching connection to its caller",
+    "tests_authored": [
+      "TestAcceptPeerExpiredBeforeAccept",
+      "TestAcceptPeerCancellationUnblocksAccept",
+      "TestAcceptPeerClosesLateConnectionAfterCancellation",
+      "TestAcceptPeerRejectsWrongPeerAndTransfersMatchingConnection",
+      "TestAcceptPeerStopsOnAcceptError"
+    ],
+    "oracles": "Controlled listener ordering, zero/one/two Accept observations, actual net.Pipe EOF and successful ping/pong after listener closure; timeouts only guard hangs",
+    "execution": {
+      "head_sha": "e711505dbc44bde087595c10a060f5ae6deb5847",
+      "run_id": 41523198228,
+      "linux": {
+        "job_id": 125544146338,
+        "conclusion": "success",
+        "actual_tests": "18 top-level cases passed, including all five new connection ownership cases; zero failed or skipped",
+        "other_steps": "Format, readonly module verification, vet, compile and unchanged tracked inputs all passed",
+        "artifact_id": 13177714201,
+        "artifact_digest": "sha256:2d5ff199075a8e612fe9578d1cc9b3f227414f52862a147acc7849705eaf571e"
+      },
+      "windows": {
+        "job_id": 125544145887,
+        "conclusion": "success",
+        "actual_tests": "18 top-level cases passed, including all five new connection ownership cases; zero failed or skipped",
+        "other_steps": "Readonly module verification, vet, compile and unchanged tracked inputs all passed; formatting is the Linux-only gate",
+        "artifact_id": 13179505351,
+        "artifact_digest": "sha256:877ca30bfadd5cc90736d068bf810ce3120e4798d283fbe30143bef3897b6ff7"
+      },
+      "host_supervisor": {
+        "job_id": 125544146110,
+        "conclusion": "success",
+        "actual_tests": "network_worker_process_contract: 3 passed, zero failed or ignored; actual child-process IPC/secret/close fixture included",
+        "log_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523198228/job/125544146110"
+      },
+      "macos_worker": {
+        "job_id": 125544146314,
+        "conclusion": "success",
+        "toolchain": "go1.27.1 darwin/arm64",
+        "actual_tests": "18 top-level cases passed, including all five connection ownership cases; zero failed or skipped",
+        "other_steps": "Readonly module verification, vet, compile and unchanged tracked inputs passed",
+        "artifact_id": 13179318578,
+        "artifact_digest": "sha256:68af017e2d887b8635c9f415529a17486294ee7aff5147d908c132fa15819569"
+      },
+      "staged_inputs": {
+        "run_id": 41523198242,
+        "job_id": 125544146095,
+        "conclusion": "success",
+        "artifact_id": 13178996044,
+        "artifact_digest": "sha256:11aa9f8ce4dbcf181436fdf68b786de92f108b120945a19a81e2d1d98379b937"
+      },
+      "staged_macos_binaries": "125544910633 (box), 125544910736 (Coordinator), 125544911038 (worker) queued at the observed snapshot",
+      "qualification": "All three worker platforms and the Host supervisor passed at the same exact H. This does not replace the actual packaged macOS worker source/binary check, live-network, signed-package or independent acceptance"
+    },
+    "local_or_htch_runtime_execution": "not performed",
+    "dependency_versions_changed": false,
+    "accepted": false
+  },
+  "generated_output_review": {
+    "module": "github.com/tailscale/web-client-prebuilt",
+    "source_commit": "e0ed2d0d0fea36f1a3d11a2724eabed86e333bfd",
+    "complete_tree": "4cee9cb0016e9e7ce92f256420518f3534158d27",
+    "tree_truncated": false,
+    "read_text_blobs": {
+      ".github/workflows/update-assets.yml": "f7792d246c4b096b730fd9121e591418439098f1",
+      ".gitignore": "62ab0993a7bb9ef4d3e26cf3c43ce725093b0241",
+      "README.md": "bff2a6346a433ea6215a52cb1fd6c7e6bd9d1119",
+      "go.mod": "9bee50d20bf2d6cb2563e6d6668c947b21e814e9",
+      "embed.go": "fe30e16f9fb15ea0a8c222ea5faab159889cbe40",
+      "build/index.html": "541d0fdc27fd142ba77d1f6208b5c62c420aec5a",
+      "LICENSE": "394db19e4aa5c648b2c73741f184134fe1f22f68"
+    },
+    "resource_identity_only_unread_contents": {
+      "build/assets/index-BbgPCR4_.js.zst": "6f1cb125f3ff15d87ebce9f4b79cc7ab14627317",
+      "build/assets/index-UKv3Effy.css.zst": "37a87825dd4576772a01c93cf182970a3a533a84",
+      "build/assets/Inter.var.latin-Dxq58mVK.woff2": "980853fec144d92ffd3712e7f2eec6395f638f2d"
+    },
+    "generator_entry": "The fixed workflow checks out tailscale/tailscale at an upstreamBranch input (default main), runs ./tool/go mod tidy, then ./tool/go run ./cmd/build-webclient --outDir ../../../build/",
+    "output_tree_boundary": "This output tree has no provenance manifest or separate third-party notice map. Its README floating main link is not a source identity. The original run recovered below supplies the actual checkout identity; compressed bundle license comments have not been read",
+    "recovered_generation": {
+      "run_url": "https://github.com/tailscale/web-client-prebuilt/actions/runs/35281869572",
+      "run_id": 35281869572,
+      "run_attempt": 1,
+      "run_head": "f19339b673682bdb6ceb47bc955ba9ae8a71978a",
+      "job_id": 105405407040,
+      "conclusion": "success",
+      "source_repository": "tailscale/tailscale",
+      "actual_source_checkout": "6608b9a387513e69ed260e323376a17aa4029084",
+      "source_log_time": "2026-09-17T22:24:39.2476098Z",
+      "generated_commit": "c6fa2fc1d3a5c6b4cc7a71c4e8c23dfac652d98b",
+      "generated_commit_log_time": "2026-09-17T22:25:43.7810294Z",
+      "created_pr": 35,
+      "pr_log_time": "2026-09-17T22:25:46.6295546Z",
+      "merge_commit": "e0ed2d0d0fea36f1a3d11a2724eabed86e333bfd",
+      "identical_generated_and_merge_tree": "4cee9cb0016e9e7ce92f256420518f3534158d27",
+      "binding": "Original job checkout and generated-commit log, PR head/merge API and identical commit trees; not inferred from dates, names or the separately pinned runtime Tailscale version",
+      "artifact_query": "Original run has no retained artifacts; the job text log was readable",
+      "actual_tool_observations": {
+        "go_revision_downloaded_and_executed": "32e8826b089fee8cb0c5c4822b9794ca5004f23a",
+        "go_source_version_declaration": "1.27.1; no separate go version output was observed in the original log",
+        "node_version_output": "v22.14.0",
+        "yarn_version_output": "1.22.19",
+        "vite_build_output": "5.4.21"
+      }
+    },
+    "generating_source_blob_anchors": {
+      "cmd/build-webclient/build-webclient.go": "5070af0bf5264499d3d72b4d6783526d5348ca49",
+      "client/web/package.json": "c733b0de06b97769c50c5824c5c86611845fce82",
+      "client/web/yarn.lock": "106a104b98d2638abac927c12ddcdab3559f9765",
+      "client/web/vite.config.ts": "3639b7b80cdd7a26a76048b6ac6804edca8ff50d",
+      "tool/go": "1c53683d52f952170efb7932f4e96155e8ef50c6",
+      "tool/gocross/gocross-wrapper.sh": "d95c12848455f73e629dcecbbf14ce5a8795adac",
+      "go.toolchain.rev": "60d970101d4c7a9baf1a4f9c8bf73ce935c9967b",
+      "go.toolchain.version": "08002f86cc8d95efc484992fe029d464924cd750",
+      "tool/node": "310140ae5bfa0da83b643e3c99943ba3c3e262c5",
+      "tool/node.rev": "7d41c735d7127c4a2530ebe846b14ffbf38b8031",
+      "tool/yarn": "6357beda61cb928924b15500623761464087bcc9",
+      "tool/yarn.rev": "de5856e86ba27142bb3f7e649cbda2c069f9c146",
+      "licenses/README.md": "46fe8b77f050cfba22f805ddccab8b855dc5d71b",
+      "licenses/tailscale.md": "a6ebee1394affac3619863aeb814a92ae863f54b"
+    },
+    "review_depth": "Generator, manifests/config, wrappers/version files and legal entry texts were read. The fixed yarn.lock was acquired and relevant entries read, not every recursive dependency. Generated compressed bundles and font contents were not read",
+    "font_source_mapping": {
+      "input": "client/web/src/assets/fonts/Inter.var.latin.woff2",
+      "output": "build/assets/Inter.var.latin-Dxq58mVK.woff2",
+      "identical_blob": "980853fec144d92ffd3712e7f2eec6395f638f2d",
+      "boundary": "Byte identity from the fixed source/output trees only; no font content or license acceptance"
+    },
+    "unblock": "Establish post-install effective Go/JS lock identities, downloaded tool archive identities and recursive JS/resource/legal disposition for this fixed input/output. The historical workflow used go mod tidy and Yarn installation without frozen-lockfile or a post-install lock identity check; no lock change is inferred. Original generating source identity is now recovered",
+    "accepted": false
+  },
+  "whole_frame_receive_repair": {
+    "requirement": "FDN-HOST-FRAME-01 / FDN-HOST-FRAME-AC-01",
+    "review_base": "e711505dbc44bde087595c10a060f5ae6deb5847",
+    "classification": "Source-observed implementation defect; no pre-fix execution claimed",
+    "failure": "Each incomplete fragment reset the production RemoteComputerTarget read to 15 seconds, so a slow peer could delay poll, supervisor stop and the later Host runner/tool shutdown sequence",
+    "production_wiring": "Existing service poll -> serve_private_request_with_timeout -> serve_private_stream -> read_private_frame -> the existing worker stream_read; read failure returns through the existing stream_close path",
+    "implementation": "One monotonic whole-frame deadline; pass only remaining whole milliseconds to each read, fail before read when exhausted, and reject any response arriving at or after the same deadline before parsing or executing it",
+    "preserved": "Existing 32 KiB/newline/whitespace/EOF rules, identity/generation/permission/operation fences, owners, schema, dependency versions and state",
+    "execution": {
+      "head_sha": "0291685eb5f7a5a7b70a11fba8a70a45793b2ae9",
+      "run_id": 41524923463,
+      "job_id": 125550076691,
+      "conclusion": "success",
+      "actual_new_behavior_tests": "Six private_frame_tests ran and passed, zero failed or ignored; 139 unrelated library cases were filtered out",
+      "retained_contract_suites": "Enrollment owner 9, worker process 3, target contract 10, native wiring 5; all executed with zero failed or ignored. These suites retain their existing fixture/source-contract scope",
+      "artifact_id": 13179148428,
+      "artifact_digest": "sha256:8df555ecff4dbe3d8f0bd445c5b9efd02bde74e4ca1f3accd5dcc908fd1e1e63",
+      "input_gate": "All Cargo commands --locked and tracked Host inputs unchanged",
+      "qualification": "Exact-H controlled-clock production-reader behavior and existing bounded contracts; not real network, complete shutdown, signed package or independent acceptance"
+    },
+    "boundary": "Existing one-second IPC allowance and bounded stream-close wait remain. This does not promise immediate supervisor stop or solve the separately observed unknown listen/dial response settlement gap",
+    "local_or_htch_runtime_execution": "not performed",
+    "accepted": false
+  },
+  "box_disconnect_oracle_repair": {
+    "requirement": "Existing G11 BW06 daemon cancellation and auxiliary owner behavior contracts",
+    "classification": "TEST_FLAW, not an established production cancellation failure",
+    "invalid_evidence_head": "e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e",
+    "invalid_test_blob": "a40dc3b5f78e414c3ac302137668f1d5be8dc73f",
+    "run_id": 41519264825,
+    "job_id": 125531715363,
+    "failure_log_time": "2026-11-02T21:01:12.1428680Z",
+    "failure": "Fixture wrote a single dollar sign instead of a PID; kill -0 reported an illegal process id, and any probe failure was treated as successful process exit",
+    "required_oracle": "Prove a real positive leader and child PID are alive in the foreground process group before disconnect. After disconnect, only explicit ESRCH establishes disappearance; verify before daemon cleanup",
+    "production_change": "None; retain the existing disconnect monitor, abort signal, process-group termination and owner",
+    "execution": {
+      "head_sha": "d2771e953a5b3978b3624518e7f07eaf692ee411",
+      "test_blob": "f9eb8afca9e3eb80e2fbce7af5712bccca478766",
+      "run_id": 41526069466,
+      "job_id": 125554615301,
+      "conclusion": "success",
+      "actual_tests": "13 owner cases passed, zero failed or ignored, including the corrected real leader/child/group disconnect oracle before daemon cleanup",
+      "artifact_id": 13180391264,
+      "artifact_digest": "sha256:b8f447e4131c2fb9772d820d71d08e63264a8ff45ff3a849861f4fda4d57da7c",
+      "locked_input_job": 125554007352,
+      "locked_input_conclusion": "success",
+      "locked_input_artifact_id": 13179877210,
+      "locked_input_artifact_digest": "sha256:99dde6d77a252f0c8cb61fd18e1eed347ed3131a57ae247c1e76e4dc2720b78d",
+      "remaining": "Corrected macOS box source/binary/Host job125554615515 is queued; Coordinator125554615412 and worker125554615556 are also queued at the recorded snapshot. Linux behavior is not a substitute for those or final package acceptance"
+    },
+    "local_or_htch_runtime_execution": "not performed",
+    "accepted": false
+  },
+  "unimplemented_open_outcome_recovery_gap": {
+    "review_base": "0291685eb5f7a5a7b70a11fba8a70a45793b2ae9",
+    "classification": "Source-observed implementation gap; no pre-fix execution claimed and no repair implemented in this receipt",
+    "source_blobs": {
+      "source/host/src/network_worker_process.rs": "2fe8c798c25df0e281d6319b48db45bf7bf544fe",
+      "source/host/src/network_enrollment_owner.rs": "df5492db2b5c5e42565f63595283f4ea0e96b7a5",
+      "source/host/src/remote_computer_target.rs": "2a9ca99996c5d05444450ffeca97c44176d94dbc"
+    },
+    "failure": "Host stream_dial/listen loses the new session ID after an unknown IPC outcome; the worker may already own its connection, and a later Running status can discard the late success without closing that stream",
+    "required_boundary": "Distinguish matched definite worker failure from local timeout/EOF/invalid or mismatched response/partial write. Normal idle accept timeout must retain the same worker. Unknown creation must settle the session or retire the existing process generation without reusing it",
+    "retirement_risk": "Current close writes to IPC before waiting, removes Child before fallible wait/termination, and callers ignore close errors. A future retirement fix must retain the unusable child until exit/reap is confirmed and must not start a replacement on the same state directory prematurely",
+    "compatibility": "Keep protocolVersion=1, public stream return types, permissions, operation journal/no replay, persistent enrollment generation and encrypted state. No new owner or state deletion",
+    "verification_needed": "Actual controlled child IPC cases for normal operation failures, late open success, malformed envelopes, EOF, stuck worker termination and no replacement before confirmed old-process exit",
+    "accepted": false
+  },
+  "authority_snapshot": {
+    "read_head": "da219ea9a9e5f143a42912ca9a127c225f36899e",
+    "live_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "upstream_lock_blob": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+    "tdrp_source_of_truth_blob": "da3455bff35978b41027d940213bf3fc6d9a496a",
+    "fbcp_source_of_truth_blob": "3f1408a1460a589eeffceba3c3404c0c151d1bfa",
+    "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "baseline_ready": false,
+    "accepted": false,
+    "source_review_boundary": "FMEP-SOURCE-01 risk-appropriate review is retained; enumeration, partial dependency review and Actions-executed bounded contracts do not promote complete source or product acceptance",
+    "rtm": "Existing auxiliary rows and the two bounded behavior requirements in projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md; no parallel inventory or ledger and no source-completion counters changed"
+  },
+  "remaining": [
+    "Exact containing-H locked-input verification, actual macOS auxiliary binaries and existing lifecycle tests",
+    "Detailed registry/Go source, generated-input and legal disposition; first pinning does not constitute semantic source review",
+    "Changed release-required and independent FDN workflow contexts require their own exact-H execution; source-contract results do not substitute for full Electron, cross-platform, real-browser or resource/privacy acceptance",
+    "Signed supported-platform packages, real-service and full product regressions, upgrade/rollback and independent ACCEPT"
+  ],
+  "accepted": false
+}

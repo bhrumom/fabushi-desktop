@@ -1,13 +1,14 @@
-import type {
-  ConversationAgentSummary,
-  ConversationAgentLastEntry,
-  ConversationTranscriptEntry,
-  DraftAttachment,
-  TranscriptMessage,
-  TranscriptLocalToolPermission,
-  TranscriptPermissionRequest,
-  TranscriptThinking,
-  TranscriptToolCall
+import {
+  isValidHumanReadAtTimestamp,
+  type ConversationAgentSummary,
+  type ConversationAgentLastEntry,
+  type ConversationTranscriptEntry,
+  type DraftAttachment,
+  type TranscriptMessage,
+  type TranscriptLocalToolPermission,
+  type TranscriptPermissionRequest,
+  type TranscriptThinking,
+  type TranscriptToolCall
 } from "../recovered/features/conversation/workspace/model";
 import type { DeepLinkInfo } from "../recovered/features/deep-links/overlay/model";
 import { projectTranscriptCardEntry } from "../recovered/features/conversation/cards/transcript-card/protocol";
@@ -324,6 +325,20 @@ function messageText(entry: Record<string, unknown>): string | null {
 
 function transcriptDelivery(entry: Record<string, unknown>): TranscriptMessage["delivery"] {
   const candidate = entry.delivery ?? entry.status;
+  // A Host dispatch has not settled its canonical remote identity yet.
+  if (candidate === "dispatching") return "pending";
+  // The Session retains a failed durable send as pending so it can be retried
+  // with its original intent. Only that local Human shape exposes Retry after
+  // reload; stale error metadata must never regress a canonical or Agent row.
+  if (candidate === "pending" && entry.kind === "message" && entry.role === "user"
+    && entry.authorKind === "human" && typeof entry.authorId === "string"
+    && entry.authorId.length > 0 && entry.authorId.trim() === entry.authorId
+    && typeof entry.clientNonce === "string" && entry.clientNonce.length > 0
+    && entry.clientNonce.trim() === entry.clientNonce
+    && new TextEncoder().encode(entry.clientNonce).byteLength <= 200
+    && entry.id === `human-message:${entry.clientNonce}` && entry.remoteMessageId === undefined
+    && typeof entry.content === "string"
+    && typeof entry.lastDispatchError === "string" && entry.lastDispatchError.trim().length > 0) return "failed";
   if (candidate === "pending" || candidate === "queued" || candidate === "failed" || candidate === "sent") return candidate;
   if (entry.pending === true || entry.isPending === true) return "pending";
   if (entry.failed === true || entry.isFailed === true) return "failed";
@@ -413,10 +428,51 @@ function transcriptReactionFields(entry: Record<string, unknown>): Pick<Transcri
   return { reactions: projection.reactions, myReactions: projection.myReactions };
 }
 
+function visibleForwardOriginAuthorName(value: Record<string, unknown>): string | undefined {
+  if (!isRecord(value.forwardContext)) return undefined;
+  const privacy = isRecord(value.forwardContext.privacy) ? value.forwardContext.privacy : null;
+  if (privacy?.dropSenderNames === true || privacy?.dropCaptions === true) return undefined;
+  const origin = isRecord(value.forwardContext.origin) ? value.forwardContext.origin : null;
+  return origin == null ? undefined : (stringValue(origin.authorName) ?? undefined);
+}
+
 export function projectTranscriptEntry(value: unknown, index: number, agentName: string, agentId?: string | null): ProductionTranscriptEntry | null {
   if (!isRecord(value)) return null;
   const id = stringValue(value.id) ?? `entry-${index}`;
   const timestampMs = numberValue(value.timestampMs, Date.now());
+  const humanRemoteMessageId = typeof value.remoteMessageId === "string" ? value.remoteMessageId
+    : typeof value.remoteMessageId === "number" && Number.isSafeInteger(value.remoteMessageId) && value.remoteMessageId > 0
+      ? String(value.remoteMessageId)
+      : undefined;
+  const humanAuthorName = value.authorKind === "human" ? (stringValue(value.authorName) ?? undefined) : undefined;
+  const forwardedFromAuthorName = value.authorKind === "human" ? visibleForwardOriginAuthorName(value) : undefined;
+  const forcedForwardInfo = value.authorKind === "human"
+    && (value.forcedForwardInfo === true || value.forcePreserveForwardInfo === true)
+    ? true
+    : undefined;
+  const resolvedDelivery = transcriptDelivery(value) ?? "sent";
+  const isCanonicalSettledHumanRow = value.authorKind === "human"
+    && resolvedDelivery === "sent"
+    && typeof value.authorId === "string" && value.authorId.trim().length > 0
+    && humanRemoteMessageId !== undefined && /^[1-9][0-9]*$/.test(humanRemoteMessageId)
+    && id === `human-server-message:${humanRemoteMessageId}`;
+  const humanReadAt = isCanonicalSettledHumanRow && isValidHumanReadAtTimestamp(value.readAt)
+    ? value.readAt.trim()
+    : undefined;
+  const transcriptAuthor = {
+    ...(value.authorKind === "human" ? {
+      authorKind: "human" as const,
+      // Missing/legacy/malformed origin is authoritative absence, not a cue to
+      // retain a previous local offline guess during canonical merging.
+      queuedOffline: value.queuedOffline === true,
+    } : {}),
+    ...(typeof value.authorId === "string" ? { authorId: value.authorId } : {}),
+    ...(humanAuthorName === undefined ? {} : { authorName: humanAuthorName }),
+    ...(forwardedFromAuthorName === undefined ? {} : { forwardedFromAuthorName }),
+    ...(forcedForwardInfo === undefined ? {} : { forcedForwardInfo }),
+    ...(humanRemoteMessageId === undefined ? {} : { remoteMessageId: humanRemoteMessageId }),
+    ...(humanReadAt === undefined ? {} : { readAt: humanReadAt }),
+  };
   const composedAtMs = typeof (value.composedAtMs ?? value.queuedAtMs) === "number" && Number.isFinite(value.composedAtMs ?? value.queuedAtMs)
     ? Number(value.composedAtMs ?? value.queuedAtMs)
     : undefined;
@@ -498,6 +554,7 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
     const attachment = projectUserAttachmentGalleryAttachment(projection);
     return {
       kind: "message", id, role: "user", author: "You", text: "", timestampMs, attachments: [attachment],
+      ...transcriptAuthor,
       sourceKind: "user-attachment",
       userAttachment: projection,
       delivery: transcriptDelivery(value) ?? "sent",
@@ -511,6 +568,7 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
   if (attachment != null) {
     return {
       kind: "message", id, role: "user", author: "You", text: "", timestampMs, attachments: [attachment],
+      ...transcriptAuthor,
       delivery: transcriptDelivery(value) ?? "sent",
       ...(typeof value.clientNonce === "string" ? { clientNonce: value.clientNonce } : {}),
       ...(transcriptReplyToId(value) == null ? {} : { replyToId: transcriptReplyToId(value) }),
@@ -528,10 +586,11 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
     author: role === "assistant" ? (stringValue(value.authorName) ?? agentName) : "You",
     text,
     timestampMs,
-    ...(attachments.length === 0 ? {} : { attachments }),
+    ...(attachments.length > 0 || (value.authorKind === "human" && Array.isArray(value.attachments)) ? { attachments } : {}),
     ...(transcriptRichText(value) === undefined ? {} : { richText: transcriptRichText(value) }),
     delivery: transcriptDelivery(value) ?? "sent",
     ...(typeof value.clientNonce === "string" ? { clientNonce: value.clientNonce } : {}),
+    ...transcriptAuthor,
     ...(composedAtMs == null ? {} : { composedAtMs }),
     ...(transcriptStreaming(value) ? { isStreaming: true } : {}),
     ...(transcriptReplyToId(value) == null ? {} : { replyToId: transcriptReplyToId(value) }),
@@ -577,7 +636,8 @@ export function coalesceProjectedUserAttachmentTurns(
   const firstAttachmentEntryByNonce = new Map<string, ProjectedUserAttachmentMessage>();
 
   for (const entry of entries) {
-    if (entry.kind !== "message" || entry.role !== "user" || entry.clientNonce == null || entry.clientNonce.length === 0) continue;
+    if (entry.kind !== "message" || entry.role !== "user" || entry.authorKind === "human" || entry.authorId != null
+      || entry.clientNonce == null || entry.clientNonce.length === 0) continue;
     if (isProjectedUserAttachmentMessage(entry)) {
       const attachments = attachmentGroups.get(entry.clientNonce) ?? [];
       attachmentGroups.set(
@@ -596,7 +656,8 @@ export function coalesceProjectedUserAttachmentTurns(
 
   const emittedAttachmentOnly = new Set<string>();
   return entries.flatMap((entry) => {
-    if (entry.kind !== "message" || entry.role !== "user" || entry.clientNonce == null || entry.clientNonce.length === 0) {
+    if (entry.kind !== "message" || entry.role !== "user" || entry.authorKind === "human" || entry.authorId != null
+      || entry.clientNonce == null || entry.clientNonce.length === 0) {
       return [entry];
     }
     const attachments = attachmentGroups.get(entry.clientNonce);
@@ -639,6 +700,7 @@ export function projectTranscriptFeedEntries(
 export interface ProjectedTranscriptPage {
   entries: ProductionTranscriptEntry[];
   nextBeforeSeq?: number;
+  nextBeforeCursor?: string;
   /** Only authoritative transcript-window responses carry this field. */
   threadSummaries?: readonly TranscriptThreadSummary[];
 }
@@ -665,10 +727,13 @@ export function projectTranscriptPageResult(value: unknown, agentName: string, a
       return composedAtMs == null ? entry : { ...entry, composedAtMs };
   }));
   const nextBeforeSeq = typeof value.nextBeforeSeq === "number" && Number.isFinite(value.nextBeforeSeq) ? value.nextBeforeSeq : undefined;
+  const nextBeforeCursor = typeof value.nextBeforeCursor === "string" && value.nextBeforeCursor.length > 0
+    ? value.nextBeforeCursor : undefined;
   const threadSummaries = projectThreadSummaries(value);
   return {
     entries,
     ...(nextBeforeSeq == null ? {} : { nextBeforeSeq }),
+    ...(nextBeforeCursor == null ? {} : { nextBeforeCursor }),
     ...(threadSummaries === undefined ? {} : { threadSummaries })
   };
 }
@@ -715,3 +780,4 @@ export function projectComputerStatus(value: unknown, isStarting = false): Compu
     handoff: isRecord(value.handoff) ? value.handoff : null
   };
 }
+

@@ -1,0 +1,39 @@
+{
+  "schema": "FBCP_NMR_BATCH_RECEIPT_V1",
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 8,
+  "batch": "NMR-UI-ENTRY-REFRESH-01-traceability-correction",
+  "sourceCommit": "a0e6cd2ded523f59add3a7ade6bd43890b448300",
+  "run": 41565477551,
+  "job": 125685842406,
+  "fullLogRead": true,
+  "actual": {
+    "nodeTests": 161,
+    "passed": 160,
+    "failed": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "python": "not-run",
+    "candidate": "skipped"
+  },
+  "failure": "canonical NMR traceability uses current checkout without promoting candidate source acceptance",
+  "cause": "NMR-AC-UI-ENTRY-REFRESH-01 is in the canonical ledger and frozen Spec but its exact acceptance identifier is missing from RTM/dossier.",
+  "classification": "Traceability implementation omission; validator correctly refused the incomplete mapping.",
+  "artifact": {
+    "id": 13198940804,
+    "sha256": "54a41ed0f1f0eec7fcd7d95ba32e877f78a5497f4359aa3c2aa3fc38ba387a76"
+  },
+  "repair": {
+    "path": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+    "scope": "Add the explicit acceptance row to the existing UI table; retain all source/ledger/production/test/workflow inputs and independent acceptance flags. No gate relaxation or rerun without changed input."
+  },
+  "containingCommitExecution": "Required; pending at this correction. Original failure remains failed evidence.",
+  "concurrentParent": "1d4bcaaaf18335511d9b01d90e11771f9f50f504",
+  "acceptance": {
+    "source": false,
+    "product": false,
+    "independent": false,
+    "release": false
+  }
+}

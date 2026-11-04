@@ -11770,8 +11770,8 @@ fn dispatch_mini_app_management(
     Some(respond())
 }
 
-fn current_native_mini_app_scope(
-    host: &UnifiedAppHost,
+fn current_native_mini_app_scope_from_store(
+    store: &mahayana_unified_app_host::MiniAppRuntimeStorePort,
 ) -> Result<(
     mahayana_host_runtime::extensions::mcp::installable_package::ledger::HostInstallScope,
     mahayana_host_runtime::extensions::session::native_messaging::FabushiNativeCredentialClaim,
@@ -11787,9 +11787,6 @@ fn current_native_mini_app_scope(
         GatewayCommandError::Internal("not_authenticated: Native account credential is invalid or expired".into())
     })?;
     let scope_hash = claim.account_scope_hash();
-    let store = host.mini_app_store_port().map_err(|_| {
-        GatewayCommandError::Internal("not_configured: RuntimeStore SQLite connection is unavailable".into())
-    })?;
     let verified = client.verify_account_identity();
     let now_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
         .map(|duration| duration.as_millis().min(u64::MAX as u128) as u64).unwrap_or(0);
@@ -11814,6 +11811,18 @@ fn current_native_mini_app_scope(
             .ok_or_else(|| GatewayCommandError::Internal("not_authenticated: no unexpired verified Native account snapshot is available offline".into()))?,
     };
     Ok((scope, claim))
+}
+
+fn current_native_mini_app_scope(
+    host: &UnifiedAppHost,
+) -> Result<(
+    mahayana_host_runtime::extensions::mcp::installable_package::ledger::HostInstallScope,
+    mahayana_host_runtime::extensions::session::native_messaging::FabushiNativeCredentialClaim,
+), GatewayCommandError> {
+    let store = host.mini_app_store_port().map_err(|_| {
+        GatewayCommandError::Internal("not_configured: RuntimeStore SQLite connection is unavailable".into())
+    })?;
+    current_native_mini_app_scope_from_store(&store)
 }
 
 fn native_mini_app_claim_is_current(
@@ -12427,6 +12436,44 @@ fn main() {
         ),
     );
     session_workers.bind_memory_synthesis_gate();
+    if let Ok(store) = host.mini_app_store_port() {
+        let store_for_scope = store.clone();
+        let store_for_verifier = store;
+        let verifier: mahayana_host_runtime::extensions::session::production::MiniAppPackageVerifier = Arc::new(move |app_id: &str, version: Option<&str>, digest: Option<&str>| {
+            use mahayana_host_runtime::extensions::mcp::installable_package::ledger;
+            let (scope, _) = current_native_mini_app_scope_from_store(&store_for_scope).map_err(|e| {
+                mahayana_host_runtime::extensions::session::production::MiniAppPostError::StaleScope(e.to_string())
+            })?;
+            store_for_verifier.with_connection(|conn| {
+                ledger::initialize(conn).map_err(|e| mahayana_host_runtime::extensions::session::production::MiniAppPostError::PersistenceFailed(format!("{e:?}")))?;
+                let installed = ledger::installed(conn, &scope, app_id).map_err(|e| mahayana_host_runtime::extensions::session::production::MiniAppPostError::PersistenceFailed(format!("{e:?}")))?;
+                let Some(record) = installed else {
+                    return Err(mahayana_host_runtime::extensions::session::production::MiniAppPostError::AppNotInstalled(app_id.to_string()));
+                };
+                if let Some(reason) = ledger::quarantine_reason(conn, &scope, app_id).map_err(|e| mahayana_host_runtime::extensions::session::production::MiniAppPostError::PersistenceFailed(format!("{e:?}")))? {
+                    return Err(mahayana_host_runtime::extensions::session::production::MiniAppPostError::AppNotInstalled(format!("{app_id} (quarantined: {reason})")));
+                }
+                if let Some(expected_ver) = version {
+                    if record.version != expected_ver {
+                        return Err(mahayana_host_runtime::extensions::session::production::MiniAppPostError::PackageDigestMismatch(format!(
+                            "version mismatch: expected {expected_ver}, found {}", record.version
+                        )));
+                    }
+                }
+                if let Some(expected_digest) = digest {
+                    if record.digest != expected_digest {
+                        return Err(mahayana_host_runtime::extensions::session::production::MiniAppPostError::PackageDigestMismatch(format!(
+                            "digest mismatch: expected {expected_digest}, found {}", record.digest
+                        )));
+                    }
+                }
+                Ok(())
+            }).map_err(|e| {
+                mahayana_host_runtime::extensions::session::production::MiniAppPostError::PersistenceFailed(format!("{e:?}"))
+            })
+        });
+        session_workers.set_mini_app_package_verifier(verifier);
+    }
     let handoff_prepare_box = Arc::clone(&forever_box);
     let handoff_screenshot_box = Arc::clone(&forever_box);
     let handoff_status_box = Arc::clone(&forever_box);

@@ -1,0 +1,293 @@
+{
+  "schema_version": 1,
+  "audit": "Containing Feature10 source at 83c9e3 and bounded native execution",
+  "reviewer": "/root/resume_current_native",
+  "read_only_remote": true,
+  "local_executable_validation": false,
+  "head_sha": "83c9e3ffbf059556f3a8bce9d84d946c97433345",
+  "parent_sha": "f60515165b7bf382c1e38c0b6feeff2feb64bd92",
+  "run_id": 41524660245,
+  "workflow_path": ".github/workflows/native-service-contracts.yml",
+  "workflow_blob_sha": "87a40da25eb5bfb3c49a5c8d5115f96090f6abe5",
+  "observed_at": "2026-11-02 21:08:15 UTC",
+  "source": {
+    "feature_tests_blob": "0aebff41e55f58921742440e9f0b896a03d25638",
+    "runtime_tests_blob": "ea8f8e5092e126e62b2dc671438f25b106dce493",
+    "parent_workflow_blob": "e60ec6e6f2d5c9e489e8200fa1bda10b3a4f4c1d",
+    "workflow_diff": "API exact parent file and current file differ only in Feature7 -> Feature10 expected count; concurrent direct C ABI job and every other gate are preserved.",
+    "expected_counts": {
+      "featurehost": 10,
+      "runtime_retained_social": 9,
+      "http_boundary": 6
+    }
+  },
+  "jobs": [
+    {
+      "id": 125549178571,
+      "name": "native-message-reconciliation",
+      "status": "completed",
+      "conclusion": "success",
+      "step_count": 18
+    },
+    {
+      "id": 125549179003,
+      "name": "retained-direct-ffi-compatibility",
+      "status": "completed",
+      "conclusion": "success",
+      "step_count": 10
+    },
+    {
+      "id": 125549179025,
+      "name": "native-message-shipping-compile",
+      "status": "queued",
+      "conclusion": null,
+      "step_count": 0
+    },
+    {
+      "id": 125549179136,
+      "name": "windows-update-publisher",
+      "status": "completed",
+      "conclusion": "success",
+      "step_count": 10
+    },
+    {
+      "id": 125549179170,
+      "name": "native-message-ui",
+      "status": "completed",
+      "conclusion": "success",
+      "step_count": 15
+    },
+    {
+      "id": 125549179437,
+      "name": "native-message-electron",
+      "status": "completed",
+      "conclusion": "success",
+      "step_count": 19
+    },
+    {
+      "id": 125549181178,
+      "name": "native-auth-and-journal",
+      "status": "completed",
+      "conclusion": "skipped",
+      "step_count": 0
+    }
+  ],
+  "completed_log_claims": {
+    "direct_c_abi": {
+      "job_id": 125549179003,
+      "passed": 15,
+      "failed": 0,
+      "ignored": 1,
+      "ignored_case": "live_runtime_bootstrap_keeps_an_encrypted_transport_session",
+      "ignored_reason": "requires a live Telegram production data center",
+      "limit": "Controlled direct C fixture compatibility only, not live DC or package acceptance."
+    },
+    "windows": {
+      "job_id": 125549179136,
+      "passed": 11,
+      "failed": 0,
+      "cancelled": 0,
+      "limit": "CI publisher/native API tests, not formal Fabushi release authorization."
+    },
+    "ui": {
+      "job_id": 125549179170,
+      "passed_groups": [
+        29,
+        17,
+        5,
+        16
+      ],
+      "failed": 0,
+      "cancelled": 0
+    },
+    "electron": {
+      "job_id": 125549179437,
+      "passed_groups": [
+        10,
+        8,
+        3,
+        16,
+        28,
+        18,
+        10,
+        7
+      ],
+      "windows_behavior": 28,
+      "failed": 0,
+      "cancelled": 0
+    },
+    "reconciliation": {
+      "job_id": 125549178571,
+      "actual_passed_counts": {
+        "human": 62,
+        "resource_upload_bounds": 3,
+        "forward_sharebox": 1,
+        "forward_batches": 12,
+        "agent_send_nonce": 4,
+        "settlement_credential": 3,
+        "forward_http": 1
+      },
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "pending": {
+    "shipping": {
+      "job_id": 125549179025,
+      "status": "queued",
+      "step_count": 0,
+      "conclusion": null,
+      "feature10_execution": false,
+      "runtime9_execution": false,
+      "http6_execution": false
+    }
+  },
+  "artifacts": [
+    {
+      "id": 13180385050,
+      "name": "native-message-reconciliation-83c9e3ffbf059556f3a8bce9d84d946c97433345",
+      "size_in_bytes": 35272,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180385050",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180385050/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:06:54Z",
+      "expires_at": "2027-01-31T21:02:24Z",
+      "updated_at": "2026-11-02T21:06:54Z",
+      "digest": "sha256:37d63eaddac1f487e9d77cc49d2af1fcba53be52861c659d1e37a60500d5abdb",
+      "workflow_run": {
+        "id": 41524660245,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "83c9e3ffbf059556f3a8bce9d84d946c97433345"
+      }
+    },
+    {
+      "id": 13180210100,
+      "name": "native-message-electron-83c9e3ffbf059556f3a8bce9d84d946c97433345",
+      "size_in_bytes": 14832,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180210100",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180210100/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:03:55Z",
+      "expires_at": "2027-01-31T21:02:24Z",
+      "updated_at": "2026-11-02T21:03:55Z",
+      "digest": "sha256:80f064ab60ff2e8e4ff5717c827d03ddd326dbba269decc58953c4225d9a880c",
+      "workflow_run": {
+        "id": 41524660245,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "83c9e3ffbf059556f3a8bce9d84d946c97433345"
+      }
+    },
+    {
+      "id": 13180160283,
+      "name": "windows-update-publisher-83c9e3ffbf059556f3a8bce9d84d946c97433345",
+      "size_in_bytes": 1828,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180160283",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180160283/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:03:33Z",
+      "expires_at": "2027-01-31T21:02:24Z",
+      "updated_at": "2026-11-02T21:03:33Z",
+      "digest": "sha256:682a340fe8ff6715aba9cfa784c38da7526a95df0dfb804c4ac6b7a2f9586191",
+      "workflow_run": {
+        "id": 41524660245,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "83c9e3ffbf059556f3a8bce9d84d946c97433345"
+      }
+    },
+    {
+      "id": 13178772371,
+      "name": "retained-direct-ffi-compatibility-83c9e3ffbf059556f3a8bce9d84d946c97433345",
+      "size_in_bytes": 2545,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178772371",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178772371/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:02:53Z",
+      "expires_at": "2027-01-31T21:02:24Z",
+      "updated_at": "2026-11-02T21:02:53Z",
+      "digest": "sha256:0d7f8266d5759d55a9849b3d6ec6bd8e56825027435ea40f9e23c47868f3d549",
+      "workflow_run": {
+        "id": 41524660245,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "83c9e3ffbf059556f3a8bce9d84d946c97433345"
+      }
+    },
+    {
+      "id": 13177989452,
+      "name": "native-message-ui-83c9e3ffbf059556f3a8bce9d84d946c97433345",
+      "size_in_bytes": 229020,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13177989452",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13177989452/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:03:35Z",
+      "expires_at": "2027-01-31T21:02:24Z",
+      "updated_at": "2026-11-02T21:03:35Z",
+      "digest": "sha256:1a6ede98d274f4977a509e2cf324f1eb58fe3b5b709c17a53ddefe692d4068db",
+      "workflow_run": {
+        "id": 41524660245,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "83c9e3ffbf059556f3a8bce9d84d946c97433345"
+      }
+    }
+  ],
+  "logs": [
+    {
+      "run_id": 41524660245,
+      "job_id": 125549179003,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41524660245-125549179003.log",
+      "bytes": 55893,
+      "sha256": "4f09d116dfb3a44ef507598c551b1d0cb97ffc09c3afcd14cf14ff15542e7784",
+      "encoding": "exact UTF-8 of complete connector-decoded log"
+    },
+    {
+      "run_id": 41524660245,
+      "job_id": 125549179136,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41524660245-125549179136.log",
+      "bytes": 35644,
+      "sha256": "82f0976980acc04411131ca6e51623a06713c83732ad2547f8dc447a113b34bc",
+      "encoding": "exact UTF-8 of complete connector-decoded log"
+    },
+    {
+      "run_id": 41524660245,
+      "job_id": 125549179170,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41524660245-125549179170.log",
+      "bytes": 86869,
+      "sha256": "2fc69004da988a2486b345b8275ab54a068299be25fc27fd92e950c9e648d33e",
+      "encoding": "exact UTF-8 of complete connector-decoded log"
+    },
+    {
+      "run_id": 41524660245,
+      "job_id": 125549179437,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41524660245-125549179437.log",
+      "bytes": 92424,
+      "sha256": "6ae24d091db99778c7ca9d98ce70123b8d284e5d7df5d9f0d1edcdb82929327f",
+      "encoding": "exact UTF-8 of complete connector-decoded log"
+    },
+    {
+      "run_id": 41524660245,
+      "job_id": 125549178571,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41524660245-125549178571.log",
+      "bytes": 353533,
+      "sha256": "c4ab3d5bfd350a8158d5c179d9fd27d4674ac448bc3e775d56fa1ad43dfda4dc",
+      "encoding": "exact UTF-8 of complete connector-decoded log"
+    }
+  ],
+  "linux_preparation": {
+    "authored_before_code": "final-resume/linux-social-scope.md",
+    "insertion_only": "final-resume/linux-social-job.txt",
+    "latest_preparation_head": "19039ea78a033af97deabcc8b605588ffcf5e437",
+    "base_workflow_blob": "87a40da25eb5bfb3c49a5c8d5115f96090f6abe5",
+    "status": "prepared only for root integration; not applied or executed by reviewer",
+    "limits": "Same existing harnesses on Ubuntu can provide direct behavior evidence, but do not replace the unchanged macOS AppHost/shipping gates. No local validation."
+  },
+  "independent_accept": false
+}

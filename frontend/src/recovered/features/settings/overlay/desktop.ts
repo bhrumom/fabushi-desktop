@@ -7,6 +7,8 @@ import type {
   DesktopCallMediaPreferences,
   DesktopTimeZoneState,
   DesktopUiPreferences,
+  ProductNetworkProxyMutation,
+  ProductNetworkProxySettings,
   DesktopUpdateStatus,
   ThemePreference,
   ThemeState,
@@ -41,6 +43,7 @@ export interface SettingsDesktopSnapshot {
   usage: UsageLoadState;
   usagePageFeatureGateEnabled: boolean;
   egressTunnel: EgressTunnelSettings;
+  networkProxy: ProductNetworkProxySettings;
 }
 
 export interface EgressTunnelSettings {
@@ -155,7 +158,7 @@ export function cursorAuthErrorMessage(reason: unknown): string {
 
 export async function loadSettingsDesktopSnapshot(bridge: DesktopBridge, coordinatorClient?: Pick<ProductionCoordinatorClient, "isEgressTunnelAvailable">): Promise<SettingsDesktopSnapshot> {
   const experimentSnapshot = loadExperimentSnapshot(bridge);
-  const [status, avatar, privacyModeEnabled, autoReview, theme, timeZone, uiPreferences, callMediaPreferences, localToolPermission, securityKeyEnabled, update, usageResult, resolvedExperimentSnapshot, egressTunnel] = await Promise.all([
+  const [status, avatar, privacyModeEnabled, autoReview, theme, timeZone, uiPreferences, callMediaPreferences, localToolPermission, securityKeyEnabled, update, usageResult, resolvedExperimentSnapshot, egressTunnel, productSettings] = await Promise.all([
     bridge.cursorAccount.getStatus(),
     // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L133195-L133204
     bridge.cursorAccount.getAvatar().catch(() => null),
@@ -180,7 +183,8 @@ export async function loadSettingsDesktopSnapshot(bridge: DesktopBridge, coordin
       })
     ),
     experimentSnapshot,
-    loadEgressTunnelState(bridge, coordinatorClient, experimentSnapshot)
+    loadEgressTunnelState(bridge, coordinatorClient, experimentSnapshot),
+    bridge.networkProxy.get()
   ]);
   return {
     account: accountStateFromCursorStatus(status, typeof avatar === "string" ? avatar : undefined),
@@ -198,7 +202,8 @@ export async function loadSettingsDesktopSnapshot(bridge: DesktopBridge, coordin
     usageSummary: usageResult.summary,
     usage: usageResult,
     usagePageFeatureGateEnabled: usagePageFeatureGateEnabled(resolvedExperimentSnapshot),
-    egressTunnel
+    egressTunnel,
+    networkProxy: productSettings.network.proxy
   };
 }
 
@@ -404,4 +409,10 @@ export function usageMetersFromSummary(summary: CursorUsageSummary | null, nowMs
     });
   }
   return meters;
+}
+
+
+export async function mutateNetworkProxySettings(bridge: DesktopBridge, mutation: ProductNetworkProxyMutation): Promise<ProductNetworkProxySettings> {
+  const result = await bridge.networkProxy.mutate(mutation);
+  return result.settings.network.proxy;
 }

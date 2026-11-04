@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { dirname } from "node:path";
 
@@ -10,7 +10,9 @@ export const FABUSHI_ACCOUNT_SESSION_SECRET = "fabushi-account-session-v1";
 export const FABUSHI_CI_ACCOUNT_SESSION_FILE_ENV = "FABUSHI_CI_ACCOUNT_SESSION_FILE";
 export const FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV = "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE";
 export const FABUSHI_REMOTE_COMPUTER_DEVICE_CREDENTIAL_FILE_ENV = "FABUSHI_REMOTE_COMPUTER_DEVICE_CREDENTIAL_FILE";
+export const FABUSHI_TELEGRAM_APPLICATION_CREDENTIAL_SECRET = "fabushi-telegram-application-credential-v1";
 const FABUSHI_REMOTE_COMPUTER_DEVICE_SECRET_PREFIX = "fabushi-remote-computer-device-secret-v1";
+const FABUSHI_TELEGRAM_STORAGE_SECRET_PREFIX = "fabushi-telegram-storage-key-v1";
 const REFRESH_LEEWAY_MS = 60_000;
 const MIN_POLL_MS = 250;
 const MAX_POLL_MS = 5_000;
@@ -43,6 +45,42 @@ import {
   nativeAuthIdForIssuer,
   type FabushiSession,
 } from "./fabushi-account-policy.js";
+
+// Retained identities for existing data and a reviewed rollback. Native account
+// authentication does not read or rewrite these legacy Telegram secrets.
+export function telegramStorageSecretName(
+  session: Pick<FabushiSession, "issuer" | "userId" | "deviceId">,
+): string {
+  const accountId = nativeAuthIdForIssuer(session.userId, session.issuer);
+  const scope = createHash("sha256")
+    .update("fabushi-telegram-storage-key-v1\0", "utf8")
+    .update(accountId, "utf8")
+    .update("\0", "utf8")
+    .update(session.deviceId, "utf8")
+    .digest("hex");
+  return `${FABUSHI_TELEGRAM_STORAGE_SECRET_PREFIX}:${scope}`;
+}
+
+export interface TelegramApplicationCredential {
+  readonly apiId: number;
+  readonly apiHash: string;
+}
+
+export function normalizeTelegramApplicationCredential(value: unknown): TelegramApplicationCredential | null {
+  if (!isRecord(value)) return null;
+  const keys = Object.keys(value);
+  if (keys.length !== 2 || !keys.every((key) => key === "apiId" || key === "apiHash")) return null;
+  const apiId = value.apiId;
+  const apiHash = typeof value.apiHash === "string" ? value.apiHash.trim().toLowerCase() : "";
+  if (typeof apiId !== "number"
+    || !Number.isSafeInteger(apiId)
+    || apiId <= 0
+    || apiId > 0x7fffffff
+    || !/^[0-9a-f]{32}$/u.test(apiHash)) {
+    return null;
+  }
+  return { apiId, apiHash };
+}
 
 function statusFromSession(session: FabushiSession): SandAuthStatus {
   const user = session.user;
@@ -663,3 +701,4 @@ export class FabushiAuthService implements AuthServicePort {
     return await this.getStatus();
   }
 }
+

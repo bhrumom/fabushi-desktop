@@ -21,6 +21,7 @@ export type SettingsNoticeOperation =
   | "settings-time-zone"
   | "settings-ui-preferences"
   | "settings-call-media"
+  | "settings-network-proxy"
   | "settings-router-provider"
   | "settings-usage-cancel-trial"
   | "settings-update-check"

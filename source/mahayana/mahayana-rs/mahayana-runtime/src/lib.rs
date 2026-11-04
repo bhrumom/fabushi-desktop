@@ -69,10 +69,23 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 const MAX_HANDOFF_DEPTH: u8 = 4;
 const MAX_HANDOFFS_PER_RUN: u8 = 8;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum RetainedConversationPolicy {
+    #[default]
+    None,
+    /// Only the desktop Session/Transcript owner may resume these historical
+    /// contact turns. Leave their SQLite rows untouched for reviewed rollback.
+    PreserveSocialContacts,
+    /// The desktop Session/Transcript composition also leaves retired Telegram
+    /// work untouched. Other constructors retain their existing recovery policy.
+    PreserveDesktopLegacyConversations,
+}
+
 pub struct RuntimeBuilder {
     config: RuntimeConfig,
     providers: ProviderRegistry,
     agent_backend: Option<Arc<dyn AgentBackend>>,
+    retained_conversation_policy: RetainedConversationPolicy,
 }
 
 impl RuntimeBuilder {
@@ -81,7 +94,13 @@ impl RuntimeBuilder {
             config,
             providers: ProviderRegistry::default(),
             agent_backend: None,
+            retained_conversation_policy: RetainedConversationPolicy::None,
         }
+    }
+
+    pub fn with_retained_conversation_policy(mut self, policy: RetainedConversationPolicy) -> Self {
+        self.retained_conversation_policy = policy;
+        self
     }
 
     pub fn with_provider(
@@ -134,7 +153,7 @@ impl RuntimeBuilder {
     }
 
     pub fn build(self) -> Result<MahayanaRuntime, RuntimeError> {
-        MahayanaRuntime::new(self.config, self.providers, self.agent_backend)
+        MahayanaRuntime::new(self.config, self.providers, self.agent_backend, self.retained_conversation_policy)
     }
 
     /// Starts an Agent backend on the same Tokio runtime that the long-lived
@@ -174,6 +193,7 @@ impl RuntimeBuilder {
             builder.config,
             builder.providers,
             builder.agent_backend,
+            builder.retained_conversation_policy,
             async_runtime,
         )
     }
@@ -194,6 +214,7 @@ struct PendingRuntimeApproval {
 }
 
 pub struct MahayanaRuntime {
+    retained_conversation_policy: RetainedConversationPolicy,
     config: RuntimeConfig,
     providers: Arc<ProviderRegistry>,
     agent_backend: Option<Arc<dyn AgentBackend>>,
@@ -221,15 +242,17 @@ impl MahayanaRuntime {
         config: RuntimeConfig,
         providers: ProviderRegistry,
         agent_backend: Option<Arc<dyn AgentBackend>>,
+        retained_conversation_policy: RetainedConversationPolicy,
     ) -> Result<Self, RuntimeError> {
         let async_runtime = create_async_runtime()?;
-        Self::new_with_async_runtime(config, providers, agent_backend, async_runtime)
+        Self::new_with_async_runtime(config, providers, agent_backend, retained_conversation_policy, async_runtime)
     }
 
     fn new_with_async_runtime(
         config: RuntimeConfig,
         providers: ProviderRegistry,
         agent_backend: Option<Arc<dyn AgentBackend>>,
+        retained_conversation_policy: RetainedConversationPolicy,
         async_runtime: tokio::runtime::Runtime,
     ) -> Result<Self, RuntimeError> {
         if config.remote_agent_enabled {
@@ -252,6 +275,7 @@ impl MahayanaRuntime {
         let capability_broker = CapabilityBroker::new(Arc::clone(&store));
         let runtime = Self {
             config,
+            retained_conversation_policy,
             providers: Arc::new(providers),
             agent_backend,
             async_runtime,
@@ -1093,8 +1117,28 @@ impl MahayanaRuntime {
         })
     }
 
+    fn retains_historical_conversation(&self, conversation: &ConversationId) -> bool {
+        let id = conversation.as_str();
+        let social = id.starts_with("mahayana:contact:")
+            && id.len() > "mahayana:contact:".len();
+        match self.retained_conversation_policy {
+            RetainedConversationPolicy::None => false,
+            RetainedConversationPolicy::PreserveSocialContacts => social,
+            RetainedConversationPolicy::PreserveDesktopLegacyConversations => {
+                // Retain the original namespace bytes, including unknown
+                // suffixes. This does not validate, normalize or reopen a chat.
+                social || id.strip_prefix("telegram:chat:").is_some_and(|suffix| !suffix.is_empty())
+            }
+        }
+    }
+
     fn recover_interrupted_turns(&self) -> Result<(), RuntimeError> {
         for pending in self.store.recoverable_turns()? {
+            // Check before waiting-user failure, provider lookup, read history
+            // or a generation rewrite. This is a no-mutation retention policy.
+            if self.retains_historical_conversation(&pending.conversation_id) {
+                continue;
+            }
             if pending.state == TurnState::WaitingUser {
                 self.store.set_run_state(
                     &pending.last_run_id,
@@ -1192,6 +1236,9 @@ impl MahayanaRuntime {
                 .unwrap_or_else(|| {
                     ConversationId(format!("codex:agent:{}", pending.intent.target_agent))
                 });
+            if self.retains_historical_conversation(&target_conversation) {
+                continue;
+            }
             let message_id = MessageId::new(pending.intent.id.to_string())
                 .map_err(|error| RuntimeError::Collaboration(error.to_string()))?;
             let existing = self
@@ -1911,6 +1958,9 @@ fn local_plugin_commands(plugin_id: Option<&str>) -> Vec<PluginCommandDescriptor
     });
     commands
 }
+
+#[cfg(test)]
+mod retained_social_recovery_tests;
 
 #[cfg(test)]
 mod tests {

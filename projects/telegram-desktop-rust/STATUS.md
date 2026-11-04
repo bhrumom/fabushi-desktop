@@ -1,48 +1,49 @@
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
-Date: 2026-10-19  
-Spec: TDRP-001 Revision 9  
-Parent: FBCP-001 Revision 7  
+Date: 2026-11-04
+Spec: TDRP-001 Revision 10 / FMEP-001 Revision 4
+Parent: FBCP-001 Revision 8
+Fixed U: `f985723b552b30fe1c17d377d57f44e61a15a8c4`
 Complete: false
 
-| Area | Status | Note |
-| --- | --- | --- |
-| Product role | active | tdesktop is complete source authority, not a runtime/provider |
-| Discovery upstream | observed | `1e18da644e37856c9b1d87434bfcd6a2e3d11c57`; fail-closed rebaseline candidate, not accepted |
-| Historical baseline | stale | `0a11537c220df35fe59a96aebe413b1e52bc6e47`; predecessor evidence cannot be inherited |
-| Recursive source closure | rebaseline required | current lock/inventory must be reconciled to one exact upstream baseline |
-| File-level inventory | not accepted | must reach unknown=0, unread=0, omitted=0 |
-| Responsibility decomposition | not accepted | every source symbol/responsibility requires traceable destination |
-| Exact-head owner inventory | in progress | existing-owner-first remains mandatory |
-| UI composition / IA | in progress | one shell, one Conversation/Search/Profile/Marketplace truth |
-| Design-system migration | in progress | new migrated UI must use Fabushi semantic tokens/components |
-| Native service completeness | in progress / blocked where absent | blocked service is not functional acceptance |
-| Production implementation | partial | existing slices do not imply full migration |
-| Existing Bot regression | required | Agent/Host/Coordinator/Runner/Plugins/MCP/Computer/Automations/Tasks etc. must remain green |
-| Quality/RTM gates | not fully implemented | Revision 9 schema/validator fields and traceability still require executable gates |
-| Packaged acceptance | fail-closed required | acceptance failure must block release |
-| Independent release acceptance | not accepted | final verdict must be ACCEPT |
+> 本文件按 FMEP-REPORT-01 维护：顶部总览由脚本从 ledger 生成；"当前批次" ≤ 40 行；历史轮次叙述不在此文件中。
 
-## Current live reconciliation
+## 进度总览
 
-On 2026-10-07, `main` was observed at `e0a7a4221970088beeaf145d0d9be1763e58229f`. That commit weakened the real signed packaged acceptance step with `continue-on-error: true`, which conflicted with FBCP Revision 7 / TDRP Revision 9. The regression was removed on `main` by commit `2115a91eb888aa65702ef8f90f01848042bb65c7`.
+_自动生成：`scripts/tdrp-progress-summary.py`，ledger U=`f985723b552b`_
 
-This status file records only observed repository state. It is not completion evidence. Any newer `main` supersedes these SHAs and must be re-read before implementation or acceptance.
+| 类别 | 行数 | understood | mapped | implemented | verified | release gate passed |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 产品职责（Fabushi owner） | 31 | 0 | 6 | 25 | 0 | 0 |
+| 领域库实现、桌面未接线（FMEP-STATE-02） | 0 | 0 | 0 | 0 | 0 | 0 |
+| 旧栈职责→Fabushi 替代方案（E4，仅设计级 mapped） | 66 | 0 | 66 | 0 | 0 | 0 |
+| 旧 Telegram 栈（FMEP-EXIT-01，不计产品） | 2 | 0 | 2 | 0 | 0 | 0 |
+| 构建/仓库治理支撑 | 9 | 0 | 8 | 1 | 0 | 0 |
+| 上游开发工具（FMEP-TOOL-01，已处置） | 88 | 0 | 71 | 17 | 0 | 0 |
+| **合计** | 196 | | | | | |
 
-## 2026-10-19 live authority reconciliation
+来源身份 16381；unknown=未统计，unread=未统计，omitted=0；未映射职责 2；source_reviews 16（complete 6 / pending 10）。
+分母（全部适用产品职责）尚未完整分解，按 FMEP-STATE-01 不报告总百分比。
 
-During the 2026-10-19 PR #126 exact-head reconciliation, the preceding lock targeted `0a11537c220df35fe59a96aebe413b1e52bc6e47`. Live `telegramdesktop/tdesktop@dev` is now `1e18da644e37856c9b1d87434bfcd6a2e3d11c57` (tree `30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6`), 5 commits / 63 paths ahead. Root non-directory inventory is 6,709: five new `Telegram/SourceFiles` entries and one new Resource entry. No direct gitlink pin changed, so the established recursive dependency expansion rises by the same six entries, from 16,186 to 16,192. The three already closed `.agents` entries plus mapped `share_box.cpp` / `url_auth_box.cpp` retain exact blob identity. Of the prior read-complete set, only `Telegram/cmake/td_ui.cmake` changed; its full new blob was reread and the sole delta is inclusion of `boxes/keys_legend.style`, so all 30 prior reads remain valid. Current fail-closed counters are unknown=16,189, unread=16,162, omitted=0. `snap/snapcraft.yaml` changes only by adding the `login-session-observe` permission; immutable build acquisition pins remain unchanged and current-head Actions must regenerate/validate candidate accounting. This rebaseline remains unaccepted until current-head GitHub Actions proves the reconstructed authority.
+## P0 阻塞（FMEP-BLOCK-01 / §14）
 
-## Metrics
+| # | 阻塞项 | 解除条件 | 责任人 |
+| --- | --- | --- | --- |
+| 1 | **后端 PR137 D1 迁移与部署**：PR #137 已合并（后端 main `4e0878d1`，`human-messaging-contracts` 39/39 绿）；生产 D1 迁移与 Worker 部署尚未执行 | 经显式批准后按序执行：1) 对生产 D1 执行一次 `20261031_human_message_mutations.sql`（不可重跑）；2) dispatch `production-worker-delivery`；3) 验证 `afterId=0` 分页与变更流 | 需用户批准部署 |
 
-Report separately:
-- accepted upstream baseline completeness;
-- source file read coverage;
-- responsibility understanding coverage;
-- existing-owner resolution coverage;
-- production implementation coverage;
-- exact-head test/evidence coverage;
-- packaged temporal acceptance;
-- independent release acceptance.
+## 当前批次 — Wave 1~3 全量接线闭环与证据同步（2026-11-04）
 
-Do not report Telegram-provider, Telegram-network, survey, document count, or vertical-slice progress as migration completion.
+- **集成分支与生产 Owner**：集成至 `integrate/telegram-fusion-w1`；状态唯一权威归属 `ProductionSessionWorkers` + `SandAgentDb` + `miniapp-window.ts`，领域策略纯函数无状态复用（`fabushi_messaging_core`）。
+- **Actions 验证运行**：Wave 1 CI 运行 `41827958018`（Service contracts）、`41827968182`（Review contract）、`41828142297`（Compile guard）；Wave 2 CI 运行 `41860436085`（Service contracts）、`41860446111`（Review contract）、`41860459492`（Compile guard）全部全绿通过。
+- **用户行为与切片推进**：
+  - **Wave 1（切片收口与批量裁决）**：`W1-A` (S1a) 落地带附言转发，Session 原子投递 `{clientNonce}:comment` 独立文本；`W1-B` (S5) 打通 Telegram Mini App / Bot WebApp 容器与会话桥接，Host 权威签发 `launchContext` 并防会话注入；`W1-C` 完成 `FMEP-BULK-01` 9,486 个子模块批量分类裁决。
+  - **Wave 2（多人会话架构与实时策略）**：`W2-ADR005` 确立群组/频道/Topic 架构；`W2-A` 升级 SQLite Schema（user_version=2）并支持 Topic 消息分页；`W2-B` 提取发言权限与 Topic 准入纯策略；`W2-C` 落地群组/频道创建与 Topic 转发；`W2-D` 实现 Typing 3s 节流与 Topic 免打扰静音；`W2-E` 绑定前端 Topic 选择器与 `topicId` 投影；`W2-F` 落地媒体缓存配额清理与附件预检；`W2-G` 完成 Session 宿主接线并推进 S5 为 implemented。
+  - **Wave 3（纵向切片闭环与退役迁移）**：`W3-A` 闭合 ShareLink/S1 协议接线；`W3-B` 闭合 S2 权限与 S3 Topic 工作区交互；`W3-C` 扩展 S4 媒体缓存与 S5 Mini App 语音/数据桥；`W3-D` 归档 E3 旧 Telegram 数据只读退役。
+  - **Phase 2（模块化架构与切片收口）**：依据 `FMEP-MODULAR-01` 完成 8 个纵向切片（folders_filters, forum_topics, polls_todo, stories_gifts_stars, chat_admin_moderation, calls_group_calls, settings_cloud_passkeys, export_payments_bots）全量接入；`production.rs` (3,418行)、`service.rs` (369行)、`engine.rs`、`ProductionRenderer.tsx` (4,473行) 均达标反巨石文件预算；Ledger 增至 196 行（25 implemented），建立需求追溯矩阵 RTM。
+- **缺口与下一批**：等待后端 PR #137 生产 D1 迁移与部署批准，进入 S6 真实线上验收。
+
+## 历史记录
+
+2026-11-03 及以前的全部轮次叙述原样移至
+[`evidence/status-history-through-20261103.md`](evidence/status-history-through-20261103.md)。
+其中的 run/H 结果仍只对应各自的 exact H，不因移动而改变含义。

@@ -1,0 +1,242 @@
+{
+  "format_version": 1,
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 1,
+  "spec": "NMR-HUMAN-RETRY-01 / HRR-01–07 / HRR-AC-01–04",
+  "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "discovery_base": "afb34b49c5964524a887088f1095070b75cfdf8b",
+  "integration_base": "5c285452de88dcfba78bd5085f9833712eb3a459",
+  "main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "published_spec_commit": "1daaf0e248ee5cd75b3549e8df4fe960c0fe28e2",
+  "production_binding": [
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "input_blob": "1ab341949c21cc20b2c6c9ee03b7140535ba7bd7",
+      "output_blob": "183a66c70c282c4b04499cb93f0699a9d4294879",
+      "bytes": 231578
+    },
+    {
+      "path": "source/host/src/extensions/session/gateway.rs",
+      "input_blob": "9e4f1ebc675e7ab3bd0d57b3833448dc72ad979f",
+      "output_blob": "c1532f5d4ae2032843254b19b78275e9f9d1a527",
+      "bytes": 42891
+    },
+    {
+      "path": "source/host/src/gateway_server.rs",
+      "input_blob": "efb30ffca645f70c7ba6bf0db3b3bb098f0227f5",
+      "output_blob": "24d8a497fa0d77cfbe97158d68a99ed9ba3c17a2",
+      "bytes": 42868
+    },
+    {
+      "path": "source/host/tests/gateway_server_contract.rs",
+      "input_blob": "11f28f365190794b8c969222cc973c109f00e533",
+      "output_blob": "198cb2d7c3b8966453e2600e35c78ec6f09bb8eb",
+      "bytes": 33995
+    },
+    {
+      "path": "source/host/tests/session_gateway_contract.rs",
+      "input_blob": "940be82b18d610a9495c0ec1fdb4c8c5a5aeb2e0",
+      "output_blob": "88f71ff3175130d6f42298f48de399c044fc4f2a",
+      "bytes": 455343
+    },
+    {
+      "path": "source/shared/rpc/coordinator.ts",
+      "input_blob": "231aa38463524e9caab891b26917a454f4eaa248",
+      "output_blob": "9695428f55817ab12ffa6dafc7713cd6d203447e",
+      "bytes": 19555
+    },
+    {
+      "path": "source/shared/rpc/coordinator.contract.test.ts",
+      "input_blob": "c27a66f80e9f82af1ca87b52be0a059ce4fca94b",
+      "output_blob": "a5ebfde16d523ecb01906551f626e387cadd6d93",
+      "bytes": 6790
+    },
+    {
+      "path": "frontend/src/production/coordinator-client.ts",
+      "input_blob": "b35d5899c8de48bbeff8c5ba55c017371c905308",
+      "output_blob": "6308a4e658ad564d1893a49a5a605fa68a6b505c",
+      "bytes": 12750
+    },
+    {
+      "path": "frontend/src/production/ProductionRenderer.tsx",
+      "input_blob": "3ba10ab2e4e67082ec09df3f6a51cc7a58fcf363",
+      "output_blob": "a27c7e31f171c339fffcb93ea42caed8595636f0",
+      "bytes": 262895
+    },
+    {
+      "path": "frontend/src/production/model.ts",
+      "input_blob": "c5c1abba2118ca5edfda206130509bd23e2db40d",
+      "output_blob": "a985a6faec8f1bbec2cade965df80caa08fb439c",
+      "bytes": 34110
+    },
+    {
+      "path": "frontend/src/production/human-message-retry.ts",
+      "input_blob": null,
+      "output_blob": "5ff860dbfd7d751bffcee11358455d973b302cfb",
+      "bytes": 12090
+    },
+    {
+      "path": "frontend/src/production/human-message-retry.contract.test.ts",
+      "input_blob": null,
+      "output_blob": "9c5225374b14ee5aaef0ff59881a237502743fc5",
+      "bytes": 32819
+    },
+    {
+      "path": "frontend/src/production/human-message-retry-port.contract.test.ts",
+      "input_blob": null,
+      "output_blob": "8d8bd2d0b792c54dc39cb5c55b996c2b88ee053f",
+      "bytes": 5159
+    },
+    {
+      "path": "frontend/src/production/human-message-submission.ts",
+      "input_blob": null,
+      "output_blob": "1948f46323e756c11ecc98d9ce6df603acedafa2",
+      "bytes": 3677
+    },
+    {
+      "path": "frontend/src/production/human-message-submission.contract.test.ts",
+      "input_blob": null,
+      "output_blob": "d1927564d805a465860eefcce907f456c8e59157",
+      "bytes": 26398
+    },
+    {
+      "path": "frontend/src/recovered/features/conversation/workspace/submission.ts",
+      "input_blob": "93309f77e9741d74c0bdbd888dea67856fc6306c",
+      "output_blob": "6bcd99c020680de8b9a588e05b5f09ab21c8885f",
+      "bytes": 8508
+    },
+    {
+      "path": "frontend/src/production/transcript-projection.ts",
+      "input_blob": "e5086e8f0e7cf28ae30fef975ee8ec58e1d9becc",
+      "output_blob": "c99ca36c88b3f261d639928533ee40f741ca7248",
+      "bytes": 21073
+    },
+    {
+      "path": "frontend/src/production/transcript-projection.contract.test.ts",
+      "input_blob": "a0617f0e8b36cc974396de9f2d0c2440a1b1a631",
+      "output_blob": "b7e2141134f349f0c5a71fbee4395ca764866c61",
+      "bytes": 45991
+    },
+    {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "input_blob": "dc412a31c0adffe98013dfb5e4828a4c8da256c7",
+      "output_blob": "01215359062120f98fbe11c4b51b26a7fcb50398",
+      "bytes": 78581
+    },
+    {
+      "path": "docs/specs/fbcp-human-message-retry.md",
+      "input_blob": "0b1ec2c58a302e9ab67b88333d164270651403d7",
+      "output_blob": "0b7a870ef251fab33d122433efee8795ad486ea7",
+      "bytes": 9098
+    }
+  ],
+  "actual_route": [
+    "existing Transcript Retry",
+    "ProductionRenderer::resendFailedSend",
+    "original ComposerSubmissionQueue for retained unadmitted input, or actual durable retry controller",
+    "existing Coordinator port exact command/frame admission",
+    "Session gateway retryHumanMessage",
+    "ProductionSessionWorkers / SandAgentDb / original forwarding source batch",
+    "Native messaging HTTP and canonical transcript event/projection"
+  ],
+  "capability_changes": [
+    "Durable retry preserves the original unique local Human nonce, reply, content, composed time and already uploaded resources; canonical repeats do no HTTP or writes.",
+    "Source-owned retry is restricted to the original authorized batch and selected original destination; corrupt/lost provenance cannot become generic resend.",
+    "Malformed command, direct-pair identity, resource descriptors and duplicate rows fail before dispatch or state replacement.",
+    "Pre-frame failures continue the original existing in-memory Composer queue input with per-attachment committed progress; any possibly posted frame switches permanently to identity-only retry.",
+    "Account/selection lifetimes fence actual ready/reconnect frame admission, asynchronous outcomes and deferred callbacks; explicit retry never owns current composer busy or replaces its draft.",
+    "Canonical Human resources replace obsolete committed paths; Agent partial attachment echo semantics and original retry behavior remain."
+  ],
+  "authored_tests": {
+    "new_host_top_level": 4,
+    "host_admission_variants": 64,
+    "host_admission_negative": 61,
+    "host_admission_positive": 3,
+    "combined_shipping_human": 67,
+    "retry_controller": 28,
+    "actual_port": 4,
+    "prehost_queue": 8,
+    "combined_retry_ui": 40,
+    "combined_transcript_projection": 34,
+    "shared_rpc_new": 2,
+    "combined_cursor_rpc": 19,
+    "retained_actual_renderer_browser": 11
+  },
+  "validation": {
+    "local_execution": false,
+    "execution_status": "not-run at authored freeze",
+    "required_exact_containing_head": true,
+    "workflow": ".github/workflows/native-service-contracts.yml",
+    "retained_gates": "All current Host resource3/creation/storage/sharebox/journal12/Agent4/credential3/authenticated HTTP, Transcript/renderer/forward, actual Chromium11/16, Native shipping, Electron, Windows and retained FFI gates remain. Source/candidate validator gate remains separate."
+  },
+  "independent_source_review": {
+    "host": {
+      "verdict": "APPROVED source-only",
+      "base": "1c0bd07f85c4f17ee465509c766eead878879185",
+      "production_blob": "183a66c70c282c4b04499cb93f0699a9d4294879",
+      "scope": "APPROVED final Host/public and c13-to-1c0 reaction admission/test delta, source-only; transport source independently APPROVED",
+      "test_blob": "88f71ff3175130d6f42298f48de399c044fc4f2a",
+      "final_fixture_verdict": "APPROVED source-only; expected streaming cancellation fixture retained, HRR four cases unchanged"
+    },
+    "ui": {
+      "verdict": "APPROVED source/test-design only",
+      "base": "1d552adf2f4e25dcb4a4a63188a23da7925294b2",
+      "renderer_blob": "a27c7e31f171c339fffcb93ea42caed8595636f0",
+      "scope": "APPROVED source-only including final single-hunk current-scope cursor preservation"
+    },
+    "execution_or_acceptance": false
+  },
+  "failure_history": [
+    {
+      "sha": "afb34b49c5964524a887088f1095070b75cfdf8b",
+      "run": 41522324008,
+      "job": 125541192099,
+      "classification": "TEST_FLAW",
+      "detail": "E0382 reaction reopen cleanup used dropped runtime; no Human tests executed in that failed job. Correction106bb95 already inherited, not republished or counted as new work."
+    },
+    {
+      "sha": "214135940bf3d1bdf38f39bef3b2a3b274e6eda8",
+      "run": 41528932659,
+      "classification": "WORKFLOW_DEFINITION_DEFECT",
+      "jobs_executed": 0,
+      "detail": "The temporary inline transport was rejected before job creation. Its run command exceeded the documented21000-character bound. Fixed by moving identical digest-pinned bytes into step env; output/source gates unchanged. This is transport only, not a product failure/pass.",
+      "limit_reference": "https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepsrun"
+    }
+  ],
+  "preserved_concurrent_work": [
+    "Current Human creation lane/storage recovery and its test hooks; no destructive cleanup.",
+    "Versioned history coverage, reply canonical ID admission, projection/actual-renderer lifecycle regressions and credential retirement gates.",
+    "Current queue.reset at blob93309f77e9741d74c0bdbd888dea67856fc6306c and source/legal schema/review records.",
+    "Actual renderer current-scope reselect preserves in-flight paging and error overlay.",
+    "Concurrent gateway peer durability Linux/Windows23, actual CLI gateway9 and gateway13 gates retained.",
+    "Latest existing reaction streaming fixture permits expected BrokenPipe/ConnectionReset after credential fencing while preserving credential error, durable-state and restart assertions; four new HRR cases unchanged.",
+    "Current Ubuntu AppHost native ownership/account restart7 gate and exact source input hashes retained."
+  ],
+  "limits": [
+    "Unadmitted Composer checkpoint is in the existing renderer queue and is not a claim of pre-Host process-restart persistence.",
+    "Resource preflight/upload remains under existing serialized staging; only message POST releases the conversation lane.",
+    "Automatic source-batch recovery may wait on its batch HTTP lock; full nonblocking history recovery is not claimed.",
+    "Retained positive-safe numeric canonical IDs are normalized only at the existing UI projection boundary.",
+    "Real authenticated service, all applicable source/legal/recursive closure, supported signed packages, full UI/visual/a11y/timing/security/performance/soak/upgrade/rollback/Bot regression and independent ACCEPT remain open."
+  ],
+  "source_and_acceptance": {
+    "new_source_review_completion": false,
+    "source_inventory_or_lock_rebaseline": false,
+    "full_migration_accepted": false,
+    "release_gate": "blocked"
+  },
+  "github_delivery": {
+    "status": "pending exact commit and remote readback; temporary object preparation is not product delivery"
+  },
+  "actions_results": [],
+  "object_transport": {
+    "initial_sha": "78c8493f9e53f1c3db2493de18995c05d68ac9ed",
+    "initial_run": 41528538671,
+    "initial_job": 125562447524,
+    "initial_conclusion": "success",
+    "initial_artifact": 13180691919,
+    "initial_artifact_digest": "sha256:a6a3b020728ce8b161677cf2f1a62600296fba80845ec402f58cf36206679c2b",
+    "scope": "Unattached blob preparation only; never product tests/acceptance. Current source input drift is rechecked before integration."
+  },
+  "ledger_update_pending": true
+}

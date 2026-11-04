@@ -1,0 +1,1586 @@
+{
+  "format_version": 1,
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 14,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "base_commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+  "observed_live_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "fixed_upstream": {
+    "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+    "source_accepted": false,
+    "refreshed": false
+  },
+  "batch": "NMR-31/32/33: isolate Native startup from legacy Telegram state while preserving retained data and original-reader rollback compatibility",
+  "preparation_state": "Original round14 production preparation is retained below as historical evidence. Production commit c15dfbd9631f8b9fb6920cb5f80b9aea35210d07 was remotely read back and its exact-H Actions run41438907013 attempt2 completed successfully. recovery_verification records the later recovery and concurrent-head observations. The ledger-only containing commit must obtain its own TDRP source-review/schema/candidate Actions; this receipt does not predeclare that future run or product ACCEPT.",
+  "production_change": [
+    "FabushiAuthService emits only the seven Native v1 credential fields. It no longer reads, creates, rotates, deletes or exports retained Telegram storage/application secrets.",
+    "All AppHost constructors converge on the existing constructor, which no longer opens/migrates a Telegram database or creates a TelegramClientLease. HostCreateConfig receives no Telegram client/self identity; old auth calls cannot lazily recreate it.",
+    "Existing Native Session/Transcript and native HTTP Human message wiring remains. Existing account/Agent roster and ProductSettings owners remain; legacy proxy publication is unavailable without the client and native-service proxy is not implemented by this batch.",
+    "No user-data deletion, schema migration, imported history or replacement owner. Historical FFI/default dependencies remain separately recorded."
+  ],
+  "preservation_and_rollback": {
+    "retained": "All existing legacy secure-store keys/values, account-scoped SQLite files and sidecars, unrelated legacy files, native Agent/account data and settings.",
+    "compatibility_oracle": "Production AppHost subprocesses leave legacy directory names and bytes unchanged; original EncryptedSqliteStore/key decrypt saved metadata and snapshot after both Native processes exit.",
+    "rollback_operation": "An ordinary reviewed code revert restores prior credential provisioning/composition against retained paths/keys/schema. No rollback is performed here. Revert may restore old startup/lifecycle defects.",
+    "limits": "Synthetic fixtures and original-reader compatibility do not replace signed old/new package upgrade/rollback, OS keychain, live account/service or final acceptance."
+  },
+  "file_identities": [
+    {
+      "path": "source/product/fabushi/fabushi-account-service.ts",
+      "sha256": "ee351063fe6aeeb0cfc96376a8fcea207e0f7dc7a1398e68915e2ee3d8fcff8a",
+      "git_blob_sha": "7dc39db60fca2765671fb897b1e213619aa56d27"
+    },
+    {
+      "path": "source/product/fabushi/fabushi-account-service.contract.test.ts",
+      "sha256": "15268a42664a7f0c8f780a550bf5bbb31efa67fdae3789b92be59ad375c46109",
+      "git_blob_sha": "267257116a129ce77c3afe3e5e45240e5449e394"
+    },
+    {
+      "path": "source/product/fabushi/fabushi-account-service.behavior.test.mjs",
+      "sha256": "1090b7837f7fcd98381d8ddfed0c39093d4322ebf39969f844145a7e7844e89f",
+      "git_blob_sha": "c196de82b051aaf4bca5389b530cbf68e81abc52"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+      "sha256": "f271d810bdcd03664434abe21082de6afec66684a29e40d60917373cd03e1adc",
+      "git_blob_sha": "976339e378f234fa349491d62a20d7342e779039"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-app-host/Cargo.toml",
+      "sha256": "33a068d10db7984cb4489d11d45151582d6648f82cdcac10e2d25501ccd6ddd7",
+      "git_blob_sha": "7e8eabd0e72d0ff659352a8f19d534dfbdafbc13"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs",
+      "sha256": "c64ecaff8de6901b1084a4e126ba8430871e115394f9736e3bbd45b835c5be23",
+      "git_blob_sha": "690eb769289f6cfd43be8fe2544015d4bb2d55d1"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/Cargo.lock",
+      "sha256": "1624ad64ef062578fe4d996f4c09b838de8bc146584657323ee09f6e53c4d3e5",
+      "git_blob_sha": "68b4343be50e0b20da090d19817738d4eddd59b1"
+    },
+    {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "sha256": "0f5d5cc881b214df6f04114359737f8cabfe2101e1dca67a999867ace7d52a73",
+      "git_blob_sha": "5073c5c1e906fb04afc03b0e1e1ae9b603cfaa06"
+    },
+    {
+      "path": "docs/specs/fbcp-native-message-reconciliation.md",
+      "sha256": "94c867a6e43d0757b85126da27a27c0aafdf7ed8ed34a75df3f0283199153941",
+      "git_blob_sha": "a6977a6fe8eb39707da8ebd5ffc2251d6fa32940"
+    }
+  ],
+  "independent_static_review": [
+    {
+      "scope": "Electron owner, existing contract, new real-owner behavior harness, Electron workflow and NMR31",
+      "verdict": "no_blocking_findings",
+      "execution": "not_run",
+      "limitations": "Controlled Electron codec and HTTP; no OS keychain, deployed account service or package ACCEPT."
+    },
+    {
+      "scope": "AppHost constructor/registration, retained-data tests, Cargo dependency/lock, Rust workflow and NMR32/33",
+      "initial_verdict": "needs_changes",
+      "finding": "R14-RUST-01: removed production helper was still referenced by an existing lib unit test; integration-only build would miss cfg(test).",
+      "fix": "Remove obsolete unit, preserve old account namespace in retained-data fixture with second account, require focused lib composition group before integration. R14-RUST-02 class reference corrected.",
+      "focused_re_review": "approved_static_only",
+      "execution": "not_run",
+      "independent_product_acceptance": false
+    }
+  ],
+  "actions_required": {
+    "workflow": ".github/workflows/native-service-contracts.yml",
+    "source_binding": "Each executed job must check git rev-parse HEAD against github.sha and upload target-sha.txt under an artifact named with the containing commit SHA.",
+    "jobs": [
+      {
+        "job": "native-message-reconciliation",
+        "expectations": [
+          "Human33",
+          "AgentNonce4",
+          "private credential settlement3",
+          "zero failed/ignored"
+        ]
+      },
+      {
+        "job": "native-message-shipping-compile",
+        "expectations": [
+          "actual source/host/app locked check",
+          "AppHost composition11",
+          "Native startup/account retention3",
+          "normalization6",
+          "future_salts2",
+          "protocol122",
+          "TCP9 including real service",
+          "proxy4",
+          "Native credential1",
+          "zero failed/ignored"
+        ]
+      },
+      {
+        "job": "native-message-ui",
+        "expectations": [
+          "UI16",
+          "renderer build",
+          "zero failed/cancelled/skipped"
+        ]
+      },
+      {
+        "job": "native-message-electron",
+        "expectations": [
+          "carrier10",
+          "Native auth/secret retention8",
+          "actual Electron build",
+          "zero failed/cancelled/skipped"
+        ]
+      }
+    ],
+    "source_contract_workflow": ".github/workflows/tdrp-source-review-contract.yml",
+    "execution_at_preparation": "not_run",
+    "no_local_or_htch_validation": true
+  },
+  "legacy_provider_baseline_audit": {
+    "audit_id": "FMEP-OWNER-legacy-telegram-host-chain-2026-11-02",
+    "audited_revision": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+    "repository": "bhrumom/fabushi-desktop",
+    "method": "Read-only GitHub connector exact-ref file/blob and recursive tree inspection; local cache searches only.",
+    "execution": {
+      "builds": "not-run",
+      "tests": "not-run",
+      "actions": "not-dispatched-by-audit-worker",
+      "remote_mutations": "none",
+      "repository_file_mutations": "none",
+      "local_cache_root": "/workspace/scratch/5ad9a3e174ec/provider-audit"
+    },
+    "scope": {
+      "instructions": [
+        "root AGENTS.md",
+        "FBCP/TDRP SOURCE_OF_TRUTH",
+        "FMEP-001 sections 12/13",
+        "FBCP/TDRP relevant primary-spec sections"
+      ],
+      "nested_agents": "No nested AGENTS.md governs the inspected mahayana-host subtree in the complete exact-H tree.",
+      "tree_entries": 9814,
+      "tree_truncated": false,
+      "manifest_contract_survey": "63 Cargo.toml files under source/mahayana/mahayana-rs plus source/host and source/host/app",
+      "coverage_limit": "Targeted symbol/call-chain review, not a whole-repository semantic review. GitHub default-branch search returned no results and is not used as absence-of-caller evidence. No claim of shipped package execution or exhaustive FFI external consumers."
+    },
+    "conclusion": {
+      "normal_startup": "At H, production AppHost constructor opens the legacy Telegram client when native_desktop_session is enabled and the native credential contains a Telegram storage key. This does not require Telegram authorization Ready or API credentials. Host registers a Telegram provider whenever the handed-off client id is Some.",
+      "network_qualification": "create_persistent_client restores/creates SQLite and registry state but does not itself establish MTProto. AppHost additionally applies restored proxy state; enabled Web proxy can prepare a relay/bootstrap event. Network login/sync use separate commands.",
+      "proposed_batch_boundary": "Stop automatic credential/key projection and AppHost client creation/registration while preserving existing DB and secure key. This is default-composition isolation only; remaining public Host/FFI/provider APIs and compiled dependencies are not retired."
+    },
+    "chains": [
+      {
+        "id": "normal-desktop-host",
+        "steps": [
+          {
+            "path": "source/host/app/src/main.rs",
+            "symbol": "main",
+            "lines": [
+              11411,
+              11419
+            ],
+            "effect": "UnifiedAppHost::new(app_data_dir)"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-unified-app-host/src/lib.rs",
+            "symbol": "UnifiedAppHost::new",
+            "lines": [
+              179,
+              183
+            ],
+            "effect": "AppHost::new"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+            "symbol": "AppHost::new_with_feature_mode_and_storage_passphrase",
+            "lines": [
+              746,
+              780
+            ],
+            "effect": "open_platform_telegram_client -> handoff -> create_feature_host"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+            "symbol": "open_platform_telegram_client",
+            "lines": [
+              1982,
+              2017
+            ],
+            "effect": "Production && native_desktop_session::enabled() && credential && telegram_storage_key"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
+            "symbol": "TelegramClientLease::open_persistent_with_application_credentials",
+            "lines": [
+              224,
+              238
+            ],
+            "effect": "create_persistent_client"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
+            "symbol": "create_persistent_client",
+            "lines": [
+              540,
+              616
+            ],
+            "effect": "open/decrypt/migrate storage; restore auth/transport/core; insert process registry"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+            "symbol": "create_feature_host",
+            "lines": [
+              2064,
+              2098
+            ],
+            "effect": "HostCreateConfig.telegram_client_id = handoff.client_id"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+            "symbol": "FeatureHostController::create_with_host_config",
+            "lines": [
+              430,
+              486
+            ],
+            "effect": "Production -> MahayanaHost::create; Test bypasses this runtime"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+            "symbol": "build_runtime",
+            "lines": [
+              407,
+              416
+            ],
+            "effect": "if Some id -> TelegramConversationProvider::from_client_id -> builder.with_provider"
+          }
+        ]
+      },
+      {
+        "id": "runtime-caller",
+        "steps": [
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-conversation/src/lib.rs",
+            "symbol": "ProviderRegistry::for_conversation; provider_key_for_conversation_id",
+            "lines": [
+              127,
+              156
+            ],
+            "effect": "telegram:* -> registered key telegram"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs",
+            "symbol": "execute RuntimeCommand::ConversationHistory",
+            "lines": [
+              731,
+              740
+            ],
+            "effect": "provider.history; unregistered key produces ProviderUnavailable"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs",
+            "symbol": "list_conversations",
+            "lines": [
+              1302,
+              1329
+            ],
+            "effect": "calls all registered providers; errors become ProviderDegraded"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs",
+            "symbol": "start_message",
+            "lines": [
+              1334,
+              1530
+            ],
+            "effect": "provider selected by id; provider send success becomes operation/turn completed"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
+            "symbol": "ConversationProvider for TelegramConversationProvider",
+            "lines": [
+              675,
+              801
+            ],
+            "effect": "state -> chats/history; send -> executeCoreCommand QueueMessage -> MessageCompleted queued; interrupt no-op"
+          }
+        ]
+      },
+      {
+        "id": "ffi-bypass",
+        "steps": [
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-ffi/src/lib.rs",
+            "symbol": "mahayana_runtime_create",
+            "lines": [
+              45,
+              57
+            ],
+            "effect": "deserialize arbitrary HostCreateConfig JSON -> MahayanaHost::create"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-ffi/src/lib.rs",
+            "symbol": "mahayana_runtime_force_link",
+            "lines": [
+              205,
+              224
+            ],
+            "effect": "unconditionally anchors Telegram create/execute/close/free ABI"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/providers/telegram-runtime/src/lib.rs",
+            "symbol": "fabushi_telegram_create_client; fabushi_telegram_create_persistent_client; fabushi_telegram_execute",
+            "effect": "direct legacy runtime ABI remains callable"
+          }
+        ]
+      }
+    ],
+    "caller_matrix": [
+      {
+        "entry": "source/host/app/src/main.rs::main",
+        "category": "shipping entry",
+        "behavior": "Uses UnifiedAppHost default constructor; conditional auto-open at H"
+      },
+      {
+        "entry": "mahayana-app-host-desktop/src/main.rs::main",
+        "category": "alternate adapter",
+        "behavior": "Uses UnifiedAppHost::new at line 64; same constructor behavior"
+      },
+      {
+        "entry": "mahayana-app-host-mobile/src/lib.rs",
+        "category": "mobile ABI adapters",
+        "behavior": "Uses UnifiedAppHost::new / new_with_feature_mode_and_storage_passphrase; auto-open still gated by native_desktop_session::enabled; do not infer actual credential availability from compile target"
+      },
+      {
+        "entry": "mahayana-cli/src/main.rs::cli_feature_host",
+        "category": "CLI",
+        "behavior": "HostCreateConfig::default then edits non-Telegram fields; default None does not register Telegram"
+      },
+      {
+        "entry": "mahayana-cli/src/main.rs::NativeRuntime::create_with_config",
+        "category": "CLI through C ABI",
+        "behavior": "Default CLI JSON omits Telegram IDs; generic FFI supports injecting them"
+      },
+      {
+        "entry": "MahayanaHost::create(HostCreateConfig)",
+        "category": "public Rust API",
+        "behavior": "Any Some Telegram id registers without platform or feature-mode guard"
+      },
+      {
+        "entry": "TelegramConversationProvider::new_ephemeral/open_persistent/from_client_id",
+        "category": "public adapter APIs",
+        "behavior": "Callable APIs; public owning constructors trust supplied self identity; from_client_id checks runtime Ready identity on operations; test existence does not prove product use"
+      }
+    ],
+    "state_and_storage": {
+      "path_formula": "<app-data>/feature-host/telegram/<sha256(b\"fabushi-telegram-account-v1\\0\" + account_id)>.sqlite3",
+      "owner": "TelegramClientLease owns numeric process registry client. RuntimeClient owns TelegramEngine, AuthorizationMachine, SQLite storage revision, SessionOwner/auth context. Provider from_client_id is non-owning.",
+      "separate_state": "TelegramState/telegram:chat:* message identity and encrypted SQLite are independent of native Fabushi Message/Conversation state; runtime additionally tracks operation/turn completion. Adapter output is not evidence of single native message authority.",
+      "schema_version": 4,
+      "schema_tables": [
+        "state_snapshot",
+        "event_log",
+        "message_index",
+        "message_search_token",
+        "private_metadata",
+        "secure_value"
+      ],
+      "journal": "WAL; synchronous NORMAL; foreign_keys enabled",
+      "cipher": {
+        "algorithm": "XChaCha20Poly1305",
+        "master_key_bytes": 32,
+        "payload_layout": "version byte 1 || 24-byte random nonce || ciphertext with AEAD tag",
+        "key_persistence": "master key is supplied by platform and not stored in SQLite",
+        "associated_data": [
+          "fabushi.telegram.private-metadata.v1:<key>",
+          "fabushi.telegram.secure-value.v1:<key>",
+          "fabushi.telegram.snapshot.v1:<revision>",
+          "fabushi.telegram.event.v1:<sequence>"
+        ]
+      },
+      "metadata": {
+        "authorization.v1": [
+          "authorizationState",
+          "selfUserId",
+          "authContext.phoneNumber",
+          "authContext.phoneCodeHash",
+          "authContext.passwordSrp"
+        ],
+        "transport.v1": [
+          "dcId",
+          "testMode",
+          "serverSalt",
+          "serverTime",
+          "authKey"
+        ]
+      },
+      "migration": "Opening store upgrades versions 0/1/2/3 to 4 and rejects >4. Opening is not read-only.",
+      "transaction": "Core command uses cloned next state, optimistic expected revision, one SQLite event+snapshot transaction; assigns live core only after commit.",
+      "restart": "Loads snapshot/auth/transport and validates Ready requires self identity and transport; challenges require resumable context+transport. SessionOwner and update_state start empty. Provider local negative message counter restarts at -1."
+    },
+    "risks": [
+      {
+        "id": "startup-coupling",
+        "status": "source-observed",
+        "detail": "Legacy directory creation, key/decrypt/schema/auth/proxy errors propagate out of AppHost constructor; corrupted old DB can stop normal Fabushi host startup."
+      },
+      {
+        "id": "logout-lease",
+        "status": "source-observed",
+        "detail": "AppHost feature.auth.logout forwards FeatureHost logout; does not clear telegram_client. Telegram provider inherits no-op reset_session/set_history_path. Startup lease remains associated with old native account."
+      },
+      {
+        "id": "borrowed-client-lifetime",
+        "status": "source-observed-risk",
+        "detail": "AppHost declaration order attempts provider-before-lease drop, but FeatureEventSource owns Arc<FeatureHostController> and can outlive AppHost. Provider numeric id carries no owning lease; stale client lookup fails after lease close."
+      },
+      {
+        "id": "cancel-semantics",
+        "status": "source-observed",
+        "detail": "Provider interrupt returns Ok without changing pending message. Lease close removes registry and SessionOwner Drop cancels owned requests; does not logout remotely or delete DB/key. Authentication-code cancel calls remote cancel and clears context only after success."
+      },
+      {
+        "id": "restart-local-id",
+        "status": "source-observed-risk",
+        "detail": "Every Provider constructor resets AtomicI64 to -1 while old queue/message IDs persist. QueueMessage rejects an existing chat/local-id tuple; repeated send after restart can collide. No dynamic verification performed."
+      },
+      {
+        "id": "auth-persistence-order",
+        "status": "source-observed-risk",
+        "detail": "apply_authorization_state mutates in-memory authorization/self id before save_private_metadata; storage failure does not restore previous in-memory state. Auth and transport are saved in separate metadata operations."
+      },
+      {
+        "id": "queued-completion",
+        "status": "source-observed",
+        "detail": "Provider marks queued message completed in runtime event path without network acknowledgment. Do not equate this with actual Telegram send or native Fabushi message integration."
+      },
+      {
+        "id": "dependency-exit",
+        "status": "remaining",
+        "detail": "Host/AppHost unconditionally depend on mahayana-telegram; FFI unconditionally depends on fabushi-telegram-runtime and anchors exports. Default isolation does not remove compiled legacy dependency graph."
+      }
+    ],
+    "public_absence_oracle": {
+      "provider_list": "No current AppHost public provider registry list. feature.info exposes only runtimeVersion/protocolVersion/platform; feature.auth.providers returns OAuth providers. Runtime Ready is discarded by FeatureHost translator.",
+      "request": {
+        "id": "legacy-provider-absence",
+        "method": "feature.execute",
+        "params": {
+          "command": {
+            "type": "conversation.open",
+            "requestId": "legacy-provider-absence",
+            "conversationId": "telegram:chat:42"
+          }
+        }
+      },
+      "precondition": "AppHostFeatureMode::Production and a valid authenticated Fabushi NativeCredential fixture",
+      "expected": "Synchronous HostResponse.ok=false; full expected error is 'host operation failed: provider is unavailable: telegram'. No feature-event wait is needed.",
+      "rationale": "ProviderRegistry routing returns that distinct error only when key telegram is absent; a registered unready provider fails later with provider-failed authorization/client error.",
+      "positive_controls": [
+        "Fabushi auth status is logged in",
+        "Agent/canonical transcript continues through same Production host",
+        "old encrypted store remains decryptable with original key"
+      ],
+      "negative_controls": [
+        "corrupt legacy DB does not prevent normal host startup",
+        "same assertions after host restart",
+        "FeatureMode::Test alone is insufficient because it bypasses MahayanaHost creation"
+      ]
+    },
+    "fixture": {
+      "minimum_dependency": "[dev-dependencies] fabushi-telegram-storage = { path = \"../providers/telegram-storage\" }",
+      "write": "EncryptedSqliteStore::open(path, StorageKey::from_slice(&[11u8;32])?) -> save_private_metadata(\"retirement.fixture.v1\", b\"preserved metadata\", 1000) -> drop store",
+      "read": "After new AppHost construction/drop/restart, reopen with same key -> load_private_metadata(\"retirement.fixture.v1\") and compare bytes",
+      "actual_authorization_json": {
+        "authorizationState": {
+          "type": "ready"
+        },
+        "selfUserId": 4242,
+        "authContext": null
+      },
+      "actual_transport_json": {
+        "dcId": 2,
+        "testMode": false,
+        "serverSalt": 7,
+        "serverTime": 8,
+        "authKey": "256 bytes of a deterministic fixture value, never production material"
+      },
+      "reader_control": "TelegramClientLease::open_persistent(path, &key)?.handoff() may be used only as an explicit legacy-reader compatibility control in Actions; do not count that deliberate control as production registration.",
+      "key_negative": "EncryptedSqliteStore::open with a wrong key can succeed; load_snapshot/load_private_metadata must fail to establish key protection."
+    },
+    "retirement_gates": [
+      "Current batch: no default key generation/reading/projection; default Production AppHost does not open old DB/lease or pass Telegram client IDs; no legacy proxy bootstrap event; preserve old DB and secure key.",
+      "Further exit: enumerate external/native FFI consumers and package/link features; remove or explicitly isolate legacy public registration/default dependencies; supply versioned data migration with ID mapping and recovery when behavior moves.",
+      "Final: Actions supported configurations prove no legacy native shipping route, original credentials/data preserve or migrate safely, current Fabushi/Agent state survives retry/restart; current not-run is not acceptance."
+    ],
+    "rollback": "Ordinary code revert only, retaining previous encrypted DB and platform key; no data deletion, schema rewrite, key regeneration or dual write in isolation batch. Exact old reader compatibility must be demonstrated in Actions; no claim this audit executed it.",
+    "source_identities": [
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "AGENTS.md",
+        "blob": "9fe4010e3624d468c2eb23b1e1ab5e90ebf8be89",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/AGENTS.md"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md",
+        "blob": "3f1408a1460a589eeffceba3c3404c0c151d1bfa",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md",
+        "blob": "da3455bff35978b41027d940213bf3fc6d9a496a",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "docs/specs/fabushi-deferred-ci-migration.md",
+        "blob": "0d1e9555075599fe65f95872b37722198f8c06cd",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/docs/specs/fabushi-deferred-ci-migration.md"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "docs/specs/fabushi-bot-communication-platform.md",
+        "blob": "93c543fafda43a0f84ecc13808dba9dd2ef71b42",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/docs/specs/fabushi-bot-communication-platform.md"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+        "blob": "2b3873eb34a5e31ed2460c1a9f6b72df51583694",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/host/app/Cargo.toml",
+        "blob": "8ea5854eed44651d4692f4e97e69102a3bb00726",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/host/app/Cargo.toml"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/host/app/src/main.rs",
+        "blob": "8e19361b3b278d085927a84ea4c8ce8c3fe3de80",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/host/app/src/main.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-unified-app-host/Cargo.toml",
+        "blob": "4c3aaad130be4a5c8e1439da9cbca71b9cfdd902",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-unified-app-host/Cargo.toml"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-unified-app-host/src/lib.rs",
+        "blob": "4f0b2d72fc07817de401bb5d378bf5312554e731",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-unified-app-host/src/lib.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "blob": "fca0e3578e50ab91311baa014c309a292b9157e0",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host/Cargo.toml",
+        "blob": "2a4fffe6110fc5da4000de040f3cd78feb2c4813",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-app-host/Cargo.toml"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+        "blob": "435e0ef4e04ee5e2b6c4a484099a1ecd93864637",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-host/src/lib.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-host/Cargo.toml",
+        "blob": "cb88615198f0320f01b0cdc65f1dd2cff8047a54",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-host/Cargo.toml"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+        "blob": "98b665d390edfbada2112d902e51c9e38dfc27ea",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-host-protocol/src/lib.rs",
+        "blob": "0bdc09b25c9b97ca3dd42a3ba938237b8a686813",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-host-protocol/src/lib.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs",
+        "blob": "d9d5a6541ed48ce8eaade65d14d7221fe6f3bed4",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-conversation/src/lib.rs",
+        "blob": "bef082eee15b811271ca7e62a84cf6221874f427",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-conversation/src/lib.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
+        "blob": "8df8e7286f161452336727d7e5750e45b67c413f",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-telegram/Cargo.toml",
+        "blob": "f43109356f1f486a82a2d0120f6e78808c431c40",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-telegram/Cargo.toml"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
+        "blob": "5771a5ee104612ec844d65f4298d037454527361",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/providers/telegram-runtime/src/lib.rs",
+        "blob": "9acba52c16de3085a3dbfa61dc3e9f6ba5cdb689",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/providers/telegram-runtime/src/lib.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/providers/telegram-core/src/engine.rs",
+        "blob": "d0b41719c489ee54e8a2d42ec43bdc4c2ea8d8fd",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/providers/telegram-core/src/engine.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/providers/telegram-core/src/domain.rs",
+        "blob": "bf14f5102a9f22d3d34263d38089dcbcffaf99ee",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/providers/telegram-core/src/domain.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/providers/telegram-storage/src/lib.rs",
+        "blob": "13378d686b9ea45ac57f165a95052ef559545fc5",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/providers/telegram-storage/src/lib.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/providers/telegram-storage/src/sqlite.rs",
+        "blob": "e6cc314ec749f8a258bfe0125a25beb3613eb2ca",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/providers/telegram-storage/src/sqlite.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/providers/telegram-storage/src/cipher.rs",
+        "blob": "39190cc58db34f6f74f390730e4b96c8d06ee066",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/providers/telegram-storage/src/cipher.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/auth.rs",
+        "blob": "bd20416c6de3458311e8141dc084ba90e837c8a2",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/providers/telegram-protocol/src/auth.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-ffi/src/lib.rs",
+        "blob": "bdff6af543a30dbfb4a2df6893eff0d3322102b5",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-ffi/src/lib.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-ffi/Cargo.toml",
+        "blob": "8b0d6b7671cacbb52760057d15edd72349716bf0",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-ffi/Cargo.toml"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-cli/src/main.rs",
+        "blob": "a0e0a98f20e7f24eb75dc13ae9bffdf5c4846b6e",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-cli/src/main.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host-desktop/src/main.rs",
+        "blob": "9b6b359c5ca35e9e4ccd66e0487ec741b7a662dc",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-app-host-desktop/src/main.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host-mobile/src/lib.rs",
+        "blob": "03b52043164e6039f929e4c5c02cd261e57a06b7",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-app-host-mobile/src/lib.rs"
+      }
+    ]
+  },
+  "featurehost_messaging_baseline_audit": {
+    "audit_id": "FMEP-OWNER-featurehost-messaging-chain-2026-11-02",
+    "repository": "bhrumom/fabushi-desktop",
+    "audited_revision": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+    "execution": {
+      "review": "read-only source chain",
+      "build": "not-run",
+      "tests": "not-run",
+      "actions": "not-dispatched",
+      "remote_mutations": "none",
+      "repository_mutations": "none"
+    },
+    "verdict": "FeatureHost MessagingService is linked and directly callable through the shipping host stdin dispatch and gateway fallback, with independent state and persistence. This is not proof the default Human UI selects this lane. Disabling the legacy Telegram AppHost client does not remove this other message authority.",
+    "entry_chain": [
+      {
+        "path": "source/host/app/src/main.rs",
+        "symbols": [
+          "main",
+          "dispatch_gateway_call"
+        ],
+        "lines": [
+          [
+            13362,
+            13378
+          ],
+          [
+            10778,
+            10787
+          ]
+        ],
+        "effect": "stdin lane and gateway fallback call dispatch_json on UnifiedAppHost"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-unified-app-host/src/lib.rs",
+        "symbol": "UnifiedAppHost::dispatch",
+        "lines": [
+          239,
+          242
+        ],
+        "effect": "non-harness method forwards to AppHost"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "symbol": "handle_feature",
+        "lines": [
+          1018,
+          1020
+        ],
+        "methods": [
+          "feature.messaging.execute",
+          "feature.messaging.blob.read",
+          "feature.messaging.access.issue"
+        ]
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "symbol": "feature_messaging_execute",
+        "lines": [
+          1168,
+          1179
+        ],
+        "effect": "FeatureHostController::execute_messaging_sync(requestId,envelope); synchronous {envelopes} result"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-host-protocol/src/lib.rs",
+        "symbol": "FeatureCommand::MessagingExecute",
+        "lines": [
+          1290,
+          1296
+        ],
+        "effect": "alternate feature.execute command type messaging.execute"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+        "symbol": "execute",
+        "lines": [
+          1011,
+          1019
+        ],
+        "effect": "MessagingExecute bypasses other feature-command routes to execute_messaging -> same execute_messaging_sync"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+        "symbol": "execute_messaging_sync",
+        "lines": [
+          1435,
+          1477
+        ],
+        "effect": "global process IO mutex; decode envelope; authenticate account/actor; load account-scoped JSON snapshot+FileBlobStore; MessagingService::handle; queue HostEvent::MessagingEvent; return envelopes"
+      },
+      {
+        "path": "native/mahayana-messaging/src/service.rs",
+        "symbol": "MessagingService::handle",
+        "lines": [
+          128,
+          288
+        ],
+        "effect": "validate protocol=2; validate command authorization; mutate MessagingEngine; increment cursor; project server events; persist before returning"
+      }
+    ],
+    "dependency_binding": {
+      "workspace_path": "source/mahayana/mahayana-rs/Cargo.toml",
+      "declaration": "fabushi-messaging-core = { path = \"../../../native/mahayana-messaging\" }",
+      "consumer": "mahayana-feature-host/Cargo.toml direct dependency; production is a default feature"
+    },
+    "authorities": [
+      {
+        "domain": "Identity",
+        "owner": "FeatureHost stable_authenticated_account_id -> account fingerprint -> ActorId; MessagingEngine MessagingState.actors",
+        "evidence": [
+          "feature-host implementation.rs::messaging_root_for",
+          "feature-host implementation.rs::issue_messaging_access",
+          "engine.rs::MessagingState"
+        ],
+        "limit": "Derived from product account but maintains its own Actor/profile state. No canonical Session actor mapping demonstrated."
+      },
+      {
+        "domain": "Conversation",
+        "owner": "MessagingEngine MessagingState.conversations/communities/participants/drafts/read cursors",
+        "evidence": [
+          "engine.rs:550-576",
+          "service.rs::validate_command_authorization"
+        ],
+        "limit": "Independent domain state/store; not routed through Session native_messaging on this call chain."
+      },
+      {
+        "domain": "Message",
+        "owner": "MessagingService + MessagingEngine MessagingState.messages",
+        "identity": "msg:sha256(actor_id || NUL || client_message_id)",
+        "version": "protocol 2, snapshot schema 1, service cursor",
+        "evidence": [
+          "service.rs::stable_message_id",
+          "service.rs::handle",
+          "service.rs::persist_with_events"
+        ],
+        "limit": "Single writer within this transient loaded service invocation does not establish product-wide single writer."
+      },
+      {
+        "domain": "Resource",
+        "owner": "FileBlobStore at account-scoped _messaging/blobs; blob metadata/chunk lifecycle",
+        "evidence": [
+          "feature-host implementation.rs::execute_messaging_sync",
+          "feature-host implementation.rs::read_messaging_blob_range",
+          "blob_store.rs::FileBlobStore"
+        ],
+        "limit": "Blob read uses active account root; message/member permission equivalence to canonical resource owner not verified."
+      },
+      {
+        "domain": "Permission",
+        "owner": "native account/actor match then MessagingService::validate_command_authorization; separate FileAccessTokenStore grant registry",
+        "evidence": [
+          "feature-host implementation.rs:6999-7023",
+          "service.rs:932+",
+          "feature-host implementation.rs:648-729",
+          "access.rs::AccessTokenRegistry"
+        ],
+        "limit": "Local execute does not read or validate access bearer. access.issue is a separate credential issuer; do not draw a false serial token dependency."
+      },
+      {
+        "domain": "Search",
+        "owner": "MessagingService::search_envelope / recipient_search_envelope creates SearchIndex from its own state",
+        "evidence": [
+          "service.rs:383-429",
+          "service.rs:432-470",
+          "search.rs::SearchIndex"
+        ],
+        "limit": "A separate searchable domain projection remains; no proof it is unified with canonical desktop Search."
+      }
+    ],
+    "persistence": {
+      "snapshot": "<app-data>/feature-host/runtime/accounts/<first-16-SHA256-bytes(account_id)-hex>/agents/_messaging/snapshot.json",
+      "blobs": "same account-scoped root /blobs",
+      "token_registry": "<app-data>/feature-host/runtime/agents/_messaging/access.json (not wrapped in account_scoped_path)",
+      "snapshot_schema": 1,
+      "implementation": "JsonFileStateStore::save serializes JSON; file.sync_all; rename temporary file; best-effort parent sync.",
+      "journal_limit": "JsonFileStateStore uses trait default save_with_events -> save(snapshot), without durable event journal. SqliteStateStore exists but this caller does not select it.",
+      "locking": "FeatureHost execute path serializes with static process-local MESSAGING_IO_LOCK; no multi-process transactional writer proof.",
+      "restart": "Each request reloads MessagingService from snapshot; state mutations persist before successful response. Cross-owner retry/restart ID convergence not verified."
+    },
+    "identity_permission": {
+      "execute": "messaging_root_for reads current auth status and matches envelope.context.actor_id to account-derived actor id.",
+      "grant_issue": "Issue token bound to derived actor, provided device/session, explicit allowlisted scopes, TTL clamped to 5 minutes..30 days; token persisted only as SHA-256 hash.",
+      "scope_defaults": [
+        "messaging",
+        "calls",
+        "blobsRead",
+        "blobsWrite"
+      ],
+      "token_dependency": "Not consumed by local execute_messaging_sync; external bearer consumers remain separate interfaces."
+    },
+    "event_path": "Response envelopes are returned synchronously and queued as HostEvent::MessagingEvent with type messaging.event. The shipping host drains regular FeatureHost events. FeatureHost Grok projection preserves events lacking a mapped equivalent; actual renderer consumer/use not established here.",
+    "remaining_requirements": [
+      "Record all six owner domains in existing owner-resolution matrix as unresolved product-wide consolidation.",
+      "Choose canonical domain state and reuse via a real call path before marking native/mahayana-messaging absorbed.",
+      "Preserve snapshot/blobs/access registry until versioned migration, ID/permission mapping, crash/restart recovery and rollback are specified.",
+      "Do not equate linked/callable with default UI selected or passing packaged verification."
+    ],
+    "source_identities": [
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/host/app/src/main.rs",
+        "blob": "8e19361b3b278d085927a84ea4c8ce8c3fe3de80",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/host/app/src/main.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-unified-app-host/src/lib.rs",
+        "blob": "4f0b2d72fc07817de401bb5d378bf5312554e731",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-unified-app-host/src/lib.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "blob": "fca0e3578e50ab91311baa014c309a292b9157e0",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-host-protocol/src/lib.rs",
+        "blob": "0bdc09b25c9b97ca3dd42a3ba938237b8a686813",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-host-protocol/src/lib.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+        "blob": "98b665d390edfbada2112d902e51c9e38dfc27ea",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/mahayana-feature-host/Cargo.toml",
+        "blob": "63ce5d23c88b90ea6891f2768ea16e3f4e6f4eca",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/mahayana-feature-host/Cargo.toml"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "source/mahayana/mahayana-rs/Cargo.toml",
+        "blob": "144c67c76daaf2229e817f9830e678a3e6d4cf3a",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/source/mahayana/mahayana-rs/Cargo.toml"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "native/mahayana-messaging/Cargo.toml",
+        "blob": "9cbcc72222ca6ba4bc5252fa837756528b3fdee7",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/native/mahayana-messaging/Cargo.toml"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "native/mahayana-messaging/src/lib.rs",
+        "blob": "3b1997057b0048218be079047f81c2216ee689bc",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/native/mahayana-messaging/src/lib.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "native/mahayana-messaging/src/service.rs",
+        "blob": "3c85c39d5642c32e6b5333d59251602556219ce4",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/native/mahayana-messaging/src/service.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "native/mahayana-messaging/src/engine.rs",
+        "blob": "7fa8496520920dba41c9ff03274f7e7e5b270544",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/native/mahayana-messaging/src/engine.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "native/mahayana-messaging/src/store.rs",
+        "blob": "2ffb60eab5986e92e6a296a9c8c90e05ba37fb8a",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/native/mahayana-messaging/src/store.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "native/mahayana-messaging/src/blob_store.rs",
+        "blob": "d4bfa78c55804904a5c11ea15658b684fd0b7273",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/native/mahayana-messaging/src/blob_store.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "native/mahayana-messaging/src/access.rs",
+        "blob": "fc211d43117b5ea18ebdddcb0d557cc0e54017d5",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/native/mahayana-messaging/src/access.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "native/mahayana-messaging/src/protocol.rs",
+        "blob": "c0190536131eb939fa4dec249708a067a20602ef",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/native/mahayana-messaging/src/protocol.rs"
+      },
+      {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+        "path": "native/mahayana-messaging/src/search.rs",
+        "blob": "d57e1bcef2f9df154315e9b9b005f82ac6d397e2",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/50b0a2048adce13f2281143e6c3f7449d56344d5/native/mahayana-messaging/src/search.rs"
+      }
+    ]
+  },
+  "backend_read_only_evidence": {
+    "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 14,
+    "repository": "bhrumom/fabushi-backend",
+    "observed_at_utc": "2026-11-02 11:22:53 UTC",
+    "read_only": true,
+    "mutations_performed": [],
+    "pr": {
+      "number": 137,
+      "url": "https://github.com/bhrumom/fabushi-backend/pull/137",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+      "base_sha": "687718ce9e0083aa124d29005bcce4051d357919",
+      "review_count": 0,
+      "issue_comment_count": 0,
+      "inline_comment_count": 0,
+      "requested_reviewers": [],
+      "requested_teams": [],
+      "formal_merge_or_deploy_authorization_observed": false
+    },
+    "required_source_reads": [
+      {
+        "path": "AGENTS.md",
+        "ref": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+        "url": "https://github.com/bhrumom/fabushi-backend/blob/06047d3ea69313ec4cfec58bbee36a7afc9cf007/AGENTS.md"
+      },
+      {
+        "path": "docs/specs/human-direct-messaging-extensions.md",
+        "ref": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+        "url": "https://github.com/bhrumom/fabushi-backend/blob/06047d3ea69313ec4cfec58bbee36a7afc9cf007/docs/specs/human-direct-messaging-extensions.md"
+      },
+      {
+        "path": "docs/specs/production-worker-delivery.md",
+        "ref": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+        "url": "https://github.com/bhrumom/fabushi-backend/blob/06047d3ea69313ec4cfec58bbee36a7afc9cf007/docs/specs/production-worker-delivery.md"
+      },
+      {
+        "path": ".github/workflows/human-messaging-ci.yml",
+        "ref": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+        "url": "https://github.com/bhrumom/fabushi-backend/blob/06047d3ea69313ec4cfec58bbee36a7afc9cf007/.github/workflows/human-messaging-ci.yml"
+      },
+      {
+        "path": ".github/workflows/production-worker-delivery.yml",
+        "ref": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+        "url": "https://github.com/bhrumom/fabushi-backend/blob/06047d3ea69313ec4cfec58bbee36a7afc9cf007/.github/workflows/production-worker-delivery.yml"
+      }
+    ],
+    "exact_head_ci": [
+      {
+        "run_id": 41427242843,
+        "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41427242843",
+        "event": "pull_request",
+        "head_sha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+        "status": "completed",
+        "conclusion": "success",
+        "job_id": 125216707135,
+        "checked_out_head_confirmed_from_full_log": true,
+        "tests": [
+          {
+            "suite": "existing messaging/call and mock/source-marker contracts",
+            "passed": 29,
+            "total": 29,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0
+          },
+          {
+            "suite": "actual handlers / real SQLite migration and recovery contracts",
+            "passed": 10,
+            "total": 10,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0
+          }
+        ],
+        "production_acceptance": false
+      },
+      {
+        "run_id": 41427235133,
+        "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41427235133",
+        "event": "push",
+        "head_sha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+        "status": "completed",
+        "conclusion": "success",
+        "job_id": 125216681052,
+        "checked_out_head_confirmed_from_full_log": true,
+        "tests": [
+          {
+            "suite": "existing messaging/call and mock/source-marker contracts",
+            "passed": 29,
+            "total": 29,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0
+          },
+          {
+            "suite": "actual handlers / real SQLite migration and recovery contracts",
+            "passed": 10,
+            "total": 10,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0
+          }
+        ],
+        "production_acceptance": false
+      }
+    ],
+    "checks": {
+      "count": 2,
+      "conclusion": "success",
+      "traditional_status_count": 0,
+      "combined_status_api_state": "pending",
+      "note": "No traditional statuses are present; this is not a failing Actions check."
+    },
+    "latest_observed_formal_worker_delivery": {
+      "run_id": 40047409890,
+      "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/40047409890",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+      "head_branch": "main",
+      "event": "workflow_dispatch",
+      "created_at": "2026-10-24T00:56:05Z",
+      "job_id": 120732189309,
+      "worker": "fabushi-flutter-web-prod",
+      "worker_version_id": "3ad1a889-4c28-4344-8472-8c8adc225a3c",
+      "migration_log_result": "No migrations to apply",
+      "deployment_approvals_api": [],
+      "artifact_bytes_inspected": true,
+      "artifact_sha256": "ba90289cbeae90d7bacca69050147717d3256a7574b1289632cfdd3bf8edae18",
+      "artifact_ids": [
+        {
+          "id": 12542105783,
+          "name": "gateway-account-recovery-33a26692ce2f74e3fdca3940dfc4cbfb3ede151b-40047409890",
+          "digest": "sha256:9b6e7cf63c49d7db8aed6120df9ee0cc3dcfdec33c5d03ae063a4861538799fb",
+          "expired": false
+        },
+        {
+          "id": 12542026010,
+          "name": "production-worker-delivery-33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+          "digest": "sha256:ba90289cbeae90d7bacca69050147717d3256a7574b1289632cfdd3bf8edae18",
+          "expired": false
+        }
+      ],
+      "artifact_scope": "production provenance + health + unauthenticated FDN enrollment denials only; no afterId messaging checks",
+      "latest_current_worker_version_confirmed": false
+    },
+    "run_listing_scope": {
+      "endpoint": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/runs?event=workflow_dispatch&per_page=100",
+      "total_count": 171,
+      "returned": 100,
+      "newest_created_at": "2026-10-24T15:00:21Z",
+      "latest_observed_production_worker_run": 40047409890,
+      "note": "The newest 100 ordered workflow_dispatch runs include all events newer than the last formal Worker deployment. Out-of-band Cloudflare changes are not covered."
+    },
+    "main_cursor_compatibility": {
+      "sha": "687718ce9e0083aa124d29005bcce4051d357919",
+      "path": "fabushi/web/src/handlers/friends.js",
+      "line": 553,
+      "condition": "afterRaw && (!Number.isSafeInteger(afterId) || afterId <= 0)",
+      "behavior": "Explicit afterId=0 rejected with 400",
+      "url": "https://github.com/bhrumom/fabushi-backend/blob/687718ce9e0083aa124d29005bcce4051d357919/fabushi/web/src/handlers/friends.js"
+    },
+    "unavailable_endpoints": [
+      {
+        "url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/workflows?per_page=100",
+        "result": "Connector INVALID_ARGUMENT / endpoint allowlist 400"
+      },
+      {
+        "url": "https://api.github.com/repos/bhrumom/fabushi-backend/deployments?per_page=100",
+        "result": "Connector INVALID_ARGUMENT / endpoint allowlist 400"
+      }
+    ],
+    "production_evidence_missing": [
+      "formal merge/deployment authorization for PR #137",
+      "active Cloudflare Worker version-to-new-compatible-source mapping",
+      "authenticated production afterId=0 multi-page traversal",
+      "authenticated production origin/terminal empty pages",
+      "unauthorized participant rejection on production message endpoint",
+      "isolated remote recovery / restore / rollback proof"
+    ],
+    "no_claims": [
+      "Mock or SQLite CI is not deployed D1 validation",
+      "Historic delivery success is not current Worker attestation",
+      "FDN route 401 artifact is not Human message authorization proof"
+    ],
+    "unblock_conditions": [
+      "Obtain explicit authorized review/merge/deployment approval under repository rules",
+      "Confirm exact compatible main source and main-only approved production delivery version",
+      "Run Actions-based authenticated real-service pagination/denial/recovery campaign with authorized account fixture and preserve source/version/artifact binding"
+    ],
+    "final_read_only_recheck": {
+      "observed_at_utc": "2026-11-02T11:36:07Z",
+      "pr_head": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "main": "687718ce9e0083aa124d29005bcce4051d357919",
+      "reviews": 0,
+      "issue_comments": 0,
+      "inline_review_comments": 0,
+      "new_authorization": false,
+      "latest_formal_delivery_run": 40047409890,
+      "changed": false
+    }
+  },
+  "remaining_acceptance": [
+    "Full fixed-U sources, recursive dependencies, generated inputs/tools/resources and legal disposition/acceptance remain incomplete; no unread/read-complete promotion.",
+    "FeatureHost has a separate reachable MessagingService JSON snapshot and blob owner. Access grants use an unscoped path with actor-bound grants; local execute does not consume its bearer. Unique identity/conversation/message/resource/permission/search authority remains unclosed.",
+    "Public HostCreateConfig/FFI and default legacy links require remaining caller/data disposition.",
+    "Backend PR137 review, explicit formal deployment authorization, current deployed Worker provenance, production authenticated afterId=0 multi-page/empty/unauthorized/recovery evidence remain missing. No merge/deploy.",
+    "Final supported-platform packages, UI/visual/accessibility, timing/security/performance/soak, full Bot regression, actual upgrade/rollback and independent ACCEPT remain open."
+  ],
+  "recovery_verification": {
+    "observed_at_utc": "2026-11-02T21:02:17Z",
+    "production_commit": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+    "production_parent": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+    "production_tree": "5f02e6693602fcbabdbf07fb127a6ad2ae5228ba",
+    "github_readback": {
+      "commit_parent_tree_verified": true,
+      "all_fifteen_committed_file_contents_match_frozen_local_copy": true
+    },
+    "successor_checkpoint_observed": "aeb2af7b9a25a9ebfdcd47f07b287bf192ce84e7",
+    "successor_run": {
+      "id": 41508537631,
+      "head_sha": "59f5fa24827812f78336c464995d161f403dedfb",
+      "status": "completed",
+      "conclusion": "success",
+      "scope": "Observed workflow result only; no successor production change is attributed to round14."
+    },
+    "recovery_scope": "Preserve the advanced migration line. Add missing round14 owner/test anchors to the current sole ledger and exact original-H execution evidence; no repeated production edits.",
+    "attempt1": {
+      "run_id": 41438907013,
+      "head_sha": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+      "conclusion": "failure",
+      "electron_job": 125255546900,
+      "ui_job": 125255547292,
+      "reused_successes": [
+        "carrier10",
+        "Native auth8",
+        "UI16",
+        "Electron and renderer builds"
+      ],
+      "cancelled_before_steps": [
+        125255547295,
+        125255547398
+      ]
+    },
+    "attempt2": {
+      "run_id": 41438907013,
+      "retry_request": "rerun_failed_workflow_run_jobs",
+      "reason": "Only the two macOS jobs had no executed steps in attempt1; completed Electron/UI evidence at identical H/input is reused.",
+      "head_sha": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+      "shipping_job": 125498461528,
+      "shipping_conclusion": "success",
+      "shipping_counts": {
+        "composition": 11,
+        "native_startup_retention": 3,
+        "normalization": 6,
+        "future_salts": 2,
+        "protocol": 122,
+        "tcp_including_live": 9,
+        "proxy": 4,
+        "native_credential": 1
+      },
+      "human_job": 125498460407,
+      "human_conclusion": "success",
+      "run_conclusion": "completed/success",
+      "human_counts": {
+        "human": 33,
+        "agent_nonce": 4,
+        "private_credential_settlement": 3
+      }
+    },
+    "artifacts": [
+      {
+        "id": 13172098929,
+        "name": "native-message-reconciliation-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "head_sha": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "digest": "sha256:a0dc155e1e69ae6cb8930877f9f4278738f8a598565270f33e78c4c11cb2a2cc"
+      },
+      {
+        "id": 13172019289,
+        "name": "native-message-shipping-compile-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "head_sha": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "digest": "sha256:f9a4ba25a84a5c5124126c3238848408925c2d1db512e4a27b45529af7fd6dae"
+      },
+      {
+        "id": 13138126451,
+        "name": "native-message-ui-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "head_sha": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "digest": "sha256:3578acfb41f75225f13eeb09961262aab06584cf85600aa6b4f25cb4ed9c60bf"
+      },
+      {
+        "id": 13138047184,
+        "name": "native-message-electron-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "head_sha": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "digest": "sha256:85ba93695f3a2f79e485c34f18b39b9499912b8f28fb8b2f90c974da2266db9b"
+      }
+    ],
+    "backend_recheck": {
+      "observed_at_utc": "2026-11-02T20:51:32Z",
+      "pr": 137,
+      "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "previous_observed_head": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+      "main": "687718ce9e0083aa124d29005bcce4051d357919",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "review_count": 0,
+      "issue_comment_count": 0,
+      "inline_comment_count": 0,
+      "formal_authorization": false,
+      "exact_head_ci": [
+        {
+          "event": "push",
+          "run": 41510852280,
+          "job": 125502003031,
+          "attempt": 1,
+          "conclusion": "success",
+          "contracts": 29,
+          "sqlite": 10,
+          "readiness_injected_fetch": 24,
+          "production_readonly_readiness": "skipped",
+          "artifact": 13171519672,
+          "digest": "sha256:4c67b8b8e4f7fce10dc263cc0d862f1f1e95dad7d511ae31804077b61a4c3463"
+        },
+        {
+          "event": "pull_request",
+          "run": 41510861859,
+          "job": 125502035909,
+          "attempt": 1,
+          "conclusion": "success",
+          "contracts": 29,
+          "sqlite": 10,
+          "readiness_injected_fetch": 24,
+          "production_readonly_readiness": "skipped",
+          "artifact": 13172293999,
+          "digest": "sha256:823587410fe31018a7cdea60f47ff608cf461828ea8726112d8aa1f1d8ba00bb"
+        }
+      ],
+      "latest_visible_production_delivery_run": 40047409890,
+      "latest_visible_delivery_source": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+      "worker_version_from_that_delivery": "3ad1a889-4c28-4344-8472-8c8adc225a3c",
+      "current_active_worker_and_authenticated_afterId0_evidence": "not_accepted",
+      "missing": [
+        "Formal review/merge/deployment authorization",
+        "Current active Worker/source mapping",
+        "Production authenticated afterId=0 multi-page/empty/unauthorized controls",
+        "True restart/server recovery/D1 restore/rollback"
+      ],
+      "production_actions": [],
+      "latest_unchanged_read_only_observation": "2026-11-02T21:00:07Z"
+    },
+    "release_acceptance": false,
+    "source_contract_successor": {
+      "head": "59308cf3cee48213278c52e4ad60bfd9250fb545",
+      "run": 41510328604,
+      "status": "completed",
+      "conclusion": "success",
+      "read": "Latest FMEP-SOURCE-01 and source-acquisition guard were read and preserved. No source acceptance promotion."
+    },
+    "ledger_update": {
+      "scope": "Existing FBCP-NMR-001 row only: missing NMR31–33 owner paths/symbols, explicit credential-vs-launch handoff, exact authored test identities and actual c15 execution records.",
+      "independent_static_review": "approved; both nonblocking anchor precision comments applied",
+      "new_containing_commit_validation": "Requires its own existing TDRP source-review/schema/candidate Actions; no production code changes in this recovery update.",
+      "source_counters_and_acceptance_changed": false,
+      "other_rows_or_successor_records_overwritten": false,
+      "current_input_readback": {
+        "head": "aeb2af7b9a25a9ebfdcd47f07b287bf192ce84e7",
+        "ledger_blob": "a64f3a5becae94767609d478e9667a27bc1859b5",
+        "prepared_blob": "1875f4f32255fc22c89de7a6c2981875bd76d015"
+      }
+    },
+    "historical_source_inference_at_59": {
+      "source_sha": "59f5fa24827812f78336c464995d161f403dedfb",
+      "status": "source_inference_not_runtime_reproduction",
+      "observation": "Forward batch freezes attachment JSON/path/name but does not bind the original bytes. Unattempted destinations read the mutable path on resume; source cache readiness checks length. Existing forwarding crash fixtures are text-only.",
+      "paths": [
+        "source/host/src/extensions/session/forward_batch_journal.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/native_messaging.rs",
+        "source/host/tests/session_gateway_contract.rs"
+      ],
+      "next_behavior": "Within existing Session/resource owners, bind immutable attachment content and prove real upload plus post-first-POST SIGKILL, same-length cache rewrite/missing file, ordinary sync resume and original nonce replay; retain legacy journal/data and fail closed when original bytes cannot be established.",
+      "superseded_by_implementation_commit": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+      "do_not_repeat_as_current_missing_feature": true
+    },
+    "current_verification_followup": {
+      "observed_at_utc": "2026-11-02T20:54:17Z",
+      "original_failure": {
+        "head": "afb34b49c5964524a887088f1095070b75cfdf8b",
+        "run": 41522324008,
+        "job": 125541192099,
+        "classification": "TEST_FLAW",
+        "detail": "E0382: dropped runtime used again in shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling; Human62 did not execute."
+      },
+      "published_repair": {
+        "head": "106bb95ba97ef7722e9523285783824393039bc0",
+        "test_blob": "2e032c705fcec8256dd66476807dd1fd683625db",
+        "detail": "Shuts down restarted before drop/reopen; root read back the exact one-line diff."
+      },
+      "new_run": {
+        "id": 41523018920,
+        "head": "106bb95ba97ef7722e9523285783824393039bc0",
+        "observed_status": "queued",
+        "conclusion": null
+      },
+      "requirements": "Current head/source and required gates must be reread before additional implementation. Preserve concurrent production work; queued runs and authored tests are not acceptance.",
+      "latest_read_only_observation": {
+        "observed_at_utc": "2026-11-02T21:01:27Z",
+        "checkpoint": "07ea477f0312398f04e55110934dbd2ff5ab3727",
+        "current_production_test_head": "d8789216b6d3278d64cfec69ecafd56e130747f5",
+        "native_run": 41524395411,
+        "status": "in_progress_and_queued_jobs_not_accepted",
+        "reconciliation_job": 125548279795,
+        "shipping_job": 125548280298,
+        "prior_106_reconciliation_and_ui": "Full logs confirmed Human62/resource3/sharebox1/journal12/Agent4/private3/Gateway1 and Transcript29/cursors17/settlement5/Chromium16 passed. Shipping remained queued; overall run not accepted."
+      }
+    },
+    "large_file_transport_recovery": {
+      "cause": "Two complete-file connector blob calls were interrupted without a returned success result.",
+      "strategy": "Reviewed append-only existing-row operations, one immutable current input, no commit/ref writes by the producer. Root reads back complete input/output and integrates only when the current ledger blob still equals input_blob, using force=false expected_sha CAS.",
+      "producer": {
+        "preparation_commit": "d1c639f14986e1e55f46fea99e9fb8723a3c984f",
+        "run_id": 41523864056,
+        "run_attempt": 3,
+        "job_id": 125551483888,
+        "status": "completed",
+        "conclusion": "success",
+        "artifact_id": 13180056029,
+        "artifact_digest": "sha256:b1f20ab32e24c50ee9cdda56499173da71ad5cebce23b85e91e3feb6e11dfb7d",
+        "receipt": {
+          "acceptance_changed": false,
+          "bytes": 3631029,
+          "changed_existing_rows": [
+            "FBCP-NMR-001"
+          ],
+          "input_blob": "a64f3a5becae94767609d478e9667a27bc1859b5",
+          "input_commit": "aeb2af7b9a25a9ebfdcd47f07b287bf192ce84e7",
+          "operations_sha256": "68c8cbf2b0785371db1942eacc1f96ceaa1e4d2db6923d1a2fd9882ee4b31e45",
+          "preparation_head": "d1c639f14986e1e55f46fea99e9fb8723a3c984f",
+          "prepared_blob": "1875f4f32255fc22c89de7a6c2981875bd76d015",
+          "product_validation": false,
+          "refs_written": false,
+          "source_accounting_preserved": true,
+          "source_reviews_preserved": true
+        },
+        "reason": "A concurrent product batch appended to the same canonical NMR row; second prepared input no longer matches. Reprepare the same reviewed additive operations on the new exact input, preserving all concurrent fields."
+      },
+      "independent_static_review": "APPROVED: fixed repository/input identity, append-only allowed fields, source/status preservation, no commit/ref write, integration CAS precondition. Static review is not product acceptance.",
+      "github_blob_readback": {
+        "complete_input_and_prepared_content_retrieved": true,
+        "prepared_bytes_exactly_equal_reviewed_delta_on_input": true
+      },
+      "helpers_removed_in_final_publication": [
+        ".github/workflows/round14-c15-ledger-object.yml",
+        ".github/round14-c15-ledger-ops.json"
+      ],
+      "product_validation": false,
+      "acceptance_changed": false,
+      "previous_prepared_objects": [
+        {
+          "preparation_commit": "d1c639f14986e1e55f46fea99e9fb8723a3c984f",
+          "run_id": 41523864056,
+          "job_id": 125546439499,
+          "status": "completed",
+          "conclusion": "success",
+          "artifact_id": 13179525482,
+          "artifact_digest": "sha256:1b1dd321516908533ee09cb601340bfabb1fa2f1d9487e50fd16918ba8dc2839",
+          "receipt": {
+            "acceptance_changed": false,
+            "bytes": 3620957,
+            "changed_existing_rows": [
+              "FBCP-NMR-001"
+            ],
+            "input_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+            "input_commit": "d1c639f14986e1e55f46fea99e9fb8723a3c984f",
+            "operations_sha256": "68c8cbf2b0785371db1942eacc1f96ceaa1e4d2db6923d1a2fd9882ee4b31e45",
+            "preparation_head": "d1c639f14986e1e55f46fea99e9fb8723a3c984f",
+            "prepared_blob": "3fe14057af52546959282415aa85758a3e6de066",
+            "product_validation": false,
+            "refs_written": false,
+            "source_accounting_preserved": true,
+            "source_reviews_preserved": true
+          },
+          "invalidated_by": "Current ledger changed from260c5dac to0b142768 before integration; never attached to the checkpoint."
+        },
+        {
+          "preparation_commit": "d1c639f14986e1e55f46fea99e9fb8723a3c984f",
+          "run_id": 41523864056,
+          "run_attempt": 2,
+          "job_id": 125548966068,
+          "status": "completed",
+          "conclusion": "success",
+          "artifact_id": 13179616097,
+          "artifact_digest": "sha256:d51cad7c156f7518a606360c8c7b70947d9a346927783fd780da91e3947c05f7",
+          "receipt": {
+            "acceptance_changed": false,
+            "bytes": 3627090,
+            "changed_existing_rows": [
+              "FBCP-NMR-001"
+            ],
+            "input_blob": "0b1427684a862213d04763ef3aa0d9e6a39234c9",
+            "input_commit": "f60515165b7bf382c1e38c0b6feeff2feb64bd92",
+            "operations_sha256": "68c8cbf2b0785371db1942eacc1f96ceaa1e4d2db6923d1a2fd9882ee4b31e45",
+            "preparation_head": "d1c639f14986e1e55f46fea99e9fb8723a3c984f",
+            "prepared_blob": "456b18e762e73b4f5ecb59f3b7e4ec643124a896",
+            "product_validation": false,
+            "refs_written": false,
+            "source_accounting_preserved": true,
+            "source_reviews_preserved": true
+          },
+          "reason": "Concurrent canonical ledger changed; prior immutable prepared object invalidated. Rerun only object preparation with unchanged reviewed operations, no product tests or ref writes.",
+          "invalidated_by": "Concurrent ledger advanced toa64f3a5becae94767609d478e9667a27bc1859b5; object was never attached."
+        }
+      ]
+    }
+  }
+}

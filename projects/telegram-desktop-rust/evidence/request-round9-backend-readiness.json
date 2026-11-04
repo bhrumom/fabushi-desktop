@@ -1,0 +1,48 @@
+{
+  "observedAt": "2026-11-02T21:39:44Z",
+  "repository": "bhrumom/fabushi-backend",
+  "main": "687718ce9e0083aa124d29005bcce4051d357919",
+  "checkpoint": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+  "pr137": {
+    "state": "open",
+    "draft": true,
+    "merged": false
+  },
+  "contracts": [
+    {
+      "runId": 41510852280,
+      "jobId": 125502003031,
+      "conclusion": "success",
+      "counts": {
+        "handler": 29,
+        "realSQLite": 10,
+        "injectedReadiness": 24
+      },
+      "productionReadinessJobId": 125502117517,
+      "productionReadinessConclusion": "skipped"
+    },
+    {
+      "runId": 41510861859,
+      "jobId": 125502035909,
+      "conclusion": "success",
+      "counts": {
+        "handler": 29,
+        "realSQLite": 10,
+        "injectedReadiness": 24
+      },
+      "productionReadinessJobId": 125502139541,
+      "productionReadinessConclusion": "skipped"
+    }
+  ],
+  "latestObservedCanonicalDelivery": {
+    "headSha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+    "runId": 40047409890,
+    "jobId": 120732189309,
+    "conclusion": "success",
+    "artifact": {
+      "id": 12542026010,
+      "sha256": "ba90289cbeae90d7bacca69050147717d3256a7574b1289632cfdd3bf8edae18"
+    }
+  },
+  "scope": "Historical delivery only; all14 subsequent workflow_dispatch runs contain no newer canonical Production Worker Delivery. Current active Worker version and real authenticated afterId=0/historyCursor pagination are unverified. Canonical main still rejects explicit afterId=0 and has no historyCursor/readiness consumer; checkpoint contract success does not prove production acceptance. No deployment or production probe executed."
+}

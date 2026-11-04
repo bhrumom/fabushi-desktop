@@ -60,6 +60,15 @@ Test-only Actions adapter follows production paths and must not translate around
 or hide unsupported RPCs. No new schema, auth system or external credential.
 
 ## Failure, acceptance and delivery
+The daemon disconnect oracle must obtain valid positive process IDs for a real
+foreground group leader and child, and prove both are alive in that group before
+closing the client connection. Only an explicit `ESRCH` observation may establish
+their disappearance; malformed IDs, permission errors and probe failures fail the
+test. Observe group termination before daemon cleanup so `handle.stop()` cannot
+supply the result attributed to client disconnect. Keep the same production
+process-group cancellation contract and pinned inputs; a passing harness result
+from an invalid PID probe is a test defect, not behavioral qualification.
+
 AC1: BW01–06 focused/whole-owner CI pass; actual direct and Rust/Box12-case suites
 pass with actual screenshots and hashes. AC2: exact-main evidence recorded.
 External hosted Box, signed extension/native messaging and packaged release remain

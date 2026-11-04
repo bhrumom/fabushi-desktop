@@ -13,22 +13,25 @@ use crate::storage::store_db::{
     release_live_db_handle,
 };
 use crate::extensions::memory::memory_service::MemoryRecoveryRecord;
-use crate::transcript_mutation_events::publish_transcript_mutation;
+use crate::transcript_mutation_events::{
+    TRANSCRIPT_MUTATION_ORIGIN_KEY, publish_transcript_mutation, transcript_mutation_origin,
+};
 
 use super::agent_db_recovery::{
-    AgentDbRecoveryError, DbRecoveryOptions, open_configured_db, recover_corrupt_store_db,
+    AgentDbRecoveryError, DbRecoveryOptions, open_configured_db,
+    probe_human_conversation_store, recover_corrupt_store_db,
 };
 use super::agent_db_schema::{
     CLEAR_BLOBS_SQL, CLEAR_TRANSCRIPT_ENTRIES_SQL, COMPARE_AND_SET_KV_SQL, DELETE_KV_SQL,
     DELETE_TRANSCRIPT_ENTRY_SQL, GET_KV_SQL, GET_TRANSCRIPT_ENTRY_SQL,
-    INSERT_TRANSCRIPT_ENTRY_SQL, SET_KV_SQL, UPDATE_TRANSCRIPT_ENTRY_SQL,
+    INSERT_TRANSCRIPT_ENTRY_SQL, LIST_BRANCHED_ENTRIES_SQL, LIST_TRANSCRIPT_ENTRIES_SQL,
+    SET_KV_SQL, UPDATE_TRANSCRIPT_ENTRY_SQL,
 };
 use super::agent_db_serde::{
     AwaitingUserResponse, EpisodeTurn, MemoryPromptSnapshot, RequestRecord,
     SandProfile, SpendGuardState, UnreadState, parse_unread_state,
     serialize_spend_guard_state,
 };
-
 pub(crate) fn parse_transcript_entry(raw: &str) -> Option<serde_json::Value> {
     let entry = serde_json::from_str::<serde_json::Value>(raw).ok()?;
     if entry.get("kind").and_then(serde_json::Value::as_str) == Some("error") {
@@ -58,9 +61,49 @@ pub(crate) fn parse_transcript_entry(raw: &str) -> Option<serde_json::Value> {
     }
 }
 pub use super::agent_db_transcript_pages::{
+    HumanTranscriptPage, HumanTranscriptPageQuery,
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
+    read_human_transcript_entries, read_human_transcript_entries_for_topic, read_human_transcript_tail,
     read_transcript_page, read_transcript_tail, read_transcript_window,
 };
+use fabushi_messaging_core::{
+    ActorId, AdminRights, CommunityMember, ConversationId, ForumTopicState, MemberRestrictions,
+    MemberStatus,
+};
+
+fn member_status_to_str(status: MemberStatus) -> &'static str {
+    match status {
+        MemberStatus::Owner => "owner",
+        MemberStatus::Administrator => "administrator",
+        MemberStatus::Member => "member",
+        MemberStatus::Restricted => "restricted",
+        MemberStatus::Left => "left",
+        MemberStatus::Banned => "banned",
+    }
+}
+
+fn member_status_from_str(s: &str) -> Result<MemberStatus, rusqlite::Error> {
+    match s {
+        "owner" | "Owner" => Ok(MemberStatus::Owner),
+        "administrator" | "Administrator" => Ok(MemberStatus::Administrator),
+        "member" | "Member" => Ok(MemberStatus::Member),
+        "restricted" | "Restricted" => Ok(MemberStatus::Restricted),
+        "left" | "Left" => Ok(MemberStatus::Left),
+        "banned" | "Banned" => Ok(MemberStatus::Banned),
+        other => Err(rusqlite::Error::FromSqlConversionFailure(
+            1,
+            rusqlite::types::Type::Text,
+            Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("invalid MemberStatus: {other}"),
+            )),
+        )),
+    }
+}
+
+#[cfg(test)]
+#[path = "human_creation_storage_tests.rs"]
+mod human_creation_storage_tests;
 
 #[derive(Debug, thiserror::Error)]
 pub enum AgentDbProjectionError {
@@ -86,6 +129,8 @@ pub enum AgentDbProjectionError {
     LatestRootHex(String),
     #[error("agent db owner mutex poisoned")]
     OwnerPoisoned,
+    #[error("Human transcript page could not be durably prepared")]
+    HumanTranscriptUnavailable,
 }
 
 pub(crate) const KV_PROFILE: &str = "sandProfile";
@@ -439,6 +484,21 @@ impl SandAgentDb {
     ) -> Result<Self, AgentDbProjectionError> {
         let mut options = SandAgentDbOptions::default();
         options.recovery.busy_timeout_ms = busy_timeout_ms;
+        Self::open_with_options_and_seed(db_path, options, false)
+    }
+
+    /// Human creation must reject corruption without quarantining or resetting
+    /// the candidate. The live connection remains the identity authority.
+    pub fn open_human_conversation_store(
+        db_path: impl AsRef<Path>,
+        busy_timeout_ms: u64,
+    ) -> Result<Self, AgentDbProjectionError> {
+        let db_path = resolve_agent_db_path(db_path.as_ref());
+        probe_human_conversation_store(&db_path, busy_timeout_ms)?;
+        let mut options = SandAgentDbOptions::default();
+        options.recovery.busy_timeout_ms = busy_timeout_ms;
+        options.recovery.recover_on_corruption = false;
+        options.recovery.reject_if_corrupt = true;
         Self::open_with_options_and_seed(db_path, options, false)
     }
 
@@ -1458,6 +1518,57 @@ impl SandAgentDb {
         Ok(changed)
     }
 
+    /// Seed Human identity only when all durable tables are empty at the same
+    /// SQLite write boundary. Callers must read and validate the persisted
+    /// metadata before publishing an owner, including after a refused or busy
+    /// insert. Identity initialization never attempts corruption recovery.
+    pub fn initialize_human_metadata_if_empty(
+        &self,
+        value: serde_json::Value,
+    ) -> Result<bool, AgentDbProjectionError> {
+        if self.is_closed() || !value.is_object() {
+            return Ok(false);
+        }
+        let encoded = encode_hex(&serde_json::to_vec(&value)?);
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(false);
+        };
+        let changed = match db.execute(
+            "INSERT INTO kv (key, value)
+             SELECT 'metadata', ?1
+             WHERE NOT EXISTS (SELECT 1 FROM kv)
+               AND NOT EXISTS (SELECT 1 FROM transcript_entries)
+               AND NOT EXISTS (SELECT 1 FROM blobs)",
+            params![encoded],
+        ) {
+            Ok(changes) => changes == 1,
+            Err(error) if is_sqlite_busy_error(&error) => {
+                let message = error.to_string();
+                drop(guard);
+                if let Some(callback) = self.options.on_busy_error.as_ref() {
+                    callback("initializeHumanMetadata", &message);
+                }
+                return Ok(false);
+            }
+            Err(error) => return Err(error.into()),
+        };
+        if changed {
+            bump_db_write_generation(&self.db_path);
+        }
+        drop(guard);
+        if changed {
+            notify_agent_db_listeners(
+                &self.db_path,
+                AgentDbListenerChannel::Metadata("metadata".to_string()),
+            );
+        }
+        Ok(changed)
+    }
+
     pub fn set_metadata(
         &self,
         key: &str,
@@ -1865,6 +1976,51 @@ impl SandAgentDb {
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
+    }
+
+    /// Compare a single metadata key (including absent versus explicit null)
+    /// with the caller's observed value, and atomically CAS the complete SQLite
+    /// metadata record. Unlike unconditional set_metadata, this rejects a
+    /// stale merge of another writer's source-owned forwarding journal.
+    pub fn set_metadata_if_unchanged(
+        &self,
+        key: &str,
+        expected: Option<&serde_json::Value>,
+        value: serde_json::Value,
+    ) -> Result<bool, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(false);
+        }
+        let Some(raw) = self.read_kv("metadata")? else {
+            return Ok(false);
+        };
+        let bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
+        let mut metadata: serde_json::Value = serde_json::from_slice(&bytes)?;
+        let Some(object) = metadata.as_object_mut() else {
+            return Ok(false);
+        };
+        if object.get(key) != expected {
+            return Ok(false);
+        }
+        if object.get(key) == Some(&value) {
+            return Ok(true);
+        }
+        object.insert(key.to_string(), value);
+        let next_raw = encode_hex(&serde_json::to_vec(&metadata)?);
+        let changed = self.run_write(&format!("setMetadataIfUnchanged:{key}"), |db| {
+            db.execute(
+                COMPARE_AND_SET_KV_SQL,
+                params![next_raw, "metadata", raw],
+            )
+            .map(|changes| changes == 1)
+        })?;
+        if changed {
+            notify_agent_db_listeners(
+                &self.db_path,
+                AgentDbListenerChannel::Metadata(key.to_string()),
+            );
+        }
+        Ok(changed)
     }
 
     /// Atomically advances the durable Agent root and marks the addressed
@@ -3108,31 +3264,72 @@ impl SandAgentDb {
             return Ok(None);
         };
         let updated = self.run_write_value("settleTranscriptEntryIdentity", |db| {
+            // The owner write wrapper serializes access but does not start a
+            // transaction. Parent identity and unsent reply edges must commit
+            // together, including when a child write or COMMIT is rejected.
             db.execute_batch("BEGIN IMMEDIATE")?;
-            let result = (|| -> Result<(Option<serde_json::Value>, bool), rusqlite::Error> {
+            let result = (|| -> Result<Vec<serde_json::Value>, rusqlite::Error> {
                 if !session_work_write_is_admitted(db)? {
-                    return Ok((None, false));
+                    return Ok(Vec::new());
                 }
-                let present = db
-                    .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| row.get::<_, String>(0))
-                    .optional()?
-                    .is_some();
-                if !present {
-                    return Ok((None, false));
-                }
-                let changed = db.execute(
+                let Some(current) = read_transcript_entry_from_db(db, entry_id)? else {
+                    return Ok(Vec::new());
+                };
+                let author = current.get("authorId").and_then(serde_json::Value::as_str);
+                let nonce = current.get("clientNonce").and_then(serde_json::Value::as_str);
+                let remote_id = next.get("remoteMessageId").and_then(serde_json::Value::as_str);
+                let repair_replies = entry_id != next_id
+                    && current.get("authorKind").and_then(serde_json::Value::as_str) == Some("human")
+                    && current.get("remoteMessageId").is_none()
+                    && matches!(current.get("delivery").and_then(serde_json::Value::as_str), Some("pending" | "dispatching"))
+                    && author.is_some()
+                    && author == next.get("authorId").and_then(serde_json::Value::as_str)
+                    && nonce.is_some_and(|nonce| !nonce.is_empty() && entry_id == format!("human-message:{nonce}"))
+                    && nonce == next.get("clientNonce").and_then(serde_json::Value::as_str)
+                    && next.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
+                    && remote_id.is_some_and(|id| !id.is_empty() && next_id == format!("human-server-message:{id}"));
+                if db.execute(
                     "UPDATE transcript_entries SET id = ?1, entry = ?2 WHERE id = ?3",
                     params![next_id, next.to_string(), entry_id],
-                )? > 0;
-                Ok((changed.then(|| next.clone()), changed))
+                )? != 1 {
+                    return Err(rusqlite::Error::QueryReturnedNoRows);
+                }
+                let mut updated = vec![next.clone()];
+                if repair_replies {
+                    for mut child in read_transcript_entries_from_db(db)? {
+                        if child.get("authorId").and_then(serde_json::Value::as_str) != author
+                            || child.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
+                            || child.get("remoteMessageId").is_some()
+                            || !matches!(child.get("delivery").and_then(serde_json::Value::as_str), Some("pending" | "dispatching"))
+                            || child.get("replyToId").and_then(serde_json::Value::as_str) != Some(entry_id)
+                        {
+                            continue;
+                        }
+                        let Some(child_id) = child.get("id").and_then(serde_json::Value::as_str).map(str::to_owned) else {
+                            continue;
+                        };
+                        if !child.get("clientNonce").and_then(serde_json::Value::as_str)
+                            .is_some_and(|nonce| !nonce.is_empty() && child_id == format!("human-message:{nonce}"))
+                        {
+                            continue;
+                        }
+                        child["replyToId"] = serde_json::json!(next_id);
+                        if db.execute(UPDATE_TRANSCRIPT_ENTRY_SQL, params![child.to_string(), child_id])? != 1 {
+                            return Err(rusqlite::Error::QueryReturnedNoRows);
+                        }
+                        updated.push(child);
+                    }
+                }
+                Ok(updated)
             })();
             match result {
-                Ok(outcome) => {
+                Ok(updated) => {
                     if let Err(error) = db.execute_batch("COMMIT") {
                         let _ = db.execute_batch("ROLLBACK");
                         return Err(error);
                     }
-                    Ok(outcome)
+                    let changed = !updated.is_empty();
+                    Ok((updated, changed))
                 }
                 Err(error) => {
                     let _ = db.execute_batch("ROLLBACK");
@@ -3140,7 +3337,8 @@ impl SandAgentDb {
                 }
             }
         })?;
-        if let Some(entry) = updated.as_ref() {
+        let settled = updated.first().cloned();
+        if settled.is_some() {
             if entry_id != next_id {
                 let mut mutation = serde_json::Map::new();
                 mutation.insert("kind".into(), serde_json::Value::String("entry-deleted".into()));
@@ -3148,9 +3346,9 @@ impl SandAgentDb {
                 mutation.insert("entryId".into(), serde_json::Value::String(entry_id.to_string()));
                 publish_transcript_mutation(&mutation);
             }
-            publish_entries_upserted(&self.db_path, vec![entry.clone()]);
+            publish_entries_upserted(&self.db_path, updated);
         }
-        Ok(updated)
+        Ok(settled)
     }
 
     /// Settle one transcript identity only while the captured session remains
@@ -3333,6 +3531,58 @@ impl SandAgentDb {
         Ok(committed)
     }
 
+    pub fn get_human_transcript_entries(
+        &self,
+    ) -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Err(AgentDbProjectionError::HumanTranscriptUnavailable);
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Err(AgentDbProjectionError::HumanTranscriptUnavailable);
+        };
+        Ok(read_human_transcript_entries(db)?)
+    }
+
+    pub fn get_human_transcript_entries_for_topic(
+        &self,
+        topic_id: Option<&str>,
+    ) -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Err(AgentDbProjectionError::HumanTranscriptUnavailable);
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Err(AgentDbProjectionError::HumanTranscriptUnavailable);
+        };
+        Ok(read_human_transcript_entries_for_topic(db, topic_id)?)
+    }
+
+    pub fn get_human_transcript_tail(
+        &self,
+        query: HumanTranscriptPageQuery,
+    ) -> Result<HumanTranscriptPage, AgentDbProjectionError> {
+        // Preparing the first page durably records its sequence index. Reuse
+        // the same write/recovery owner and reject its closed/busy no-op result.
+        let page = self.run_write_value("humanTranscriptTail", |db| {
+            let metadata = read_metadata_json(db).map_err(|error| match error {
+                AgentDbProjectionError::Sqlite(error) => error,
+                error => rusqlite::Error::ToSqlConversionFailure(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    error.to_string(),
+                ))),
+            })?.unwrap_or(serde_json::Value::Null);
+            read_human_transcript_tail(db, &query, &metadata)
+                .map(|(page, changed)| (Some(page), changed))
+        })?;
+        page.ok_or(AgentDbProjectionError::HumanTranscriptUnavailable)
+    }
 
     pub fn clear_conversation(&self) -> Result<bool, AgentDbProjectionError> {
         if self.is_closed() {
@@ -3529,6 +3779,336 @@ impl SandAgentDb {
         }
     }
 
+    pub fn upsert_conversation_topic(
+        &self,
+        topic: &ForumTopicState,
+    ) -> Result<(), AgentDbProjectionError> {
+        self.run_write_value("upsertConversationTopic", |db| {
+            let changed = db.execute(
+                "INSERT INTO conversation_topics (
+                    topic_id, title, icon, creator_id, created_at_ms,
+                    pinned, closed, hidden, last_message_id, unread_count
+                ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+                ON CONFLICT(topic_id) DO UPDATE SET
+                    title = excluded.title,
+                    icon = excluded.icon,
+                    creator_id = excluded.creator_id,
+                    created_at_ms = excluded.created_at_ms,
+                    pinned = excluded.pinned,
+                    closed = excluded.closed,
+                    hidden = excluded.hidden,
+                    last_message_id = excluded.last_message_id,
+                    unread_count = excluded.unread_count",
+                params![
+                    topic.id,
+                    topic.title,
+                    topic.icon,
+                    topic.creator_id.0,
+                    topic.created_at_ms,
+                    if topic.pinned { 1i64 } else { 0i64 },
+                    if topic.closed { 1i64 } else { 0i64 },
+                    if topic.hidden { 1i64 } else { 0i64 },
+                    topic.last_message_id,
+                    topic.unread_count as i64,
+                ],
+            )? > 0;
+            Ok(((), changed))
+        })
+    }
+
+    pub fn get_conversation_topic(
+        &self,
+        topic_id: &str,
+    ) -> Result<Option<ForumTopicState>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(None);
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(None);
+        };
+        let mut statement = db.prepare(
+            "SELECT topic_id, title, icon, creator_id, created_at_ms, pinned, closed, hidden, last_message_id, unread_count
+             FROM conversation_topics WHERE topic_id = ?1",
+        )?;
+        let result = statement.query_row(params![topic_id], |row| {
+            let topic_id = row.get::<_, String>(0)?;
+            let title = row.get::<_, String>(1)?;
+            let icon = row.get::<_, Option<String>>(2)?;
+            let creator_id = row.get::<_, String>(3)?;
+            let created_at_ms = row.get::<_, i64>(4)?;
+            let pinned = row.get::<_, i64>(5)? != 0;
+            let closed = row.get::<_, i64>(6)? != 0;
+            let hidden = row.get::<_, i64>(7)? != 0;
+            let last_message_id = row.get::<_, Option<String>>(8)?;
+            let unread_count = row.get::<_, i64>(9)? as u32;
+            Ok(ForumTopicState {
+                id: topic_id,
+                conversation_id: ConversationId::new(&self.agent_dir_name),
+                title,
+                icon,
+                creator_id: ActorId::new(creator_id),
+                created_at_ms,
+                pinned,
+                closed,
+                hidden,
+                unread_count,
+                last_message_id,
+            })
+        }).optional()?;
+        Ok(result)
+    }
+
+    pub fn list_conversation_topics(
+        &self,
+    ) -> Result<Vec<ForumTopicState>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(Vec::new());
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(Vec::new());
+        };
+        let mut statement = db.prepare(
+            "SELECT topic_id, title, icon, creator_id, created_at_ms, pinned, closed, hidden, last_message_id, unread_count
+             FROM conversation_topics
+             ORDER BY pinned DESC, created_at_ms DESC, topic_id ASC",
+        )?;
+        let rows = statement.query_map([], |row| {
+            let topic_id = row.get::<_, String>(0)?;
+            let title = row.get::<_, String>(1)?;
+            let icon = row.get::<_, Option<String>>(2)?;
+            let creator_id = row.get::<_, String>(3)?;
+            let created_at_ms = row.get::<_, i64>(4)?;
+            let pinned = row.get::<_, i64>(5)? != 0;
+            let closed = row.get::<_, i64>(6)? != 0;
+            let hidden = row.get::<_, i64>(7)? != 0;
+            let last_message_id = row.get::<_, Option<String>>(8)?;
+            let unread_count = row.get::<_, i64>(9)? as u32;
+            Ok(ForumTopicState {
+                id: topic_id,
+                conversation_id: ConversationId::new(&self.agent_dir_name),
+                title,
+                icon,
+                creator_id: ActorId::new(creator_id),
+                created_at_ms,
+                pinned,
+                closed,
+                hidden,
+                unread_count,
+                last_message_id,
+            })
+        })?;
+        let mut topics = Vec::new();
+        for row in rows {
+            topics.push(row?);
+        }
+        Ok(topics)
+    }
+
+    pub fn upsert_conversation_member(
+        &self,
+        member: &CommunityMember,
+        updated_at_ms: i64,
+    ) -> Result<(), AgentDbProjectionError> {
+        let admin_rights_json = serde_json::to_string(&member.admin_rights).ok();
+        let restrictions_json = serde_json::to_string(&member.restrictions).ok();
+        self.run_write_value("upsertConversationMember", |db| {
+            let changed = db.execute(
+                "INSERT INTO conversation_members (
+                    actor_id, status, admin_title, admin_rights,
+                    restrictions, joined_at_ms, invited_by, updated_at_ms
+                ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+                ON CONFLICT(actor_id) DO UPDATE SET
+                    status = excluded.status,
+                    admin_title = excluded.admin_title,
+                    admin_rights = excluded.admin_rights,
+                    restrictions = excluded.restrictions,
+                    joined_at_ms = excluded.joined_at_ms,
+                    invited_by = excluded.invited_by,
+                    updated_at_ms = excluded.updated_at_ms",
+                params![
+                    member.actor_id.0,
+                    member_status_to_str(member.status),
+                    member.admin_title,
+                    admin_rights_json,
+                    restrictions_json,
+                    member.joined_at_ms,
+                    member.invited_by.as_ref().map(|id| id.0.clone()),
+                    updated_at_ms,
+                ],
+            )? > 0;
+            Ok(((), changed))
+        })
+    }
+
+    pub fn get_conversation_member(
+        &self,
+        actor_id: &str,
+    ) -> Result<Option<CommunityMember>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(None);
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(None);
+        };
+        let mut statement = db.prepare(
+            "SELECT actor_id, status, admin_title, admin_rights, restrictions, joined_at_ms, invited_by
+             FROM conversation_members WHERE actor_id = ?1",
+        )?;
+        let result = statement.query_row(params![actor_id], |row| {
+            let actor_id = row.get::<_, String>(0)?;
+            let status_str = row.get::<_, String>(1)?;
+            let status = member_status_from_str(&status_str)?;
+            let admin_title = row.get::<_, Option<String>>(2)?;
+            let admin_rights_str = row.get::<_, Option<String>>(3)?;
+            let admin_rights: AdminRights = admin_rights_str
+                .as_deref()
+                .and_then(|s| serde_json::from_str(s).ok())
+                .unwrap_or_default();
+            let restrictions_str = row.get::<_, Option<String>>(4)?;
+            let restrictions: MemberRestrictions = restrictions_str
+                .as_deref()
+                .and_then(|s| serde_json::from_str(s).ok())
+                .unwrap_or_default();
+            let joined_at_ms = row.get::<_, i64>(5)?;
+            let invited_by = row.get::<_, Option<String>>(6)?.map(ActorId::new);
+
+            Ok(CommunityMember {
+                actor_id: ActorId::new(actor_id),
+                status,
+                admin_title,
+                admin_rights,
+                restrictions,
+                joined_at_ms,
+                invited_by,
+            })
+        }).optional()?;
+        Ok(result)
+    }
+
+    pub fn list_conversation_members(
+        &self,
+    ) -> Result<Vec<CommunityMember>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(Vec::new());
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(Vec::new());
+        };
+        let mut statement = db.prepare(
+            "SELECT actor_id, status, admin_title, admin_rights, restrictions, joined_at_ms, invited_by
+             FROM conversation_members
+             ORDER BY joined_at_ms ASC, actor_id ASC",
+        )?;
+        let rows = statement.query_map([], |row| {
+            let actor_id = row.get::<_, String>(0)?;
+            let status_str = row.get::<_, String>(1)?;
+            let status = member_status_from_str(&status_str)?;
+            let admin_title = row.get::<_, Option<String>>(2)?;
+            let admin_rights_str = row.get::<_, Option<String>>(3)?;
+            let admin_rights: AdminRights = admin_rights_str
+                .as_deref()
+                .and_then(|s| serde_json::from_str(s).ok())
+                .unwrap_or_default();
+            let restrictions_str = row.get::<_, Option<String>>(4)?;
+            let restrictions: MemberRestrictions = restrictions_str
+                .as_deref()
+                .and_then(|s| serde_json::from_str(s).ok())
+                .unwrap_or_default();
+            let joined_at_ms = row.get::<_, i64>(5)?;
+            let invited_by = row.get::<_, Option<String>>(6)?.map(ActorId::new);
+
+            Ok(CommunityMember {
+                actor_id: ActorId::new(actor_id),
+                status,
+                admin_title,
+                admin_rights,
+                restrictions,
+                joined_at_ms,
+                invited_by,
+            })
+        })?;
+        let mut members = Vec::new();
+        for row in rows {
+            members.push(row?);
+        }
+        Ok(members)
+    }
+
+    pub fn pin_conversation_message(
+        &self,
+        child_scope: &str,
+        message_id: &str,
+        pinned_at_ms: i64,
+        pinned_by: &str,
+    ) -> Result<(), AgentDbProjectionError> {
+        self.run_write_value("pinConversationMessage", |db| {
+            let changed = db.execute(
+                "INSERT INTO conversation_pins (child_scope, message_id, pinned_at_ms, pinned_by)
+                 VALUES (?1, ?2, ?3, ?4)
+                 ON CONFLICT(child_scope, message_id) DO UPDATE SET
+                    pinned_at_ms = excluded.pinned_at_ms,
+                    pinned_by = excluded.pinned_by",
+                params![child_scope, message_id, pinned_at_ms, pinned_by],
+            )? > 0;
+            Ok(((), changed))
+        })
+    }
+
+    pub fn unpin_conversation_message(
+        &self,
+        child_scope: &str,
+        message_id: &str,
+    ) -> Result<(), AgentDbProjectionError> {
+        self.run_write_value("unpinConversationMessage", |db| {
+            let changed = db.execute(
+                "DELETE FROM conversation_pins WHERE child_scope = ?1 AND message_id = ?2",
+                params![child_scope, message_id],
+            )? > 0;
+            Ok(((), changed))
+        })
+    }
+
+    pub fn list_conversation_pins(
+        &self,
+        child_scope: &str,
+    ) -> Result<Vec<String>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(Vec::new());
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(Vec::new());
+        };
+        let mut statement = db.prepare(
+            "SELECT message_id FROM conversation_pins WHERE child_scope = ?1 ORDER BY pinned_at_ms DESC",
+        )?;
+        let rows = statement.query_map(params![child_scope], |row| row.get::<_, String>(0))?;
+        let mut pins = Vec::new();
+        for row in rows {
+            pins.push(row?);
+        }
+        Ok(pins)
+    }
+
 }
 
 /// Check owner-local metadata writes at the same SQLite transaction edge as
@@ -3588,3 +4168,243 @@ pub(crate) fn session_admission_identity_is_well_formed(
 pub use super::ocrm_agent_db_persisted_metadata::*;
 pub use super::ocrm_agent_db_persisted_ops::*;
 pub use super::ocrm_agent_db_transcript_queries::*;
+
+fn delete_persisted_kv(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    key: &str,
+) -> Result<bool, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    let wrote = db.execute(DELETE_KV_SQL, params![key])? > 0;
+    if wrote {
+        bump_db_write_generation(db_path);
+    }
+    Ok(wrote)
+}
+
+fn read_transcript_entries_from_db(
+    db: &rusqlite::Connection,
+) -> Result<Vec<serde_json::Value>, rusqlite::Error> {
+    let mut statement = db.prepare(LIST_TRANSCRIPT_ENTRIES_SQL)?;
+    let rows = statement.query_map([], |row| row.get::<_, String>(0))?;
+    let mut entries = Vec::new();
+    for row in rows {
+        if let Some(entry) = parse_transcript_entry(&row?) {
+            entries.push(entry);
+        }
+    }
+    Ok(entries)
+}
+
+fn read_transcript_entry_from_db(
+    db: &rusqlite::Connection,
+    entry_id: &str,
+) -> Result<Option<serde_json::Value>, rusqlite::Error> {
+    let raw = db
+        .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
+            row.get::<_, String>(0)
+        })
+        .optional()?;
+    Ok(raw.as_deref().and_then(parse_transcript_entry))
+}
+
+fn read_branched_entries_from_db(
+    db: &rusqlite::Connection,
+) -> Result<Vec<serde_json::Value>, rusqlite::Error> {
+    let mut statement = db.prepare(LIST_BRANCHED_ENTRIES_SQL)?;
+    let rows = statement.query_map([], |row| row.get::<_, String>(0))?;
+    let mut entries = Vec::new();
+    for row in rows {
+        if let Some(entry) = parse_transcript_entry(&row?) {
+            entries.push(entry);
+        }
+    }
+    Ok(entries)
+}
+
+fn branch_reply_counts_from_entries(
+    branched: &[serde_json::Value],
+) -> HashMap<String, usize> {
+    let by_id = branched
+        .iter()
+        .filter_map(|entry| {
+            Some((
+                entry.get("id")?.as_str()?.to_string(),
+                entry,
+            ))
+        })
+        .collect::<HashMap<_, _>>();
+    let mut counts = HashMap::new();
+    for entry in branched {
+        if let Some(root) = resolve_branch_root_from_entries(entry, &by_id) {
+            *counts.entry(root).or_insert(0) += 1;
+        }
+    }
+    counts
+}
+
+fn thread_descendants_from_entries(
+    root_id: &str,
+    branched: &[serde_json::Value],
+) -> Vec<serde_json::Value> {
+    let by_id = branched
+        .iter()
+        .filter_map(|entry| {
+            Some((
+                entry.get("id")?.as_str()?.to_string(),
+                entry,
+            ))
+        })
+        .collect::<HashMap<_, _>>();
+    branched
+        .iter()
+        .filter(|entry| {
+            resolve_branch_root_from_entries(entry, &by_id).as_deref() == Some(root_id)
+        })
+        .cloned()
+        .collect()
+}
+
+fn resolve_branch_root_from_entries(
+    entry: &serde_json::Value,
+    branched_by_id: &HashMap<String, &serde_json::Value>,
+) -> Option<String> {
+    let mut current = entry;
+    let mut seen = std::collections::HashSet::new();
+    if let Some(id) = current.get("id").and_then(serde_json::Value::as_str) {
+        seen.insert(id.to_string());
+    }
+    loop {
+        let parent_id = current.get("replyTo").and_then(serde_json::Value::as_str)?;
+        let Some(parent) = branched_by_id.get(parent_id) else {
+            return Some(parent_id.to_string());
+        };
+        if !seen.insert(parent_id.to_string()) {
+            return None;
+        }
+        current = parent;
+    }
+}
+
+fn main_transcript_entries_from_entries(
+    entries: &[serde_json::Value],
+) -> Vec<serde_json::Value> {
+    let by_id = entries
+        .iter()
+        .filter_map(|entry| {
+            Some((
+                entry.get("id")?.as_str()?.to_string(),
+                entry,
+            ))
+        })
+        .collect::<HashMap<_, _>>();
+    let is_thread_message = |entry: &serde_json::Value| {
+        is_main_branched_entry(entry)
+            && resolve_main_branch_root(entry, &by_id).is_some()
+    };
+    if !entries.iter().any(is_thread_message) {
+        return entries.to_vec();
+    }
+    entries
+        .iter()
+        .filter(|entry| !is_thread_message(entry))
+        .cloned()
+        .collect()
+}
+
+fn is_main_branched_entry(entry: &serde_json::Value) -> bool {
+    matches!(
+        entry.get("kind").and_then(serde_json::Value::as_str),
+        Some("message" | "send-message" | "user-attachment" | "notice")
+    ) && entry.get("branched").and_then(serde_json::Value::as_bool) == Some(true)
+}
+
+fn main_entry_reply_to(entry: &serde_json::Value) -> Option<&str> {
+    if !matches!(
+        entry.get("kind").and_then(serde_json::Value::as_str),
+        Some("message" | "send-message" | "user-attachment" | "notice")
+    ) {
+        return None;
+    }
+    entry.get("replyTo").and_then(serde_json::Value::as_str)
+}
+
+fn resolve_main_branch_root(
+    entry: &serde_json::Value,
+    by_id: &HashMap<String, &serde_json::Value>,
+) -> Option<String> {
+    let mut current = entry;
+    let mut seen = std::collections::HashSet::new();
+    if let Some(id) = current.get("id").and_then(serde_json::Value::as_str) {
+        seen.insert(id.to_string());
+    }
+    loop {
+        let parent_id = main_entry_reply_to(current)?;
+        let parent = by_id.get(parent_id)?;
+        if !is_main_branched_entry(parent) {
+            return Some(parent_id.to_string());
+        }
+        if !seen.insert(parent_id.to_string()) {
+            return None;
+        }
+        current = parent;
+    }
+}
+
+fn publish_entries_upserted(db_path: &Path, entries: Vec<serde_json::Value>) {
+    let mut mutation = serde_json::Map::new();
+    mutation.insert(
+        "kind".into(),
+        serde_json::Value::String("entries-upserted".into()),
+    );
+    mutation.insert(
+        "agentId".into(),
+        serde_json::Value::String(agent_id_for_db_path(db_path)),
+    );
+    mutation.insert("entries".into(), serde_json::Value::Array(entries));
+    if let Some(origin) = transcript_mutation_origin(db_path) {
+        mutation.insert(TRANSCRIPT_MUTATION_ORIGIN_KEY.into(), serde_json::Value::String(origin));
+    }
+    publish_transcript_mutation(&mutation);
+}
+
+fn agent_id_for_db_path(db_path: &Path) -> String {
+    db_path
+        .parent()
+        .and_then(Path::file_name)
+        .map(|value| value.to_string_lossy().into_owned())
+        .unwrap_or_default()
+}
+
+fn json_number(value: f64) -> serde_json::Value {
+    serde_json::Number::from_f64(value)
+        .map(serde_json::Value::Number)
+        .unwrap_or(serde_json::Value::Null)
+}
+
+pub(crate) fn read_kv(
+    db: &rusqlite::Connection,
+    key: &str,
+) -> Result<Option<String>, rusqlite::Error> {
+    db.query_row(GET_KV_SQL, params![key], |row| row.get::<_, String>(0))
+        .optional()
+}
+
+pub(crate) fn encode_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+pub(crate) fn decode_hex(raw: &str) -> Result<Vec<u8>, String> {
+    let clean = raw.trim();
+    if clean.len() % 2 != 0 {
+        return Err("odd-length hex string".into());
+    }
+    let mut output = Vec::with_capacity(clean.len() / 2);
+    for index in (0..clean.len()).step_by(2) {
+        let pair = &clean[index..index + 2];
+        let byte = u8::from_str_radix(pair, 16)
+            .map_err(|_| format!("invalid hex pair at offset {index}: {pair}"))?;
+        output.push(byte);
+    }
+    Ok(output)
+}

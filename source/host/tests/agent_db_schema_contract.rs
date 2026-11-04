@@ -1,5 +1,5 @@
 use mahayana_host_runtime::extensions::session::agent_db_schema::{
-    AGENT_DB_SCHEMA, BRANCHED_ENTRY_FILTER_SQL, CLEAR_BLOBS_SQL,
+    AGENT_DB_SCHEMA, AGENT_DB_SCHEMA_VERSION, BRANCHED_ENTRY_FILTER_SQL, CLEAR_BLOBS_SQL,
     CLEAR_TRANSCRIPT_ENTRIES_SQL, COMPARE_AND_SET_KV_SQL,
     DELETE_KV_SQL, DELETE_TRANSCRIPT_ENTRY_SQL, DIVIDER_ANCHOR_ENTRY_FILTER_SQL,
     GET_KV_SQL, GET_TRANSCRIPT_ENTRY_SQL, HAS_LEGACY_BLOB_SQL,
@@ -23,7 +23,16 @@ fn frozen_agent_db_schema_creates_strict_tables_indexes_and_all_prepared_sql() {
     let db = Connection::open_in_memory().expect("sqlite");
     db.execute_batch(AGENT_DB_SCHEMA).expect("agent schema");
 
-    for table in ["kv", "blobs", "transcript_entries"] {
+    assert_eq!(AGENT_DB_SCHEMA_VERSION, "2");
+
+    for table in [
+        "kv",
+        "blobs",
+        "transcript_entries",
+        "conversation_topics",
+        "conversation_members",
+        "conversation_pins",
+    ] {
         let sql: String = db
             .query_row(
                 "SELECT sql FROM sqlite_master WHERE type='table' AND name=?1",
@@ -31,10 +40,10 @@ fn frozen_agent_db_schema_creates_strict_tables_indexes_and_all_prepared_sql() {
                 |row| row.get(0),
             )
             .expect("table ddl");
-        assert!(sql.to_ascii_uppercase().contains("STRICT"));
+        assert!(sql.to_ascii_uppercase().contains("STRICT"), "table {table} must be STRICT");
     }
 
-    for index in ["idx_transcript_window", "idx_transcript_branched"] {
+    for index in ["idx_transcript_window", "idx_transcript_branched", "idx_transcript_topic"] {
         let present: i64 = db
             .query_row(
                 "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name=?1",
@@ -42,7 +51,7 @@ fn frozen_agent_db_schema_creates_strict_tables_indexes_and_all_prepared_sql() {
                 |row| row.get(0),
             )
             .expect("index lookup");
-        assert_eq!(present, 1);
+        assert_eq!(present, 1, "index {index} must be present");
     }
 
     for (name, sql) in PREPARED_STATEMENT_SQL {

@@ -1,0 +1,52 @@
+name: Mahayana workspace compile guard
+
+# FMEP-001 r3: every workspace member must keep compiling (lib + tests).
+# Added 2026-11-04 after mahayana-web and mahayana-native-engine silently
+# stopped compiling because no job built them.
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, main]
+    paths:
+      - 'source/mahayana/mahayana-rs/**'
+      - 'source/host/**'
+      - 'native/mahayana-messaging/**'
+      - '.github/workflows/mahayana-workspace-compile-guard.yml'
+  pull_request:
+    paths:
+      - 'source/mahayana/mahayana-rs/**'
+      - 'source/host/**'
+      - 'native/mahayana-messaging/**'
+      - '.github/workflows/mahayana-workspace-compile-guard.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mahayana-workspace-compile-guard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  workspace-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact source
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/mahayana/mahayana-rs -> target
+          shared-key: mahayana-workspace-compile-guard-ubuntu-1.97.1
+      - name: Install existing Linux native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: cargo check every workspace member (lib + tests)
+        run: cargo check --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml --workspace --tests

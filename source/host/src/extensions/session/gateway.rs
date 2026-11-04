@@ -18,16 +18,17 @@ use crate::extensions::transcript::send_message_shaping::{
 };
 use crate::extensions::transcript::send_thread_stamping::resolve_send_reply_threading;
 use crate::extensions::transcript::roster_search::{
-    AGENT_CONTENT_SEARCH_MAX_RESULTS, RosterContentSearch, search_agents, search_media,
+    AGENT_CONTENT_SEARCH_MAX_RESULTS, RosterContentSearch, search_agents,
+    search_human_conversation_messages, search_media,
 };
 use crate::extensions::transcript::transcript_entry_ids::{
     TranscriptEntryIdKind, next_entry_id,
 };
 use uuid::Uuid;
 
-use super::agent_db_transcript_pages::{TranscriptPageQuery, TranscriptWindowQuery};
+use super::agent_db_transcript_pages::{HumanTranscriptPageQuery, TranscriptPageQuery, TranscriptWindowQuery};
 use super::agent_session::SandAgentSessionStore;
-use super::production::ProductionSessionWorkers;
+use super::production::{HumanForwardDestination, MiniAppPostError, ProductionSessionWorkers};
 use super::session_profile_files::AgentProfileUpdate;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -55,6 +56,7 @@ impl std::fmt::Display for SessionGatewayError {
     }
 }
 
+impl std::error::Error for SessionGatewayError {}
 fn recent_recovery_user_messages(
     entries: &[Value],
 ) -> Vec<crate::runner::RecoveryUserMessage> {
@@ -382,6 +384,117 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 .create_human_conversation(peer_human_id, title)
                 .map_err(SessionGatewayError::internal)
         }),
+        "createGroupConversation" => (|| {
+            let group_id = optional_string(args, "groupId")?
+                .or(optional_string(args, "conversationId")?)
+                .ok_or_else(|| SessionGatewayError::bad("createGroupConversation requires groupId"))?;
+            let title = optional_string(args, "title")?.unwrap_or(group_id);
+            let participant_ids = optional_string_array(args, "participantIds")?.unwrap_or_default();
+            let slow_mode_seconds = args.get("slowModeSeconds").and_then(Value::as_u64).map(|v| v as u32);
+            session
+                .create_group_conversation(group_id, title, &participant_ids, slow_mode_seconds)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "createChannelConversation" => (|| {
+            let channel_id = optional_string(args, "channelId")?
+                .or(optional_string(args, "conversationId")?)
+                .ok_or_else(|| SessionGatewayError::bad("createChannelConversation requires channelId"))?;
+            let title = optional_string(args, "title")?.unwrap_or(channel_id);
+            let participant_ids = optional_string_array(args, "participantIds")?.unwrap_or_default();
+            session
+                .create_channel_conversation(channel_id, title, &participant_ids)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "upsertConversationTopic" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let topic_id = required_string(args, "topicId")?;
+            let title = required_string(args, "title")?;
+            let icon = optional_string(args, "icon")?;
+            let closed = optional_bool(args, "closed")?.unwrap_or(false);
+            let pinned = optional_bool(args, "pinned")?.unwrap_or(false);
+            let hidden = optional_bool(args, "hidden")?.unwrap_or(false);
+            session
+                .upsert_conversation_topic(conversation_id, topic_id, title, icon, closed, pinned, hidden)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "listConversationTopics" => required_string(args, "conversationId").and_then(|conversation_id| {
+            session
+                .list_conversation_topics(conversation_id)
+                .map(Value::Array)
+                .map_err(SessionGatewayError::internal)
+        }),
+        "upsertConversationMember" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let member_value = args.get("member").unwrap_or(args);
+            let member: fabushi_messaging_core::CommunityMember = serde_json::from_value(member_value.clone())
+                .map_err(|e| SessionGatewayError::bad(format!("invalid member payload: {e}")))?;
+            session
+                .upsert_conversation_member(conversation_id, member)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "pinConversationMessage" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let message_id = required_string(args, "messageId")?;
+            let topic_id = optional_string(args, "topicId")?;
+            session
+                .pin_conversation_message(conversation_id, message_id, topic_id)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "unpinConversationMessage" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let message_id = required_string(args, "messageId")?;
+            let topic_id = optional_string(args, "topicId")?;
+            session
+                .unpin_conversation_message(conversation_id, message_id, topic_id)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "listConversationPins" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let topic_id = optional_string(args, "topicId")?;
+            session
+                .list_conversation_pins(conversation_id, topic_id)
+                .map(|pins| Value::Array(pins.into_iter().map(Value::String).collect()))
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "setConversationTopicMute" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let topic_id = optional_string(args, "topicId")?;
+            let muted_until_ms = match args.get("mutedUntilMs") {
+                None | Some(Value::Null) => None,
+                _ => optional_i64(args, "mutedUntilMs"),
+            };
+            session
+                .set_conversation_topic_mute(conversation_id, topic_id, muted_until_ms)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "evaluateMessageNotification" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let message_id = required_string(args, "messageId")?;
+            session
+                .evaluate_message_notification(conversation_id, message_id)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "publishConversationTyping" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let topic_id = optional_string(args, "topicId")?;
+            let action = optional_string(args, "action")?;
+            session
+                .publish_conversation_typing(conversation_id, topic_id, action)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "validateMediaAttachmentPreflight" => (|| {
+            let file_name = optional_string(args, "fileName")?.unwrap_or_default();
+            let mime_type = optional_string(args, "mimeType")?.unwrap_or_default();
+            let size_bytes = args
+                .get("sizeBytes")
+                .and_then(Value::as_u64)
+                .ok_or_else(|| SessionGatewayError::bad("validateMediaAttachmentPreflight requires numeric sizeBytes"))?;
+            let width = args.get("width").and_then(Value::as_u64).map(|v| v as u32);
+            let height = args.get("height").and_then(Value::as_u64).map(|v| v as u32);
+            session
+                .validate_media_attachment_preflight(file_name, mime_type, size_bytes, width, height)
+                .map_err(SessionGatewayError::internal)
+        })(),
         "searchHumanRecipients" => required_string(args, "sourceConversationId").and_then(|source_conversation_id| {
             required_string(args, "sourceEntryId").and_then(|source_entry_id| {
                 let query = optional_string(args, "query")?.unwrap_or_default();
@@ -396,23 +509,158 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     .map_err(SessionGatewayError::internal)
             })
         }),
+        "composeShareComment" => (|| {
+            let link = match optional_string(args, "link")? {
+                Some(l) => l,
+                None => match optional_string(args, "shareUrl")? {
+                    Some(l) => l,
+                    None => return Err(SessionGatewayError::bad("composeShareComment requires link")),
+                },
+            };
+            let link = link.trim();
+            if link.is_empty() {
+                return Err(SessionGatewayError::bad("link must not be empty"));
+            }
+            if link.chars().any(|c| c == '\r' || c == '\n' || c.is_control()) {
+                return Err(SessionGatewayError::bad("link must not contain newlines or control characters"));
+            }
+            let comment = match args.get("comment") {
+                None | Some(Value::Null) => fabushi_messaging_core::FormattedText::plain(""),
+                Some(Value::String(text)) => {
+                    let trimmed = text.trim();
+                    if trimmed.is_empty() {
+                        fabushi_messaging_core::FormattedText::plain("")
+                    } else {
+                        fabushi_messaging_core::FormattedText::plain(text)
+                    }
+                }
+                Some(val @ Value::Object(_)) => {
+                    serde_json::from_value(val.clone())
+                        .map_err(|err| SessionGatewayError::bad(format!("invalid comment: {err}")))?
+                }
+                Some(_) => return Err(SessionGatewayError::bad("invalid comment: expected object or string")),
+            };
+            let composed = session
+                .compose_share_comment(link, comment)
+                .map_err(|err| SessionGatewayError::bad(format!("composeShareComment failed: {err:?}")))?;
+            serde_json::to_value(&composed).map_err(|e| SessionGatewayError::internal(e.to_string()))
+        })(),
         "forwardHumanMessage" => required_string(args, "sourceConversationId").and_then(|source_conversation_id| {
             required_string(args, "sourceEntryId").and_then(|source_entry_id| {
                 let destination_conversation_ids = required_string_array(args, "destinationConversationIds")?;
+                let destination_topics: Option<std::collections::HashMap<String, String>> = match args.get("destinationTopics") {
+                    None | Some(Value::Null) => None,
+                    Some(Value::Object(map)) => {
+                        let mut parsed = std::collections::HashMap::new();
+                        for (k, v) in map {
+                            if let Some(s) = v.as_str() {
+                                let trimmed = s.trim();
+                                if !trimmed.is_empty() {
+                                    parsed.insert(k.clone(), trimmed.to_string());
+                                }
+                            }
+                        }
+                        Some(parsed)
+                    }
+                    Some(_) => return Err(SessionGatewayError::bad("invalid destinationTopics: expected object")),
+                };
+                let share_url = match optional_string(args, "shareUrl")? {
+                    Some(s) => {
+                        let trimmed = s.trim();
+                        if trimmed.is_empty() {
+                            return Err(SessionGatewayError::bad("shareUrl must not be empty"));
+                        }
+                        if trimmed.chars().any(|c| c == '\r' || c == '\n' || c.is_control()) {
+                            return Err(SessionGatewayError::bad("shareUrl must not contain newlines or control characters"));
+                        }
+                        Some(trimmed)
+                    }
+                    None => None,
+                };
+                let raw_comment = match args.get("comment") {
+                    None | Some(Value::Null) => None,
+                    Some(Value::String(text)) => {
+                        let trimmed = text.trim();
+                        if trimmed.is_empty() {
+                            None
+                        } else {
+                            Some(fabushi_messaging_core::FormattedText::plain(text))
+                        }
+                    }
+                    Some(val @ Value::Object(_)) => {
+                        let parsed: fabushi_messaging_core::FormattedText = serde_json::from_value(val.clone())
+                            .map_err(|err| SessionGatewayError::bad(format!("invalid comment: {err}")))?;
+                        Some(parsed)
+                    }
+                    Some(_) => return Err(SessionGatewayError::bad("invalid comment: expected object or string")),
+                };
+                let comment = match share_url {
+                    Some(url) => {
+                        let base_comment = raw_comment.unwrap_or_else(|| fabushi_messaging_core::FormattedText::plain(""));
+                        let composed = session
+                            .compose_share_comment(url, base_comment)
+                            .map_err(|err| SessionGatewayError::bad(format!("failed to compose share comment: {err:?}")))?;
+                        fabushi_messaging_core::validate_formatted_text(&composed)
+                            .map_err(|err| SessionGatewayError::bad(format!("invalid comment: {err}")))?;
+                        if composed.text.trim().is_empty() {
+                            None
+                        } else {
+                            Some(composed)
+                        }
+                    }
+                    None => match raw_comment {
+                        Some(c) => {
+                            fabushi_messaging_core::validate_formatted_text(&c)
+                                .map_err(|err| SessionGatewayError::bad(format!("invalid comment: {err}")))?;
+                            if c.text.trim().is_empty() {
+                                None
+                            } else {
+                                Some(c)
+                            }
+                        }
+                        None => None,
+                    },
+                };
+                let destinations: Vec<HumanForwardDestination> = destination_conversation_ids
+                    .into_iter()
+                    .map(|id| {
+                        let topic_id = destination_topics.as_ref().and_then(|map| map.get(&id)).cloned();
+                        HumanForwardDestination {
+                            conversation_id: id,
+                            topic_id,
+                        }
+                    })
+                    .collect();
                 required_string(args, "clientNonce").and_then(|client_nonce| {
                     session
-                        .forward_human_message(
+                        .forward_human_message_to_destinations(
                             source_conversation_id,
                             source_entry_id,
-                            &destination_conversation_ids,
+                            &destinations,
                             client_nonce,
                             optional_bool(args, "dropSenderNames")?.unwrap_or(false),
                             optional_bool(args, "dropCaptions")?.unwrap_or(false),
+                            comment,
                         )
                         .map_err(SessionGatewayError::internal)
                 })
             })
         }),
+        "retryHumanMessage" => (|| {
+            let object = args.as_object().ok_or_else(|| SessionGatewayError::bad("retryHumanMessage requires identity-only arguments"))?;
+            if object.len() != 2 || !object.contains_key("conversationId") || !object.contains_key("clientNonce") {
+                return Err(SessionGatewayError::bad("retryHumanMessage accepts only conversationId and clientNonce"));
+            }
+            let exact = |key: &str| args.get(key).and_then(Value::as_str)
+                .filter(|value| !value.is_empty() && *value == value.trim())
+                .ok_or_else(|| SessionGatewayError::bad(format!("retryHumanMessage requires an unpadded {key}")));
+            let conversation_id = exact("conversationId")?;
+            let client_nonce = exact("clientNonce")?;
+            if client_nonce.len() > 200 {
+                return Err(SessionGatewayError::bad("retryHumanMessage clientNonce exceeds 200 UTF-8 bytes"));
+            }
+            session.retry_human_message(conversation_id, client_nonce).map_err(SessionGatewayError::internal)
+        })(),
         "sendHumanMessage" => required_string(args, "conversationId").and_then(|conversation_id| {
             let local_human_id = session.local_human_id().map_err(SessionGatewayError::internal)?;
             if let Some(requested) = optional_string(args, "senderId")? {
@@ -422,27 +670,113 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             }
             let text = optional_string(args, "text")?.unwrap_or_default();
             let reply_to_id = optional_string(args, "replyToId")?;
+            let topic_id = optional_string(args, "topicId")?;
             let attachments = match args.get("attachments") {
                 None | Some(Value::Null) => Vec::new(),
                 Some(Value::Array(values)) => values.clone(),
                 Some(_) => return Err(SessionGatewayError::bad("invalid attachments")),
             };
+            let queued_offline = match args.get("queuedOffline") {
+                None => false,
+                Some(Value::Bool(value)) => *value,
+                Some(_) => return Err(SessionGatewayError::bad("queuedOffline must be a boolean")),
+            };
+            let composed_at_ms = optional_f64(args, "composedAtMs");
+            if queued_offline && !composed_at_ms.is_some_and(f64::is_finite) {
+                return Err(SessionGatewayError::bad("queuedOffline requires a finite composedAtMs"));
+            }
             required_string(args, "clientNonce").and_then(|client_nonce| {
                 session
-                    .append_human_message(
+                    .append_human_message_with_topic_and_queue_origin(
                         conversation_id,
                         text,
                         client_nonce,
-                        optional_f64(args, "composedAtMs"),
+                        composed_at_ms,
                         reply_to_id,
                         &attachments,
+                        topic_id,
+                        queued_offline,
                     )
                     .map_err(SessionGatewayError::internal)
             })
         }),
+        "issueMiniAppLaunchSession" => (|| {
+            let app_id = required_string(args, "appId")?;
+            let conversation_id = required_string(args, "conversationId")?;
+            let start_parameter = optional_string(args, "startParameter")?;
+            let version = optional_string(args, "version")?;
+            let package_digest = optional_string(args, "packageDigest")?;
+            session
+                .issue_miniapp_launch_session(app_id, conversation_id, start_parameter, version, package_digest)
+                .map_err(|err| match err {
+                    MiniAppPostError::PersistenceFailed(msg) => SessionGatewayError::internal(msg),
+                    _ => SessionGatewayError::bad(err.to_string()),
+                })
+        })(),
+        "miniAppPostToConversation" => (|| {
+            let launch_session_id = required_string(args, "launchSessionId")
+                .or_else(|_| required_string(args, "sessionId"))?;
+            let request_id = required_string(args, "requestId")?;
+
+            let request: fabushi_messaging_core::MiniAppRequest = if let Some(req_val) = args.get("request") {
+                serde_json::from_value(req_val.clone())
+                    .map_err(|e| SessionGatewayError::bad(format!("invalid miniapp request: {e}")))?
+            } else if let Some(text) = optional_string(args, "text")? {
+                fabushi_messaging_core::MiniAppRequest::SendMessage { text: text.to_string() }
+            } else if let Some(data) = optional_string(args, "data")? {
+                fabushi_messaging_core::MiniAppRequest::SendData { data: data.to_string() }
+            } else {
+                return Err(SessionGatewayError::bad("miniAppPostToConversation requires request or text/data"));
+            };
+
+            session
+                .post_miniapp_message(launch_session_id, request_id, &request)
+                .map_err(|err| match err {
+                    MiniAppPostError::PersistenceFailed(msg) => SessionGatewayError::internal(msg),
+                    _ => SessionGatewayError::bad(err.to_string()),
+                })
+        })(),
+        "cacheConversationMedia" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let topic_id = optional_string(args, "topicId")?;
+            let key = required_string(args, "key")
+                .or_else(|_| required_string(args, "mediaId"))?;
+            let size_bytes = args
+                .get("sizeBytes")
+                .and_then(|v| v.as_u64().or_else(|| v.as_i64().and_then(|i| u64::try_from(i).ok())))
+                .ok_or_else(|| SessionGatewayError::bad("cacheConversationMedia requires sizeBytes"))?;
+            let mime_type = optional_string(args, "mimeType")?
+                .unwrap_or("application/octet-stream");
+            session
+                .cache_conversation_media(
+                    conversation_id,
+                    topic_id,
+                    key,
+                    size_bytes,
+                    mime_type,
+                )
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "getConversationMediaCacheStats" => required_string(args, "conversationId").and_then(|conversation_id| {
+            session
+                .get_conversation_media_cache_stats(conversation_id)
+                .map_err(SessionGatewayError::internal)
+        }),
+        "clearConversationMediaCache" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let topic_id = optional_string(args, "topicId")?;
+            session
+                .clear_conversation_media_cache(conversation_id, topic_id)
+                .map_err(SessionGatewayError::internal)
+        })(),
         "reactHumanMessage" => required_string(args, "conversationId").and_then(|conversation_id| {
             required_string(args, "entryId").and_then(|entry_id| {
-                required_string(args, "emoji").and_then(|emoji| {
+                // Emoji bytes are reaction identity; validation must not erase
+                // padding before the production admission guard sees it.
+                args.get("emoji").and_then(Value::as_str)
+                    .filter(|value| !value.trim().is_empty())
+                    .ok_or_else(|| SessionGatewayError::bad("missing or invalid emoji"))
+                    .and_then(|emoji| {
                     session
                         .toggle_human_message_reaction(conversation_id, entry_id, emoji)
                         .map_err(SessionGatewayError::internal)
@@ -450,23 +784,49 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             })
         }),
         "getHumanConversationTranscript" => required_string(args, "conversationId").and_then(|conversation_id| {
+            let topic_id = match args.get("topicId") {
+                None | Some(Value::Null) => None,
+                Some(Value::String(topic)) if !topic.trim().is_empty() => Some(topic.as_str()),
+                Some(_) => return Err(SessionGatewayError::bad("invalid topicId")),
+            };
             session
-                .read_human_conversation_transcript(conversation_id)
+                .read_human_conversation_transcript_for_topic(conversation_id, topic_id)
                 .map(Value::Array)
                 .map_err(SessionGatewayError::internal)
         }),
         "getHumanConversationTranscriptTail" => required_string(args, "conversationId").and_then(|conversation_id| {
-            let query = TranscriptWindowQuery {
+            let before_cursor = match args.get("beforeCursor") {
+                None | Some(Value::Null) => None,
+                Some(Value::String(cursor)) if !cursor.is_empty() && cursor.len() <= 256 => Some(cursor.clone()),
+                Some(_) => return Err(SessionGatewayError::bad("invalid beforeCursor")),
+            };
+            let topic_id = match args.get("topicId") {
+                None | Some(Value::Null) => None,
+                Some(Value::String(topic)) if !topic.trim().is_empty() => Some(topic.clone()),
+                Some(_) => return Err(SessionGatewayError::bad("invalid topicId")),
+            };
+            let query = HumanTranscriptPageQuery {
                 before_seq: optional_i64(args, "beforeSeq"),
+                before_cursor,
                 limit: optional_i64(args, "limit").unwrap_or(200),
+                topic_id,
             };
             session
                 .read_human_conversation_transcript_tail(conversation_id, query)
-                .map(|page| {
-                    json!({
+                .and_then(|page| {
+                    let coverage_incomplete =
+                        session.human_conversation_coverage_incomplete(conversation_id)?;
+                    let mut response = json!({
                         "entries": page.entries,
                         "nextBeforeSeq": page.next_before_seq,
-                    })
+                        "nextBeforeCursor": page.next_before_cursor,
+                    });
+                    if coverage_incomplete {
+                        if let Some(object) = response.as_object_mut() {
+                            object.insert("historyCoverageComplete".into(), json!(false));
+                        }
+                    }
+                    Ok(response)
                 })
                 .map_err(SessionGatewayError::internal)
         }),
@@ -482,10 +842,15 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     .and_then(Value::as_u64)
                     .and_then(|value| usize::try_from(value).ok())
                     .unwrap_or(50);
-                session
-                    .search_human_messages(conversation_id, query, limit)
-                    .map(Value::Array)
-                    .map_err(SessionGatewayError::internal)
+                search_human_conversation_messages(
+                    session,
+                    content_search,
+                    conversation_id,
+                    query,
+                    limit,
+                )
+                .map(Value::Array)
+                .map_err(SessionGatewayError::internal)
             })
         }),
         "getCallTransportIdentity" => session
@@ -820,6 +1185,18 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     })
             })
         }),
+        "retireLegacyTelegramData" => (|| {
+            let remove_immediately = optional_bool(args, "removeImmediately")?
+                .or(optional_bool(args, "remove_immediately")?)
+                .unwrap_or(false);
+            session
+                .retire_legacy_telegram_data(remove_immediately)
+                .and_then(|report| {
+                    serde_json::to_value(report)
+                        .map_err(|error| super::legacy_telegram_retirement::LegacyTelegramRetirementError::Internal(error.to_string()))
+                })
+                .map_err(|error| SessionGatewayError::bad(error.to_string()))
+        })(),
         _ => return None,
     };
     Some(result)
@@ -906,6 +1283,28 @@ fn required_string_array(
         .collect()
 }
 
+fn optional_string_array(
+    args: &Value,
+    field: &str,
+) -> Result<Option<Vec<String>>, SessionGatewayError> {
+    match args.get(field) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Array(values)) => {
+            let res = values
+                .iter()
+                .map(|value| {
+                    value
+                        .as_str()
+                        .map(ToOwned::to_owned)
+                        .ok_or_else(|| SessionGatewayError::bad(format!("{field} must contain only strings")))
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(Some(res))
+        }
+        _ => Err(SessionGatewayError::bad(format!("{field} must be an array of strings"))),
+    }
+}
+
 pub(crate) fn optional_string<'a>(
     args: &'a Value,
     field: &str,
@@ -985,3 +1384,4 @@ fn optional_i64(args: &Value, field: &str) -> Option<i64> {
                 .map(|value| value.trunc() as i64)
         })
 }
+

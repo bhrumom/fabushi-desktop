@@ -9,6 +9,7 @@ import {
   installUpdate,
   loadSettingsDesktopSnapshot,
   loadUsageState,
+  mutateNetworkProxySettings,
   cancelUsageTrial,
   checkForUpdatesWithRecovery,
   runAccountAction,
@@ -176,6 +177,7 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
     localToolPermission: { ...current.localToolPermission, permission }
   });
   const updateSecurityKey = (securityKeyEnabled: boolean) => setSnapshot((current) => current == null ? current : { ...current, securityKeyEnabled });
+  const updateNetworkProxy = (networkProxy: SettingsDesktopSnapshot["networkProxy"]) => setSnapshot((current) => current == null ? current : { ...current, networkProxy });
   const updateAutoReview = (autoReview: AutoReviewSettings) => setSnapshot((current) => current == null ? current : { ...current, autoReview });
   const refreshUsage = async () => {
     const previous = snapshot?.usage;
@@ -253,6 +255,7 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
               onRequestPermissions: () => bridge.callMedia.requestPermissions({ audio: true, video: true })
             }}
             privacyModeEnabled={snapshot.privacyModeEnabled}
+            networkProxy={{ state: snapshot.networkProxy, onMutate: (mutation) => mutate(() => mutateNetworkProxySettings(bridge, mutation), "settings-network-proxy", updateNetworkProxy) }}
             theme={snapshot.theme}
           />
         );

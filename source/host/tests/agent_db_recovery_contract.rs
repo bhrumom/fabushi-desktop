@@ -56,6 +56,21 @@ fn salvage_preserves_kv_blob_and_transcript_rows() {
         "INSERT INTO transcript_entries(seq,id,entry) VALUES(7,'entry-a',?1)",
         params![r#"{"id":"entry-a","kind":"message","role":"user","content":"hi"}"#],
     ).expect("transcript");
+    source.execute(
+        "INSERT INTO conversation_topics(topic_id, title, icon, creator_id, created_at_ms)
+         VALUES('topic-1', 'Topic 1', 'icon-url', 'creator-1', 1000)",
+        [],
+    ).expect("topic");
+    source.execute(
+        "INSERT INTO conversation_members(actor_id, status, joined_at_ms, updated_at_ms)
+         VALUES('actor-1', 'member', 1000, 1000)",
+        [],
+    ).expect("member");
+    source.execute(
+        "INSERT INTO conversation_pins(child_scope, message_id, pinned_at_ms, pinned_by)
+         VALUES('topic:topic-1', 'entry-a', 1000, 'actor-1')",
+        [],
+    ).expect("pin");
     drop(source);
 
     let target = Connection::open(&target_path).expect("target");
@@ -64,6 +79,11 @@ fn salvage_preserves_kv_blob_and_transcript_rows() {
     assert_eq!(counts.kv, 1);
     assert_eq!(counts.blobs, 1);
     assert_eq!(counts.transcript, 1);
+    assert_eq!(counts.topics, 1);
+    assert_eq!(counts.members, 1);
+    assert_eq!(counts.pins, 1);
+    assert_eq!(counts.total(), 6);
+
     let seq: i64 = target
         .query_row(
             "SELECT seq FROM transcript_entries WHERE id='entry-a'",
@@ -72,6 +92,33 @@ fn salvage_preserves_kv_blob_and_transcript_rows() {
         )
         .expect("transcript row");
     assert_eq!(seq, 7);
+
+    let topic_title: String = target
+        .query_row(
+            "SELECT title FROM conversation_topics WHERE topic_id='topic-1'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("topic row");
+    assert_eq!(topic_title, "Topic 1");
+
+    let member_status: String = target
+        .query_row(
+            "SELECT status FROM conversation_members WHERE actor_id='actor-1'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("member row");
+    assert_eq!(member_status, "member");
+
+    let pinned_by: String = target
+        .query_row(
+            "SELECT pinned_by FROM conversation_pins WHERE child_scope='topic:topic-1' AND message_id='entry-a'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("pin row");
+    assert_eq!(pinned_by, "actor-1");
 
     drop(target);
     cleanup(&source_path);

@@ -2382,5 +2382,38 @@
       "root_candidate_policy_status": "complete-for-current-xkbcommon-authority",
       "note": "Closes acquisition-pattern candidates for xkbcommon-1.6.0; keyboard mapping/runtime behavior remains in semantic scope."
     }
+  },
+  "current_source_status": "historical-pending-fixed-u-revalidation",
+  "rebaseline_candidate": {
+    "upstream_repository": "telegramdesktop/tdesktop",
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "upstream_tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+    "status": "unaccepted-build-input-observations",
+    "classification_status": "pending-source-review",
+    "evidence": {
+      "repository": "bhrumom/fabushi-desktop",
+      "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+      "artifact_id": 13121721589,
+      "run_id": 41401970993,
+      "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+    },
+    "total_candidate_lines": 333,
+    "counts_by_scope": {
+      "legacy-root-paths": 331,
+      "pinned-cmake-component": 2
+    },
+    "text_files_read": 203,
+    "opaque_inputs_unread": 2,
+    "context_observations": 508,
+    "unresolved_ref_observations": 76,
+    "baseline_accepted": false,
+    "source_closure_ready": false,
+    "build_time_acquisitions_complete": false,
+    "generated_inputs_complete": false,
+    "lfs_object_closure_complete": false,
+    "semantic_review_performed": false,
+    "legal_review_performed": false,
+    "product_accepted": false,
+    "independent_acceptance": false
   }
 }

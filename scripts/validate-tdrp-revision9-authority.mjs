@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { validateSourceReviews } from './tdrp-source-review.mjs';
+import { validateResponsibilitySources, validateSourceReviews, readFrozenUpstreamCommit, assertNoOpenSourceCandidate, assertSourceAcquisitionClosure, assertResponsibilityTraceability } from './tdrp-source-review.mjs';
+import { canonicalNestedRepository, assertNestedGitlinkPins } from './tdrp-nested-pin-identity.mjs';
 
 const root = process.cwd();
 const requireAccepted = process.argv.includes('--require-accepted');
@@ -65,13 +66,20 @@ const schema=await readJson('projects/telegram-desktop-rust/contracts/parity-led
 const spec=await read('docs/specs/telegram-desktop-rust-equivalence-migration.md');
 const rtm=await read('projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md');
 const ledger=await readJson('projects/telegram-desktop-rust/parity-ledger.json');
+if (requireAccepted) assertNoOpenSourceCandidate(ledger);
 const acquisitionInventory=await readJson('projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
+if (requireAccepted) assertSourceAcquisitionClosure(lock, acquisitionInventory);
 
 fail(lock.project_id==='TDRP-001' && lock.spec_revision===9,'lock is not TDRP Revision 9');
 fail(schema.properties?.spec_revision?.const===9,'ledger schema is not Revision 9');
 fail(ledger.project_id==='TDRP-001' && ledger.spec_revision===9 && ledger.format_version===3,'ledger instance is not Revision 9');
 fail(ledger.upstream_commit===lock.upstream.commit,'ledger upstream commit does not match accepted baseline identity');
 fail(ledger.coverage?.source_entries_total===lock.coverage.recursive_source_entries_total,'ledger recursive source count does not match lock');
+for (const value of [ledger.coverage?.unknown, ledger.coverage?.unread,
+  lock.coverage?.unknown_minimum, lock.coverage?.unread_minimum]) {
+  fail(Number.isInteger(value) && value >= 0,
+    'full source authority coverage is unestablished; run the focused candidate consistency gate');
+}
 fail(ledger.coverage?.unknown>=lock.coverage.unknown_minimum,'ledger unknown count understates lock minimum');
 fail(ledger.coverage?.unread>=lock.coverage.unread_minimum,'ledger unread count understates lock minimum');
 fail(ledger.coverage?.omitted===lock.coverage.omitted_known,'ledger omitted count disagrees with lock');
@@ -103,7 +111,7 @@ for (const group of dispositionGroups) {
 fail(dispositionedCandidateLines+acquisitionInventory.discovery.immutable_commit_pin_occurrences_classified===acquisitionInventory.discovery.candidate_lines_classified,'explicit candidate dispositions do not match classified count');
 const immutableKeys=new Set((acquisitionInventory.immutable_commit_pin_occurrences || []).map(item=>item.source_path+':'+item.source_line));
 for (const key of dispositionKeys) fail(!immutableKeys.has(key),'candidate disposition overlaps immutable occurrence: '+key);
-fail(lock.build_time_acquisition_inventory.closure_status==='open','build-time acquisition closure must remain open while candidate lines are pending');
+if (!requireAccepted) fail(lock.build_time_acquisition_inventory.closure_status==='open','historical build-time acquisition audit must remain explicitly open');
 for (const acquisition of acquisitionInventory.immutable_commit_pin_occurrences || []) {
   fail(/^[0-9a-f]{40}$/.test(acquisition.commit),'immutable acquisition lacks full commit pin: '+acquisition.id);
   const raw=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${lock.upstream.commit}/${acquisition.source_path}`,false);
@@ -142,7 +150,7 @@ for (const child of recursiveChildren) {
   fail(entry.sha===child.child_commit,'recursive child gitlink SHA drift: '+child.id);
 }
 const recursiveReachability=acquisitionInventory.recursive_build_reachability;
-fail(recursiveReachability?.status==='partial-audited-disposition-open','recursive build reachability status must remain explicitly partial/open');
+if (!requireAccepted) fail(recursiveReachability?.status==='partial-audited-disposition-open','historical recursive build reachability audit must remain explicitly partial/open');
 fail(recursiveReachability.accepted_upstream_commit===lock.upstream.commit,'recursive build reachability upstream commit drift');
 const qtReachability=recursiveReachability.qt_superproject;
 fail(qtReachability?.repository==='https://github.com/qt/qt5','Qt reachability authority missing');
@@ -550,12 +558,8 @@ const responsibilityIds=new Set();
 const targetSymbolOwners=new Map();
 for (const row of ledger.rows) {
   for (const key of rowRequired) fail(Object.prototype.hasOwnProperty.call(row,key),'ledger row '+(row.responsibility_id||'<unknown>')+' missing required field '+key);
-  fail(row.source_commit===lock.upstream.commit,'row '+row.responsibility_id+' source commit differs from accepted upstream');
   fail(!responsibilityIds.has(row.responsibility_id),'duplicate responsibility id '+row.responsibility_id);
   responsibilityIds.add(row.responsibility_id);
-  const sourceObject=(await ghTree(lock.upstream.repository,lock.upstream.commit)).tree.find(e=>e.path===row.source_path);
-  fail(sourceObject,'row source path absent from accepted upstream tree: '+row.source_path);
-  fail(sourceObject.sha===row.source_blob_sha,'row source blob mismatch: '+row.source_path);
   fail(await fs.stat(path.join(root,row.source_analysis_path)).then(()=>true).catch(()=>false),'row dossier missing: '+row.source_analysis_path);
   fail(row.existing_owner || row.novel_capability===true,'existing-owner-first unresolved for '+row.responsibility_id);
   if (row.novel_capability!==true) {
@@ -578,8 +582,7 @@ for (const row of ledger.rows) {
     if (prior && prior!==row.responsibility_id) fail(false,'target symbol has multiple responsibility owners without explicit split: '+key);
     targetSymbolOwners.set(key,row.responsibility_id);
   }
-  const traceText=rtm+'\n'+await read(row.source_analysis_path);
-  for (const id of [...row.requirement_ids,...row.oracle_ids,...row.invariant_ids]) fail(traceText.includes(id),'traceability id '+id+' missing from RTM/dossier for '+row.responsibility_id);
+  assertResponsibilityTraceability(row, rtm, await read(row.source_analysis_path));
   if (['implemented','verified'].includes(row.implementation_status)) {
     fail(row.production_entrypoints.length>0,'implemented row lacks shipping entrypoint: '+row.responsibility_id);
     fail(row.production_evidence.length>0,'implemented row lacks production evidence: '+row.responsibility_id);
@@ -598,11 +601,7 @@ for (const gate of ['G-INVENTORY','G-FILE','G-TRACEABILITY','G-COMPOSITION','G-S
 for (const key of ['oracle_ids','invariant_ids','evidence_ids','verdict']) fail(rtm.includes(key),'RTM missing '+key);
 
 const u=lock.upstream;
-const commit=await get(`https://api.github.com/repos/${u.repository}/git/commits/${u.commit}`);
-fail(commit.sha===u.commit,'upstream commit mismatch');
-fail(commit.tree?.sha===u.tree,'upstream tree mismatch');
-const branch=await get(`https://api.github.com/repos/${u.repository}/branches/dev`);
-fail(branch.commit?.sha===u.commit,`upstream dev advanced to ${branch.commit?.sha}; rebaseline required`);
+await readFrozenUpstreamCommit(u, get);
 
 const rootTree=await ghTree(u.repository,u.commit);
 fail(rootTree.truncated===false,'root recursive tree truncated');
@@ -638,13 +637,17 @@ for (const g of links) {
   recursiveInventory.push(...componentEntries.map(e=>({
     repository:repo,commit:g.sha,scope:'direct-gitlink',mount:g.path,path:e.path,mode:e.mode,type:e.type,object:e.sha,size:e.size??null
   })));
-  for (const e of td.tree||[]) if (e.mode==='160000') nested.push({parent:`${repo}@${g.sha}`,path:e.path,commit:e.sha});
+  const nestedLinks = (td.tree||[]).filter(e => e.mode === '160000');
+  if (nestedLinks.length) {
+    const nestedModules = parseGitmodules(await get(`https://raw.githubusercontent.com/${repo}/${g.sha}/.gitmodules`, false));
+    for (const e of nestedLinks) {
+      const repository = canonicalNestedRepository(nestedModules.get(e.path));
+      fail(repository !== null, 'unresolved nested gitlink repository ' + repo + ':' + e.path);
+      nested.push({ parent: `${repo}@${g.sha}`, path: e.path, repository, commit: e.sha });
+    }
+  }
 }
-for (const k of lock.known_nested_gitlinks.filter(x=>!x.repository.startsWith('gitlab.com/'))) {
-  fail(nested.some(n=>n.parent===k.parent&&n.path===k.path&&n.commit===k.commit),'missing known nested gitlink '+k.parent+':'+k.path);
-}
-const unexpected=nested.filter(n=>!lock.known_nested_gitlinks.some(k=>k.parent===n.parent&&k.path===n.path&&k.commit===n.commit));
-fail(unexpected.length===0,'unexpected nested gitlinks '+JSON.stringify(unexpected));
+assertNestedGitlinkPins(lock.known_nested_gitlinks, nested);
 
 const githubNestedCounts=[];
 for (const k of lock.known_nested_gitlinks.filter(x=>!x.repository.startsWith('gitlab.com/'))) {
@@ -681,6 +684,9 @@ recursiveInventory.push(...childEntries.map(e=>({
 })));
 
 fail(recursiveInventory.length===lock.coverage.recursive_source_entries_total,`recursive inventory count drift ${recursiveInventory.length} != ${lock.coverage.recursive_source_entries_total}`);
+// Primary and additional rows may refer to any actually acquired source in U's
+// graph. A row's own repository/commit cannot introduce an unrelated source.
+validateResponsibilitySources(recursiveInventory, ledger.rows);
 
 const attrs=await get(`https://raw.githubusercontent.com/${u.repository}/${u.commit}/.gitattributes`,false);
 fail(!/filter=lfs|diff=lfs|merge=lfs/.test(attrs),'Git LFS attributes detected; explicit LFS closure required');
@@ -712,6 +718,7 @@ const report={
 await fs.writeFile(path.join(root,'artifacts/tdrp-authority/authority-report.json'),JSON.stringify(report,null,2)+'\n');
 
 if (requireAccepted) {
+  assertNoOpenSourceCandidate(ledger);
   fail(u.accepted===true,'accepted mode requires upstream.accepted=true');
   fail(lock.acceptance.accepted===true,'accepted mode requires acceptance.accepted=true');
   fail(lock.acceptance.baseline_ready===true,'accepted mode requires baseline_ready=true');

@@ -1,6 +1,92 @@
 name: Native service contracts
 
 on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - 'source/host/src/extensions/session/**'
+      - 'source/host/src/transcript_mutation_events.rs'
+      - 'source/host/src/extensions/transcript/extension.rs'
+      - 'source/host/src/extensions/transcript/roster_emit.rs'
+      - 'source/host/src/extensions/transcript/roster_search.rs'
+      - 'native/mahayana-messaging/src/message.rs'
+      - 'native/mahayana-messaging/src/search.rs'
+      - 'frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts'
+      - 'source/host/src/transcript_mirror/conversation_state_binary.rs'
+      - 'source/host/tests/roster_search_contract.rs'
+      - 'source/host/tests/session_gateway_contract.rs'
+      - 'source/host/src/gateway_server.rs'
+      - 'source/host/tests/gateway_server_contract.rs'
+      - 'frontend/src/production/human-message-retry*'
+      - 'frontend/src/production/human-message-submission*'
+      - 'frontend/src/recovered/features/conversation/workspace/submission.ts'
+      - 'source/host/Cargo.lock'
+      - 'source/host/app/Cargo.lock'
+      - 'frontend/src/production/ProductionRenderer.tsx'
+      - 'frontend/src/production/ProductionRenderer.transcript.*'
+      - 'frontend/src/recovered/features/conversation/workspace/transcript.tsx'
+      - 'frontend/src/recovered/features/conversation/workspace/media-viewer.tsx'
+      - 'frontend/src/recovered/features/conversation/workspace/pdf-viewer.css'
+      - 'frontend/src/recovered/features/conversation/workspace/view.css'
+      - 'frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer-provider.ts'
+      - 'desktop/transcript-test.html'
+      - 'desktop/transcript-test.ts'
+      - 'frontend/src/production/model.ts'
+      - 'desktop/native-message-projection.html'
+      - 'desktop/e2e/native-message-projection.spec.ts'
+      - 'desktop/e2e/fixtures/native-message-projection.tsx'
+      - 'desktop/playwright.config.ts'
+      - 'desktop/forward-dialog-test.html'
+      - 'desktop/forward-dialog-test.ts'
+      - 'frontend/src/production/ForwardMessageDialog*'
+      - 'frontend/src/production/forward-settlement*'
+      - 'frontend/src/production/forward-account-scope.ts'
+      - 'frontend/src/production/forward-recipient-navigation.ts'
+      - 'frontend/src/recovered/runtime/coordinator-source.ts'
+      - 'source/shared/rpc/coordinator.ts'
+      - 'source/shared/rpc/coordinator.contract.test.ts'
+      - 'frontend/src/production/model.ts'
+      - 'frontend/src/recovered/features/conversation/workspace/model.ts'
+      - 'frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts'
+      - 'frontend/src/production/coordinator-client.ts'
+      - 'frontend/src/recovered/features/root-resilience/connection-state.ts'
+      - 'frontend/src/production/transcript-projection*'
+      - 'frontend/src/recovered/features/conversation/workspace/draft-state.ts'
+      - 'frontend/src/recovered/features/conversation/workspace/draft-recovery.contract.test.ts'
+      - 'source/shared/client-persistence-store*'
+      - 'frontend/src/recovered/features/conversation/workspace/reply-thread-controller*'
+      - 'desktop/e2e/native-message-author-recovery.spec.ts'
+      - 'desktop/e2e/fixtures/native-message-author-recovery.tsx'
+      - 'frontend/src/recovered/features/conversation/workspace/pagination*'
+      - 'frontend/src/recovered/features/conversation/workspace/submission.ts'
+      - 'source/electron-main/coordinator/rust-coordinator-carrier*'
+      - 'source/product/fabushi/fabushi-account-service*'
+      - 'source/electron-main/update/**'
+      - 'source/electron-main/production-binding-providers.ts'
+      - 'source/shared/node/fabushi-service-origin.ts'
+      - 'frontend/src/recovered/contracts/desktop-bridge.ts'
+      - 'frontend/src/recovered/features/settings/overlay/updates.ts'
+      - 'desktop/package.json'
+      - 'desktop/package-lock.json'
+      - 'desktop/scripts/build-electron-runtime.mjs'
+      - 'desktop/scripts/native-package-resources.contract.test.mjs'
+      - 'desktop/scripts/reconcile-macos-update-metadata*.mjs'
+      - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
+      - 'source/mahayana/mahayana-rs/mahayana-feature-host/**'
+      - 'source/mahayana/mahayana-rs/mahayana-ffi/**'
+      - 'source/mahayana/mahayana-rs/mahayana-host/**'
+      - 'source/mahayana/mahayana-rs/mahayana-cli/**'
+      - 'source/mahayana/mahayana-rs/mahayana-gateway/**'
+      - 'source/mahayana/mahayana-rs/mahayana-gateway-peer/**'
+      - 'source/mahayana/mahayana-rs/mahayana-product/**'
+      - 'source/mahayana/mahayana-rs/mahayana-runtime/**'
+      - 'source/mahayana/mahayana-rs/Cargo.lock'
+      - 'source/mahayana/mahayana-rs/Cargo.toml'
+      - 'projects/telegram-desktop-rust/upstream.lock.json'
+      - '.github/workflows/native-service-contracts.yml'
+      - '.github/workflows/release-macos-main.yml'
+      - '.github/scripts/promote-miniapp-candidate*.mjs'
+      - '.github/scripts/resolve-package-acceptance-scope*.mjs'
   pull_request:
     paths:
       - 'source/host/src/extensions/auth/**'
@@ -29,10 +115,16 @@ on:
       - 'projects/openclaw-rust/scripts/expand_inventory.py'
       - '.github/workflows/native-service-contracts.yml'
   workflow_dispatch:
+    inputs:
+      message_batch:
+        description: Run the focused FBCP native message reconciliation batch
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
   native-auth-and-journal:
+    if: github.event_name != 'push' && !inputs.message_batch
     strategy:
       fail-fast: false
       matrix:
@@ -77,6 +169,8 @@ jobs:
             --test box_store_sync_production_wiring_contract \
             --test xuser_sharing_environment_contract \
             --test xuser_service_contract
+          git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
+          echo 'Native credential and loopback HTTP transport evidence only; no deployed-cloud, full lifecycle or packaged-platform acceptance.' >> "$GITHUB_STEP_SUMMARY"
       - name: Record bounded evidence scope
         shell: bash
         run: |
@@ -96,3 +190,1112 @@ jobs:
           path: .evidence/native-service-contracts.json
           if-no-files-found: error
           retention-days: 90
+  gateway-peer-durability:
+    if: github.event_name == 'push' || inputs.message_batch
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact peer source and platform scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/gateway-peer-durability
+          git rev-parse HEAD > artifacts/gateway-peer-durability/target-sha.txt
+          printf '%s\n' 'FBCP-NMR-001/NMR-PEER-DURABILITY-01; actual file transactions and OS locks; Host handoff, replay reconciliation, power-loss and mixed-version acceptance remain open' > artifacts/gateway-peer-durability/scope.txt
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/mahayana/mahayana-rs -> target
+          shared-key: gateway-peer-durability-${{ matrix.os }}-1.97.1
+      - name: Complete peer state and actual filesystem contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-gateway-peer --lib -- --nocapture --test-threads=1 2>&1 | tee artifacts/gateway-peer-durability/peer-contracts.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/gateway-peer-durability/peer-contracts.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gateway-peer-durability-${{ matrix.os }}-${{ github.sha }}
+          path: artifacts/gateway-peer-durability
+          if-no-files-found: error
+  native-message-reconciliation:
+    if: github.event_name == 'push' || inputs.message_batch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact source and batch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/native-message
+          git rev-parse HEAD > artifacts/native-message/target-sha.txt
+          printf '%s\n' 'FBCP-NMR-001; source-informed U=f985723b552b30fe1c17d377d57f44e61a15a8c4; loopback integration only' > artifacts/native-message/scope.txt
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Install existing Linux Host native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: Transcript compaction and recovery registration contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --lib conversation_state_binary::tests -- --nocapture 2>&1 | tee artifacts/native-message/transcript-recovery.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message/transcript-recovery.log
+          grep -Fx 'test transcript_mirror::conversation_state_binary::tests::recovery_fields_decode_token_details_and_turn_timing ... ok' artifacts/native-message/transcript-recovery.log
+          grep -Fx 'test transcript_mirror::conversation_state_binary::tests::stale_token_details_can_be_removed_without_reencoding_other_fields ... ok' artifacts/native-message/transcript-recovery.log
+      - name: Human ingress, settlement and restart contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -F 'test shipping_human_forward_active_batch_does_not_block_destination_or_unrelated_history ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'test shipping_human_roster_recovery_attempts_failed_forward_once_per_invocation_and_reopens ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'test shipping_human_roster_binds_active_user_before_http_and_preserves_compatible_api ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'test shipping_human_roster_rejects_six_streaming_credential_rotations_before_effects_and_recovers ... ok' artifacts/native-message/session-gateway.log
+          grep -Fq 'shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy ... ok' artifacts/native-message/session-gateway.log
+          for case_name in \
+            shipping_human_retry_reopens_attachment_reply_and_coalesces_same_nonce_without_reupload \
+            shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mutation \
+            shipping_human_retry_preserves_forward_source_policy_and_refuses_generic_ownership_bypass \
+            shipping_human_retry_fences_account_and_issuer_changes_and_restores_durable_failure \
+            shipping_human_committed_refresh_reaches_production_transcript_bus \
+            shipping_human_transcript_feed_reads_current_owner_and_deduplicates_ids \
+            shipping_human_transcript_feed_rejects_foreign_roots_agents_and_unauthorized_origins \
+            shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement \
+            shipping_human_offline_origin_is_explicit_and_survives_settlement_and_restart \
+            shipping_human_reaction_rejection_preserves_intent_while_history_progresses_after_restart \
+            shipping_human_roster_reaction_rejection_does_not_starve_other_conversations_or_calls \
+            shipping_human_reaction_rejection_continuation_refuses_changed_credentials_before_downstream_work \
+            shipping_human_reaction_rejection_keeps_admission_and_protocol_failures_fail_closed \
+            shipping_human_history_coverage_incomplete_signal_is_exposed_until_sync_reaches_end; do
+            grep -Fx "test $case_name ... ok" artifacts/native-message/session-gateway.log
+          done
+      - name: Human resource upload size and bounded-read contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --lib native_message_resource_upload_tests -- --nocapture 2>&1 | tee artifacts/native-message/resource-upload-bounds.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message/resource-upload-bounds.log
+          grep -F 'shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_historical_reply_aliases_require_unique_local_canonical_parent ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen ... ok' artifacts/native-message/session-gateway.log
+      - name: Concurrent Human creation and non-destructive initialization recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --lib human_creation_tests -- --nocapture 2>&1 | tee artifacts/native-message/human-creation.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message/human-creation.log
+          grep -Fq 'retained_wal_creation_keeps_committed_identity_and_transcript_after_reopen ... ok' artifacts/native-message/human-creation.log
+          grep -Fq 'human_format_probe_preserves_posix_locks_against_an_external_writer ... ok' artifacts/native-message/human-creation.log
+          cargo test --locked --manifest-path source/host/Cargo.toml --lib human_creation_storage_tests -- --nocapture 2>&1 | tee artifacts/native-message/human-creation-storage.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message/human-creation-storage.log
+      - name: Durable forwarding sharebox owner contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --lib sharebox_shipping_tests -- --nocapture 2>&1 | tee artifacts/native-message/forward-sharebox.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message/forward-sharebox.log
+      - name: Durable forwarding journal and stale-write CAS contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --lib forward_batch_journal::tests -- --nocapture 2>&1 | tee artifacts/native-message/forward-batches.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message/forward-batches.log
+          grep -F 'stale_same_batch_snapshot_cannot_regress_completed_destination ... ok' artifacts/native-message/forward-batches.log
+          grep -F 'concurrent_forward_metadata_writers_have_one_durable_winner_and_recover ... ok' artifacts/native-message/forward-batches.log
+      - name: Preserve Agent send nonce boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --test send_pipeline_nonce_boundary_contract -- --nocapture 2>&1 | tee artifacts/native-message/agent-send-nonce.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message/agent-send-nonce.log
+      - name: Prove completed HTTP credential fencing at settlement
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --lib shipping_human_settlement_credential_ -- --nocapture 2>&1 | tee artifacts/native-message/settlement-credential.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message/settlement-credential.log
+      - name: Authenticated forward and identity-only retry gateway HTTP contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --test gateway_server_contract gateway_forward_recipient_methods_are_authenticated_and_unknown_methods_stay_closed -- --nocapture 2>&1 | tee artifacts/native-message/forward-http.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message/forward-http.log
+      - name: Canonical Search merges authenticated Human and Agent conversations
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --lib recipient_policy_tests -- --nocapture 2>&1 | tee artifacts/native-message/messaging-core-search.log
+          grep -Fx 'test search::recipient_policy_tests::forward_origin_visibility_and_multi_term_field_matching_enforce_domain_policy ... ok' artifacts/native-message/messaging-core-search.log
+          grep -Fx 'test search::recipient_policy_tests::search_index_supports_scoped_media_files_links_collections_and_filename_matching ... ok' artifacts/native-message/messaging-core-search.log
+          cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --lib child_destination_tests -- --nocapture 2>&1 | tee artifacts/native-message/child-destination-tests.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message/child-destination-tests.log
+          grep -Fx 'test conversation::child_destination_tests::child_runtime_removes_deleted_messages_and_clears_matching_draft_reply_without_losing_text ... ok' artifacts/native-message/child-destination-tests.log
+          grep -Fx 'test conversation::child_destination_tests::child_runtime_rekeys_local_to_server_message_id_and_invalidates_bottom_window ... ok' artifacts/native-message/child-destination-tests.log
+          cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --test m5_contacts_groups_contract -- --nocapture 2>&1 | tee artifacts/native-message/m5-contacts-groups.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message/m5-contacts-groups.log
+          cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --test messaging_contract -- --nocapture 2>&1 | tee artifacts/native-message/messaging-contract.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message/messaging-contract.log
+          grep -Fx 'test story_sibling_resolution_fences_stale_suggestions_contacts_visibility_and_media_fallback ... ok' artifacts/native-message/messaging-contract.log
+          grep -Fx 'test send_menu_mode_and_applicability_enforces_paid_silent_only_reminder_and_scheduled_to_user ... ok' artifacts/native-message/messaging-contract.log
+          grep -Fx 'test paid_send_plan_approval_consumption_and_story_share_at_time_revalidation ... ok' artifacts/native-message/messaging-contract.log
+          grep -Fx 'test forward_panel_option_cycle_draft_lifecycle_forced_info_and_custom_emoji_stripping ... ok' artifacts/native-message/messaging-contract.log
+          cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --test service_contract -- --nocapture 2>&1 | tee artifacts/native-message/service-contract.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message/service-contract.log
+          grep -Fx 'test presence_triggered_send_enforces_last_seen_privacy_cancellation_reschedule_and_terminal_policy_failure ... ok' artifacts/native-message/service-contract.log
+          cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --test m6_channels_topics_contract -- --nocapture 2>&1 | tee artifacts/native-message/m6-channels-topics.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message/m6-channels-topics.log
+          grep -Fx 'test deleting_messages_clears_reply_drafts_without_losing_text_and_reconciles_child_windows ... ok' artifacts/native-message/m6-channels-topics.log
+          grep -Fx 'test share_recipient_search_uses_canonical_typed_permission_axes_before_exposure ... ok' artifacts/native-message/m5-contacts-groups.log
+          grep -Fx 'test typed_share_permission_fields_keep_legacy_persistence_fail_closed ... ok' artifacts/native-message/m5-contacts-groups.log
+          cargo test --locked --manifest-path source/host/Cargo.toml --test roster_search_contract -- --nocapture 2>&1 | tee artifacts/native-message/roster-search.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message/roster-search.log
+          grep -Fx 'test canonical_search_merges_authenticated_human_and_agent_conversations_and_enforces_account_isolation ... ok' artifacts/native-message/roster-search.log
+      - name: Diagnose locked Session dependency drift (no acceptance)
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq 'cannot update the lock file|lock file.*needs to be updated' artifacts/native-message/*.log 2>/dev/null; then
+            cargo metadata --format-version 1 --manifest-path source/host/Cargo.toml > /dev/null 2> artifacts/native-message/dependency-resolution.log || true
+            git diff -- source/host/Cargo.lock > artifacts/native-message/dependency-drift.patch
+            sed -n '1,260p' artifacts/native-message/dependency-drift.patch
+          fi
+      - name: Preserve exact batch evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-message-reconciliation-${{ github.sha }}
+          path: artifacts/native-message
+          if-no-files-found: error
+  desktop-social-owner-behaviors:
+    if: github.event_name == 'push' || inputs.message_batch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CARGO_BUILD_JOBS: '2'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact Desktop Social behavior input
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/desktop-social-owner
+          git rev-parse HEAD > artifacts/desktop-social-owner/target-sha.txt
+          sha256sum \
+            .github/workflows/native-service-contracts.yml \
+            docs/specs/fbcp-desktop-social-owner-boundary.md \
+            docs/specs/fbcp-native-message-reconciliation.md \
+            source/mahayana/mahayana-rs/Cargo.lock \
+            source/mahayana/mahayana-rs/Cargo.toml \
+            source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs \
+            source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs \
+            source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs \
+            source/mahayana/mahayana-rs/mahayana-runtime/src/retained_social_recovery_tests.rs \
+            source/mahayana/mahayana-rs/mahayana-product/src/lib.rs \
+            source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs \
+            source/mahayana/mahayana-rs/mahayana-app-host/Cargo.toml \
+            source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs \
+            source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs \
+            source/mahayana/mahayana-rs/mahayana-feature-host/Cargo.toml \
+            source/mahayana/mahayana-rs/mahayana-host/Cargo.toml \
+            source/mahayana/mahayana-rs/mahayana-runtime/Cargo.toml \
+            source/mahayana/mahayana-rs/mahayana-product/Cargo.toml \
+            source/host/Cargo.toml \
+            source/host/src/extensions/session/production.rs \
+            source/host/src/extensions/session/agent_db.rs \
+            source/host/src/extensions/session/agent_db_recovery.rs \
+            > artifacts/desktop-social-owner/input-sha256.txt
+          printf '%s\n' 'NMR-SOCIAL-AC-01/02, NMR-AC-RETAINED-TELEGRAM-01, NMR-AC-HTTP-OWNER-01 and AC-NATIVE-RESPONSE-01; fixed U=f985723b552b30fe1c17d377d57f44e61a15a8c4; Ubuntu controlled FeatureHost/SQLite/loopback HTTP and Production AppHost integration-test child processes only; macOS shipping binary, real installed packages/services, publisher, signing and independent ACCEPT remain unqualified.' > artifacts/desktop-social-owner/scope.txt
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/mahayana/mahayana-rs -> target
+          shared-key: desktop-social-owner-ubuntu-rust-1.97.1
+      - name: Install existing Linux native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pkg-config libclang-dev libsqlite3-dev libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: Execute actual FeatureHost Social and retained messaging boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustc --version > artifacts/desktop-social-owner/toolchain.txt
+          cargo --version >> artifacts/desktop-social-owner/toolchain.txt
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-feature-host --lib desktop_messaging_boundary_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/desktop-social-owner/featurehost-messaging-boundary.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured;' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
+          grep -F 'desktop_social_intents_refuse_before_auth_runtime_context_io_and_events ... ok' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
+          grep -F 'test implementation::desktop_messaging_boundary_tests::desktop_social_refusal_does_not_lock_state_or_touch_retained_context ...' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
+          grep -F 'social_boundary_keeps_explicit_test_non_desktop_and_other_namespaces ... ok' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
+      - name: Execute real SQLite retained Social and Telegram recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-runtime --lib retained_social_recovery_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/desktop-social-owner/social-recovery.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured;' artifacts/desktop-social-owner/social-recovery.log
+          grep -F 'test retained_social_recovery_tests::retained_telegram_turns_and_handoffs_survive_desktop_sqlite_restart_without_dispatch ... ok' artifacts/desktop-social-owner/social-recovery.log
+          grep -F 'test retained_social_recovery_tests::legacy_telegram_recovery_keeps_default_and_social_only_policies ... ok' artifacts/desktop-social-owner/social-recovery.log
+      - name: Execute existing session-owned HTTP boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib session_owned_platform_ -- --nocapture --test-threads=1 2>&1 | tee artifacts/desktop-social-owner/social-http-owner.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured;' artifacts/desktop-social-owner/social-http-owner.log
+          git diff --exit-code -- source/mahayana/mahayana-rs/Cargo.lock
+      - name: Native AppHost desktop ownership and account restart on Linux
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x /usr/bin/openssl
+          test -x /usr/bin/mkfifo
+          /usr/bin/openssl version > artifacts/desktop-social-owner/apphost-tools.txt
+          /usr/bin/mkfifo --version >> artifacts/desktop-social-owner/apphost-tools.txt
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --test native_desktop_account_handoff -- --nocapture --test-threads=1 2>&1 | tee artifacts/desktop-social-owner/native-startup-retention.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/desktop-social-owner/native-startup-retention.log
+          # Child-process output may interleave after the case prefix; the complete suite above proves its result.
+          grep -F 'test native_telegram_owner_preserves_sqlite_turns_and_refuses_bypass ...' artifacts/desktop-social-owner/native-startup-retention.log
+          git diff --exit-code -- source/mahayana/mahayana-rs/Cargo.lock
+      - name: Native authenticated response completion on Linux
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib native_response_completion_ -- --nocapture --test-threads=1 2>&1 | tee artifacts/desktop-social-owner/native-response-completion.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/desktop-social-owner/native-response-completion.log
+          test "$(grep -c 'NATIVE_RESPONSE_COMPLETION_CASE ' artifacts/desktop-social-owner/native-response-completion.log)" -eq 69
+          git diff --exit-code -- source/mahayana/mahayana-rs/Cargo.lock
+      - name: Preserve exact Desktop Social behavior evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-social-owner-behaviors-${{ github.sha }}
+          path: artifacts/desktop-social-owner
+          if-no-files-found: error
+
+  native-message-shipping-compile:
+    if: github.event_name == 'push' || inputs.message_batch
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact shipping source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/native-message-shipping
+          git rev-parse HEAD > artifacts/native-message-shipping/target-sha.txt
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            source/host/app -> target
+            source/mahayana/mahayana-rs -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Commit peer mutations before exposing live state or frames
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-gateway-peer --lib -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/peer-contracts.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/peer-contracts.log
+      - name: Native authenticated response completion and no replay
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib native_response_completion_ -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/native-response-completion.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/native-response-completion.log
+          test "$(grep -c 'NATIVE_RESPONSE_COMPLETION_CASE ' artifacts/native-message-shipping/native-response-completion.log)" -eq 69
+
+      - name: Build actual desktop AppHost entry and inspect its legacy boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo tree --locked --manifest-path source/host/app/Cargo.toml --edges normal,build 2>&1 | tee artifacts/native-message-shipping/app-host-production-dependencies.log
+          if grep -Eq '(mahayana-telegram|fabushi-telegram-(core|network|protocol|runtime|storage)) v' artifacts/native-message-shipping/app-host-production-dependencies.log; then
+            echo 'desktop AppHost still has a production dependency on a legacy Telegram owner' >&2
+            exit 1
+          fi
+          cargo build --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml 2>&1 | tee artifacts/native-message-shipping/app-host-build.log
+          binary=source/host/app/target/ci/mahayana-app-host
+          test -x "$binary"
+          shasum -a 256 "$binary" > artifacts/native-message-shipping/app-host-sha256.txt
+          file "$binary" > artifacts/native-message-shipping/app-host-file.txt
+          nm -gUj "$binary" > artifacts/native-message-shipping/app-host-defined-symbols.txt
+          otool -L "$binary" > artifacts/native-message-shipping/app-host-linked-libraries.txt
+          if grep -Eq '^_?fabushi_telegram_(create_client|create_persistent_client|execute|close_client|free_string|force_link)$' artifacts/native-message-shipping/app-host-defined-symbols.txt; then
+            echo 'desktop AppHost exports a legacy direct Telegram C entry' >&2
+            exit 1
+          fi
+          if grep -Eqi '(mahayana_runtime|fabushi[_-]telegram)' artifacts/native-message-shipping/app-host-linked-libraries.txt; then
+            echo 'desktop AppHost loads a legacy runtime shared library' >&2
+            exit 1
+          fi
+          cp "$binary" artifacts/native-message-shipping/mahayana-app-host
+      - name: Native startup, desktop messaging boundary and account restart
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --lib telegram_composition_contract_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/native-composition.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/native-composition.log
+          grep -Fx 'NMR-41 proxy preference matrix passed: orders=16 removals=48 repeated_no_ops=48 complete_permutations=6 complete_permutation_removals=18' artifacts/native-message-shipping/native-composition.log
+          test "$(grep -c 'NMR-41 proxy removal passed:' artifacts/native-message-shipping/native-composition.log)" -eq 48
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --test native_desktop_account_handoff -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/native-startup-retention.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/native-startup-retention.log
+          # Child-process output may interleave after the case prefix; the complete suite above proves its result.
+          grep -F 'test native_telegram_owner_preserves_sqlite_turns_and_refuses_bypass ...' artifacts/native-message-shipping/native-startup-retention.log
+      - name: Retained messaging stores and Agent automation boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-feature-host --lib desktop_messaging_boundary_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/featurehost-messaging-boundary.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/featurehost-messaging-boundary.log
+      - name: Retained Social recovery and desktop HTTP ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-runtime --lib retained_social_recovery_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/social-recovery.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/social-recovery.log
+          grep -F 'test retained_social_recovery_tests::retained_telegram_turns_and_handoffs_survive_desktop_sqlite_restart_without_dispatch ... ok' artifacts/native-message-shipping/social-recovery.log
+          grep -F 'test retained_social_recovery_tests::legacy_telegram_recovery_keeps_default_and_social_only_policies ... ok' artifacts/native-message-shipping/social-recovery.log
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib session_owned_platform_ -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/social-http-owner.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed;' artifacts/native-message-shipping/social-http-owner.log
+      - name: Direct Host and C ABI reject legacy handoff before storage
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-host --features test-support --lib legacy_handoff_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/host-legacy-handoff.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/host-legacy-handoff.log
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-ffi --lib -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/ffi-legacy-handoff.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/ffi-legacy-handoff.log
+      - name: Build and inspect actual CLI and gateway production binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest=source/mahayana/mahayana-rs/Cargo.toml
+          cargo tree --locked --manifest-path "$manifest" -p mahayana-cli --edges normal,build,features --format '{p} features=[{f}]' 2>&1 | tee artifacts/native-message-shipping/cli-production-features.log
+          grep -F 'mahayana-host feature "desktop-full"' artifacts/native-message-shipping/cli-production-features.log
+          grep -F 'mahayana-host feature "local-only"' artifacts/native-message-shipping/cli-production-features.log
+          if grep -F 'mahayana-host feature "test-support"' artifacts/native-message-shipping/cli-production-features.log; then
+            echo 'CLI production graph must not use the test-support Host backend' >&2
+            exit 1
+          fi
+          # One package root: workspace/dev feature unification must not conceal
+          # a missing production Agent backend.
+          cargo build --locked --profile ci --manifest-path "$manifest" -p mahayana-cli --bin mahayana --bin mahayana-gateway 2>&1 | tee artifacts/native-message-shipping/cli-production-build.log
+          mkdir -p artifacts/native-message-shipping/cli-binaries
+          for name in mahayana mahayana-gateway; do
+            binary="source/mahayana/mahayana-rs/target/ci/$name"
+            test -x "$binary"
+            shasum -a 256 "$binary" > "artifacts/native-message-shipping/$name-sha256.txt"
+            file "$binary" > "artifacts/native-message-shipping/$name-file.txt"
+            nm -gUj "$binary" > "artifacts/native-message-shipping/$name-defined-symbols.txt"
+            otool -L "$binary" > "artifacts/native-message-shipping/$name-linked-libraries.txt"
+            if grep -Eq '^_?(fabushi_telegram_[[:alnum:]_]+|mahayana_runtime_[[:alnum:]_]+|mahayana_product_execute)$' "artifacts/native-message-shipping/$name-defined-symbols.txt"; then
+              echo "$name contains a retained FFI entrypoint" >&2
+              exit 1
+            fi
+            if grep -Eqi '(mahayana_runtime|fabushi[_-]telegram)' "artifacts/native-message-shipping/$name-linked-libraries.txt"; then
+              echo "$name links a legacy runtime library" >&2
+              exit 1
+            fi
+            cp "$binary" "artifacts/native-message-shipping/cli-binaries/$name"
+          done
+      - name: Actual CLI and gateway native model construction controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess, tempfile
+          evidence = pathlib.Path("artifacts/native-message-shipping").resolve()
+          binaries = pathlib.Path("source/mahayana/mahayana-rs/target/ci").resolve()
+          cases = []
+          identities = []
+          for name in ("mahayana", "mahayana-gateway"):
+              binary = binaries / name
+              raw = binary.read_bytes()
+              identities.append({"name": name, "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()})
+              for native_https in (True, False):
+                  label = name + ("-native-https" if native_https else "-native-http-refusal")
+                  with tempfile.TemporaryDirectory(prefix="fabushi-cli-production-") as scratch:
+                      owned = pathlib.Path(scratch)
+                      workspace = owned / "workspace"
+                      workspace.mkdir()
+                      env = os.environ.copy()
+                      env.update({
+                          "MAHAYANA_HOME": str(owned / "mahayana"),
+                          "MAHAYANA_GATEWAY_STATE": str(owned / "gateway-state.json"),
+                          "MAHAYANA_USE_CODEX_ACCOUNT": "0",
+                          "MAHAYANA_RESPONSES_BASE_URL": ("https" if native_https else "http") + "://127.0.0.1:1/v1",
+                      })
+                      command = [str(binary)] + (["status"] if name == "mahayana" else [])
+                      frames = (
+                          '{"jsonrpc":"2.0","id":1,"method":"session.list","params":{}}\n'
+                          '{"jsonrpc":"2.0","id":2,"method":"gateway.shutdown","params":{}}\n'
+                      ) if name == "mahayana-gateway" else ""
+                      try:
+                          result = subprocess.run(command, input=frames, text=True, capture_output=True,
+                                                  cwd=workspace, env=env, timeout=30)
+                      except subprocess.TimeoutExpired as error:
+                          for stream, value in (("stdout", error.stdout), ("stderr", error.stderr)):
+                              if isinstance(value, bytes):
+                                  value = value.decode("utf-8", errors="replace")
+                              (evidence / (label + "." + stream + ".log")).write_text(value or "")
+                          raise
+                      (evidence / (label + ".stdout.log")).write_text(result.stdout)
+                      (evidence / (label + ".stderr.log")).write_text(result.stderr)
+                      if native_https:
+                          assert result.returncode == 0, (label, result.returncode, result.stderr)
+                          if name == "mahayana":
+                              status = json.loads(result.stdout)
+                              assert status["@type"] == "mahayana.runtime.status", status
+                              assert "mahayana-ai" in status["providers"] and "miniapp" in status["providers"], status
+                          else:
+                              observed = [json.loads(line) for line in result.stdout.splitlines() if line.strip()]
+                              replies = {frame["id"]: frame for frame in observed if "id" in frame}
+                              assert "result" in replies[1] and "error" not in replies[1], replies
+                              assert replies[2]["result"]["shuttingDown"] is True, replies
+                      else:
+                          assert result.returncode != 0, (label, "unavailable fallback unexpectedly succeeded")
+                          assert "remote model endpoints must use HTTPS" in result.stderr, (label, result.stderr)
+                      cases.append({"case": label, "exit_code": result.returncode, "passed": True})
+          assert len(cases) == 4
+          receipt = {"source_sha": os.environ["GITHUB_SHA"], "build_profile": "ci",
+                     "build_root": "mahayana-cli only; normal/build features",
+                     "binaries": identities, "cases": cases,
+                     "limits": "Production process construction only; no remote inference, full Bot, signed installer or external FFI acceptance"}
+          (evidence / "cli-production-processes.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print("NMR-CLI-HOST-01 actual production process controls: 4 passed")
+          PY
+      - name: Native CLI/gateway direct Host and approval boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest=source/mahayana/mahayana-rs/Cargo.toml
+          cargo tree --locked --manifest-path "$manifest" -p mahayana-cli --edges normal,build 2>&1 | tee artifacts/native-message-shipping/cli-production-dependencies.log
+          if grep -Eq '(mahayana-ffi|fabushi-telegram-runtime) v' artifacts/native-message-shipping/cli-production-dependencies.log; then
+            echo 'production CLI or stdio gateway retains the legacy FFI/Telegram runtime dependency' >&2
+            exit 1
+          fi
+          cargo test --locked --manifest-path "$manifest" -p mahayana-cli --bin mahayana direct_cli_host_contract_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/cli-native-owner.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/cli-native-owner.log
+          cargo test --locked --manifest-path "$manifest" -p mahayana-cli --bin mahayana-gateway -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/gateway-native-owner.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/gateway-native-owner.log
+          cargo test --locked --manifest-path "$manifest" -p mahayana-gateway --lib -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/gateway-contracts.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/gateway-contracts.log
+      - name: Verify generic Host has no direct Telegram adapter dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo tree --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-host --edges normal --depth 1 2>&1 | tee artifacts/native-message-shipping/host-direct-dependencies.log
+          if grep -q 'mahayana-telegram v' artifacts/native-message-shipping/host-direct-dependencies.log; then
+            echo 'generic Host still depends directly on legacy Telegram adapter' >&2
+            exit 1
+          fi
+      - name: Verify Native credential boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib native_schema_is_not_ci_export_and_has_no_ci_ttl_cap -- --nocapture 2>&1 | tee artifacts/native-message-shipping/native-credential-schema.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/native-credential-schema.log
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install locked resource-copy implementation
+        working-directory: desktop
+        run: npm ci
+      - name: Copy the actual AppHost into its package resource slot
+        shell: bash
+        env:
+          FABUSHI_PACKAGE_REAL_APP_HOST: '1'
+          FABUSHI_PACKAGE_APP_HOST_BINARY: ${{ github.workspace }}/source/host/app/target/ci/mahayana-app-host
+          FABUSHI_PACKAGE_TARGET_SHA: ${{ github.sha }}
+          FABUSHI_PACKAGE_EVIDENCE_DIR: ${{ github.workspace }}/artifacts/native-message-shipping/actual-package-resource
+        run: |
+          set -euo pipefail
+          export FABUSHI_PACKAGE_APP_HOST_BUILD_SHA256="$(awk 'NR == 1 { print $1 }' artifacts/native-message-shipping/app-host-sha256.txt)"
+          if env -u FABUSHI_PACKAGE_APP_HOST_BINARY node --test --test-reporter=tap --test-name-pattern='NMR-40 actual' desktop/scripts/native-package-resources.contract.test.mjs > artifacts/native-message-shipping/package-missing-input-negative.log 2>&1; then
+            echo 'actual package-copy invocation accepted a missing binary input' >&2
+            exit 1
+          fi
+          grep -F 'FABUSHI_PACKAGE_APP_HOST_BINARY is required' artifacts/native-message-shipping/package-missing-input-negative.log
+          if env FABUSHI_PACKAGE_APP_HOST_BUILD_SHA256=invalid node --test --test-reporter=tap --test-name-pattern='NMR-40 actual' desktop/scripts/native-package-resources.contract.test.mjs > artifacts/native-message-shipping/package-invalid-hash-negative.log 2>&1; then
+            echo 'actual package-copy invocation accepted an invalid build hash' >&2
+            exit 1
+          fi
+          grep -F 'bind the hash recorded by the actual AppHost build step' artifacts/native-message-shipping/package-invalid-hash-negative.log
+          mismatched_hash="0${FABUSHI_PACKAGE_APP_HOST_BUILD_SHA256:1}"
+          if [ "$mismatched_hash" = "$FABUSHI_PACKAGE_APP_HOST_BUILD_SHA256" ]; then
+            mismatched_hash="1${FABUSHI_PACKAGE_APP_HOST_BUILD_SHA256:1}"
+          fi
+          if env FABUSHI_PACKAGE_APP_HOST_BUILD_SHA256="$mismatched_hash" node --test --test-reporter=tap --test-name-pattern='NMR-40 actual' desktop/scripts/native-package-resources.contract.test.mjs > artifacts/native-message-shipping/package-mismatched-hash-negative.log 2>&1; then
+            echo 'actual package-copy invocation accepted a mismatched build hash' >&2
+            exit 1
+          fi
+          grep -F 'copy only the same binary whose hash was captured after build' artifacts/native-message-shipping/package-mismatched-hash-negative.log
+          grep -Fx '# tests 1' artifacts/native-message-shipping/package-mismatched-hash-negative.log
+          grep -Fx '# pass 0' artifacts/native-message-shipping/package-mismatched-hash-negative.log
+          grep -Fx '# fail 1' artifacts/native-message-shipping/package-mismatched-hash-negative.log
+          grep -Fx '# cancelled 0' artifacts/native-message-shipping/package-mismatched-hash-negative.log
+          grep -Fx '# skipped 0' artifacts/native-message-shipping/package-mismatched-hash-negative.log
+          test ! -e "$FABUSHI_PACKAGE_EVIDENCE_DIR"
+          node --test --test-reporter=tap desktop/scripts/native-package-resources.contract.test.mjs 2>&1 | tee artifacts/native-message-shipping/actual-package-resource.log
+          grep -Fx '# tests 4' artifacts/native-message-shipping/actual-package-resource.log
+          grep -Fx '# pass 4' artifacts/native-message-shipping/actual-package-resource.log
+          grep -Fx '# fail 0' artifacts/native-message-shipping/actual-package-resource.log
+          grep -Fx '# cancelled 0' artifacts/native-message-shipping/actual-package-resource.log
+          grep -Fx '# skipped 0' artifacts/native-message-shipping/actual-package-resource.log
+          copied="$FABUSHI_PACKAGE_EVIDENCE_DIR/resources/bin/mahayana-app-host"
+          cmp "$FABUSHI_PACKAGE_APP_HOST_BINARY" "$copied"
+          file "$copied" > artifacts/native-message-shipping/copied-app-host-file.txt
+          shasum -a 256 "$copied" > artifacts/native-message-shipping/copied-app-host-sha256.txt
+          nm -gUj "$copied" > artifacts/native-message-shipping/copied-app-host-defined-symbols.txt
+          otool -L "$copied" > artifacts/native-message-shipping/copied-app-host-linked-libraries.txt
+          if grep -Eq '^_?fabushi_telegram_(create_client|create_persistent_client|execute|close_client|free_string|force_link)$' artifacts/native-message-shipping/copied-app-host-defined-symbols.txt; then
+            echo 'copied AppHost exports a legacy direct Telegram C entry' >&2
+            exit 1
+          fi
+          if grep -Eqi '(mahayana_runtime|fabushi[_-]telegram)' artifacts/native-message-shipping/copied-app-host-linked-libraries.txt; then
+            echo 'copied AppHost loads a legacy runtime shared library' >&2
+            exit 1
+          fi
+          printf '%s\n' 'Actual AppHost resource-copy evidence only; complete signed application/package acceptance remains open.' > "$FABUSHI_PACKAGE_EVIDENCE_DIR/scope.txt"
+      - name: Diagnose locked shipping dependency drift (no acceptance)
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          for cargo_root in source/host/app source/mahayana/mahayana-rs; do
+            if grep -Eq "cannot update the lock file .*$cargo_root/Cargo[.]lock|lock file .*$cargo_root/Cargo[.]lock.*needs to be updated" artifacts/native-message-shipping/*.log 2>/dev/null; then
+              diagnostic_name=${cargo_root//\//-}
+              cargo metadata --format-version 1 --manifest-path "$cargo_root/Cargo.toml" > /dev/null 2> "artifacts/native-message-shipping/$diagnostic_name-dependency-resolution.log" || true
+            fi
+          done
+          git diff -- source/host/app/Cargo.lock source/mahayana/mahayana-rs/Cargo.lock > artifacts/native-message-shipping/dependency-drift.patch
+          sed -n '1,260p' artifacts/native-message-shipping/dependency-drift.patch
+      - name: Preserve shipping compile evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-message-shipping-compile-${{ github.sha }}
+          path: artifacts/native-message-shipping
+          if-no-files-found: error
+  native-message-ui:
+    if: github.event_name == 'push' || inputs.message_batch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact renderer source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/native-message-ui
+          git rev-parse HEAD > artifacts/native-message-ui/target-sha.txt
+          printf '%s\n' 'FBCP-NMR-001/NMR-26/NMR-UI-01/NMR-DRAFT-01; actual projection/pagination/draft/reply/persistence owners and production root with controlled external boundaries; packaged visual/a11y acceptance pending' > artifacts/native-message-ui/scope.txt
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install locked desktop dependencies
+        working-directory: desktop
+        run: npm ci
+      - name: Transcript pagination and refresh behaviors
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./desktop/node_modules/.bin/esbuild frontend/src/production/transcript-projection.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript-bundle.log
+          node --test --test-reporter=tap artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript.log
+          grep -Fx '# tests 47' artifacts/native-message-ui/transcript.log
+          grep -Fx '# pass 47' artifacts/native-message-ui/transcript.log
+          grep -Fx 'ok 45 - NMR-UI-ENTRY-REFRESH-01 live forward target reconciliation preserves eligible updates and retires cleared or non-actionable sources' artifacts/native-message-ui/transcript.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/transcript.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/transcript.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/transcript.log
+      - name: Persisted Human draft binding and retired owner recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./desktop/node_modules/.bin/esbuild frontend/src/recovered/features/conversation/workspace/draft-recovery.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/draft-recovery.test.mjs 2>&1 | tee artifacts/native-message-ui/draft-recovery-bundle.log
+          node --test --test-reporter=tap artifacts/native-message-ui/draft-recovery.test.mjs 2>&1 | tee artifacts/native-message-ui/draft-recovery.log
+          grep -Fx '# tests 14' artifacts/native-message-ui/draft-recovery.log
+          grep -Fx '# pass 14' artifacts/native-message-ui/draft-recovery.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/draft-recovery.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/draft-recovery.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/draft-recovery.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/draft-recovery.log
+      - name: Existing client persistence owner I/O and ordering contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./desktop/node_modules/.bin/esbuild source/shared/client-persistence-store.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/client-persistence.test.mjs 2>&1 | tee artifacts/native-message-ui/client-persistence-bundle.log
+          node --test --test-reporter=tap artifacts/native-message-ui/client-persistence.test.mjs 2>&1 | tee artifacts/native-message-ui/client-persistence.log
+          grep -Fx '# tests 7' artifacts/native-message-ui/client-persistence.log
+          grep -Fx '# pass 7' artifacts/native-message-ui/client-persistence.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/client-persistence.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/client-persistence.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/client-persistence.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/client-persistence.log
+          grep -E '^ok [0-9]+ - NMR-DRAFT-01 one-shot migration rejects marker I/O errors without resurrecting retired drafts$' artifacts/native-message-ui/client-persistence.log
+          grep -E '^ok [0-9]+ - NMR-DRAFT-01 one-shot migration commits its marker atomically and recovers after write or rename failure$' artifacts/native-message-ui/client-persistence.log
+      - name: Restored reply scope and explicit cancellation contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./desktop/node_modules/.bin/esbuild frontend/src/recovered/features/conversation/workspace/reply-thread-controller.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/reply-recovery.test.mjs 2>&1 | tee artifacts/native-message-ui/reply-recovery-bundle.log
+          node --test --test-reporter=tap artifacts/native-message-ui/reply-recovery.test.mjs 2>&1 | tee artifacts/native-message-ui/reply-recovery.log
+          grep -Fx '# tests 5' artifacts/native-message-ui/reply-recovery.log
+          grep -Fx '# pass 5' artifacts/native-message-ui/reply-recovery.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/reply-recovery.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/reply-recovery.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/reply-recovery.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/reply-recovery.log
+      - name: Durable Human cursor and canonical pagination consumers
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -e "$GITHUB_WORKSPACE/node_modules" ]; then
+            ln -s "$GITHUB_WORKSPACE/desktop/node_modules" "$GITHUB_WORKSPACE/node_modules"
+          fi
+          ./desktop/node_modules/.bin/esbuild source/shared/rpc/coordinator.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/coordinator-cursor.test.mjs 2>&1 | tee artifacts/native-message-ui/coordinator-cursor-bundle.log
+          ./desktop/node_modules/.bin/esbuild frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/pagination-cursor.test.mjs 2>&1 | tee artifacts/native-message-ui/pagination-cursor-bundle.log
+          node --test --test-reporter=tap artifacts/native-message-ui/coordinator-cursor.test.mjs artifacts/native-message-ui/pagination-cursor.test.mjs 2>&1 | tee artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# tests 19' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# pass 19' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/human-cursors.log
+      - name: Human durable retry UI and actual Coordinator port boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./desktop/node_modules/.bin/esbuild frontend/src/production/human-message-retry.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/human-retry.test.mjs 2>&1 | tee artifacts/native-message-ui/human-retry-bundle.log
+          ./desktop/node_modules/.bin/esbuild frontend/src/production/human-message-retry-port.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/human-retry-port.test.mjs 2>&1 | tee artifacts/native-message-ui/human-retry-port-bundle.log
+          ./desktop/node_modules/.bin/esbuild frontend/src/production/human-message-submission.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/human-submission.test.mjs 2>&1 | tee artifacts/native-message-ui/human-submission-bundle.log
+          node --test --test-reporter=tap artifacts/native-message-ui/human-retry.test.mjs artifacts/native-message-ui/human-retry-port.test.mjs artifacts/native-message-ui/human-submission.test.mjs 2>&1 | tee artifacts/native-message-ui/human-retry.log
+          grep -Fx '# tests 47' artifacts/native-message-ui/human-retry.log
+          grep -Fx '# pass 47' artifacts/native-message-ui/human-retry.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/human-retry.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/human-retry.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/human-retry.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/human-retry.log
+      - name: Compile actual production renderer
+        id: renderer-build
+        shell: bash
+        working-directory: desktop
+        run: |
+          set -euo pipefail
+          npm run build:renderer 2>&1 | tee ../artifacts/native-message-ui/renderer-build.log
+      - name: Forward settlement account and roster boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap frontend/src/production/forward-settlement.contract.test.ts 2>&1 | tee artifacts/native-message-ui/forward-settlement.log
+          grep -Fx '# tests 10' artifacts/native-message-ui/forward-settlement.log
+          grep -Fx '# pass 10' artifacts/native-message-ui/forward-settlement.log
+          grep -Fx 'ok 10 - single self/Saved Messages destination uses Saved Messages default, custom self label, or optional notice suppression' artifacts/native-message-ui/forward-settlement.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/forward-settlement.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/forward-settlement.log
+      - name: Install locked Chromium for actual forward dialog
+        id: browser-install
+        working-directory: desktop
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Actual forward dialog account and lifetime behaviors
+        if: ${{ !cancelled() && steps.renderer-build.outcome == 'success' && steps.browser-install.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap frontend/src/production/ForwardMessageDialog.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/forward-dialog.log
+          grep -Eq '^# (tests|pass) [1-9][0-9]*' artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/forward-dialog.log
+          grep -Eq '^ok [0-9]+ - typing comment transmits formatted comment with forward request and locks on submission' artifacts/native-message-ui/forward-dialog.log
+      - name: Actual ProductionRenderer history, account and restart projection behaviors
+        if: ${{ !cancelled() && steps.renderer-build.outcome == 'success' && steps.browser-install.outcome == 'success' }}
+        shell: bash
+        working-directory: desktop
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ../artifacts/native-message-ui/production-renderer.json
+        run: |
+          set -euo pipefail
+          npx --no-install playwright test e2e/native-message-projection.spec.ts --workers=1 --retries=0 --reporter=line,json 2>&1 | tee ../artifacts/native-message-ui/production-renderer.log
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const report = JSON.parse(fs.readFileSync('../artifacts/native-message-ui/production-renderer.json', 'utf8'));
+          assert.equal(report.stats.expected, 13);
+          for (const field of ['unexpected', 'flaky', 'skipped']) assert.equal(report.stats[field], 0, field);
+          assert.deepEqual(report.errors, []);
+          const cases = [];
+          const walk = suite => { for (const spec of suite.specs ?? []) cases.push(...spec.tests); for (const child of suite.suites ?? []) walk(child); };
+          for (const suite of report.suites) walk(suite);
+          assert.equal(cases.length, 13);
+          for (const item of cases) {
+            assert.equal(item.expectedStatus, 'passed');
+            assert.equal(item.results.length, 1);
+            assert.equal(item.results[0].status, 'passed');
+            assert.equal(item.results[0].retry, 0);
+          }
+          console.log('actual ProductionRenderer: 13 passed, 0 failed, 0 skipped, 0 retries');
+          NODE
+      - name: Actual ProductionRenderer Transcript cache and continuation behaviors
+        if: ${{ !cancelled() && steps.renderer-build.outcome == 'success' && steps.browser-install.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# tests 15' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# pass 15' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/production-transcript.log
+          for entry_case in \
+            'human_entry_refresh_requeries_search_and_discards_older_results' \
+            'human_entry_refresh_retires_action_menus_without_hook_order_errors' \
+            'human_entry_refresh_retires_removed_pdf_and_late_resource_reads' \
+            'human_entry_refresh_retires_spreadsheet_mount_when_source_changes' \
+            'command_palette_searches_human_conversations_messages_and_files_and_paginates_older_targets' \
+            'human_history_coverage_continuation_advances_multi_window_sync_and_fences_account_switches' \
+            'human_entry_refresh_renders_monotonic_read_receipts_and_privacy_gated_forwarded_provenance'; do
+            grep -Eq "^ok [0-9]+ - ${entry_case}$" artifacts/native-message-ui/production-transcript.log
+          done
+      - name: Actual ProductionRenderer author and draft recovery behaviors
+        if: ${{ !cancelled() && steps.renderer-build.outcome == 'success' && steps.browser-install.outcome == 'success' }}
+        shell: bash
+        working-directory: desktop
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ../artifacts/native-message-ui/author-recovery.json
+        run: |
+          set -euo pipefail
+          npx --no-install playwright test e2e/native-message-author-recovery.spec.ts --output=author-recovery-results --retries=0 --workers=1 --reporter=line,json 2>&1 | tee ../artifacts/native-message-ui/author-recovery.log
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const report = JSON.parse(fs.readFileSync('../artifacts/native-message-ui/author-recovery.json', 'utf8'));
+          fs.writeFileSync('../artifacts/native-message-ui/author-recovery-counts.json', JSON.stringify({ required: 23, actual: report.stats, errors: report.errors }, null, 2) + '\n');
+          assert.equal(report.stats.expected, 23, 'all twenty-three author and recovery cases must actually pass');
+          for (const field of ['unexpected', 'flaky', 'skipped']) assert.equal(report.stats[field], 0, field);
+          assert.deepEqual(report.errors, []);
+          const cases = [];
+          const walk = suite => { for (const spec of suite.specs ?? []) cases.push(...spec.tests); for (const child of suite.suites ?? []) walk(child); };
+          for (const suite of report.suites) walk(suite);
+          assert.equal(cases.length, 23);
+          for (const item of cases) {
+            assert.equal(item.expectedStatus, 'passed');
+            assert.equal(item.results.length, 1);
+            assert.equal(item.results[0].status, 'passed');
+            assert.equal(item.results[0].retry, 0);
+          }
+          console.log('actual ProductionRenderer author/recovery: 23 passed, 0 failed, 0 skipped, 0 retries');
+          NODE
+      - name: Preserve exact renderer evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-message-ui-${{ github.sha }}
+          path: |
+            artifacts/native-message-ui
+            desktop/test-results
+            desktop/author-recovery-results
+          if-no-files-found: error
+  native-message-electron:
+    if: github.event_name == 'push' || inputs.message_batch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact Electron carrier source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/native-message-electron
+          git rev-parse HEAD > artifacts/native-message-electron/target-sha.txt
+          printf '%s\n' 'FBCP-NMR-001/NMR-27/31; actual carrier plus Native auth/secret-store owners with controlled Electron/HTTP boundaries; no live service, OS keychain or packaged acceptance claim' > artifacts/native-message-electron/scope.txt
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install locked desktop dependencies
+        working-directory: desktop
+        run: npm ci
+      - name: Native carrier command, event and disposal contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap source/electron-main/coordinator/rust-coordinator-carrier.contract.test.mjs 2>&1 | tee artifacts/native-message-electron/carrier.log
+          grep -Fx '# tests 10' artifacts/native-message-electron/carrier.log
+          grep -Fx '# pass 10' artifacts/native-message-electron/carrier.log
+          grep -Fx '# fail 0' artifacts/native-message-electron/carrier.log
+          grep -Fx '# cancelled 0' artifacts/native-message-electron/carrier.log
+          grep -Fx '# skipped 0' artifacts/native-message-electron/carrier.log
+      - name: Native auth lifecycle and retained legacy secret behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap source/product/fabushi/fabushi-account-service.behavior.test.mjs 2>&1 | tee artifacts/native-message-electron/native-auth-retention.log
+          grep -Fx '# tests 8' artifacts/native-message-electron/native-auth-retention.log
+          grep -Fx '# pass 8' artifacts/native-message-electron/native-auth-retention.log
+          grep -Fx '# fail 0' artifacts/native-message-electron/native-auth-retention.log
+          grep -Fx '# cancelled 0' artifacts/native-message-electron/native-auth-retention.log
+          grep -Fx '# skipped 0' artifacts/native-message-electron/native-auth-retention.log
+      - name: Native package resources exclude retained FFI libraries
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap desktop/scripts/native-package-resources.contract.test.mjs 2>&1 | tee artifacts/native-message-electron/package-resources.log
+          grep -Fx '# tests 3' artifacts/native-message-electron/package-resources.log
+          grep -Fx '# pass 3' artifacts/native-message-electron/package-resources.log
+          grep -Fx '# fail 0' artifacts/native-message-electron/package-resources.log
+          grep -Fx '# cancelled 0' artifacts/native-message-electron/package-resources.log
+          grep -Fx '# skipped 0' artifacts/native-message-electron/package-resources.log
+      - name: Explicit approved update source and recovery behaviors
+        shell: bash
+        working-directory: desktop
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap ../source/electron-main/update/update-source.contract.test.mjs 2>&1 | tee ../artifacts/native-message-electron/update-source.log
+          grep -Fx '# tests 16' ../artifacts/native-message-electron/update-source.log
+          grep -Fx '# pass 16' ../artifacts/native-message-electron/update-source.log
+          grep -Fx '# fail 0' ../artifacts/native-message-electron/update-source.log
+          grep -Fx '# cancelled 0' ../artifacts/native-message-electron/update-source.log
+          grep -Fx '# skipped 0' ../artifacts/native-message-electron/update-source.log
+          grep -Fx '# todo 0' ../artifacts/native-message-electron/update-source.log
+      - name: Windows publisher authorization and candidate recovery behaviors
+        shell: bash
+        working-directory: desktop
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap ../source/electron-main/update/windows-publisher.contract.test.mjs 2>&1 | tee ../artifacts/native-message-electron/windows-publisher.log
+          grep -Fx '# tests 28' ../artifacts/native-message-electron/windows-publisher.log
+          grep -Fx '# pass 28' ../artifacts/native-message-electron/windows-publisher.log
+          grep -Fx '# fail 0' ../artifacts/native-message-electron/windows-publisher.log
+          grep -Fx '# cancelled 0' ../artifacts/native-message-electron/windows-publisher.log
+          grep -Fx '# skipped 0' ../artifacts/native-message-electron/windows-publisher.log
+          grep -Fx '# todo 0' ../artifacts/native-message-electron/windows-publisher.log
+      - name: Final macOS update metadata and blockmap behaviors
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap desktop/scripts/reconcile-macos-update-metadata.contract.test.mjs 2>&1 | tee artifacts/native-message-electron/macos-metadata.log
+          grep -Fx '# tests 18' artifacts/native-message-electron/macos-metadata.log
+          grep -Fx '# pass 18' artifacts/native-message-electron/macos-metadata.log
+          grep -Fx '# fail 0' artifacts/native-message-electron/macos-metadata.log
+          grep -Fx '# cancelled 0' artifacts/native-message-electron/macos-metadata.log
+          grep -Fx '# skipped 0' artifacts/native-message-electron/macos-metadata.log
+      - name: Explicit artifact-only scope and side-effect admission contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap .github/scripts/resolve-package-acceptance-scope.test.mjs 2>&1 | tee artifacts/native-message-electron/package-scope.log
+          grep -Fx '# tests 10' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# pass 10' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# fail 0' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# cancelled 0' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# skipped 0' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# todo 0' artifacts/native-message-electron/package-scope.log
+      - name: Existing installer promotion consumer contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap .github/scripts/promote-miniapp-candidate.test.mjs 2>&1 | tee artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# tests 7' artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# pass 7' artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# fail 0' artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# cancelled 0' artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# skipped 0' artifacts/native-message-electron/promotion-consumer.log
+      - name: Reconcile immutable historical installer metadata without changing package bytes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HISTORICAL_PACKAGE_SOURCE: 9d16483f70df9af06db97b17bb02a24dc507e459
+          HISTORICAL_ARTIFACT_DIGEST: f17fc29681164e69507d24201c57a58c84651d66a65cc3d0ebf1faeeee0be225
+        run: |
+          set -euo pipefail
+          export MACOS_METADATA_CANDIDATE
+          MACOS_METADATA_CANDIDATE="$(mktemp -d "$RUNNER_TEMP/fabushi-historical-metadata.XXXXXX")"
+          export MACOS_METADATA_ARCHIVE="$RUNNER_TEMP/fabushi-historical-package.zip"
+          gh api repos/bhrumom/fabushi-desktop/actions/artifacts/13093546572 > artifacts/native-message-electron/historical-artifact.json
+          gh api repos/bhrumom/fabushi-desktop/actions/artifacts/13093546572/zip > "$MACOS_METADATA_ARCHIVE"
+          python3 - <<'PY'
+          import hashlib, json, os, shutil, zipfile
+          from pathlib import Path
+          evidence = Path('artifacts/native-message-electron')
+          archive = Path(os.environ['MACOS_METADATA_ARCHIVE'])
+          metadata = json.loads((evidence / 'historical-artifact.json').read_text())
+          expected = os.environ['HISTORICAL_ARTIFACT_DIGEST']
+          assert metadata['id'] == 13093546572 and not metadata['expired']
+          assert metadata['workflow_run']['id'] == 41327420143
+          assert metadata['workflow_run']['head_sha'] == '9993ca8e107f7e019a8201e5ab74fa54e82159f2'
+          assert metadata['digest'] == 'sha256:' + expected
+          with archive.open('rb') as handle:
+              assert hashlib.file_digest(handle, 'sha256').hexdigest() == expected
+          names = ['fabushi-1.2.78-macos-arm64.zip', 'fabushi-1.2.78-macos-arm64.dmg']
+          permitted = set(names + [name + '.blockmap' for name in names] + ['latest-mac.yml'])
+          destination = Path(os.environ['MACOS_METADATA_CANDIDATE'])
+          with zipfile.ZipFile(archive) as source:
+              assert len(source.infolist()) == len(permitted) and set(source.namelist()) == permitted
+              for item in source.infolist():
+                  assert not item.is_dir() and item.file_size > 0
+                  with source.open(item) as src, (destination / item.filename).open('xb') as dst:
+                      shutil.copyfileobj(src, dst)
+          assets = []
+          for name in names:
+              asset = destination / name
+              with asset.open('rb') as handle:
+                  digest = hashlib.file_digest(handle, 'sha256').hexdigest()
+              assets.append({'name': name, 'size': asset.stat().st_size, 'sha256': digest})
+          assert assets[0]['size'] == 174991227 and assets[1]['size'] == 174156394
+          shutil.copyfile(destination / 'latest-mac.yml', evidence / 'historical-latest-mac.before.yml')
+          receipt = {'harness_sha': os.environ['GITHUB_SHA'], 'artifact_id': metadata['id'],
+              'archive_sha256': expected, 'package_source_observed_in_job_log': os.environ['HISTORICAL_PACKAGE_SOURCE'],
+              'source_job': 124910185631, 'assets': assets, 'installed_or_released': False}
+          (evidence / 'historical-input.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          print(json.dumps(receipt))
+          PY
+          if node desktop/scripts/reconcile-macos-update-metadata.mjs \
+            --directory "$MACOS_METADATA_CANDIDATE" --version 1.2.78 \
+            --target-sha "$HISTORICAL_PACKAGE_SOURCE" --verify \
+            > artifacts/native-message-electron/historical-rejection.log 2>&1; then
+            echo 'Stale historical package metadata unexpectedly passed' >&2
+            exit 1
+          fi
+          grep -Fx 'MACOS_METADATA_ASSET_MISMATCH' artifacts/native-message-electron/historical-rejection.log
+          node desktop/scripts/reconcile-macos-update-metadata.mjs \
+            --directory "$MACOS_METADATA_CANDIDATE" --version 1.2.78 \
+            --target-sha "$HISTORICAL_PACKAGE_SOURCE" \
+            --receipt "$GITHUB_WORKSPACE/artifacts/native-message-electron/historical-reconciled.json" \
+            > artifacts/native-message-electron/historical-reconcile.log 2>&1
+          node desktop/scripts/reconcile-macos-update-metadata.mjs \
+            --directory "$MACOS_METADATA_CANDIDATE" --version 1.2.78 \
+            --target-sha "$HISTORICAL_PACKAGE_SOURCE" --verify \
+            > artifacts/native-message-electron/historical-verify.log 2>&1
+          cp "$MACOS_METADATA_CANDIDATE/latest-mac.yml" artifacts/native-message-electron/historical-latest-mac.after.yml
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('artifacts/native-message-electron')
+          before = json.loads((root / 'historical-input.json').read_text())
+          after = json.loads((root / 'historical-reconciled.json').read_text())
+          verified = json.loads((root / 'historical-verify.log').read_text())
+          assert after == verified and after['sourceSha'] == before['package_source_observed_in_job_log']
+          for original in before['assets']:
+              actual = next(item for item in after['assets'] if item['name'] == original['name'])
+              assert actual['size'] == original['size'] and actual['sha256'] == original['sha256']
+          print('NMR-43 historical installer: stale metadata rejected, final maps/hashes verified, ZIP/DMG bytes unchanged; no install or release')
+          PY
+      - name: Compile actual Electron main, preload and carrier
+        shell: bash
+        working-directory: desktop
+        run: |
+          set -euo pipefail
+          npm run build:electron 2>&1 | tee ../artifacts/native-message-electron/electron-build.log
+      - name: Preserve exact Electron evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-message-electron-${{ github.sha }}
+          path: artifacts/native-message-electron
+          if-no-files-found: error
+  windows-update-publisher:
+    if: github.event_name == 'push' || inputs.message_batch
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact Windows publisher source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/windows-update-publisher
+          git rev-parse HEAD > artifacts/windows-update-publisher/target-sha.txt
+          printf '%s\n' 'EUS-WIN-02/04/06; actual Windows Authenticode with an ephemeral CI-only certificate and inert signed fixture; no installer execution, formal publisher authorization, or package acceptance' > artifacts/windows-update-publisher/scope.txt
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install locked desktop dependencies
+        working-directory: desktop
+        run: npm ci
+      - name: Actual Windows signature and Unicode publisher contracts
+        shell: bash
+        working-directory: desktop
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap ../source/electron-main/update/windows-publisher.native.test.mjs 2>&1 | tee ../artifacts/windows-update-publisher/native-publisher.log
+          grep -Fx '# tests 11' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -Fx '# pass 11' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -Fx '# fail 0' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -Fx '# cancelled 0' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -Fx '# skipped 0' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -Fx '# todo 0' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -F 'FABUSHI_WINDOWS_NATIVE_FIXTURE ' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -F 'FABUSHI_WINDOWS_NATIVE_UNICODE ' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -F 'FABUSHI_WINDOWS_NATIVE_CLEANUP ' ../artifacts/windows-update-publisher/native-publisher.log
+      - name: Preserve native API evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-update-publisher-${{ github.sha }}
+          path: artifacts/windows-update-publisher
+          if-no-files-found: error

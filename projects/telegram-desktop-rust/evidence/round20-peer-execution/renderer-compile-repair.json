@@ -1,0 +1,567 @@
+{
+  "format": "FABUSHI_ROUND20_UI_221D_COMPILE_FAILURE_APPEND_V1",
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 20,
+  "repository": "bhrumom/fabushi-desktop",
+  "observed_at": "2026-11-02 21:49:59 UTC",
+  "supersedes": "Prior queued observation for221d UI only; retain immutable9bb and9b9 receipts under their own H. No passing renderer result is inferred for221d.",
+  "H": "221d7097f5603a6be06c8c51763047e03420090a",
+  "run": 41530131373,
+  "UI_job": {
+    "id": 125567864141,
+    "run_id": 41530131373,
+    "head_sha": "221d7097f5603a6be06c8c51763047e03420090a",
+    "status": "completed",
+    "conclusion": "failure",
+    "started_at": "2026-11-02T21:47:03Z",
+    "completed_at": "2026-11-02T21:47:41Z",
+    "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530131373/job/125567864141",
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1,
+        "started_at": "2026-11-02T21:47:04Z",
+        "completed_at": "2026-11-02T21:47:05Z"
+      },
+      {
+        "name": "Run actions/checkout@v6",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2,
+        "started_at": "2026-11-02T21:47:05Z",
+        "completed_at": "2026-11-02T21:47:10Z"
+      },
+      {
+        "name": "Bind exact renderer source",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3,
+        "started_at": "2026-11-02T21:47:10Z",
+        "completed_at": "2026-11-02T21:47:10Z"
+      },
+      {
+        "name": "Run actions/setup-node@v6",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4,
+        "started_at": "2026-11-02T21:47:10Z",
+        "completed_at": "2026-11-02T21:47:13Z"
+      },
+      {
+        "name": "Install locked desktop dependencies",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5,
+        "started_at": "2026-11-02T21:47:13Z",
+        "completed_at": "2026-11-02T21:47:24Z"
+      },
+      {
+        "name": "Transcript pagination and refresh behaviors",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 6,
+        "started_at": "2026-11-02T21:47:24Z",
+        "completed_at": "2026-11-02T21:47:24Z"
+      },
+      {
+        "name": "Durable Human cursor and canonical pagination consumers",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 7,
+        "started_at": "2026-11-02T21:47:24Z",
+        "completed_at": "2026-11-02T21:47:24Z"
+      },
+      {
+        "name": "Human durable retry UI and actual Coordinator port boundaries",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 8,
+        "started_at": "2026-11-02T21:47:24Z",
+        "completed_at": "2026-11-02T21:47:25Z"
+      },
+      {
+        "name": "Compile actual production renderer",
+        "status": "completed",
+        "conclusion": "failure",
+        "number": 9,
+        "started_at": "2026-11-02T21:47:25Z",
+        "completed_at": "2026-11-02T21:47:35Z"
+      },
+      {
+        "name": "Forward settlement account and roster boundaries",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 10,
+        "started_at": "2026-11-02T21:47:35Z",
+        "completed_at": "2026-11-02T21:47:35Z"
+      },
+      {
+        "name": "Install locked Chromium for actual forward dialog",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 11,
+        "started_at": "2026-11-02T21:47:35Z",
+        "completed_at": "2026-11-02T21:47:35Z"
+      },
+      {
+        "name": "Actual forward dialog account and lifetime behaviors",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 12,
+        "started_at": "2026-11-02T21:47:35Z",
+        "completed_at": "2026-11-02T21:47:35Z"
+      },
+      {
+        "name": "Actual ProductionRenderer history, account and restart projection behaviors",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 13,
+        "started_at": "2026-11-02T21:47:35Z",
+        "completed_at": "2026-11-02T21:47:35Z"
+      },
+      {
+        "name": "Actual ProductionRenderer Transcript cache and continuation behaviors",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 14,
+        "started_at": "2026-11-02T21:47:35Z",
+        "completed_at": "2026-11-02T21:47:35Z"
+      },
+      {
+        "name": "Preserve exact renderer evidence",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 15,
+        "started_at": "2026-11-02T21:47:35Z",
+        "completed_at": "2026-11-02T21:47:36Z"
+      },
+      {
+        "name": "Post Run actions/setup-node@v6",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 29,
+        "started_at": "2026-11-02T21:47:36Z",
+        "completed_at": "2026-11-02T21:47:36Z"
+      },
+      {
+        "name": "Post Run actions/checkout@v6",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 30,
+        "started_at": "2026-11-02T21:47:36Z",
+        "completed_at": "2026-11-02T21:47:37Z"
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 31,
+        "started_at": "2026-11-02T21:47:37Z",
+        "completed_at": "2026-11-02T21:47:37Z"
+      }
+    ]
+  },
+  "complete_log": {
+    "path": "/workspace/scratch/b725a2794b30/desktop-ui-221d-compile-audit/job-125567864141.log",
+    "bytes": 71344,
+    "sha256": "a249a601e60d74c062465a3251a9f7f6f313314d7cd4b959a1f1b275feedb0c9",
+    "lines": 939,
+    "complete_content_read": true
+  },
+  "errors": [
+    "2026-11-02T21:47:35.1199568Z ##[error]../frontend/src/recovered/runtime/coordinator-source.ts(519,7): error TS2741: Property 'retryHumanMessage' is missing in type '{ \"feature.auth.telegramStatus\": string; \"feature.auth.telegramSendCode\": string; \"feature.auth.telegramSignIn\": string; \"feature.auth.telegramPassword\": string; \"feature.auth.telegramRegistration\": string; ... 97 more ...; leaveSharedRoom: string; }' but required in type 'Record<\"reactToMessage\" | \"getAgentTranscriptWindow\" | \"getAgentThread\" | \"getHumanConversationTranscriptTail\" | \"retryHumanMessage\" | \"feature.auth.telegramStatus\" | \"feature.auth.telegramSendCode\" | ... 96 more ... | \"runAgentAutomationNow\", string>'.",
+    "2026-11-02T21:47:35.1899869Z ##[error]Process completed with exit code 2."
+  ],
+  "classification": "IMPL_BUG",
+  "cause": "New CoordinatorMethod retryHumanMessage was not registered in the exhaustive TELEMETRY_DOMAIN_BY_METHOD Record in production coordinator-source.ts:519. Actual renderer TypeScript compilation rejects the missing property with TS2741 and exit2. This precedes and prevents every real Chromium case; it is neither a pointer assertion failure nor a runner/environment fault.",
+  "artifact": {
+    "metadata": {
+      "id": 13182691351,
+      "name": "native-message-ui-221d7097f5603a6be06c8c51763047e03420090a",
+      "size_in_bytes": 94352,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13182691351",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13182691351/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:47:36Z",
+      "expires_at": "2027-01-31T21:38:05Z",
+      "updated_at": "2026-11-02T21:47:36Z",
+      "digest": "sha256:83b38790f6c878a24949e6bc47287e1926c9577883dba4064d2f1d5a79672758",
+      "workflow_run": {
+        "id": 41530131373,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "221d7097f5603a6be06c8c51763047e03420090a"
+      }
+    },
+    "archive": {
+      "path": "/workspace/scratch/b725a2794b30/desktop-ui-221d-compile-audit/artifact-13182691351.zip",
+      "bytes": 94352,
+      "sha256": "83b38790f6c878a24949e6bc47287e1926c9577883dba4064d2f1d5a79672758"
+    },
+    "full_inspection": {
+      "id": 13182691351,
+      "archive_bytes": 94352,
+      "archive_sha256": "83b38790f6c878a24949e6bc47287e1926c9577883dba4064d2f1d5a79672758",
+      "expected_github_digest": "sha256:83b38790f6c878a24949e6bc47287e1926c9577883dba4064d2f1d5a79672758",
+      "members": [
+        {
+          "name": "artifacts/native-message-ui/coordinator-cursor-bundle.log",
+          "bytes": 84,
+          "sha256": "e9139f25053edf8f48c362d1ea5a794aed34b9ac455c678918f386db36e9658d"
+        },
+        {
+          "name": "artifacts/native-message-ui/human-cursors.log",
+          "bytes": 4488,
+          "sha256": "4156dbcbac629fdc70f74f269b417b71123f421959fcae4878725cf4a13ef71c"
+        },
+        {
+          "name": "artifacts/native-message-ui/coordinator-cursor.test.mjs",
+          "bytes": 14731,
+          "sha256": "44304e79e9a8bd304ceae04fe2ea661267a9464a46ab033dc6617d724efa6132"
+        },
+        {
+          "name": "artifacts/native-message-ui/human-retry-bundle.log",
+          "bytes": 79,
+          "sha256": "46ef82232404c2de8b62d7b65048fee103a637c15c2eca18f2bb4be1d164ac48"
+        },
+        {
+          "name": "artifacts/native-message-ui/human-retry-port-bundle.log",
+          "bytes": 82,
+          "sha256": "2153fe4352cd759b54220b46daaf6f815f27dadb35019f3f54887ec5cdacd977"
+        },
+        {
+          "name": "artifacts/native-message-ui/human-retry-port.test.mjs",
+          "bytes": 22346,
+          "sha256": "b16709007b784e7245b64ca04e339a124352026abb14f5ed40e61bfdeea7a574"
+        },
+        {
+          "name": "artifacts/native-message-ui/human-retry.log",
+          "bytes": 10476,
+          "sha256": "bead1c7c1787f5187888c54c6cb963841a2af858c9c214e4c1c75b906a12812b"
+        },
+        {
+          "name": "artifacts/native-message-ui/human-retry.test.mjs",
+          "bytes": 122194,
+          "sha256": "7d24160ef2f39775037f48079ad0f151d203ac1556eb55ab83276ba606df90ab"
+        },
+        {
+          "name": "artifacts/native-message-ui/human-submission-bundle.log",
+          "bytes": 82,
+          "sha256": "e64d283bed414cfbb4126cd193f2531a1aa97e5ed124bb90b96def657c4a4cda"
+        },
+        {
+          "name": "artifacts/native-message-ui/human-submission.test.mjs",
+          "bytes": 51187,
+          "sha256": "8ee733ff04dd9c69923f5da8369e66505991df8106c67319af69066377477a5c"
+        },
+        {
+          "name": "artifacts/native-message-ui/pagination-cursor-bundle.log",
+          "bytes": 85,
+          "sha256": "43ea05fb291aedf687c29e41b5ab334145beb3ca4793d33c1eb01a07345acd11"
+        },
+        {
+          "name": "artifacts/native-message-ui/pagination-cursor.test.mjs",
+          "bytes": 103303,
+          "sha256": "3f92cb9a882023a6d7800811dc146c2f7e3f10064a7179a9117a5b659411dd39"
+        },
+        {
+          "name": "artifacts/native-message-ui/renderer-build.log",
+          "bytes": 768,
+          "sha256": "f28268399ee8b94de6486f91cce349a58139114bb9897d3721cdd910cf772452",
+          "compiler_errors": [
+            "../frontend/src/recovered/runtime/coordinator-source.ts(519,7): error TS2741: Property 'retryHumanMessage' is missing in type '{ \"feature.auth.telegramStatus\": string; \"feature.auth.telegramSendCode\": string; \"feature.auth.telegramSignIn\": string; \"feature.auth.telegramPassword\": string; \"feature.auth.telegramRegistration\": string; ... 97 more ...; leaveSharedRoom: string; }' but required in type 'Record<\"reactToMessage\" | \"getAgentTranscriptWindow\" | \"getAgentThread\" | \"getHumanConversationTranscriptTail\" | \"retryHumanMessage\" | \"feature.auth.telegramStatus\" | \"feature.auth.telegramSendCode\" | ... 96 more ... | \"runAgentAutomationNow\", string>'."
+          ]
+        },
+        {
+          "name": "artifacts/native-message-ui/scope.txt",
+          "bytes": 120,
+          "sha256": "25b37f8641c130a0beca65b252073df8b83da6f048b29bbc1c7a22d92feb3ad9"
+        },
+        {
+          "name": "artifacts/native-message-ui/target-sha.txt",
+          "bytes": 41,
+          "sha256": "8895b95c677a0dcea0917e4a260f291366ee505da6a576a25cfd07891d8373f8"
+        },
+        {
+          "name": "artifacts/native-message-ui/transcript-bundle.log",
+          "bytes": 87,
+          "sha256": "de9abbcdf2ca9120332e319d31027b4beaac5dc2200b561ba1ab6d148107a1e7"
+        },
+        {
+          "name": "artifacts/native-message-ui/transcript-contract.test.mjs",
+          "bytes": 104551,
+          "sha256": "a22ffbb91d1a503f0a23417282296c8130434a2b8bd00554c9c3c4e02eeb0a86"
+        },
+        {
+          "name": "artifacts/native-message-ui/transcript.log",
+          "bytes": 8011,
+          "sha256": "52632f8991a933a9945690e5425c9b6da95503ee60b5985f467b15214188f950"
+        }
+      ],
+      "tap_suites": [
+        {
+          "file": "artifacts/native-message-ui/human-cursors.log",
+          "metrics": {
+            "tests": 19,
+            "suites": 0,
+            "pass": 19,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "cases": [
+            "Human retry admits only exact durable identities and bounds nonce UTF-8 bytes",
+            "Human retry reply must be a canonical settled Human message",
+            "Human transcript cursors preserve the opaque traversal beside the physical anchor",
+            "Human transcript cursor admission rejects malformed scope and continuation without coercion",
+            "Telegram authorization projection accepts typed challenge, issue, and bounded backoff",
+            "Telegram authorization projection rejects malformed or unbounded state",
+            "remaining Telegram auth lifecycle methods share the canonical projection contract",
+            "timeline event registry validates protocol rows and descriptions",
+            "transcript feed fanout shares one subscription and validates entry identity",
+            "hidden chat mutations rollback permanent failures and hold transport failures for reconnect",
+            "find-in-chat searches visible text, wraps navigation and resets on scope",
+            "routine history formats status and relative/zoned timestamps",
+            "composer draft restore does not overwrite a staged attachment added while persistence is loading",
+            "forward recipient keyboard policy preserves picker boundaries and submit semantics",
+            "Human opaque history cursors survive projection, root-cache commits and cached conversation reopen",
+            "Human failed history retries preserve the exact token and the latest committed row overlay",
+            "Human opaque history rejects stale account ABA results and their buffered updates",
+            "Human replacement initial history clears the prior token and failed-read overlays",
+            "Agent pagination retains its sequence-only request and viewport anchor"
+          ],
+          "not_ok": []
+        },
+        {
+          "file": "artifacts/native-message-ui/human-retry.log",
+          "metrics": {
+            "tests": 40,
+            "suites": 0,
+            "pass": 40,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "cases": [
+            "actual Coordinator retry frame carries only durable identities and validates canonical replies",
+            "queued initial readiness rechecks account and selection lifetime before posting a retry frame",
+            "resolved initial ready does not admit an expired retry queued on reconnect readiness",
+            "expired retry refuses immediately while an existing unguarded Agent call keeps its transport",
+            "HRR-05 retry sends only the original identities and settles through the existing projection and acknowledgement",
+            "HRR-05 canonical retry replaces committed attachment paths with the complete Host resource collection",
+            "HRR-05 omitted or empty canonical retry attachments clear the local collection and stay empty after stale reads",
+            "HRR-05 Human attachment replacement preserves Agent incremental and missing-attachment merges",
+            "HRR-05 canonical numeric remote identity is projected without changing the authoritative response",
+            "HRR-05 rapid duplicate clicks share one pending UI attempt before and after dispatch",
+            "HRR-05 failure retains the same row, reply, attachment and nonce for a subsequent retry",
+            "HRR-05 synchronous client failure releases the attempt for retry",
+            "HRR-05 malformed or mismatched settlements retain failure and cannot reconcile an echo",
+            "HRR-05 a current pending or dispatching Host result is not falsely acknowledged as sent",
+            "HRR-05 an original optimistic Human failure retries without reading projected content or attachment paths",
+            "HRR-05 invalid local identities never dispatch or mint replacement identities",
+            "HRR-06 changing conversation while retry awaits preserves the replacement view",
+            "HRR-06 the actual selection owner fences A to B to A even without a render or open-request increment",
+            "HRR-06 reopening the same selected conversation fences the prior open-request generation",
+            "HRR-06 account A to B to A cannot publish a late result into a replacement lifetime",
+            "HRR-06 logout and layout-unmount fences are immediate, before passive disposal",
+            "HRR-06 cancellation before the dispatch microtask releases its flight without effects",
+            "HRR-07 a possibly posted author-bound optimistic Human row retries through the real durable controller",
+            "HRR-06 a queued-ready production client admits no retry frame after account or selection replacement",
+            "HRR-06 deferred success and notice updaters recheck account and selection lifetimes",
+            "HRR-06 deferred failure and notice cannot overwrite a later successful retry",
+            "HRR-06 deferred pending feedback cannot regress a completed current attempt",
+            "HRR-05 a canonical transcript event wins over a late retry error and deferred retry feedback",
+            "HRR-05 same nonce in different conversations has separate flights and no cross-view settlement",
+            "HRR-06 disposal drops late results, errors and deferred updaters without another request",
+            "HRR-05 persisted pending Human errors expose Retry while preserving all projected content",
+            "HRR-05 malformed, foreign, canonical and Agent shapes do not acquire Human Retry from error metadata",
+            "Human Composer partial commit failure resumes the same queue input and never recommits acknowledged files",
+            "Human Composer disconnect before the real initial frame retains non-admission and recovers the same first send",
+            "Human Composer lost reply or throwing post cannot downgrade a possibly admitted message to payload resend",
+            "Human Composer scope expiry during retry commit retains progress without stale queue callbacks or frame",
+            "Human Composer offline retry joins its queued flight and expired admission cannot flush a replacement frame",
+            "Human Composer durable retry fences reconnect readiness and late settlement without forgetting possible admission",
+            "Human retry callbacks carry their explicit attempt while original Agent queue callbacks and order remain unchanged",
+            "explicit Human retry never captures or releases the current composer busy state across selection replacement"
+          ],
+          "not_ok": []
+        },
+        {
+          "file": "artifacts/native-message-ui/transcript.log",
+          "metrics": {
+            "tests": 34,
+            "suites": 0,
+            "pass": 34,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "cases": [
+            "NMR-49 dispatching Human text and attachments stay pending until settlement",
+            "NMR-49 existing Human and Agent delivery projections remain unchanged",
+            "NMR-26 late initial tail keeps a same-ID edit, reaction, and newer append",
+            "NMR-26 duplicate initial IDs and nonce acknowledgement retain one canonical send",
+            "NMR-26 feed baseline cannot roll back a same-ID Agent terminal event",
+            "NMR-26 tail merge preserves cached older updates in canonical order",
+            "NMR-26 disjoint tail stays between cached history and events first seen during the read",
+            "NMR-26 complete refresh updates unchanged rows but preserves post-request events",
+            "NMR-26 older page overlap deduplicates IDs without reverting current row state",
+            "NMR-26 accepted pages commit to the root cache and resume the exclusive cursor on reopen",
+            "NMR-26 update of an unloaded old row wins over an in-flight page",
+            "NMR-26 loaded older row refresh retains order and the next-page cursor",
+            "NMR-26 account and conversation changes fence stale rows and request completion",
+            "NMR-26 clear/reset prevents a late page from repopulating the transcript",
+            "NMR-26 authoritative complete refresh supersedes an older request",
+            "NMR-26 failed history load preserves rows and retries the same cursor once",
+            "NMR-26 synchronous fetch failure cannot leave pagination permanently busy",
+            "NMR-26 viewport anchoring and disposal reject stale asynchronous effects",
+            "Human transcript correlation isolates authors while retaining Host and optimistic send settlement",
+            "HRR-05 canonical Human attachment collections replace local paths in either merge order",
+            "Human older pages cannot resurrect a settled pending row in the root cache",
+            "NMR-26 an intermediate row commit cannot consume an older-page viewport anchor",
+            "NMR-26 a late first reaction response cannot replace a later mutation settlement",
+            "NMR-26 an authoritative event wins over an outstanding reaction RPC response",
+            "NMR-26 account generation fences a reaction across logout and return to the same identity",
+            "NMR-26 independent conversation and message reactions retain their completion scope",
+            "NMR-26 current reaction failures report once and obsolete failures cannot replace recovery feedback",
+            "NMR-26 deferred reaction state and error updates recheck events, clear and account generation",
+            "NMR-26 Human reaction settlement and a later event refresh an older row without moving it",
+            "NMR-26 disposed reaction completion cannot mutate the renderer or show a stale error",
+            "NMR-26 Human empty snapshots clear content and resources while Agent partial echoes retain them",
+            "NMR-26 peer and missing-author nonces cannot reconcile a local Human placeholder",
+            "NMR-26 before-ID canonicalization and a delayed receipt preserve one newer settled Human row",
+            "NMR-26 overlapping older windows preserve canonical anchors and loaded/in-flight identity updates"
+          ],
+          "not_ok": []
+        }
+      ],
+      "duplicate_names": false,
+      "target_sha": "221d7097f5603a6be06c8c51763047e03420090a",
+      "metadata_expected_head": "221d7097f5603a6be06c8c51763047e03420090a",
+      "target_sha_matches_expected": true,
+      "github_digest_match": true,
+      "actual_browser_report_present": false,
+      "scope": "Actual CI TypeScript compilation failure after passing pre-compile suites; no actual browser execution at this H."
+    },
+    "inspection_file": {
+      "path": "/workspace/scratch/b725a2794b30/desktop-ui-221d-compile-audit/artifact-13182691351-inspection.json",
+      "bytes": 14692,
+      "sha256": "43d012854141c5b8c9a8cf63784910a4627885823a7b21c390009c6aa8499d1c"
+    },
+    "member_count": 18,
+    "every_member_read_and_hashed": true,
+    "contained_executable_code_run": false
+  },
+  "actual_execution": {
+    "Transcript": {
+      "passed": 34,
+      "failed": 0,
+      "ignored_or_skipped": 0
+    },
+    "Human_cursors": {
+      "passed": 19,
+      "failed": 0,
+      "ignored_or_skipped": 0
+    },
+    "Human_retry_UI_Coordinator_port_Composer": {
+      "passed": 40,
+      "failed": 0,
+      "ignored_or_skipped": 0
+    },
+    "actual_renderer_compile": "failure: TS2741",
+    "Forward_settlement5": "skipped/not-run",
+    "Chromium_install": "skipped/not-run",
+    "actual_forward_dialog16": "skipped/not-run",
+    "actual_ProductionRenderer11": "skipped/not-run",
+    "actual_Transcript8": "skipped/not-run",
+    "browser_report_present": false
+  },
+  "already_published_minimal_fix": {
+    "sha": "7201c8897dafb39bea92543d3ac447305348e17d",
+    "parents": [
+      "d1b7ced237f108a22c1b166877a6d1c1bd62d301"
+    ],
+    "tree": "b314ce5e9ac9a3ac8605790565dfbe5fc3405361",
+    "url": "https://github.com/bhrumom/fabushi-desktop/commit/7201c8897dafb39bea92543d3ac447305348e17d",
+    "committed_at": "2026-11-02T21:42:48Z",
+    "message": "fix(messaging): classify Human retry in the exhaustive telemetry map\n\nFix exact71931591 run41529834351/job125566849067 TS2741: the new CoordinatorMethod was missing from TELEMETRY_DOMAIN_BY_METHOD. Keep the existing send telemetry owner and all typechecking/test gates. This is a production integration defect; the failed renderer/pointer run remains evidence, with zero pointer tests executed.",
+    "files": [
+      {
+        "filename": "frontend/src/recovered/runtime/coordinator-source.ts",
+        "blob": "0526b43cd03ce33167f095bfdf15febe4dcca7a2",
+        "patch": "@@ -530,7 +530,7 @@ const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {\n   \"feature.auth.telegramVerifyEmail\": \"auth\",\n   \"feature.auth.telegramRefreshPasswordChallenge\": \"auth\",\n   getAgentTranscriptWindow: \"transcript\", getAgentThread: \"transcript\", getAgentTranscriptTail: \"transcript\", getHumanConversationTranscriptTail: \"transcript\", openAgentTail: \"transcript\", getConversationOutline: \"transcript\",\n-  sendPrompt: \"send\", interruptAgent: \"send\", promptAcceptanceStatus: \"send\", reactToMessage: \"send\",\n+  sendPrompt: \"send\", interruptAgent: \"send\", promptAcceptanceStatus: \"send\", reactToMessage: \"send\", retryHumanMessage: \"send\",\n   listRoutedMcpTools: \"plugins\", executeRoutedMcpTool: \"plugins\",\n   respondToWidget: \"widgets\", dismissWidget: \"widgets\", submitSecret: \"widgets\",\n   resolveAutoReviewApproval: \"approvals\", resolveLocalToolPermission: \"approvals\",",
+        "additions": 1,
+        "deletions": 1
+      }
+    ]
+  },
+  "fix_is_production_change": true,
+  "fix_scope": "One telemetry domain registration retryHumanMessage:\"send\"; exhaustive type requirement and all tests/assertions remain. No new fix was authored or applied by this reader.",
+  "observed_current_retention": {
+    "checkpoint": "474bd33c50aa7126a355f6951fd7a99a3c535103",
+    "path": "frontend/src/recovered/runtime/coordinator-source.ts",
+    "blob": "0526b43cd03ce33167f095bfdf15febe4dcca7a2",
+    "same_blob_as_fix": true,
+    "selected_lines": [
+      519,
+      539
+    ],
+    "content": "const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {\n  \"feature.auth.telegramStatus\": \"auth\",\n  \"feature.auth.telegramSendCode\": \"auth\",\n  \"feature.auth.telegramSignIn\": \"auth\",\n  \"feature.auth.telegramPassword\": \"auth\",\n  \"feature.auth.telegramRegistration\": \"auth\",\n  \"feature.auth.telegramResendCode\": \"auth\",\n  \"feature.auth.telegramCancelCode\": \"auth\",\n  \"feature.auth.telegramRequestPasswordRecovery\": \"auth\",\n  \"feature.auth.telegramCheckRecoveryPassword\": \"auth\",\n  \"feature.auth.telegramSendVerifyEmailCode\": \"auth\",\n  \"feature.auth.telegramVerifyEmail\": \"auth\",\n  \"feature.auth.telegramRefreshPasswordChallenge\": \"auth\",\n  getAgentTranscriptWindow: \"transcript\", getAgentThread: \"transcript\", getAgentTranscriptTail: \"transcript\", getHumanConversationTranscriptTail: \"transcript\", openAgentTail: \"transcript\", getConversationOutline: \"transcript\",\n  sendPrompt: \"send\", interruptAgent: \"send\", promptAcceptanceStatus: \"send\", reactToMessage: \"send\", retryHumanMessage: \"send\",\n  listRoutedMcpTools: \"plugins\", executeRoutedMcpTool: \"plugins\",\n  respondToWidget: \"widgets\", dismissWidget: \"widgets\", submitSecret: \"widgets\",\n  resolveAutoReviewApproval: \"approvals\", resolveLocalToolPermission: \"approvals\",\n  listAgents: \"roster\", countAgents: \"roster\", searchAgents: \"roster\", createAgent: \"roster\",\n  createGroup: \"roster\", setGroupMembers: \"roster\", updateAgent: \"roster\", deleteAgents: \"roster\",\n  duplicateAgent: \"roster\", kickstartAgent: \"roster\", requestDiskSaverAudit: \"roster\","
+  },
+  "fix_execution": {
+    "H": "7201c8897dafb39bea92543d3ac447305348e17d",
+    "run": 41530848397,
+    "UI_job": {
+      "id": 125570311430,
+      "run_id": 41530848397,
+      "head_sha": "7201c8897dafb39bea92543d3ac447305348e17d",
+      "status": "queued",
+      "conclusion": null,
+      "started_at": "2026-11-02T21:42:51Z",
+      "completed_at": null,
+      "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530848397/job/125570311430",
+      "steps": []
+    },
+    "passing_not_claimed": true
+  },
+  "pointer_precondition_execution": {
+    "H": "18fa9233d592e3fa536d4fd4ec6675e175d58d18",
+    "run": 41530401510,
+    "UI_job": {
+      "id": 125568803608,
+      "run_id": 41530401510,
+      "head_sha": "18fa9233d592e3fa536d4fd4ec6675e175d58d18",
+      "status": "queued",
+      "conclusion": null,
+      "started_at": "2026-11-02T21:39:55Z",
+      "completed_at": null,
+      "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530401510/job/125568803608",
+      "steps": []
+    },
+    "passing_not_claimed": true
+  },
+  "remote_readback": {
+    "path": "/workspace/scratch/b725a2794b30/desktop-ui-221d-compile-audit/remote-readback.json",
+    "bytes": 12798,
+    "sha256": "8ec1c9988c2604a309e73e6b49141a9f9f4154725e11527ab0486bd0112aba0f"
+  },
+  "scope_limits": [
+    "Precompile unit suites bundle real owner/controller code with controlled fixture/port dependencies; their93 total passes do not override failed production renderer compilation.",
+    "9b9 earlier10/11 browser results remain scoped to9b9 and do not qualify laterHuman-retry composition.",
+    "Actual7201 UI results must be read before claiming the one-line repair or pointer fixes execute successfully.",
+    "No live messaging service, signed installation or independent acceptance is established."
+  ],
+  "remote_write": false,
+  "rerun_dispatch": false,
+  "production_HTTP": false,
+  "local_project_test_build_validator_execution": false,
+  "product_acceptance": false,
+  "independent_ACCEPT": false,
+  "next_required": "Read exact7201 native run41530848397 UI125570311430 complete log and actual artifact on terminal state. Preserve both existing hover targets and18fa pointer-event preconditions; do not duplicate7201 production fix."
+}

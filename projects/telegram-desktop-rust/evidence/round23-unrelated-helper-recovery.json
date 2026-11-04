@@ -1,0 +1,67 @@
+{
+  "format_version": 1,
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 23,
+  "repository": "bhrumom/fabushi-desktop",
+  "read_only": true,
+  "failed_definition": {
+    "head": "a4499061296ffdc883e4f4ca9fa60f1f4617d5e2",
+    "run_id": 41529080628,
+    "workflow_path": ".github/workflows/task20bf-human-retry-live-objects.yml",
+    "status": "completed",
+    "conclusion": "failure",
+    "jobs": [],
+    "check_suite_id": 112539472936,
+    "commit_check_runs": [],
+    "workflow_blob": "8c944745ff3de9dca855494228ad57539f43ad01",
+    "run_block_chars": 21773,
+    "run_started_at": "2026-11-02T21:31:16Z",
+    "updated_at": "2026-11-02T21:31:16Z",
+    "conclusion_scope": "Definition/initialization failure before any job. No product test or source schema result exists in this run."
+  },
+  "repair": {
+    "head": "9d669a964825ceff655e59c2d9288e239a2fb3ae",
+    "workflow_blob": "674b46207280f2e32fdb152390f47c8a646245e4",
+    "commit_reason": "keep retry object carrier below the run command limit",
+    "documented_limit_chars": 21000,
+    "run_block_chars": 5032,
+    "change": "Move the same compressed payload from inline script literal to REVIEWED_PAYLOAD_BASE64 step environment. The Python script reads that environment variable.",
+    "run_id": 41529111469,
+    "job_id": 125564422089,
+    "status": "completed",
+    "conclusion": "success",
+    "artifact_id": 13180936737,
+    "artifact_size_in_bytes": 859,
+    "artifact_name": "task20bf-human-retry-live-objects-9d669a964825ceff655e59c2d9288e239a2fb3ae",
+    "full_log": "final-resume/other-helper-a449/125564422089.log",
+    "output_blob_lines": [
+      258,
+      262
+    ],
+    "payload_comparison": {
+      "payload_chars": 16776,
+      "same_compressed_payload": true,
+      "script_identical_after_assignment_change": true
+    },
+    "full_log_sha256": "de7999a876df7fde3f8b2dfe42bc6ca5686f05f33aadf7c3ed1f7448c92113c4",
+    "full_log_bytes": 44849
+  },
+  "removal": {
+    "commit": "71931591dda1b1326ebf2fd7ddf2523097cee919",
+    "path_absent_at": "d1daa0427a43f19480814f9669de118069e090c9",
+    "current_complete_tree_confirmed_absent": true
+  },
+  "evidence_limitations": [
+    "Direct check-suite annotations endpoint was blocked by connector URL allowlist; allowed commit check-runs endpoint returned an empty list. The script-length cause is documented in the repair commit and is consistent with the independently measured source and successful fixed run, rather than a retrieved GitHub annotation.",
+    "Object transport success does not establish successful product behavior, source schema, shipping or independent acceptance."
+  ],
+  "related_source_evidence": {
+    "exact_6f692_run": 41528778067,
+    "conclusion": "success",
+    "latest_5c285_run": 41529547932,
+    "observed_conclusion": null,
+    "unrelated_helper_failure_does_not_change_source_results": true
+  },
+  "remote_mutations": false,
+  "local_tests_or_validators": false
+}

@@ -34,6 +34,14 @@ import {
   isForwardToggleShortcut,
   nextForwardRecipientIndex,
 } from "../../production/forward-recipient-navigation.ts";
+import { projectTranscriptEntry, projectTranscriptPageResult } from "../../production/model.ts";
+import type { ConversationTranscriptEntry } from "./conversation/workspace/model.ts";
+import {
+  createTranscriptPaginationController,
+  mergeOlderTranscriptEntries,
+  type TranscriptHistoryPage,
+  type TranscriptHistoryRequest,
+} from "./conversation/workspace/pagination.ts";
 
 const flush = async (): Promise<void> => {
   await Promise.resolve();
@@ -216,6 +224,53 @@ test("find-in-chat searches visible text, wraps navigation and resets on scope",
   assert.equal(controller.getSnapshot().generation, priorGeneration + 1);
   assert.equal(controller.getSnapshot().query, "");
   assert.equal(controller.getSnapshot().matches.length, 0);
+
+  const visibleForward = projectTranscriptEntry({
+    id: "human-fwd-visible",
+    kind: "message",
+    role: "user",
+    authorKind: "human",
+    authorId: "peer-alice",
+    authorName: "Alice Sender",
+    content: "quarterly roadmap summary",
+    attachments: [{ path: "/tmp/quarterly.xlsx", name: "quarterly.xlsx" }],
+    forwardContext: {
+      privacy: { dropSenderNames: false, dropCaptions: false },
+      origin: { authorId: "peer-origin", authorName: "OriginArchitect" },
+    },
+    timestampMs: 1000,
+    delivery: "sent",
+  }, 0, "Alice", "human-conv-1");
+  const anonymousForward = projectTranscriptEntry({
+    id: "human-fwd-anon",
+    kind: "message",
+    role: "user",
+    authorKind: "human",
+    authorId: "peer-alice",
+    authorName: "Alice Sender",
+    content: "quarterly roadmap summary",
+    forwardContext: {
+      privacy: { dropSenderNames: true, dropCaptions: false },
+      origin: { authorId: "peer-origin", authorName: "OriginArchitect" },
+    },
+    timestampMs: 1001,
+    delivery: "sent",
+  }, 1, "Alice", "human-conv-1");
+  assert.ok(visibleForward && visibleForward.kind === "message");
+  assert.ok(anonymousForward && anonymousForward.kind === "message");
+  assert.equal(visibleForward.authorName, "Alice Sender");
+  assert.equal(visibleForward.forwardedFromAuthorName, "OriginArchitect");
+  assert.equal(anonymousForward.forwardedFromAuthorName, undefined);
+
+  controller.replaceEntries([visibleForward, anonymousForward]);
+  controller.setQuery("OriginArchitect roadmap");
+  assert.deepEqual(controller.getSnapshot().matches, [
+    { entryId: "human-fwd-visible", occurrence: 0 },
+  ]);
+  controller.setQuery("Alice quarterly.xlsx");
+  assert.deepEqual(controller.getSnapshot().matches, [
+    { entryId: "human-fwd-visible", occurrence: 0 },
+  ]);
   controller.dispose();
 });
 
@@ -304,3 +359,213 @@ test("forward recipient keyboard policy preserves picker boundaries and submit s
   assert.equal(isForwardToggleShortcut({ key: " ", ctrlKey: false, metaKey: false }), true);
   assert.equal(isForwardToggleShortcut({ key: "Enter", ctrlKey: true, metaKey: false }), false);
 });
+
+const historyEntry = (id: string): ConversationTranscriptEntry => ({
+  id, kind: "message", role: "user", author: "Peer", text: id, timestampMs: 1000,
+});
+
+function deferredHistoryPage() {
+  let resolve!: (page: TranscriptHistoryPage) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<TranscriptHistoryPage>((resolvePage, rejectPage) => {
+    resolve = resolvePage;
+    reject = rejectPage;
+  });
+  return { promise, resolve, reject };
+}
+
+test("Human opaque history cursors survive projection, root-cache commits and cached conversation reopen", async () => {
+  const firstToken = "opaque-history:walk-A/+=:2:5";
+  const secondToken = "opaque-history:walk-A/+=:4:3";
+  const initial = projectTranscriptPageResult({
+    entries: ["m5", "m6"].map((id) => ({ id, kind: "message", content: id, timestampMs: 1000 })),
+    nextBeforeSeq: 5,
+    nextBeforeCursor: firstToken,
+  }, "Peer", "human-room");
+  assert.equal(initial.nextBeforeCursor, firstToken);
+  const dispatching = projectTranscriptPageResult({ entries: [{
+    id: "human-message:local-nonce", kind: "message", authorKind: "human", authorId: "local",
+    clientNonce: "local-nonce", delivery: "dispatching", content: "sending", timestampMs: 1000,
+  }, {
+    id: "human-server-message:42", kind: "message", authorKind: "human", authorId: "peer",
+    remoteMessageId: "42", delivery: "sent", content: "received", timestampMs: 1000,
+  }] }, "Peer", "human-room").entries;
+  assert.ok(dispatching[0].kind === "message" && dispatching[1].kind === "message");
+  assert.equal(dispatching[0].delivery, "pending");
+  assert.equal(dispatching[0].authorKind, "human");
+  assert.equal(dispatching[0].authorId, "local");
+  assert.equal(dispatching[1].remoteMessageId, "42");
+  let cached = initial.entries as readonly ConversationTranscriptEntry[];
+  let cachedPage: TranscriptHistoryPage = { ...initial, entries: [] };
+  const requests: TranscriptHistoryRequest[] = [];
+  const controller = createTranscriptPaginationController({
+    accountSlot: "account-A", agentId: "human-room", pageLimit: 2,
+    fetchPage: async (request) => {
+      requests.push(request);
+      return requests.length === 1
+        ? { entries: [historyEntry("m3"), historyEntry("m4")], nextBeforeSeq: 3, nextBeforeCursor: secondToken }
+        : { entries: [historyEntry("m1"), historyEntry("m2")] };
+    },
+    onPageApplied: (scope, page) => {
+      assert.deepEqual(scope, { accountSlot: "account-A", agentId: "human-room" });
+      cached = mergeOlderTranscriptEntries(cached, page.entries);
+      cachedPage = { ...page, entries: [] };
+    },
+  });
+  controller.installInitialPage(cachedPage);
+  await controller.loadOlder();
+  assert.equal(cachedPage.nextBeforeCursor, secondToken);
+  assert.deepEqual(controller.getSnapshot().cursor, { kind: "more", beforeSeq: 3, beforeCursor: secondToken });
+  controller.setScope("account-A", "other-room");
+  controller.installInitialPage({ entries: [historyEntry("other")] });
+  controller.setScope("account-A", "human-room");
+  controller.installInitialPage(cachedPage);
+  await controller.loadOlder();
+  assert.deepEqual(requests, [
+    { id: "human-room", limit: 2, beforeSeq: 5, beforeCursor: firstToken },
+    { id: "human-room", limit: 2, beforeSeq: 3, beforeCursor: secondToken },
+  ]);
+  assert.deepEqual(cached.map((entry) => entry.id), ["m1", "m2", "m3", "m4", "m5", "m6"]);
+  assert.deepEqual(controller.getSnapshot().cursor, { kind: "exhausted" });
+  assert.equal(cachedPage.nextBeforeCursor, undefined);
+  controller.dispose();
+});
+
+test("Human failed history retries preserve the exact token and the latest committed row overlay", async () => {
+  const pages = [deferredHistoryPage(), deferredHistoryPage()];
+  const requests: TranscriptHistoryRequest[] = [];
+  const commits: TranscriptHistoryPage[] = [];
+  const token = "opaque-history:retry/+=:2:3";
+  const controller = createTranscriptPaginationController({
+    accountSlot: "account-A", agentId: "human-room",
+    fetchPage: (request) => {
+      requests.push(request);
+      return pages[requests.length - 1].promise;
+    },
+    onPageApplied: (_scope, page) => { commits.push(page); },
+  });
+  const initial = historyEntry("m3");
+  controller.installInitialPage({ entries: [initial], nextBeforeSeq: 3, nextBeforeCursor: token });
+  const first = controller.loadOlder();
+  await flush();
+  const updated = { ...historyEntry("m1"), reactions: [{ emoji: "❤️", by: "me" } as const] };
+  controller.ingestEntryUpdate("account-A", "human-room", updated);
+  const failure = new Error("older-page transport interrupted");
+  pages[0].reject(failure);
+  await first;
+  assert.deepEqual(controller.getSnapshot().entries, [initial]);
+  assert.deepEqual(controller.getSnapshot().cursor, { kind: "more", beforeSeq: 3, beforeCursor: token });
+  assert.equal(controller.getSnapshot().olderFailure, failure);
+  assert.equal(controller.getSnapshot().isLoadingOlder, false);
+  assert.equal(commits.length, 0);
+  const latest = { ...historyEntry("m1"), reactions: [{ emoji: "🎉", by: "me" } as const] };
+  // Updates between failure and retry must also replace that read's overlay.
+  controller.ingestEntryUpdate("account-A", "human-room", latest);
+  const retry = controller.loadOlder();
+  await flush();
+  pages[1].resolve({ entries: [historyEntry("m1"), historyEntry("m2"), historyEntry("m3")] });
+  await retry;
+  assert.deepEqual(requests, [
+    { id: "human-room", limit: 200, beforeSeq: 3, beforeCursor: token },
+    { id: "human-room", limit: 200, beforeSeq: 3, beforeCursor: token },
+  ]);
+  assert.deepEqual(controller.getSnapshot().entries, [latest, historyEntry("m2"), initial]);
+  assert.deepEqual(commits[0].entries, controller.getSnapshot().entries);
+  assert.equal(controller.getSnapshot().olderFailure, null);
+  assert.deepEqual(controller.getSnapshot().cursor, { kind: "exhausted" });
+  controller.dispose();
+});
+
+test("Human opaque history rejects stale account ABA results and their buffered updates", async () => {
+  for (const outcome of ["success", "failure"] as const) {
+    const stalePage = deferredHistoryPage();
+    const freshPage = deferredHistoryPage();
+    const requests: TranscriptHistoryRequest[] = [];
+    const commits: TranscriptHistoryPage[] = [];
+    const controller = createTranscriptPaginationController({
+      accountSlot: "account-A", agentId: "human-room",
+      fetchPage: (request) => {
+        requests.push(request);
+        return requests.length === 1 ? stalePage.promise : freshPage.promise;
+      },
+      onPageApplied: (_scope, page) => { commits.push(page); },
+    });
+    controller.installInitialPage({ entries: [], nextBeforeSeq: 10, nextBeforeCursor: "retired-token" });
+    const stale = controller.loadOlder();
+    await flush();
+    controller.ingestEntryUpdate("account-A", "human-room", { ...historyEntry("m1"), text: "retired update" });
+    controller.setScope("account-B", "human-room");
+    assert.deepEqual(controller.getSnapshot().cursor, { kind: "unprobed" });
+    controller.setScope("account-A", "human-room");
+    controller.installInitialPage({ entries: [], nextBeforeSeq: 8, nextBeforeCursor: "current-token" });
+    const fresh = controller.loadOlder();
+    await flush();
+    if (outcome === "success") stalePage.resolve({ entries: [historyEntry("must-not-leak")] });
+    else stalePage.reject({ code: "source/capability-unavailable" });
+    await stale;
+    assert.equal(controller.getSnapshot().isLoadingOlder, true);
+    assert.deepEqual(controller.getSnapshot().entries, []);
+    assert.deepEqual(controller.getSnapshot().cursor, { kind: "more", beforeSeq: 8, beforeCursor: "current-token" });
+    assert.equal(commits.length, 0);
+    freshPage.resolve({ entries: [historyEntry("m1")] });
+    await fresh;
+    assert.deepEqual(controller.getSnapshot().entries, [historyEntry("m1")]);
+    assert.deepEqual(requests[1], { id: "human-room", limit: 200, beforeSeq: 8, beforeCursor: "current-token" });
+    assert.equal(commits.length, 1);
+    controller.dispose();
+  }
+});
+
+test("Human replacement initial history clears the prior token and failed-read overlays", async () => {
+  const retiredPage = deferredHistoryPage();
+  const requests: TranscriptHistoryRequest[] = [];
+  const controller = createTranscriptPaginationController({
+    accountSlot: "account-A", agentId: "human-room",
+    fetchPage: (request) => {
+      requests.push(request);
+      return requests.length === 1 ? retiredPage.promise : Promise.resolve({ entries: [historyEntry("m1")] });
+    },
+  });
+  controller.installInitialPage({ entries: [], nextBeforeSeq: 10, nextBeforeCursor: "retired-token" });
+  const retired = controller.loadOlder();
+  await flush();
+  controller.ingestEntryUpdate("account-A", "human-room", { ...historyEntry("m1"), text: "retired update" });
+  retiredPage.reject(new Error("failed old read"));
+  await retired;
+  controller.installInitialPage({ entries: [historyEntry("m2")], nextBeforeSeq: 2, nextBeforeCursor: "replacement-token" });
+  await controller.loadOlder();
+  assert.deepEqual(requests[1], { id: "human-room", limit: 200, beforeSeq: 2, beforeCursor: "replacement-token" });
+  assert.deepEqual(controller.getSnapshot().entries, [historyEntry("m1"), historyEntry("m2")]);
+  assert.equal(controller.getSnapshot().olderFailure, null);
+  controller.reset();
+  assert.deepEqual(controller.getSnapshot().cursor, { kind: "unprobed" });
+  controller.dispose();
+});
+
+test("Agent pagination retains its sequence-only request and viewport anchor", async () => {
+  const requests: TranscriptHistoryRequest[] = [];
+  const commits: TranscriptHistoryPage[] = [];
+  const viewport = { scrollTop: 45, scrollHeight: 500 };
+  const controller = createTranscriptPaginationController({
+    accountSlot: "account-A", agentId: "agent-A", pageLimit: 50,
+    fetchPage: async (request) => {
+      requests.push(request);
+      return { entries: [historyEntry("a1"), historyEntry("a2")], nextBeforeSeq: 1 };
+    },
+    onPageApplied: (_scope, page) => { commits.push(page); },
+  });
+  controller.installInitialPage({ entries: [historyEntry("a2"), historyEntry("a3")], nextBeforeSeq: 2 });
+  controller.bindViewport(viewport);
+  await controller.loadOlder();
+  assert.deepEqual(requests, [{ id: "agent-A", limit: 50, beforeSeq: 2 }]);
+  assert.equal(Object.hasOwn(requests[0], "beforeCursor"), false);
+  assert.equal(Object.hasOwn(commits[0], "nextBeforeCursor"), false);
+  assert.deepEqual(controller.getSnapshot().cursor, { kind: "more", beforeSeq: 1 });
+  assert.deepEqual(controller.getSnapshot().entries.map((entry) => entry.id), ["a1", "a2", "a3"]);
+  viewport.scrollHeight = 700;
+  assert.equal(controller.onEntriesCommitted(), true);
+  assert.equal(viewport.scrollTop, 245);
+  assert.equal(controller.onEntriesCommitted(), false);
+  controller.dispose();
+});
+

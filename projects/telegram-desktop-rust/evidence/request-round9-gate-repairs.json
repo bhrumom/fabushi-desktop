@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 9,
+  "repository": "bhrumom/fabushi-desktop",
+  "failedHead": "5755732d62146d9bccfa07d9d0dc2a2de6d12dad",
+  "runId": 41525961187,
+  "runAttempt": 1,
+  "repairs": [
+    {
+      "jobId": 125553629899,
+      "gate": "native-message-ui",
+      "classification": "IMPLEMENTATION_DEFECT",
+      "observed": {
+        "projectionPassed": 33,
+        "cursorPassed": 17,
+        "settlementPassed": 5,
+        "dialogPassed": 16,
+        "rendererBuild": "success",
+        "actualRenderer": {
+          "passed": 1,
+          "failed": 10,
+          "skipped": 0,
+          "retries": 0
+        }
+      },
+      "artifact": {
+        "id": 13180545328,
+        "sha256": "1e9238478ff6ab282fc81fca23dbe903db5a4611ce7b769d4304f9caba29bb19"
+      },
+      "failure": "All ten failures had only the initial tail request and no older-page request; the view's unprobed-to-more hasOlder value stayed true.",
+      "fix": "Preserve the identical cursor-ready handoff independently published in 441425cd65a661f95d8b629c388281c77115d2b2. Strengthen the existing eleven-case regression to require automatic older-page dispatch before the concurrently added real scroll, which must remain single-flight.",
+      "path": "frontend/src/production/ProductionRenderer.tsx",
+      "blob": "e6449278d2b45a40cfbd3537ef3a6590680dce82",
+      "independentFixCommit": "441425cd65a661f95d8b629c388281c77115d2b2"
+    },
+    {
+      "jobId": 125553629593,
+      "gate": "native-message-reconciliation",
+      "classification": "TEST_FLAW",
+      "observed": {
+        "humanPassed": 63,
+        "humanFailed": 0,
+        "humanIgnored": 0,
+        "resourceAndCreationSuites": "not executed: library test compilation failed"
+      },
+      "failure": "E0277: rusqlite FromSql is not implemented for usize in the concurrent corruption fixture.",
+      "fix": "Preserve the independently published f544e9b3161d758141e1b419bcdab22cc522952e correction: i64 reads, positive page size and checked usize multiplication. The local three-line candidate was not committed.",
+      "path": "source/host/src/extensions/session/human_creation_tests.rs",
+      "blob": "6f59c6249a3c9be84fa36a22b1a79bc8c9d2b4ab",
+      "independentFixCommit": "f544e9b3161d758141e1b419bcdab22cc522952e"
+    },
+    {
+      "head": "aed9e8ab10eb4566631a89987511754bdc8dbfe7",
+      "runId": 41525211992,
+      "jobId": 125551061534,
+      "gate": "plugins-close-pointer",
+      "classification": "TEST_FLAW",
+      "observed": {
+        "executed": 2,
+        "passed": 1,
+        "failed": 1,
+        "skipped": 0,
+        "retries": 0
+      },
+      "artifact": {
+        "id": 13180396673,
+        "sha256": "ecffb1826bc7eab75a46c9a9e75115b6ec4bfa64f383af1a67202cc6e2b54ca1"
+      },
+      "failure": "The 1280x900 case authenticated and mounted the real shell, then waited on an unrelated Agent-roster prerequisite. The UI reported an unreachable Host; the Close path was not reached.",
+      "fix": "Plugins Close keeps real login, shell, pointer, geometry and reopen assertions. Keep the original Agent Network roster/Create Agent prerequisite unchanged. Attach the observed roster state instead of treating Host availability as a Close prerequisite.",
+      "path": "desktop/e2e/agent-network-responsive.spec.ts",
+      "blob": "adba306a35b8a62b1cf916b86a2c5f8226451532",
+      "scope": "Underlying Host-roster failure cause and recovery remain open. This test preparation repair grants no Host, Agent Network, package or production acceptance."
+    }
+  ],
+  "execution": "Preserve the already-published cursor-ready production repair and SQLite test repair. The containing commit qualifies automatic page dispatch without removing concurrent scroll behavior. No local validation. Exact containing-H Actions are required; case count and retry policy remain unchanged.",
+  "acceptance": {
+    "wholeNativeRun": false,
+    "productionService": false,
+    "source": false,
+    "independent": false
+  }
+}

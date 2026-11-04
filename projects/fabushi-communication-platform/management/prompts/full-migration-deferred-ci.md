@@ -1,12 +1,12 @@
 # Fabushi 全量迁移执行提示词：按产品闭环推进并及时验证
 
-你负责完整 Telegram 来源适用职责融入当前 Fabushi，保留已有 Bot 全部能力。先读 root/nested AGENTS、FBCP/TDRP SOT/spec 和 `docs/specs/fabushi-deferred-ci-migration.md` Revision 2；它撤销旧全量完成前零 CI 限制。当前文件名仅为链接兼容。
+你负责完整 Telegram 来源适用职责融入当前 Fabushi，保留已有 Bot 全部能力。先读 root/nested AGENTS、FBCP/TDRP SOT/spec 和 `docs/specs/fabushi-deferred-ci-migration.md` Revision 3（含 §14 纠偏）；它撤销旧全量完成前零 CI 限制。当前文件名仅为链接兼容。
 
 1. 读 live main 与既有迁移线，固定 upstream U；沿用同一 inventory/ledger/RTM，完整核算来源。复用未变化 blob 的理解，不反复重读全部历史或追逐浮动上游。
 2. 从当前消息生产链及状态权威收口开始，按 owner、依赖、用户价值和风险选择功能批次。每批明确用户入口、状态/权限、存储/服务、事件消费者和错误/重启恢复；不按源文件字典序持续迁移开发工具。
 3. 公共 Identity/Conversation/Message/Resource/Permission 合同先稳定。复用现有 production owner；最小新 owner 须有 ADR。查明 Session/Transcript、MessagingService、旧 Telegram Provider/FFI 的实际调用关系。旧路径退出必须保护调用者和存量数据，准备版本迁移与回滚，不能直接按名字删库。
 4. 支持 worker 时按独立 owner/path 并行，交付 exact base、接口与 diff；公共 schema/composition/账本由单一集成人处理。没有 worker 就沿同一依赖队列推进，不虚构后台执行。
-5. 每批实现、接线和用例一起完成。冻结批次 H，在 GitHub Actions 跑最小必要的受影响编译、合同/状态机和接线验证；权限、同步、迁移和恢复关键负例及时验证。允许 push/PR/dispatch，不允许本机或 htch-runtime 执行验证。
+5. 每批实现、接线和用例一起完成。冻结批次 H，在 GitHub Actions 跑最小必要的受影响编译、合同/状态机和接线验证；权限、同步、迁移和恢复关键负例及时验证。允许 push/PR/dispatch。阶段 A 可在本机跑聚焦的 cargo check/test、tsc、聚焦单测作为 `local-feedback` 加快修复回路，但它永不推进 ledger/RTM/批次门、不得报告为 pass；打包/签名/真实服务/soak/验收不在本机跑；证据只来自 Actions（FMEP-FAST-09）。
 6. 检查现有 workflow 触发范围，复用 job/harness/缓存；避免每文件、每提交全量跑。同 H/输入有效结果保留，只重验失败或失效项。CI 运行时推进独立任务；共享合同失败先修复再推进依赖批次，不重跑挑绿，不关闭保护。
 7. 及时云端保存，沿用已有实现线，不 force push 覆盖他人修改。工具治理、阅读、产品实现、生产接线、测试编写、执行和独立验收分别报告；未运行保持 not-run，局部绿色不能算完整迁移。
 8. Human/Agent/Group/Channel 复用统一 shell/transcript/composer；使用既有设计系统。完整消息、群频道、搜索、媒体通话、Stories、商业、平台等适用责任都要闭合，现有 Agent/Host/Coordinator/Runner/Plugins/MCP/Computer/Automations 不得回退。源工具可有证据地复用/适配/判定不适用，不机械导入 root 治理。
@@ -18,3 +18,9 @@
 ### Source-review amendment — 2026-11-02
 
 FMEP-SOURCE-01 (`docs/specs/fabushi-deferred-ci-migration.md` §13) supersedes blanket per-file deep-reading/unread=0 requirements: enumerate and disposition every exact source identity; review product/mixed/high-risk logic deeply, generated and dependency contracts at their owning inputs/interfaces, and resources/docs/tooling by evidenced disposition. Preserve full product scope. Unknown or ambiguous responsibilities escalate to deep review. Historical unread counts are not rewritten as completed reads. Final acceptance requires complete identity coverage, required review depth, responsibility mapping and all original product/evidence gates.
+11. **Revision 3 硬性约束（2026-11-04）：**
+   - 不再开启 MTProto/旧 Telegram network/runtime/storage 实现或取证轮次；可靠性职责在 Fabushi Session/native messaging/服务端 owner 中实现；按 FMEP-EXIT-01 E2→E4 推进旧栈退出（FMEP-EXIT-01）。
+   - 上游 `.agents`/cross-review/code-health 等开发工具已处置，不新增行、治理文档或 Actions 轮次（FMEP-TOOL-01）。
+   - 只经桌面被拒的 `MessagingService` 才能到达的能力不算桌面实现；先解决 message-owner ADR，再决定新消息能力落点（FMEP-STATE-02）。
+   - STATUS 顶部总览用 `python3 scripts/tdrp-progress-summary.py` 生成，"当前批次" ≤ 40 行，历史叙述写入 evidence（FMEP-REPORT-01）。
+   - 优先处理 STATUS 中的 P0 阻塞表；后端 PR137/部署阻塞要追踪责任人与接口版本（FMEP-BLOCK-01）。

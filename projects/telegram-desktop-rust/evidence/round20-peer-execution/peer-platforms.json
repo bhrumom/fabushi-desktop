@@ -1,0 +1,766 @@
+{
+  "format": "FBCP_PEER_EXACT_H_EXECUTION_AUDIT_V1",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 20,
+  "repository": "bhrumom/fabushi-desktop",
+  "head_sha": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+  "run_id": 41528207637,
+  "run_attempt": 1,
+  "run_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41528207637",
+  "observed_at": "2026-11-02 21:32:36 UTC",
+  "source_bindings": [
+    {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "git_blob_sha": "f467018b45c9dc699dfacdf64c58f182d142d8f9",
+      "sha256": "c7060534bc0fcb163d68a9144d4df3d3a14fecb6329bea06c1a7973bbadab6f9",
+      "bytes": 74289,
+      "declared_test_names": []
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs",
+      "git_blob_sha": "39cf3f07dd2d79e5e6a71fbaa542b2e4d501e47a",
+      "sha256": "4fbe03f5b050f26e505eb36c5f373a6759061ed2a1ccb2882833eb31c6f3feea",
+      "bytes": 19875,
+      "declared_test_names": [
+        "server_request_uses_peer_json_rpc_and_stable_request_id",
+        "response_resolves_only_the_matching_open_request",
+        "cancel_emits_one_shared_request_cancel_notification",
+        "reconnect_replays_unanswered_request_and_locked_clarify_answers",
+        "last_clarify_lock_resolves_with_full_answer_set",
+        "locked_clarify_answer_wins_over_stale_client_response",
+        "exported_state_round_trips_for_future_canonical_restart_store"
+      ]
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib_v2.rs",
+      "git_blob_sha": "b996054d584aaa26e757330e856e928e815373ba",
+      "sha256": "b4b06b10e4564e6e612ad355a3a6f57a6306158cdf54bc78b7706250b031ef43",
+      "bytes": 20902,
+      "declared_test_names": []
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs",
+      "git_blob_sha": "e7338a96323b7ccafe5e7ab1c45609c0b150ad87",
+      "sha256": "d865fc4eba0307842f5eef736c5cf362c8d711f9f7cbe53af8a1bee99dda12e6",
+      "bytes": 32755,
+      "declared_test_names": [
+        "pending_request_survives_process_style_reopen",
+        "resolving_request_is_durable_and_preserves_replay_section",
+        "failed_issue_retains_live_state_then_repairs_and_reopens",
+        "failed_response_keeps_pending_and_stable_id_until_repaired",
+        "failed_clarify_lock_and_completion_preserve_answers_before_retry",
+        "failed_cancel_has_no_notifications_and_preserves_other_sessions",
+        "real_temp_creation_failure_rolls_back_every_mutation_then_reopens",
+        "malformed_state_import_is_atomic_and_never_overwrites_inputs",
+        "stale_instances_merge_changes_without_resurrecting_resolved_requests",
+        "approval_issue_and_response_lookup_use_latest_transaction",
+        "only_backup_survives_failed_mutation_then_commits_on_repair",
+        "nonregular_and_legacy_inputs_fail_closed_without_touching_targets",
+        "memory_only_registry_preserves_behavior_without_filesystem",
+        "held_old_lock_cannot_be_stolen_and_killed_child_releases_it",
+        "business_errors_and_noops_leave_committed_state_unchanged",
+        "stale_clarify_writers_preserve_other_committed_answers"
+      ]
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-gateway/src/lib_v2.rs",
+      "git_blob_sha": "c826e6f52091d7727a3815edbfa5e76e2eb4a54c",
+      "sha256": "4bcf9481014b218169a3b300830857996ccfb76bb33744e65b0181f975676338",
+      "bytes": 28678,
+      "declared_test_names": [
+        "restart_rehydrates_replay_under_a_fresh_epoch",
+        "shared_state_writer_preserves_non_replay_sections",
+        "shared_writer_rejects_invalid_schema_and_lock_inputs_without_writes",
+        "shared_writer_retains_only_backup_on_failure_then_recovers"
+      ]
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/Cargo.toml",
+      "git_blob_sha": "da5b1e098fd582714e91ab6fc31885600f0abe72",
+      "sha256": "3508f2f4e39baa74f31813fad845b317b493768fddb45058996154d33f6e1dc0",
+      "bytes": 402,
+      "declared_test_names": []
+    }
+  ],
+  "scope": "Read-only exact-H Linux and Windows mahayana-gateway-peer CI job and artifact audit; source retrieval, log and archive hashing only. No local project compilation, tests, validation, or remote writes/reruns.",
+  "method": "Fetched complete decoded job logs and preserved all bytes. Inspected checkout and SHA binding, pinned compiler, command and pipefail, actual harness test names/results, artifact upload digests, warnings and job completion. Downloaded complete artifact ZIPs, read all members, and matched complete cargo output to the full job output in order.",
+  "expected_tests": [
+    "base::tests::cancel_emits_one_shared_request_cancel_notification",
+    "base::tests::exported_state_round_trips_for_future_canonical_restart_store",
+    "base::tests::last_clarify_lock_resolves_with_full_answer_set",
+    "base::tests::locked_clarify_answer_wins_over_stale_client_response",
+    "base::tests::reconnect_replays_unanswered_request_and_locked_clarify_answers",
+    "base::tests::response_resolves_only_the_matching_open_request",
+    "base::tests::server_request_uses_peer_json_rpc_and_stable_request_id",
+    "durability_tests::approval_issue_and_response_lookup_use_latest_transaction",
+    "durability_tests::business_errors_and_noops_leave_committed_state_unchanged",
+    "durability_tests::failed_cancel_has_no_notifications_and_preserves_other_sessions",
+    "durability_tests::failed_clarify_lock_and_completion_preserve_answers_before_retry",
+    "durability_tests::failed_issue_retains_live_state_then_repairs_and_reopens",
+    "durability_tests::failed_response_keeps_pending_and_stable_id_until_repaired",
+    "durability_tests::held_old_lock_cannot_be_stolen_and_killed_child_releases_it",
+    "durability_tests::malformed_state_import_is_atomic_and_never_overwrites_inputs",
+    "durability_tests::memory_only_registry_preserves_behavior_without_filesystem",
+    "durability_tests::nonregular_and_legacy_inputs_fail_closed_without_touching_targets",
+    "durability_tests::only_backup_survives_failed_mutation_then_commits_on_repair",
+    "durability_tests::pending_request_survives_process_style_reopen",
+    "durability_tests::real_temp_creation_failure_rolls_back_every_mutation_then_reopens",
+    "durability_tests::resolving_request_is_durable_and_preserves_replay_section",
+    "durability_tests::stale_clarify_writers_preserve_other_committed_answers",
+    "durability_tests::stale_instances_merge_changes_without_resurrecting_resolved_requests"
+  ],
+  "jobs": [
+    {
+      "platform": "windows-2025",
+      "job_id": 125561310321,
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41528207637/job/125561310321",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "head_sha": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+      "started_at": "2026-11-02T21:27:48Z",
+      "completed_at": "2026-11-02T21:30:59Z",
+      "labels": [
+        "windows-2025"
+      ],
+      "runner_name": "GitHub Actions 1000260148",
+      "runner_image": "windows-2025-vs2026/20261030.294.1",
+      "rustc": "1.97.1 (8bab26f4f 2026-07-14)",
+      "target": "x86_64-pc-windows-msvc",
+      "full_job_log": {
+        "local_path": "/workspace/scratch/b725a2794b30/peer-ci-9bb1c85/peer-windows-job-125561310321.log",
+        "bytes": 68633,
+        "sha256": "65fba9a8ad6a843dbd0a3281342e5e04e4a222535df72b76913421d92a529738",
+        "git_blob_sha": "daaec8b74420409cc733edc6e7ffa6439050f6b9",
+        "lines": 746,
+        "complete_decoded_response_saved": true,
+        "bom_and_original_newlines_preserved": true
+      },
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-02T21:27:48Z",
+          "completed_at": "2026-11-02T21:27:50Z"
+        },
+        {
+          "name": "Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-02T21:27:50Z",
+          "completed_at": "2026-11-02T21:27:59Z"
+        },
+        {
+          "name": "Bind exact peer source and platform scope",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-02T21:27:59Z",
+          "completed_at": "2026-11-02T21:27:59Z"
+        },
+        {
+          "name": "Run dtolnay/rust-toolchain@stable",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-02T21:27:59Z",
+          "completed_at": "2026-11-02T21:28:14Z"
+        },
+        {
+          "name": "Run Swatinem/rust-cache@v2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-02T21:28:14Z",
+          "completed_at": "2026-11-02T21:28:25Z"
+        },
+        {
+          "name": "Complete peer state and actual filesystem contracts",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-02T21:28:25Z",
+          "completed_at": "2026-11-02T21:28:52Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-02T21:28:52Z",
+          "completed_at": "2026-11-02T21:28:53Z"
+        },
+        {
+          "name": "Post Run Swatinem/rust-cache@v2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-11-02T21:28:53Z",
+          "completed_at": "2026-11-02T21:30:54Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-11-02T21:30:54Z",
+          "completed_at": "2026-11-02T21:30:57Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-11-02T21:30:57Z",
+          "completed_at": "2026-11-02T21:30:57Z"
+        }
+      ],
+      "command": "cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-gateway-peer --lib -- --nocapture --test-threads=1",
+      "tests": [
+        {
+          "name": "base::tests::cancel_emits_one_shared_request_cancel_notification",
+          "status": "ok"
+        },
+        {
+          "name": "base::tests::exported_state_round_trips_for_future_canonical_restart_store",
+          "status": "ok"
+        },
+        {
+          "name": "base::tests::last_clarify_lock_resolves_with_full_answer_set",
+          "status": "ok"
+        },
+        {
+          "name": "base::tests::locked_clarify_answer_wins_over_stale_client_response",
+          "status": "ok"
+        },
+        {
+          "name": "base::tests::reconnect_replays_unanswered_request_and_locked_clarify_answers",
+          "status": "ok"
+        },
+        {
+          "name": "base::tests::response_resolves_only_the_matching_open_request",
+          "status": "ok"
+        },
+        {
+          "name": "base::tests::server_request_uses_peer_json_rpc_and_stable_request_id",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::approval_issue_and_response_lookup_use_latest_transaction",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::business_errors_and_noops_leave_committed_state_unchanged",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::failed_cancel_has_no_notifications_and_preserves_other_sessions",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::failed_clarify_lock_and_completion_preserve_answers_before_retry",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::failed_issue_retains_live_state_then_repairs_and_reopens",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::failed_response_keeps_pending_and_stable_id_until_repaired",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::held_old_lock_cannot_be_stolen_and_killed_child_releases_it",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::malformed_state_import_is_atomic_and_never_overwrites_inputs",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::memory_only_registry_preserves_behavior_without_filesystem",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::nonregular_and_legacy_inputs_fail_closed_without_touching_targets",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::only_backup_survives_failed_mutation_then_commits_on_repair",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::pending_request_survives_process_style_reopen",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::real_temp_creation_failure_rolls_back_every_mutation_then_reopens",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::resolving_request_is_durable_and_preserves_replay_section",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::stale_clarify_writers_preserve_other_committed_answers",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::stale_instances_merge_changes_without_resurrecting_resolved_requests",
+          "status": "ok"
+        }
+      ],
+      "result": [
+        "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.50s"
+      ],
+      "artifact": {
+        "id": 13179824721,
+        "name": "gateway-peer-durability-windows-2025-9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+        "size_in_bytes": 2152,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179824721",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179824721/zip",
+        "expired": false,
+        "created_at": "2026-11-02T21:28:53Z",
+        "expires_at": "2027-01-31T21:25:29Z",
+        "updated_at": "2026-11-02T21:28:53Z",
+        "digest": "sha256:01e946cd92fa021a19073e2364bacdb64b01486586919b98d1b7615dc693d310",
+        "workflow_run": {
+          "id": 41528207637,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a"
+        },
+        "local_zip_path": "/workspace/scratch/b725a2794b30/peer-ci-9bb1c85/peer-windows-13179824721.zip",
+        "actual_zip_bytes": 2152,
+        "actual_zip_sha256": "01e946cd92fa021a19073e2364bacdb64b01486586919b98d1b7615dc693d310",
+        "members": [
+          {
+            "name": "peer-contracts.log",
+            "bytes": 5215,
+            "sha256": "e9d7571448f90cc6f74ebea729f02c4e295be9c840217758ba71b7a6cbdd1d23",
+            "local_path": "/workspace/scratch/b725a2794b30/peer-ci-9bb1c85/windows-peer-contracts.log"
+          },
+          {
+            "name": "scope.txt",
+            "bytes": 165,
+            "sha256": "5d48ba8e6cf10df760a555d8560e98324512bf14abf0849886e1014e0a19e45c",
+            "local_path": "/workspace/scratch/b725a2794b30/peer-ci-9bb1c85/windows-scope.txt"
+          },
+          {
+            "name": "target-sha.txt",
+            "bytes": 41,
+            "sha256": "d4304e0e96a72a32e7d1ded996bed04c9d6c60ad6ca9e6607eda91c73bc3ca9d",
+            "local_path": "/workspace/scratch/b725a2794b30/peer-ci-9bb1c85/windows-target-sha.txt"
+          }
+        ],
+        "target_sha": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+        "scope": "FBCP-NMR-001/NMR-PEER-DURABILITY-01; actual file transactions and OS locks; Host handoff, replay reconciliation, power-loss and mixed-version acceptance remain open"
+      },
+      "full_job_log_markers": {
+        "checkout_binding": [
+          {
+            "line": 187,
+            "text": "test \"$(git rev-parse HEAD)\" = \"9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a\""
+          }
+        ],
+        "command": [
+          {
+            "line": 491,
+            "text": "cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-gateway-peer --lib -- --nocapture --test-threads=1 2>&1 | tee artifacts/gateway-peer-durability/peer-contracts.log"
+          }
+        ],
+        "harness_count": [
+          {
+            "line": 558,
+            "text": "running 23 tests"
+          }
+        ],
+        "result": [
+          {
+            "line": 583,
+            "text": "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.50s"
+          }
+        ],
+        "upload_digest": [
+          {
+            "line": 608,
+            "text": "SHA256 digest of uploaded artifact zip is 01e946cd92fa021a19073e2364bacdb64b01486586919b98d1b7615dc693d310"
+          }
+        ],
+        "upload_finalized": [
+          {
+            "line": 610,
+            "text": "Artifact gateway-peer-durability-windows-2025-9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a.zip successfully finalized. Artifact ID 13179824721"
+          }
+        ]
+      },
+      "checks": {
+        "job_completed_success": true,
+        "job_head_sha_matches": true,
+        "job_run_and_attempt_match": true,
+        "artifact_head_sha_matches": true,
+        "target_sha_matches": true,
+        "zip_size_matches_metadata": true,
+        "zip_digest_matches_metadata": true,
+        "zip_digest_matches_upload_log": true,
+        "23_distinct_tests_match_source": true,
+        "all_tests_ok": true,
+        "result_has_23_no_failed_ignored_or_filtered": true,
+        "test_names_match_full_job_log": true,
+        "complete_artifact_log_matches_full_job_output_in_order": true,
+        "exact_command_in_full_job_log": true,
+        "no_failure_diagnostics": true
+      },
+      "warnings": [
+        {
+          "line": 544,
+          "text": "warning: variable does not need to be mutable"
+        },
+        {
+          "line": 554,
+          "text": "warning: `mahayana-gateway-peer` (lib test) generated 1 warning (run `cargo fix --lib -p mahayana-gateway-peer --tests` to apply 1 suggestion)"
+        },
+        {
+          "line": 746,
+          "text": "##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/"
+        }
+      ],
+      "failure_diagnostics": [],
+      "failure_classification": null,
+      "minimal_fix_required": false
+    },
+    {
+      "platform": "ubuntu-24.04",
+      "job_id": 125561310518,
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41528207637/job/125561310518",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "head_sha": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+      "started_at": "2026-11-02T21:30:02Z",
+      "completed_at": "2026-11-02T21:31:04Z",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "runner_name": "GitHub Actions 1000260166",
+      "runner_image": "ubuntu-24.04/20261025.353.1",
+      "rustc": "1.97.1 (8bab26f4f 2026-07-14)",
+      "target": "x86_64-unknown-linux-gnu",
+      "full_job_log": {
+        "local_path": "/workspace/scratch/b725a2794b30/peer-ci-9bb1c85/peer-linux-job-125561310518.log",
+        "bytes": 64409,
+        "sha256": "e7e394112fb17a6ff5203f57e8521ff2f6be5367d7854de5d2b6e9ec9f7f6326",
+        "git_blob_sha": "e85803f0f2da5e4e98be684dbaa053b24e6bb579",
+        "lines": 685,
+        "complete_decoded_response_saved": true,
+        "bom_and_original_newlines_preserved": true
+      },
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-02T21:30:10Z",
+          "completed_at": "2026-11-02T21:30:11Z"
+        },
+        {
+          "name": "Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-02T21:30:11Z",
+          "completed_at": "2026-11-02T21:30:16Z"
+        },
+        {
+          "name": "Bind exact peer source and platform scope",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-02T21:30:16Z",
+          "completed_at": "2026-11-02T21:30:16Z"
+        },
+        {
+          "name": "Run dtolnay/rust-toolchain@stable",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-02T21:30:16Z",
+          "completed_at": "2026-11-02T21:30:25Z"
+        },
+        {
+          "name": "Run Swatinem/rust-cache@v2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-02T21:30:25Z",
+          "completed_at": "2026-11-02T21:30:26Z"
+        },
+        {
+          "name": "Complete peer state and actual filesystem contracts",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-02T21:30:26Z",
+          "completed_at": "2026-11-02T21:30:41Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-02T21:30:41Z",
+          "completed_at": "2026-11-02T21:30:42Z"
+        },
+        {
+          "name": "Post Run Swatinem/rust-cache@v2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-11-02T21:30:42Z",
+          "completed_at": "2026-11-02T21:31:01Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-11-02T21:31:01Z",
+          "completed_at": "2026-11-02T21:31:01Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-11-02T21:31:01Z",
+          "completed_at": "2026-11-02T21:31:01Z"
+        }
+      ],
+      "command": "cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-gateway-peer --lib -- --nocapture --test-threads=1",
+      "tests": [
+        {
+          "name": "base::tests::cancel_emits_one_shared_request_cancel_notification",
+          "status": "ok"
+        },
+        {
+          "name": "base::tests::exported_state_round_trips_for_future_canonical_restart_store",
+          "status": "ok"
+        },
+        {
+          "name": "base::tests::last_clarify_lock_resolves_with_full_answer_set",
+          "status": "ok"
+        },
+        {
+          "name": "base::tests::locked_clarify_answer_wins_over_stale_client_response",
+          "status": "ok"
+        },
+        {
+          "name": "base::tests::reconnect_replays_unanswered_request_and_locked_clarify_answers",
+          "status": "ok"
+        },
+        {
+          "name": "base::tests::response_resolves_only_the_matching_open_request",
+          "status": "ok"
+        },
+        {
+          "name": "base::tests::server_request_uses_peer_json_rpc_and_stable_request_id",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::approval_issue_and_response_lookup_use_latest_transaction",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::business_errors_and_noops_leave_committed_state_unchanged",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::failed_cancel_has_no_notifications_and_preserves_other_sessions",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::failed_clarify_lock_and_completion_preserve_answers_before_retry",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::failed_issue_retains_live_state_then_repairs_and_reopens",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::failed_response_keeps_pending_and_stable_id_until_repaired",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::held_old_lock_cannot_be_stolen_and_killed_child_releases_it",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::malformed_state_import_is_atomic_and_never_overwrites_inputs",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::memory_only_registry_preserves_behavior_without_filesystem",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::nonregular_and_legacy_inputs_fail_closed_without_touching_targets",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::only_backup_survives_failed_mutation_then_commits_on_repair",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::pending_request_survives_process_style_reopen",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::real_temp_creation_failure_rolls_back_every_mutation_then_reopens",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::resolving_request_is_durable_and_preserves_replay_section",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::stale_clarify_writers_preserve_other_committed_answers",
+          "status": "ok"
+        },
+        {
+          "name": "durability_tests::stale_instances_merge_changes_without_resurrecting_resolved_requests",
+          "status": "ok"
+        }
+      ],
+      "result": [
+        "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.08s"
+      ],
+      "artifact": {
+        "id": 13181121245,
+        "name": "gateway-peer-durability-ubuntu-24.04-9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+        "size_in_bytes": 1880,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181121245",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181121245/zip",
+        "expired": false,
+        "created_at": "2026-11-02T21:30:42Z",
+        "expires_at": "2027-01-31T21:25:29Z",
+        "updated_at": "2026-11-02T21:30:42Z",
+        "digest": "sha256:685fe186d830924cda93ba3b1222fa823cd6ee2142a24ceef374100814869c69",
+        "workflow_run": {
+          "id": 41528207637,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a"
+        },
+        "local_zip_path": "/workspace/scratch/b725a2794b30/peer-ci-9bb1c85/peer-linux-13181121245.zip",
+        "actual_zip_bytes": 1880,
+        "actual_zip_sha256": "685fe186d830924cda93ba3b1222fa823cd6ee2142a24ceef374100814869c69",
+        "members": [
+          {
+            "name": "peer-contracts.log",
+            "bytes": 4527,
+            "sha256": "71ed3e39ed90d5703109bcfd0630f3ad4145dee806722d590a5c5dc3d0bed8b8",
+            "local_path": "/workspace/scratch/b725a2794b30/peer-ci-9bb1c85/linux-peer-contracts.log"
+          },
+          {
+            "name": "target-sha.txt",
+            "bytes": 41,
+            "sha256": "d4304e0e96a72a32e7d1ded996bed04c9d6c60ad6ca9e6607eda91c73bc3ca9d",
+            "local_path": "/workspace/scratch/b725a2794b30/peer-ci-9bb1c85/linux-target-sha.txt"
+          },
+          {
+            "name": "scope.txt",
+            "bytes": 165,
+            "sha256": "5d48ba8e6cf10df760a555d8560e98324512bf14abf0849886e1014e0a19e45c",
+            "local_path": "/workspace/scratch/b725a2794b30/peer-ci-9bb1c85/linux-scope.txt"
+          }
+        ],
+        "target_sha": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+        "scope": "FBCP-NMR-001/NMR-PEER-DURABILITY-01; actual file transactions and OS locks; Host handoff, replay reconciliation, power-loss and mixed-version acceptance remain open"
+      },
+      "full_job_log_markers": {
+        "checkout_binding": [
+          {
+            "line": 139,
+            "text": "test \"$(git rev-parse HEAD)\" = \"9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a\""
+          }
+        ],
+        "command": [
+          {
+            "line": 442,
+            "text": "cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-gateway-peer --lib -- --nocapture --test-threads=1 2>&1 | tee artifacts/gateway-peer-durability/peer-contracts.log"
+          }
+        ],
+        "harness_count": [
+          {
+            "line": 498,
+            "text": "running 23 tests"
+          }
+        ],
+        "result": [
+          {
+            "line": 523,
+            "text": "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.08s"
+          }
+        ],
+        "upload_digest": [
+          {
+            "line": 548,
+            "text": "SHA256 digest of uploaded artifact zip is 685fe186d830924cda93ba3b1222fa823cd6ee2142a24ceef374100814869c69"
+          }
+        ],
+        "upload_finalized": [
+          {
+            "line": 550,
+            "text": "Artifact gateway-peer-durability-ubuntu-24.04-9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a.zip successfully finalized. Artifact ID 13181121245"
+          }
+        ]
+      },
+      "checks": {
+        "job_completed_success": true,
+        "job_head_sha_matches": true,
+        "job_run_and_attempt_match": true,
+        "artifact_head_sha_matches": true,
+        "target_sha_matches": true,
+        "zip_size_matches_metadata": true,
+        "zip_digest_matches_metadata": true,
+        "zip_digest_matches_upload_log": true,
+        "23_distinct_tests_match_source": true,
+        "all_tests_ok": true,
+        "result_has_23_no_failed_ignored_or_filtered": true,
+        "test_names_match_full_job_log": true,
+        "complete_artifact_log_matches_full_job_output_in_order": true,
+        "exact_command_in_full_job_log": true,
+        "no_failure_diagnostics": true
+      },
+      "warnings": [
+        {
+          "line": 685,
+          "text": "##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/"
+        }
+      ],
+      "failure_diagnostics": [],
+      "failure_classification": null,
+      "minimal_fix_required": false
+    }
+  ],
+  "execution_result": "success",
+  "all_audit_checks_pass": true,
+  "scope_limitations": [
+    "Each platform ran all 23 named peer tests: 7 existing base tests and 16 filesystem/state durability tests. Platform cfg-specific Unix symlink and permission subcases are not claimed on Windows.",
+    "This audit does not accept Host handoff atomicity, peer/replay reconciliation and publication, power-loss, mixed-version coordination or complete migration.",
+    "Mac shipping, CLI nine, gateway library thirteen and all other run jobs remain outside this reviewer execution scope. This receipt makes no whole-workflow success claim.",
+    "Windows compilation emitted a nonfatal unused_mut warning in durability_tests.rs:15; mutation is needed by the Unix cfg branch. Both jobs emitted an actions/upload-artifact@v4 Node 20 deprecation notice. Neither warning was a test or environment failure."
+  ],
+  "independent_ACCEPT": false,
+  "full_migration_accepted": false,
+  "production_files_modified": false,
+  "remote_writes": false,
+  "rerun_requested": false,
+  "local_project_execution": false
+}

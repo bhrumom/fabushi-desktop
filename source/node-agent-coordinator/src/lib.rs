@@ -19,6 +19,7 @@ pub mod renderer_port_server;
 pub mod routed_mcp_bridge;
 pub mod runner_tool_relay;
 pub mod supervisor;
+pub mod tdrp;
 pub mod telemetry;
 pub mod webauthn;
 
@@ -31,3 +32,4 @@ pub use supervisor::{
     PendingRequest, RequestSettlement, ResyncSnapshot,
 };
 pub mod miniapp_management_relay;
+pub use tdrp::*;

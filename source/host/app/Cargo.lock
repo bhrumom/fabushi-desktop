@@ -1196,74 +1196,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fabushi-telegram-core"
-version = "0.1.0"
-dependencies = [
- "serde",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "fabushi-telegram-network"
-version = "0.1.0"
-dependencies = [
- "fabushi-telegram-protocol",
- "getrandom 0.2.17",
- "thiserror 1.0.69",
- "zeroize",
-]
-
-[[package]]
-name = "fabushi-telegram-protocol"
-version = "0.1.0"
-dependencies = [
- "aes 0.8.4",
- "crc32fast",
- "fabushi-telegram-core",
- "getrandom 0.2.17",
- "hex",
- "num-bigint-dig",
- "pbkdf2 0.12.2",
- "serde",
- "serde_json",
- "sha1 0.10.7",
- "sha2 0.10.9",
- "subtle",
- "thiserror 1.0.69",
- "zeroize",
-]
-
-[[package]]
-name = "fabushi-telegram-runtime"
-version = "0.1.0"
-dependencies = [
- "fabushi-telegram-core",
- "fabushi-telegram-network",
- "fabushi-telegram-protocol",
- "fabushi-telegram-storage",
- "once_cell",
- "serde_json",
- "thiserror 1.0.69",
- "zeroize",
-]
-
-[[package]]
-name = "fabushi-telegram-storage"
-version = "0.1.0"
-dependencies = [
- "chacha20poly1305",
- "fabushi-telegram-core",
- "hmac 0.12.1",
- "rand_core 0.6.4",
- "rusqlite",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror 1.0.69",
- "zeroize",
-]
-
-[[package]]
 name = "fallible-iterator"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2276,12 +2208,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "libm"
-version = "0.2.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
-
-[[package]]
 name = "libspa"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2449,6 +2375,7 @@ dependencies = [
  "rusqlite",
  "serde",
  "serde_json",
+ "sha2 0.10.9",
  "thiserror 2.0.21",
 ]
 
@@ -2608,7 +2535,6 @@ dependencies = [
  "mahayana-platform-core",
  "mahayana-runtime",
  "mahayana-social",
- "mahayana-telegram",
  "serde",
  "serde_json",
  "thiserror 2.0.21",
@@ -2800,6 +2726,7 @@ name = "mahayana-platform-client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "mahayana-auth",
  "mahayana-host-protocol",
  "mahayana-platform-core",
@@ -2887,18 +2814,6 @@ dependencies = [
  "mahayana-platform-client",
  "serde_json",
  "tokio",
-]
-
-[[package]]
-name = "mahayana-telegram"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "fabushi-telegram-core",
- "fabushi-telegram-runtime",
- "mahayana-conversation",
- "mahayana-core",
- "serde_json",
 ]
 
 [[package]]
@@ -3128,23 +3043,6 @@ checksum = "c89e69e7e0f03bea5ef08013795c25018e101932225a656383bd384495ecc367"
 dependencies = [
  "num-integer",
  "num-traits",
-]
-
-[[package]]
-name = "num-bigint-dig"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7f9a86e097b0d187ad0e65667c2f58b9254671e86e7dbb78036b16692eae099"
-dependencies = [
- "libm",
- "num-integer",
- "num-iter",
- "num-traits",
- "once_cell",
- "rand 0.9.5",
- "serde",
- "smallvec",
- "zeroize",
 ]
 
 [[package]]
@@ -5361,6 +5259,30 @@ name = "utf8_iter"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
+
+[[package]]
+name = "uiautomation"
+version = "0.25.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa2eacf9390a8491bc949b04230f40c12520c6423a2962a6087eea1ef14373af"
+dependencies = [
+ "chrono",
+ "uiautomation_derive",
+ "windows 0.62.2",
+ "windows-core 0.62.2",
+]
+
+[[package]]
+name = "uiautomation_derive"
+version = "0.7.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c893ec96e05c3c81ba46f838f3190549ec185ef377d582ab3d44202b2dfacbd"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.9",
+]
+
 
 [[package]]
 name = "uuid"

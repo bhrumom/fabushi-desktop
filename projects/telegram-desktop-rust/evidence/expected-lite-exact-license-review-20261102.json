@@ -1,0 +1,74 @@
+{
+  "format": "TDRP_SOURCE_LEGAL_BLOB_REVIEW_V1",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 3,
+  "observed_at_utc": "2026-11-02",
+  "target_repository": "bhrumom/fabushi-desktop",
+  "observation_base": "2fd8d7623a1cfa00b09e90a2d81535c6550425df",
+  "frozen_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "source_chain": {
+    "parent": {
+      "repository": "https://github.com/desktop-app/cmake_helpers.git",
+      "commit": "7ceca3019b4750d7a5acb2de0faffd523ee14095",
+      "submodule_path": "external/glib/cppgir",
+      "gitmodules_blob": "c92fbea3467f72e188cba4cbfe51c8c68a7e2e77"
+    },
+    "child": {
+      "repository": "https://gitlab.com/mnauw/cppgir.git",
+      "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+      "tree": "b70fee3ca4bf9e4c6fa2a761bd3461be3754f7f8",
+      "submodule_path": "expected-lite",
+      "gitmodules_blob": "e0c91502bcb2798a8a57bd85e49c76e0ef7275a3"
+    },
+    "nested": {
+      "repository": "https://github.com/martinmoene/expected-lite.git",
+      "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+      "tree": "5f38901998c76e9c3dcc52bfbbe26877820cbbda",
+      "declared_repository_url": "https://github.com/martinmoene/expected-lite.git"
+    }
+  },
+  "reviewed_blob": {
+    "repository": "nonstd-lite/expected-lite",
+    "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+    "path": "LICENSE.txt",
+    "git_blob_sha1": "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+    "byte_length": 1338,
+    "license_identifier": "BSL-1.0",
+    "observed_text_title": "Boost Software License - Version 1.0 - August 17th, 2003",
+    "obligations_observed": "The source license grants use and redistribution conditioned on retaining the copyright notices and the full license statement in covered source/derivative copies, except solely machine-executable object code.",
+    "primary_read": "https://github.com/nonstd-lite/expected-lite/blob/95b9cb015fa17baa749c2b396b335906e1596a9e/LICENSE.txt",
+    "review_scope": "Exact pinned license text only; not complete source header attribution, dependency license compliance, binaries, or release clearance.",
+    "mirror_read_note": "License text was read at the nonstd-lite GitHub mirror using its pinned Git blob; cppgir .gitmodules declares martinmoene/expected-lite. The Git tree acquisition binds the original declaration to exactly the same commit/tree; mirror name alone is not source provenance."
+  },
+  "acquisition_evidence": {
+    "run_id": 41395923342,
+    "job_id": 125117103688,
+    "head_sha": "d00fdb48200b105b7aea9f2cb865cf4e7b482b2d",
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41395923342",
+    "artifact_id": 13119680890,
+    "artifact_digest": "sha256:61c39c84a93982b5788e8dba6c3cf1627ebf85cdabf8c08851537ddfa5b970be",
+    "original_host_child_and_nested_tree_acquired": true,
+    "recursive_git_trees_enumerated_completely": true,
+    "repository_count": 2,
+    "edge_count": 2,
+    "total_tree_entries": 181,
+    "entry_jsonl_sha256": "ca7b93baea47c96a852166ecd5a35dcfa4c4d882a4e5ba240d2f103af63ab453",
+    "edge_jsonl_sha256": "a109d372e8ba3f8eeed356b89cba618dd66c7f43f9dfa04b58ed1b4e3be7b4c1"
+  },
+  "acceptance": {
+    "complete_source_inventory": false,
+    "recursive_dependency_semantic_review": false,
+    "cppgir_license_complete_review": false,
+    "all_generated_inputs_reviewed": false,
+    "full_legal_clearance": false,
+    "product_accepted": false,
+    "independent_acceptance": false,
+    "original_host_license_bytes_retained_in_artifact": false,
+    "note": "Earlier original-host Actions artifact contained trees and .gitmodules but omitted both license files. NMR-08b acquisition repair is authored and requires exact-H GitHub Actions before this flag can change."
+  },
+  "blocked_on": [
+    "Complete original-host cppgir LICENSE and source-embedded notices review; this receipt does not substitute for that license's separately acquired bytes.",
+    "Reconcile the canonical fixed-U source lock/inventory and the strict ledger schema without masking historical unknown/unread or inventing product ownership.",
+    "Review and disposition generated inputs, source consumers, legal notices and all remaining pinned nested/external sources before any full-source acceptance."
+  ]
+}

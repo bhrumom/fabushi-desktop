@@ -140,10 +140,14 @@ const FABUSHI_EXTENSION_COMMANDS: &[&str] = &[
     "syncHumanConversation",
     "createHumanConversation",
     "sendHumanMessage",
+    "retryHumanMessage",
     "reactHumanMessage",
     "getHumanConversationTranscript",
     "getHumanConversationTranscriptTail",
     "searchHumanMessages",
+    // Reuse the canonical Session forward and recipient authorization owner.
+    "searchHumanRecipients",
+    "forwardHumanMessage",
     // ADR-003 CallSession/Signaling commands. Keep live call truth in the
     // canonical Host owner rather than widening Renderer/Electron ownership.
     "createCallSession",
@@ -984,10 +988,13 @@ mod tests {
             "syncHumanConversation",
             "createHumanConversation",
             "sendHumanMessage",
+            "retryHumanMessage",
             "reactHumanMessage",
             "getHumanConversationTranscript",
             "getHumanConversationTranscriptTail",
             "searchHumanMessages",
+            "searchHumanRecipients",
+            "forwardHumanMessage",
             "createCallSession",
             "getCallSession",
             "listCallSessions",

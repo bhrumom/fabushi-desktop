@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "audit": "f290 Human creation sidecar-preservation failure and already-published minimal owner fix",
+  "reviewer": "/root/resume_current_native",
+  "repository": "bhrumom/fabushi-desktop",
+  "failure": {
+    "head_sha": "f2903f53ded5b07faea73e7f07d780eda0423283",
+    "run_id": 41527613857,
+    "job_id": 125559290464,
+    "conclusion": "failure",
+    "classification": "IMPL_BUG",
+    "actual_passed_before_failure": {
+      "transcript_recovery": 3,
+      "human_gateway": 63,
+      "resource_upload_bounds": 3
+    },
+    "human_creation": {
+      "passed": 11,
+      "failed": 1,
+      "ignored": 0,
+      "case": "corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
+      "failure_at": "source/host/src/extensions/session/human_creation_tests.rs:777",
+      "first_variant": "notadb",
+      "observed": "Main store.db and unrelated-resource.bin preserved; store.db-wal, store.db-shm and store.db-journal disappeared.",
+      "oracle": "Sorted names and exact bytes for every file in retained directory, on initial refusal and planned retry/reopen.",
+      "later_variants": "schema and data-page-delete-mode were not reached after first-variant panic."
+    },
+    "not_executed": [
+      "human_creation_storage_tests3",
+      "sharebox1",
+      "forward journal12",
+      "Agent4",
+      "credential3",
+      "forward HTTP1"
+    ],
+    "log_path": "final-resume/native-logs/41527613857-125559290464.log",
+    "log_metadata": {
+      "run_id": 41527613857,
+      "job_id": 125559290464,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41527613857-125559290464.log",
+      "bytes": 230963,
+      "sha256": "56768fe916f53494097758cc93eabb659fde50cedc829d3d72b8d207a43d23c7",
+      "format": "Complete connector-decoded job log, UTF-8 exact text"
+    },
+    "artifact": {
+      "id": 13179829387,
+      "name": "native-message-reconciliation-f2903f53ded5b07faea73e7f07d780eda0423283",
+      "size_in_bytes": 20986,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179829387",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179829387/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:27:18Z",
+      "expires_at": "2027-01-31T21:21:33Z",
+      "updated_at": "2026-11-02T21:27:18Z",
+      "digest": "sha256:19196a31f6510226f4598ceaf97934f933510a79331d435c2d31040b821ddab6",
+      "workflow_run": {
+        "id": 41527613857,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "f2903f53ded5b07faea73e7f07d780eda0423283"
+      }
+    }
+  },
+  "root_cause": {
+    "production_blob_before": "fee9c2f3f88e713edea0d6f03c70763a8dd8072d",
+    "path": "source/host/src/extensions/session/agent_db_recovery.rs",
+    "old_branch": "probe_human_conversation_store returns Ok on any nonempty -wal or -journal before inspecting the main database.",
+    "effect": "open_human_conversation_store then calls existing SQLite open/journal_mode/schema path. SQLite removed the synthetic invalid sidecars before NOTADB failure even with recover_on_corruption=false. The app must prevent this delegation when raw main bytes already prove NOTADB.",
+    "classification_basis": "NMR-CREATE-01d explicitly requires preserving original database and sidecar bytes on refusal. Artificial invalid sidecar files exercise that defined negative contract. Deleting the assertion or weakening the saved-directory comparison would hide the observed destructive effect."
+  },
+  "observed_fix": {
+    "commit_sha": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "run_id": 41528369271,
+    "job_id": 125561859923,
+    "path": "source/host/src/extensions/session/agent_db_recovery.rs",
+    "blob_sha": "91105c4c23fd18cb2da1ec9ef7d81fedd5e0f167",
+    "change": "Read first 16 bytes of nonempty existing main file through std::fs::File before sidecar bypass or any SQLite handle. Reject short header via read_exact error and non-SQLite magic via Integrity. Missing/zero-length database and valid-header WAL/rollback delegation retain existing behavior.",
+    "caller": {
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "blob_sha": "0b396511ce827f38377b252ec6e05466be1d8564",
+      "order": "open_human_conversation_store resolves path, executes probe with ?, and only then calls open_with_options_and_seed -> open_configured_db. No owner handle is published before successful open."
+    },
+    "test_blob_at_fix": "6f59c6249a3c9be84fa36a22b1a79bc8c9d2b4ab",
+    "tests_and_oracles_unchanged_at_fix": true,
+    "static_assessment": "Covers the observed NOTADB + invalid sidecar loss before any SQLite action; exact-H execution remains pending.",
+    "additional_patch_needed_for_observed_failure": false,
+    "diff_file": "observed-production-fix.diff"
+  },
+  "newer_observation": {
+    "head_sha": "f95a33b13672095d68c6ca731f2f42e6c10b9890",
+    "test_blob_sha": "7ce0914f9010d7d7fda0676929d57b154fa38f45",
+    "change": "Adds short-header to the same existing case while retaining NOTADB/schema/data-page variants and every original no-loss/retry/reopen assertion.",
+    "qualification": "A pass at 9b9 does not execute this later short-header variant even though both suite counts remain 12.",
+    "diff_file": "later-short-header-test-extension.diff"
+  },
+  "spec": {
+    "path": "docs/specs/fbcp-native-message-reconciliation.md",
+    "head_sha": "f95a33b13672095d68c6ca731f2f42e6c10b9890",
+    "blob_sha": "bd545bf38a7577a55ff0fecece1932a44df30ada",
+    "requirement": "NMR-CREATE-01d / NMR-AC-CREATE-01",
+    "scope": "Human creation must refuse corruption without quarantine/reset/salvage; database and sidecars remain byte-identical. Arbitrary hot/corrupt-sidecar recovery remains explicitly open."
+  },
+  "limits": {
+    "local_build_test_or_validator": false,
+    "remote_writes": false,
+    "production_edits_by_reviewer": false,
+    "independent_accept": false,
+    "arbitrary_corrupt_sidecar_recovery_closed": false
+  },
+  "sources_manifest": "sources.json"
+}

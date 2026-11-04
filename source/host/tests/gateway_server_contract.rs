@@ -38,6 +38,7 @@ impl GatewayApi for TestApi {
                 "version": "avatar-v1"
             })),
             "getTranscript" => Ok(args),
+            "searchHumanRecipients" | "forwardHumanMessage" | "retryHumanMessage" => Ok(json!({"method":method,"args":args})),
             method if method.starts_with("feature.") => Ok(json!({
                 "method": method,
                 "args": args,
@@ -617,6 +618,41 @@ fn gateway_serves_real_tls_when_cert_and_key_are_configured() {
     assert!(response.starts_with("HTTP/1.1 200 OK"), "{response}");
     assert_eq!(json_body(&response)["startedAt"], 321);
 
+    server.close();
+}
+
+#[test]
+fn gateway_forward_recipient_methods_are_authenticated_and_unknown_methods_stay_closed() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi), events: GatewayEventHub::default(),
+        local_exec: None, webauthn: None,
+        config: config(Some("forward-secret")), started_at: 1,
+    }).expect("gateway");
+    for method in ["searchHumanRecipients", "forwardHumanMessage", "retryHumanMessage"] {
+        let body = if method == "retryHumanMessage" {
+            r#"{"conversationId":"a","clientNonce":"c"}"#
+        } else {
+            r#"{"sourceConversationId":"a","sourceEntryId":"b","clientNonce":"c"}"#
+        };
+        let send = |token: &str| request(server.port(), &format!(
+            "POST /api/{method} HTTP/1.1\r\nHost: 127.0.0.1\r\n{token}Content-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()));
+        let denied = send("");
+        assert!(denied.starts_with("HTTP/1.1 401 Unauthorized"), "{denied}");
+        let allowed = send("Authorization: Bearer forward-secret\r\n");
+        assert!(allowed.starts_with("HTTP/1.1 200 OK"), "{allowed}");
+        assert_eq!(json_body(&allowed)["method"], method);
+        assert_eq!(json_body(&allowed)["args"]["clientNonce"], "c");
+        if method != "retryHumanMessage" {
+            assert_eq!(json_body(&allowed)["args"]["sourceEntryId"], "b");
+        } else {
+            assert_eq!(json_body(&allowed)["args"]["conversationId"], "a");
+        }
+    }
+    for method in ["telegram.forwardMessage", "forwardHumanMessages", "telegram.retryMessage", "retryHumanMessages"] {
+        let response = request(server.port(), &format!(
+            "POST /api/{method} HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer forward-secret\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"));
+        assert!(response.starts_with("HTTP/1.1 404 Not Found"), "{response}");
+    }
     server.close();
 }
 

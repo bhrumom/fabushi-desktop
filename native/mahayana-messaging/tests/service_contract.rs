@@ -320,6 +320,7 @@ fn realtime_state_tracks_group_call_media_and_typing() {
         actor_id,
         action: "typing".into(),
         expires_at_ms: 50,
+        topic_id: None,
     });
     realtime.expire_typing(51);
     assert!(realtime.typing.is_empty());
@@ -930,4 +931,471 @@ fn presence_triggered_send_persists_releases_once_and_replays_idempotently() {
             [&ConversationId::new("chat:presence-trigger")].len(),
         1
     );
+}
+
+#[test]
+fn presence_triggered_send_enforces_last_seen_privacy_cancellation_reschedule_and_terminal_policy_failure() {
+    let mut service = MessagingService::load(MemoryStateStore::default()).unwrap();
+    let sender = ActorId::new("human:schedule-sender");
+    let target = ActorId::new("human:schedule-target");
+    let service_target = ActorId::new("human:schedule-service");
+    let paid_target = ActorId::new("human:schedule-paid");
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-sender"),
+                ClientCommand::UpsertProfile {
+                    actor: Actor::human("human:schedule-sender", "Schedule Sender"),
+                },
+            ),
+            1,
+        )
+        .unwrap();
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-target"),
+                ClientCommand::UpsertProfile {
+                    actor: Actor::human("human:schedule-target", "Schedule Target"),
+                },
+            ),
+            2,
+        )
+        .unwrap();
+
+    let mut service_actor = Actor::human("human:schedule-service", "Notifications Service");
+    service_actor.capabilities.push("service_notifications".into());
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-service"),
+                ClientCommand::UpsertProfile {
+                    actor: service_actor,
+                },
+            ),
+            3,
+        )
+        .unwrap();
+
+    let mut paid_actor = Actor::human("human:schedule-paid", "Paid Recipient");
+    paid_actor
+        .capabilities
+        .push("stars_per_message_required".into());
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-paid"),
+                ClientCommand::UpsertProfile { actor: paid_actor },
+            ),
+            4,
+        )
+        .unwrap();
+
+    for (chat_id, peer_id) in [
+        ("chat:schedule-direct", target.clone()),
+        ("chat:schedule-service", service_target.clone()),
+        ("chat:schedule-paid", paid_target.clone()),
+    ] {
+        service
+            .handle(
+                ClientEnvelope::new(
+                    context("human:schedule-sender"),
+                    ClientCommand::CreateConversation {
+                        conversation: Conversation::direct(
+                            chat_id,
+                            chat_id,
+                            vec![
+                                Participant {
+                                    actor_id: sender.clone(),
+                                    role: ParticipantRole::Owner,
+                                    joined_at_ms: 5,
+                                    muted_until_ms: None,
+                                },
+                                Participant {
+                                    actor_id: peer_id,
+                                    role: ParticipantRole::Member,
+                                    joined_at_ms: 5,
+                                    muted_until_ms: None,
+                                },
+                            ],
+                            5,
+                        ),
+                    },
+                ),
+                5,
+            )
+            .unwrap();
+    }
+
+    // 1. Notifications service user and paid-messages recipient must be rejected for SendWhenParticipantOnline
+    for (chat_id, peer_id, client_id) in [
+        ("chat:schedule-service", service_target, "client:service-reject"),
+        ("chat:schedule-paid", paid_target, "client:paid-reject"),
+    ] {
+        let err = service
+            .handle(
+                ClientEnvelope::new(
+                    context("human:schedule-sender"),
+                    ClientCommand::SendWhenParticipantOnline {
+                        conversation_id: ConversationId::new(chat_id),
+                        client_message_id: ClientMessageId(client_id.into()),
+                        target_actor_id: peer_id,
+                        content: MessageContent::Text {
+                            text: FormattedText::plain("not eligible"),
+                        },
+                        reply_to_message_id: None,
+                        thread_root_message_id: None,
+                        silent: false,
+                        protected_content: false,
+                    },
+                ),
+                6,
+            )
+            .unwrap_err();
+        assert!(matches!(
+            err,
+            MessagingServiceError::Engine(EngineError::InvalidPresenceTriggeredSend)
+        ));
+    }
+
+    // 2. Target hiding LastSeen from sender (PrivacyAudience::Contacts without contact capability) rejects SendWhenParticipantOnline
+    let mut privacy = PrivacySettings::default();
+    privacy.rules.insert(
+        PrivacyKey::LastSeen,
+        PrivacyRule {
+            audience: PrivacyAudience::Contacts,
+            always_allow: Default::default(),
+            never_allow: Default::default(),
+        },
+    );
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-target"),
+                ClientCommand::UpsertPrivacySettings {
+                    settings: privacy.clone(),
+                },
+            ),
+            7,
+        )
+        .unwrap();
+
+    let hidden_last_seen_err = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-sender"),
+                ClientCommand::SendWhenParticipantOnline {
+                    conversation_id: ConversationId::new("chat:schedule-direct"),
+                    client_message_id: ClientMessageId("client:hidden-last-seen".into()),
+                    target_actor_id: target.clone(),
+                    content: MessageContent::Text {
+                        text: FormattedText::plain("blocked by hidden last seen"),
+                    },
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    silent: false,
+                    protected_content: false,
+                },
+            ),
+            8,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        hidden_last_seen_err,
+        MessagingServiceError::Engine(EngineError::InvalidPresenceTriggeredSend)
+    ));
+
+    // 3. Granting LastSeen visibility via always_allow (or contact) allows queuing, and CancelPresenceTriggeredSend settles across sender devices
+    privacy
+        .rules
+        .get_mut(&PrivacyKey::LastSeen)
+        .unwrap()
+        .always_allow
+        .insert(sender.clone());
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-target"),
+                ClientCommand::UpsertPrivacySettings {
+                    settings: privacy.clone(),
+                },
+            ),
+            9,
+        )
+        .unwrap();
+
+    let cursor_before_cancel_flow = service.cursor().to_string();
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-sender"),
+                ClientCommand::SendWhenParticipantOnline {
+                    conversation_id: ConversationId::new("chat:schedule-direct"),
+                    client_message_id: ClientMessageId("client:cancel-me".into()),
+                    target_actor_id: target.clone(),
+                    content: MessageContent::Text {
+                        text: FormattedText::plain("cancel before online"),
+                    },
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    silent: true,
+                    protected_content: false,
+                },
+            ),
+            10,
+        )
+        .unwrap();
+    assert_eq!(service.engine().state().pending_presence_sends.len(), 1);
+
+    // Target cannot cancel sender's pending presence-triggered send
+    let unauthorized_cancel = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-target"),
+                ClientCommand::CancelPresenceTriggeredSend {
+                    client_message_id: ClientMessageId("client:cancel-me".into()),
+                },
+            ),
+            11,
+        )
+        .unwrap_err();
+    assert!(matches!(
+        unauthorized_cancel,
+        MessagingServiceError::Engine(EngineError::InvalidPresenceTriggeredSend)
+    ));
+
+    // Sender cancels pending presence-triggered send
+    let cancelled = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-sender"),
+                ClientCommand::CancelPresenceTriggeredSend {
+                    client_message_id: ClientMessageId("client:cancel-me".into()),
+                },
+            ),
+            12,
+        )
+        .unwrap();
+    assert!(matches!(
+        cancelled.as_slice(),
+        [ServerEnvelope {
+            event: ServerEvent::PresenceTriggeredSendChanged {
+                ref client_message_id,
+                pending: None,
+            },
+            ..
+        }] if client_message_id.0 == "client:cancel-me"
+    ));
+    assert!(service.engine().state().pending_presence_sends.is_empty());
+
+    // Multi-device incremental sync for sender receives both the queued and cancelled PresenceTriggeredSendChanged events, while target does not
+    let sender_delta = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-sender"),
+                ClientCommand::Sync {
+                    cursor: Some(cursor_before_cancel_flow.clone()),
+                    limit: 50,
+                },
+            ),
+            13,
+        )
+        .unwrap();
+    assert!(sender_delta.iter().any(|env| matches!(
+        &env.event,
+        ServerEvent::PresenceTriggeredSendChanged {
+            client_message_id,
+            pending: None,
+        } if client_message_id.0 == "client:cancel-me"
+    )));
+    let target_delta = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-target"),
+                ClientCommand::Sync {
+                    cursor: Some(cursor_before_cancel_flow),
+                    limit: 50,
+                },
+            ),
+            13,
+        )
+        .unwrap();
+    assert!(!target_delta.iter().any(|env| matches!(
+        &env.event,
+        ServerEvent::PresenceTriggeredSendChanged { .. }
+    )));
+
+    // 4. Rescheduling a pending presence-triggered send via SendMessage with the same client_message_id atomically retires the pending trigger
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-sender"),
+                ClientCommand::SendWhenParticipantOnline {
+                    conversation_id: ConversationId::new("chat:schedule-direct"),
+                    client_message_id: ClientMessageId("client:reschedule-me".into()),
+                    target_actor_id: target.clone(),
+                    content: MessageContent::Text {
+                        text: FormattedText::plain("reschedule to timed"),
+                    },
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    silent: false,
+                    protected_content: false,
+                },
+            ),
+            14,
+        )
+        .unwrap();
+    assert_eq!(service.engine().state().pending_presence_sends.len(), 1);
+
+    let rescheduled = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-sender"),
+                ClientCommand::SendMessage {
+                    conversation_id: ConversationId::new("chat:schedule-direct"),
+                    client_message_id: ClientMessageId("client:reschedule-me".into()),
+                    content: MessageContent::Text {
+                        text: FormattedText::plain("reschedule to timed"),
+                    },
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    scheduled_at_ms: Some(1_000),
+                    silent: false,
+                    protected_content: false,
+                },
+            ),
+            15,
+        )
+        .unwrap();
+    assert!(service.engine().state().pending_presence_sends.is_empty());
+    assert!(rescheduled.iter().any(|env| matches!(
+        &env.event,
+        ServerEvent::PresenceTriggeredSendChanged {
+            client_message_id,
+            pending: None,
+        } if client_message_id.0 == "client:reschedule-me"
+    )));
+
+    // 5. Policy change while pending (target blocks sender before coming online) settles the trigger into a terminal Failed message and removes the pending trigger
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-sender"),
+                ClientCommand::SendWhenParticipantOnline {
+                    conversation_id: ConversationId::new("chat:schedule-direct"),
+                    client_message_id: ClientMessageId("client:fail-on-policy-change".into()),
+                    target_actor_id: target.clone(),
+                    content: MessageContent::Text {
+                        text: FormattedText::plain("policy revoked while pending"),
+                    },
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    silent: false,
+                    protected_content: false,
+                },
+            ),
+            16,
+        )
+        .unwrap();
+    assert_eq!(service.engine().state().pending_presence_sends.len(), 1);
+
+    let cursor_before_policy_fail = service.cursor().to_string();
+    privacy.block(BlockEntry {
+        actor_id: sender.clone(),
+        blocked_at_ms: 17,
+        reason: Some("blocked while pending".into()),
+        report_spam: false,
+    });
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-target"),
+                ClientCommand::UpsertPrivacySettings { settings: privacy },
+            ),
+            17,
+        )
+        .unwrap();
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-target"),
+                ClientCommand::SetPresence {
+                    presence: Presence {
+                        status: PresenceStatus::Online,
+                        last_seen_at_ms: None,
+                        status_text: None,
+                    },
+                },
+            ),
+            18,
+        )
+        .unwrap();
+
+    assert!(service.engine().state().pending_presence_sends.is_empty());
+    let failed_message = service.engine().state().messages
+        [&ConversationId::new("chat:schedule-direct")]
+        .values()
+        .find(|msg| {
+            msg.content
+                == MessageContent::Text {
+                    text: FormattedText::plain("policy revoked while pending"),
+                }
+        })
+        .expect("terminal failed message recorded")
+        .clone();
+    assert!(matches!(
+        &failed_message.delivery_state,
+        DeliveryState::Failed {
+            code,
+            retryable: false,
+        } if code == "presence_trigger_policy_rejected"
+    ));
+
+    // Sender's second device receives both the terminal Failed MessageAdded and PresenceTriggeredSendChanged(None)
+    let sender_fail_delta = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-sender"),
+                ClientCommand::Sync {
+                    cursor: Some(cursor_before_policy_fail.clone()),
+                    limit: 50,
+                },
+            ),
+            19,
+        )
+        .unwrap();
+    assert!(sender_fail_delta.iter().any(|env| matches!(
+        &env.event,
+        ServerEvent::MessageAdded { message }
+            if message.id == failed_message.id
+                && matches!(message.delivery_state, DeliveryState::Failed { retryable: false, .. })
+    )));
+    assert!(sender_fail_delta.iter().any(|env| matches!(
+        &env.event,
+        ServerEvent::PresenceTriggeredSendChanged {
+            client_message_id,
+            pending: None,
+        } if client_message_id.0 == "client:fail-on-policy-change"
+    )));
+
+    // Target does not receive the sender's failed message
+    let target_fail_delta = service
+        .handle(
+            ClientEnvelope::new(
+                context("human:schedule-target"),
+                ClientCommand::Sync {
+                    cursor: Some(cursor_before_policy_fail),
+                    limit: 50,
+                },
+            ),
+            19,
+        )
+        .unwrap();
+    assert!(!target_fail_delta.iter().any(|env| matches!(
+        &env.event,
+        ServerEvent::MessageAdded { message } if message.id == failed_message.id
+    )));
 }

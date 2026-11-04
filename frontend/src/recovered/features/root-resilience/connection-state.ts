@@ -121,10 +121,14 @@ export function createCoordinatorConnectionController(
 ): CoordinatorConnectionController {
   let snapshot = projectSnapshot({ ...INITIAL_SNAPSHOT, ...initialReadiness });
   let generation = 0;
+  let transportGeneration = 0;
+  let observedTransport = false;
+  let accountObservationGeneration = 0;
   let started = false;
   let disposed = false;
   let retryInFlight: Promise<boolean> | null = null;
   let retryWaiter: RetryWaiter | null = null;
+  let retryStartQueued = false;
   const listeners = new Set<() => void>();
   let stopAccount: (() => void) | null = null;
   let stopTransport: (() => void) | null = null;
@@ -148,58 +152,72 @@ export function createCoordinatorConnectionController(
     retryWaiter = { generation, promise, resolve };
     return promise;
   };
+  const scheduleRetry = () => {
+    if (retryStartQueued || disposed || snapshot.transport !== "connected" || retryWaiter == null) return;
+    retryStartQueued = true;
+    // The Root transport listener runs after this controller's listener. Its
+    // generation must advance before refreshRoster captures the current scope.
+    queueMicrotask(() => {
+      retryStartQueued = false;
+      if (!disposed && snapshot.accountKind === "logged-in" && snapshot.transport === "connected"
+        && retryWaiter?.generation === generation && retryInFlight == null) void runRetry();
+    });
+  };
   const runRetry = (): Promise<boolean> => {
-    if (disposed || snapshot.accountKind !== "logged-in") return Promise.resolve(false);
+    if (disposed || snapshot.accountKind !== "logged-in" || snapshot.transport !== "connected") return Promise.resolve(false);
     if (retryInFlight != null) return retryInFlight;
     const expectedGeneration = generation;
-    setSnapshot({ ...snapshot, isRetrying: true });
-    const request = source.retry().then(() => {
-      if (!isCurrent(expectedGeneration)) return false;
-      setSnapshot({ ...snapshot, failureCode: null, isRetrying: false });
+    const expectedTransportGeneration = transportGeneration;
+    const isCurrentRetry = (): boolean => isCurrent(expectedGeneration)
+      && expectedTransportGeneration === transportGeneration && retryInFlight === request;
+    const request: Promise<boolean> = Promise.resolve().then(() => {
+      if (isCurrentRetry()) return source.retry();
+    }).then(() => {
+      if (!isCurrentRetry()) return false;
       resolveQueuedRetry(true);
+      setSnapshot({ ...snapshot, failureCode: null, isRetrying: false });
       return true;
     }, (reason: unknown) => {
-      if (!isCurrent(expectedGeneration)) return false;
-      // A replacement can reject the current call before the new session is
-      // ready. Keep the user's retry queued for the connected event.
-      if (snapshot.transport !== "connected") {
-        queueRetry();
-        setSnapshot({ ...snapshot, isRetrying: true, failureCode: null });
-        return false;
-      }
-      setSnapshot({ ...snapshot, failureCode: failureCode(reason), isRetrying: false });
+      if (!isCurrentRetry()) return false;
       resolveQueuedRetry(false);
+      setSnapshot({ ...snapshot, failureCode: failureCode(reason), isRetrying: false });
       return false;
     }).finally(() => {
-      if (retryInFlight === request) {
-        retryInFlight = null;
-        if (retryWaiter != null && snapshot.transport === "connected") void runRetry();
-      }
+      if (retryInFlight !== request) return;
+      retryInFlight = null;
+      scheduleRetry();
     });
     retryInFlight = request;
     return request;
   };
   const onTransport = (state: CoordinatorTransportState) => {
     if (disposed) return;
-    setSnapshot({ ...snapshot, transport: state });
-    if (state === "connected" && retryWaiter != null && retryInFlight == null) void runRetry();
+    observedTransport = true;
+    transportGeneration += 1;
+    const hadRetry = retryInFlight != null || retryWaiter != null;
+    // The underlying RPC still settles normally. Only its ownership of the
+    // current retry slot ends here; its completion is fenced by both epochs.
+    retryInFlight = null;
+    if (hadRetry && snapshot.accountKind === "logged-in") queueRetry();
+    setSnapshot({ ...snapshot, transport: state, isRetrying: retryWaiter != null });
+    scheduleRetry();
+  };
+  const retireRetry = () => {
+    generation += 1;
+    retryInFlight = null;
+    resolveQueuedRetry(false);
   };
   const onAccount = (status: CursorAuthStatus) => {
     if (disposed) return;
+    accountObservationGeneration += 1;
     const nextIdentity = accountIdentity(status);
     const identityChanged = snapshot.accountIdentity != null && snapshot.accountIdentity !== nextIdentity;
-    if (identityChanged) {
-      generation += 1;
-      retryWaiter?.resolve(false);
-      retryWaiter = null;
-    }
     if (status.kind !== "logged-in") {
-      generation += 1;
-      retryWaiter?.resolve(false);
-      retryWaiter = null;
+      retireRetry();
       setSnapshot({ ...snapshot, accountIdentity: nextIdentity, accountKind: status.kind, failureCode: null, isRetrying: false });
       return;
     }
+    if (identityChanged) retireRetry();
     setSnapshot({ ...snapshot, accountIdentity: nextIdentity, accountKind: status.kind, failureCode: identityChanged ? null : snapshot.failureCode, isRetrying: identityChanged ? false : snapshot.isRetrying });
   };
 
@@ -213,16 +231,17 @@ export function createCoordinatorConnectionController(
     start() {
       if (disposed || started) return;
       started = true;
+      const expectedAccountObservation = accountObservationGeneration;
       stopAccount = source.subscribeAccount(onAccount);
       stopTransport = source.subscribeTransport(onTransport);
       const expectedGeneration = generation;
       void source.getAccountStatus().then((status) => {
-        if (isCurrent(expectedGeneration)) onAccount(status);
+        if (isCurrent(expectedGeneration) && accountObservationGeneration === expectedAccountObservation) onAccount(status);
       }, () => {});
       source.ready.then(() => {
-        if (isCurrent(expectedGeneration)) onTransport("connected");
+        if (isCurrent(expectedGeneration) && !observedTransport) onTransport("connected");
       }, () => {
-        if (isCurrent(expectedGeneration)) onTransport("down");
+        if (isCurrent(expectedGeneration) && !observedTransport) onTransport("down");
       });
     },
     ingestAccount: onAccount,
@@ -232,17 +251,16 @@ export function createCoordinatorConnectionController(
     },
     retry() {
       if (disposed || snapshot.accountKind !== "logged-in") return Promise.resolve(false);
-      if (snapshot.transport !== "connected") {
-        const promise = queueRetry();
-        setSnapshot({ ...snapshot, isRetrying: true });
-        return promise;
-      }
-      return runRetry();
+      const promise = queueRetry();
+      setSnapshot({ ...snapshot, isRetrying: true });
+      scheduleRetry();
+      return promise;
     },
     dispose() {
       if (disposed) return;
       disposed = true;
       generation += 1;
+      retryInFlight = null;
       stopAccount?.();
       stopTransport?.();
       stopAccount = null;

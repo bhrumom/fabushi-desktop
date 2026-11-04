@@ -5691,60 +5691,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fabushi-telegram-media"
-version = "0.1.0"
-dependencies = [
- "hex",
- "serde",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "fabushi-telegram-network"
-version = "0.1.0"
-dependencies = [
- "fabushi-telegram-protocol",
- "getrandom 0.2.17",
- "thiserror 1.0.69",
- "zeroize",
-]
-
-[[package]]
-name = "fabushi-telegram-protocol"
-version = "0.1.0"
-dependencies = [
- "aes 0.8.4",
- "crc32fast",
- "fabushi-telegram-core",
- "getrandom 0.2.17",
- "hex",
- "num-bigint-dig 0.9.1",
- "pbkdf2 0.12.2",
- "serde",
- "serde_json",
- "sha1 0.10.7",
- "sha2 0.10.9",
- "subtle",
- "thiserror 1.0.69",
- "zeroize",
-]
-
-[[package]]
-name = "fabushi-telegram-runtime"
-version = "0.1.0"
-dependencies = [
- "fabushi-telegram-core",
- "fabushi-telegram-network",
- "fabushi-telegram-protocol",
- "fabushi-telegram-storage",
- "once_cell",
- "serde_json",
- "tempfile",
- "thiserror 1.0.69",
- "zeroize",
-]
-
-[[package]]
 name = "fabushi-telegram-storage"
 version = "0.1.0"
 dependencies = [
@@ -5759,16 +5705,6 @@ dependencies = [
  "tempfile",
  "thiserror 1.0.69",
  "zeroize",
-]
-
-[[package]]
-name = "fabushi-telegram-wasm"
-version = "0.1.0"
-dependencies = [
- "fabushi-telegram-core",
- "fabushi-telegram-protocol",
- "serde_json",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -9038,6 +8974,7 @@ name = "mahayana-app-host"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
+ "fabushi-telegram-storage",
  "mahayana-core",
  "mahayana-feature-host",
  "mahayana-host",
@@ -9050,6 +8987,7 @@ dependencies = [
  "rusqlite",
  "serde",
  "serde_json",
+ "sha2 0.10.9",
  "thiserror 2.0.20",
 ]
 
@@ -9096,7 +9034,6 @@ dependencies = [
  "insta",
  "mahayana-core",
  "mahayana-feature-host",
- "mahayana-ffi",
  "mahayana-gateway",
  "mahayana-gateway-peer",
  "mahayana-gateway-protocol",
@@ -9192,7 +9129,6 @@ dependencies = [
 name = "mahayana-ffi"
 version = "0.1.0"
 dependencies = [
- "fabushi-telegram-runtime",
  "mahayana-core",
  "mahayana-host",
  "mahayana-platform-client",
@@ -9206,6 +9142,7 @@ name = "mahayana-gateway"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "fs2",
  "mahayana-core",
  "mahayana-gateway-protocol",
  "serde",
@@ -9217,6 +9154,7 @@ dependencies = [
 name = "mahayana-gateway-peer"
 version = "0.1.0"
 dependencies = [
+ "fs2",
  "serde",
  "serde_json",
  "thiserror 2.0.20",
@@ -9335,7 +9273,6 @@ dependencies = [
  "mahayana-platform-core",
  "mahayana-runtime",
  "mahayana-social",
- "mahayana-telegram",
  "serde",
  "serde_json",
  "thiserror 2.0.20",
@@ -9390,6 +9327,7 @@ dependencies = [
  "tar",
  "thiserror 2.0.20",
  "tokio",
+ "tungstenite 0.30.0",
  "unicode-normalization",
  "url",
  "uuid",
@@ -9539,6 +9477,7 @@ name = "mahayana-platform-client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "mahayana-auth",
  "mahayana-host-protocol",
  "mahayana-platform-core",
@@ -9667,19 +9606,6 @@ dependencies = [
  "mahayana-conversation",
  "mahayana-core",
  "mahayana-platform-client",
- "serde_json",
- "tokio",
-]
-
-[[package]]
-name = "mahayana-telegram"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "fabushi-telegram-core",
- "fabushi-telegram-runtime",
- "mahayana-conversation",
- "mahayana-core",
  "serde_json",
  "tokio",
 ]
@@ -10113,23 +10039,6 @@ dependencies = [
  "num-iter",
  "num-traits",
  "rand 0.8.7",
- "smallvec",
- "zeroize",
-]
-
-[[package]]
-name = "num-bigint-dig"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7f9a86e097b0d187ad0e65667c2f58b9254671e86e7dbb78036b16692eae099"
-dependencies = [
- "libm",
- "num-integer",
- "num-iter",
- "num-traits",
- "once_cell",
- "rand 0.9.5",
- "serde",
  "smallvec",
  "zeroize",
 ]
@@ -12547,7 +12456,7 @@ checksum = "b8573f03f5883dcaebdfcf4725caa1ecb9c15b2ef50c43a07b816e06799bb12d"
 dependencies = [
  "const-oid 0.9.6",
  "digest 0.10.7",
- "num-bigint-dig 0.8.6",
+ "num-bigint-dig",
  "num-integer",
  "num-traits",
  "pkcs1",
@@ -15110,8 +15019,11 @@ dependencies = [
  "httparse",
  "log",
  "rand 0.10.2",
+ "rustls",
+ "rustls-pki-types",
  "sha1 0.11.0",
  "thiserror 2.0.20",
+ "webpki-roots 0.26.11",
 ]
 
 [[package]]

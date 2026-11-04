@@ -16,6 +16,24 @@ export interface CoordinatorTranscriptWindowResponse {
   readonly threadCounts: Readonly<Record<string, number>>;
 }
 
+export interface CoordinatorHumanTranscriptPageRequest {
+  readonly conversationId: string;
+  readonly beforeSeq?: number;
+  readonly beforeCursor?: string;
+  readonly limit?: number;
+}
+
+export interface CoordinatorHumanTranscriptPageResponse {
+  readonly entries: readonly CoordinatorTranscriptEntry[];
+  readonly nextBeforeSeq?: number;
+  readonly nextBeforeCursor?: string;
+}
+
+export interface CoordinatorHumanRetryRequest {
+  readonly conversationId: string;
+  readonly clientNonce: string;
+}
+
 export interface CoordinatorAgentThreadRequest {
   readonly id: string;
   readonly rootId: string;
@@ -74,6 +92,57 @@ export interface CloudWorkerDoctorRequest {
   readonly action: CloudWorkerDoctorAction;
   readonly acknowledged_mutation: boolean;
   readonly replay_key: string;
+}
+
+export type TelegramCodeDeliveryType =
+  | "telegramMessage"
+  | "sms"
+  | "call"
+  | "flashCall"
+  | "missedCall"
+  | "email"
+  | "fragment"
+  | "firebaseAndroid"
+  | "firebaseIos"
+  | "unknown";
+
+export type TelegramAuthorizationStateProjection =
+  | { readonly type: "waitParameters" }
+  | { readonly type: "waitPhoneNumber" }
+  | {
+      readonly type: "waitCode";
+      readonly phoneNumber: string;
+      readonly deliveryType: TelegramCodeDeliveryType;
+      readonly codeLength: number;
+      readonly timeoutSeconds?: number | null;
+    }
+  | { readonly type: "waitOtherDeviceConfirmation"; readonly link: string }
+  | { readonly type: "waitRegistration"; readonly termsOfServiceId?: string | null }
+  | {
+      readonly type: "waitPassword";
+      readonly passwordHint: string;
+      readonly hasRecoveryEmail: boolean;
+      readonly recoveryEmailPattern?: string | null;
+    }
+  | { readonly type: "ready" }
+  | { readonly type: "loggingOut" }
+  | { readonly type: "closing" }
+  | { readonly type: "closed" };
+
+export interface TelegramAuthIssueProjection {
+  readonly code: string;
+  readonly category: string;
+  readonly action: string;
+  readonly recoverable: boolean;
+  readonly retryAfterSeconds?: number | null;
+}
+
+export interface TelegramAuthorizationProjection {
+  readonly authorizationState: TelegramAuthorizationStateProjection;
+  readonly selfUserId?: number | null;
+  readonly error?: TelegramAuthIssueProjection;
+  readonly backoff?: { readonly retryAfterSeconds: number };
+  readonly [key: string]: unknown;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -138,6 +207,95 @@ export function parseCloudWorkerDoctorProjection(value: unknown): CloudWorkerDoc
   return value as unknown as CloudWorkerDoctorProjection;
 }
 
+const TELEGRAM_CODE_DELIVERY_TYPES = new Set<TelegramCodeDeliveryType>([
+  "telegramMessage",
+  "sms",
+  "call",
+  "flashCall",
+  "missedCall",
+  "email",
+  "fragment",
+  "firebaseAndroid",
+  "firebaseIos",
+  "unknown",
+]);
+const MAX_TELEGRAM_AUTH_BACKOFF_SECONDS = 7 * 24 * 60 * 60;
+
+function isBoundedString(value: unknown, maxLength: number): value is string {
+  return typeof value === "string" && value.length > 0 && value.length <= maxLength;
+}
+
+function isNullableBoundedString(value: unknown, maxLength: number): boolean {
+  return value == null || (typeof value === "string" && value.length <= maxLength);
+}
+
+function isTelegramAuthorizationState(value: unknown): value is TelegramAuthorizationStateProjection {
+  if (!isRecord(value) || typeof value.type !== "string") return false;
+  switch (value.type) {
+    case "waitParameters":
+    case "waitPhoneNumber":
+    case "ready":
+    case "loggingOut":
+    case "closing":
+    case "closed":
+      return true;
+    case "waitCode":
+      return isBoundedString(value.phoneNumber, 64)
+        && typeof value.deliveryType === "string"
+        && TELEGRAM_CODE_DELIVERY_TYPES.has(value.deliveryType as TelegramCodeDeliveryType)
+        && typeof value.codeLength === "number"
+        && Number.isSafeInteger(value.codeLength)
+        && value.codeLength >= 0
+        && (value.codeLength as number) <= 64
+        && (value.timeoutSeconds == null
+          || (typeof value.timeoutSeconds === "number"
+            && Number.isSafeInteger(value.timeoutSeconds)
+            && value.timeoutSeconds >= 0
+            && value.timeoutSeconds <= MAX_TELEGRAM_AUTH_BACKOFF_SECONDS));
+    case "waitOtherDeviceConfirmation":
+      return isBoundedString(value.link, 4096);
+    case "waitRegistration":
+      return isNullableBoundedString(value.termsOfServiceId, 1024);
+    case "waitPassword":
+      return typeof value.passwordHint === "string"
+        && value.passwordHint.length <= 1024
+        && typeof value.hasRecoveryEmail === "boolean"
+        && isNullableBoundedString(value.recoveryEmailPattern, 1024);
+    default:
+      return false;
+  }
+}
+
+function isTelegramAuthIssue(value: unknown): value is TelegramAuthIssueProjection {
+  if (!isRecord(value)) return false;
+  if (!isBoundedString(value.code, 128)
+    || !isBoundedString(value.category, 64)
+    || !isBoundedString(value.action, 128)
+    || typeof value.recoverable !== "boolean") return false;
+  return value.retryAfterSeconds == null
+    || (typeof value.retryAfterSeconds === "number"
+      && Number.isSafeInteger(value.retryAfterSeconds)
+      && value.retryAfterSeconds >= 1
+      && value.retryAfterSeconds <= MAX_TELEGRAM_AUTH_BACKOFF_SECONDS);
+}
+
+export function parseCoordinatorTelegramAuthorizationProjection(value: unknown): TelegramAuthorizationProjection | null {
+  if (!isRecord(value) || !isTelegramAuthorizationState(value.authorizationState)) return null;
+  if (value.selfUserId !== undefined
+    && value.selfUserId !== null
+    && (typeof value.selfUserId !== "number" || !Number.isSafeInteger(value.selfUserId) || value.selfUserId <= 0)) return null;
+  if (value.error !== undefined && !isTelegramAuthIssue(value.error)) return null;
+  if (value.backoff !== undefined) {
+    if (!isRecord(value.backoff)
+      || typeof value.backoff.retryAfterSeconds !== "number"
+      || !Number.isSafeInteger(value.backoff.retryAfterSeconds)
+      || value.backoff.retryAfterSeconds < 1
+      || value.backoff.retryAfterSeconds > MAX_TELEGRAM_AUTH_BACKOFF_SECONDS) return null;
+  }
+  return value as unknown as TelegramAuthorizationProjection;
+}
+}
+
 export function parseCoordinatorTranscriptWindowResponse(value: unknown): CoordinatorTranscriptWindowResponse | null {
   if (!isRecord(value) || !Array.isArray(value.entries) || !value.entries.every(isTranscriptEntry) || !isRecord(value.threadCounts)) return null;
   const threadCounts: Record<string, number> = {};
@@ -151,6 +309,54 @@ export function parseCoordinatorTranscriptWindowResponse(value: unknown): Coordi
     ...(value.nextBeforeSeq === undefined ? {} : { nextBeforeSeq: value.nextBeforeSeq }),
     threadCounts,
   };
+}
+
+export function parseCoordinatorHumanTranscriptPageResponse(value: unknown): CoordinatorHumanTranscriptPageResponse | null {
+  if (!isRecord(value) || !Array.isArray(value.entries) || !value.entries.every(isTranscriptEntry)) return null;
+  const seq = value.nextBeforeSeq;
+  const cursor = value.nextBeforeCursor;
+  if (seq != null && (typeof seq !== "number" || !Number.isSafeInteger(seq) || seq <= 0)) return null;
+  if (cursor != null && (typeof cursor !== "string" || cursor.length === 0 || cursor.length > 256 || seq == null)) return null;
+  return {
+    entries: value.entries,
+    ...(seq == null ? {} : { nextBeforeSeq: seq as number }),
+    ...(cursor == null ? {} : { nextBeforeCursor: cursor as string }),
+  };
+}
+
+export function parseCoordinatorHumanTranscriptPageRequest(value: unknown): CoordinatorHumanTranscriptPageRequest | null {
+  if (!isRecord(value) || typeof value.conversationId !== "string" || value.conversationId.trim().length === 0) return null;
+  const { beforeSeq, beforeCursor, limit } = value;
+  if (beforeSeq != null && (typeof beforeSeq !== "number" || !Number.isSafeInteger(beforeSeq) || beforeSeq <= 0)) return null;
+  if (beforeCursor != null && (typeof beforeCursor !== "string" || beforeCursor.length === 0 || beforeCursor.length > 256)) return null;
+  if (limit !== undefined && (typeof limit !== "number" || !Number.isSafeInteger(limit))) return null;
+  return {
+    conversationId: value.conversationId,
+    ...(beforeSeq == null ? {} : { beforeSeq: beforeSeq as number }),
+    ...(beforeCursor == null ? {} : { beforeCursor: beforeCursor as string }),
+    ...(limit === undefined ? {} : { limit: limit as number }),
+  };
+}
+
+export function parseCoordinatorHumanRetryRequest(value: unknown): CoordinatorHumanRetryRequest | null {
+  if (!isRecord(value) || Object.keys(value).length !== 2) return null;
+  const { conversationId, clientNonce } = value;
+  if (typeof conversationId !== "string" || conversationId.length === 0 || conversationId !== conversationId.trim()
+    || typeof clientNonce !== "string" || clientNonce.length === 0 || clientNonce !== clientNonce.trim()
+    || new TextEncoder().encode(clientNonce).byteLength > 200) return null;
+  return { conversationId, clientNonce };
+}
+
+export function parseCoordinatorHumanRetryResponse(value: unknown): CoordinatorTranscriptEntry | null {
+  if (!isTranscriptEntry(value) || value.kind !== "message" || value.role !== "user"
+    || value.authorKind !== "human" || typeof value.authorId !== "string" || value.authorId.length === 0
+    || typeof value.clientNonce !== "string" || value.clientNonce.length === 0 || value.delivery !== "sent"
+    || (typeof value.remoteMessageId !== "string" && typeof value.remoteMessageId !== "number")) return null;
+  const remoteId = Number(value.remoteMessageId);
+  if (!Number.isSafeInteger(remoteId) || remoteId <= 0
+    || (typeof value.remoteMessageId === "string" && String(remoteId) !== value.remoteMessageId)
+    || value.id !== `human-server-message:${remoteId}`) return null;
+  return value;
 }
 
 export function parseCoordinatorTranscriptWindowRequest(value: unknown): CoordinatorTranscriptWindowRequest | null {
@@ -181,6 +387,9 @@ export function parseCoordinatorAgentThreadRequest(value: unknown): CoordinatorA
 }
 
 export function validateCoordinatorReply(method: string, value: unknown): unknown {
+  if (method.startsWith("feature.auth.telegram") && parseCoordinatorTelegramAuthorizationProjection(value) == null) {
+    throw new Error(`${method} returned a malformed Telegram authorization projection`);
+  }
   if (method === "getAgentTranscriptWindow" && parseCoordinatorTranscriptWindowResponse(value) == null) {
     throw new Error("getAgentTranscriptWindow returned a malformed transcript window");
   }
@@ -196,13 +405,34 @@ export function validateCoordinatorReply(method: string, value: unknown): unknow
   if (method === "cloudWorkers.doctor" && parseCloudWorkerDoctorProjection(value) == null) {
     throw new Error("cloudWorkers.doctor returned a malformed cloud worker doctor projection");
   }
+  if (method === "getHumanConversationTranscriptTail" && parseCoordinatorHumanTranscriptPageResponse(value) == null) {
+    throw new Error("getHumanConversationTranscriptTail returned a malformed Human transcript page");
+  }
+  if (method === "retryHumanMessage" && parseCoordinatorHumanRetryResponse(value) == null) {
+    throw new Error("retryHumanMessage returned a malformed canonical Human message");
+  }
+  }
   return value;
 }
 
 export const COORDINATOR_METHOD_TABLE = {
+  "feature.auth.telegramStatus": { args: "none", reply: "record" },
+  "feature.auth.telegramSendCode": { args: "object", reply: "record" },
+  "feature.auth.telegramSignIn": { args: "object", reply: "record" },
+  "feature.auth.telegramPassword": { args: "object", reply: "record" },
+  "feature.auth.telegramRegistration": { args: "object", reply: "record" },
+  "feature.auth.telegramResendCode": { args: "object", reply: "record" },
+  "feature.auth.telegramCancelCode": { args: "none", reply: "record" },
+  "feature.auth.telegramRequestPasswordRecovery": { args: "none", reply: "record" },
+  "feature.auth.telegramCheckRecoveryPassword": { args: "object", reply: "record" },
+  "feature.auth.telegramSendVerifyEmailCode": { args: "object", reply: "record" },
+  "feature.auth.telegramVerifyEmail": { args: "object", reply: "record" },
+  "feature.auth.telegramRefreshPasswordChallenge": { args: "none", reply: "record" },
   getAgentTranscriptWindow: { args: "object", reply: "transcript-window" },
   getAgentThread: { args: "object", reply: "agent-thread" },
   getAgentTranscriptTail: { args: "object", reply: "transcript-page" },
+  getHumanConversationTranscriptTail: { args: "object", reply: "human-transcript-page" },
+  retryHumanMessage: { args: "object", reply: "record" },
   openAgentTail: { args: "object", reply: "transcript-page" },
   sendPrompt: { args: "object", reply: "send-result" },
   interruptAgent: { args: "object", reply: "interrupt-result" },

@@ -1,0 +1,1053 @@
+{
+  "schema_version": 1,
+  "audit": "source-gate-after-concurrent-canonical-ledger-update",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 23,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "recorded_at_utc": "2026-11-02 21:10:43 UTC",
+  "operations": {
+    "remote_read_only": true,
+    "full_terminal_job_logs_read": true,
+    "local_validator_build_test_executed": false,
+    "github_writes": false,
+    "dispatch": false,
+    "canonical_ledger_mutation": false,
+    "old_evidence_modified": false
+  },
+  "previous_frozen_receipt": {
+    "path": "final-resume/source-current.json",
+    "sha256": "20bb3b3a005d701ae07e153a72167a773e4d89739ba6837dc0a842225c0adc7c",
+    "qualified_head": "afb34b49c5964524a887088f1095070b75cfdf8b",
+    "qualified_node_contract_count": 157,
+    "scope": "Immutable earlier observation; unchanged and not relabelled as latest execution."
+  },
+  "head_and_ledger_bindings": [
+    {
+      "head": "aed9e8ab10eb4566631a89987511754bdc8dbfe7",
+      "ledger_blob": "a64f3a5becae94767609d478e9667a27bc1859b5",
+      "binding": "fetch_file at exact head returned blob SHA; separately fetched blob and parsed full content match the exact-head content read",
+      "run_id": 41525211785
+    },
+    {
+      "head": "19df1199779fa7fd66547ba095c277e0306d4c93",
+      "ledger_blob": "1875f4f32255fc22c89de7a6c2981875bd76d015",
+      "bytes": 3631029,
+      "binding": "non-truncated exact-head Git tree plus full blob read",
+      "run_id": 41525539280
+    }
+  ],
+  "concurrent_ledger_delta": {
+    "from": "a64f3a5becae94767609d478e9667a27bc1859b5",
+    "to": "1875f4f32255fc22c89de7a6c2981875bd76d015",
+    "changed_row": "FBCP-NMR-001",
+    "changed_fields": [
+      {
+        "field": "fabushi_target_paths",
+        "old_type": "array",
+        "old_length": 30,
+        "new_length": 33
+      },
+      {
+        "field": "fabushi_target_symbols",
+        "old_type": "array",
+        "old_length": 34,
+        "new_length": 37
+      },
+      {
+        "field": "production_entrypoints",
+        "old_type": "array",
+        "old_length": 6,
+        "new_length": 7
+      },
+      {
+        "field": "production_evidence",
+        "old_type": "array",
+        "old_length": 39,
+        "new_length": 42
+      },
+      {
+        "field": "test_evidence",
+        "old_type": "array",
+        "old_length": 77,
+        "new_length": 88
+      },
+      {
+        "field": "integration_case_ids",
+        "old_type": "array",
+        "old_length": 49,
+        "new_length": 60
+      },
+      {
+        "field": "fault_recovery_case_ids",
+        "old_type": "array",
+        "old_length": 39,
+        "new_length": 50
+      },
+      {
+        "field": "security_case_ids",
+        "old_type": "array",
+        "old_length": 33,
+        "new_length": 44
+      },
+      {
+        "field": "test_execution_evidence",
+        "old_type": "array",
+        "old_length": 38,
+        "new_length": 40
+      },
+      {
+        "field": "notes",
+        "old_type": "string",
+        "old_length": 22186,
+        "new_length": 23146
+      }
+    ],
+    "unchanged_top_level_fields": [
+      "format_version",
+      "project_id",
+      "spec_revision",
+      "upstream_commit",
+      "target_commit",
+      "coverage",
+      "rebaseline_candidate",
+      "source_reviews"
+    ],
+    "source_identities_unchanged": true
+  },
+  "current_source_inputs": [
+    {
+      "path": ".github/workflows/tdrp-source-review-contract.yml",
+      "blob_sha": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5",
+      "bytes": 8716,
+      "changed_since_previous_frozen_receipt": false
+    },
+    {
+      "path": "projects/telegram-desktop-rust/contracts/parity-ledger.schema.json",
+      "blob_sha": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+      "bytes": 34792,
+      "changed_since_previous_frozen_receipt": false
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
+      "blob_sha": "d37247e17c2e965e3116ce3721f79d81da50dd6c",
+      "bytes": 92726,
+      "changed_since_previous_frozen_receipt": false
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/index.json",
+      "blob_sha": "d9a721c0ac1f94c50b562202fcdd1345ef4487ca",
+      "bytes": 9098,
+      "changed_since_previous_frozen_receipt": false
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/root-mutable-authorities.json",
+      "blob_sha": "cf010d245bdba0bd04090bde807a8f551f4e1f23",
+      "bytes": 24018,
+      "changed_since_previous_frozen_receipt": false
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/root-tool-authorities.json",
+      "blob_sha": "86f6becac9dd094e93181c3a3810eea7ae71539c",
+      "bytes": 4850,
+      "changed_since_previous_frozen_receipt": false
+    },
+    {
+      "path": "projects/telegram-desktop-rust/parity-ledger.json",
+      "blob_sha": "1875f4f32255fc22c89de7a6c2981875bd76d015",
+      "bytes": 3631029,
+      "changed_since_previous_frozen_receipt": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/upstream.lock.json",
+      "blob_sha": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+      "bytes": 33202,
+      "changed_since_previous_frozen_receipt": false
+    },
+    {
+      "path": "scripts/tdrp-nested-pin-identity.mjs",
+      "blob_sha": "175400b628fe02f4a4d73f18ac6af5dc7a631bc3",
+      "bytes": 2043,
+      "changed_since_previous_frozen_receipt": false
+    },
+    {
+      "path": "scripts/tdrp-nested-pin-identity.test.mjs",
+      "blob_sha": "da1d2f9146649f5f60a7cecdb7264d0c95746c86",
+      "bytes": 2716,
+      "changed_since_previous_frozen_receipt": false
+    },
+    {
+      "path": "scripts/tdrp-source-review-schema.test.py",
+      "blob_sha": "bbe2384b30c294a44d1f41e581201f5342101936",
+      "bytes": 25153,
+      "changed_since_previous_frozen_receipt": false
+    },
+    {
+      "path": "scripts/tdrp-source-review.mjs",
+      "blob_sha": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+      "bytes": 36890,
+      "changed_since_previous_frozen_receipt": false
+    },
+    {
+      "path": "scripts/tdrp-source-review.test.mjs",
+      "blob_sha": "3ef07bee2d0eb93126c26317d9007c2f4e6a4008",
+      "bytes": 60914,
+      "changed_since_previous_frozen_receipt": true
+    },
+    {
+      "path": "scripts/tdrp-summarize-protocol-artifact.py",
+      "blob_sha": "0ec50cd95f324c5f2682d936a7b96253c552922c",
+      "bytes": 23062,
+      "changed_since_previous_frozen_receipt": false
+    },
+    {
+      "path": "scripts/validate-tdrp-revision9-authority.mjs",
+      "blob_sha": "2b828d3f4f86128c53f4962fb39a5341a87234f7",
+      "bytes": 59519,
+      "changed_since_previous_frozen_receipt": false
+    },
+    {
+      "path": "scripts/validate-tdrp-source-candidate.mjs",
+      "blob_sha": "85dac7c60ef8add19c998f0b7a6ba4b7028599b0",
+      "bytes": 11203,
+      "changed_since_previous_frozen_receipt": false
+    }
+  ],
+  "source_review_contract": {
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "frozen_upstream_tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+    "ledger_target_commit": "95b29df688f718a35574fa36ef4ca75df437ed30",
+    "coverage": {
+      "source_entries_total": 16381,
+      "unknown": null,
+      "unread": null,
+      "omitted": 0,
+      "responsibilities_total": 184,
+      "unmapped_responsibilities": 0
+    },
+    "row_count": 184,
+    "source_reviews": [
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/ui/chat/forward_options_box.h",
+        "object": "65db5fbe067e340e0259a23ae57cda59096ccda0",
+        "category": "mixed-ui",
+        "risk": "high",
+        "review_depth": "deep",
+        "status": "complete",
+        "rationale": "Entire declaration read: coupled sender/caption option state, shared callback and supplied lifetime; mapped to the existing canonical forward privacy responsibility.",
+        "evidence": [
+          "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+        ],
+        "responsibility_ids": [
+          "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
+        ]
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/ui/chat/forward_options_box.cpp",
+        "object": "708ae65e92dc435bf798f8c0220b0547f35ab2bf",
+        "category": "mixed-ui",
+        "risk": "high",
+        "review_depth": "deep",
+        "status": "complete",
+        "rationale": "Entire implementation and scoped callers read: hiding captions hides names; showing names restores captions; one emitted snapshot and lifetime. Shipping picker and Session policy reuse are recorded separately from test execution and product acceptance.",
+        "evidence": [
+          "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+        ],
+        "responsibility_ids": [
+          "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
+        ]
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+        "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8",
+        "category": "mixed-ui",
+        "risk": "high",
+        "review_depth": "deep",
+        "status": "pending",
+        "rationale": "Entire file read at fixed U. Full forward/reply draft, destination lifetime and source eligibility obligations still require decomposition and exact responsibility mapping; not credited as complete.",
+        "evidence": [
+          "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+        ],
+        "responsibility_ids": []
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+        "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+        "category": "mixed-ui",
+        "risk": "high",
+        "review_depth": "deep",
+        "status": "pending",
+        "rationale": "Entire file and scoped consumers read. Forced provenance/rich-page eligibility, source removal, typed destination destruction, matching reply/suggestion clearing and delayed cloud-save obligations remain open; source reading alone does not close these mappings.",
+        "evidence": [
+          "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+        ],
+        "responsibility_ids": []
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+        "object": "86865db47439dbce848fc812df2554335d3e004c",
+        "category": "mixed-ui",
+        "risk": "medium",
+        "review_depth": "deep",
+        "status": "pending",
+        "rationale": "Entire declaration read. Complete destination/self/premium-aware terminal feedback and navigation responsibility mapping remains open.",
+        "evidence": [
+          "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+        ],
+        "responsibility_ids": []
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+        "object": "1437bbfbd86b9d6649faae0bed7eed755e06337e",
+        "category": "mixed-ui",
+        "risk": "medium",
+        "review_depth": "deep",
+        "status": "pending",
+        "rationale": "Entire implementation read. Saved/self/premium, one/two/many destination feedback and session-window navigation exceed the existing generic settlement count; decomposition and production closure remain open.",
+        "evidence": [
+          "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+        ],
+        "responsibility_ids": []
+      }
+    ],
+    "authored_count": 6,
+    "complete_count": 2,
+    "pending_count": 4,
+    "source_reviews_identical_between_a64_and_1875": true,
+    "source_reviews_identical_to_previous_frozen_receipt": true,
+    "source_identity_tuple_sets_unchanged_between_a64_and_1875": true,
+    "schema_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+    "validator_blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+    "authority_validator_blob": "2b828d3f4f86128c53f4962fb39a5341a87234f7",
+    "candidate_validator_blob": "85dac7c60ef8add19c998f0b7a6ba4b7028599b0",
+    "rules_preserved": [
+      "exact source tuple and per-responsibility relation validation",
+      "complete product/mixed-ui and high-risk records require deep review",
+      "generated/dependency require contract or deep review",
+      "candidate may carry pending records without counting them reviewed",
+      "accepted mode requires all source identities reviewed and rejects open candidates",
+      "unknown/unread remain null rather than fabricated zero"
+    ]
+  },
+  "new_public_contract_test": {
+    "path": "scripts/tdrp-source-review.test.mjs",
+    "old_blob": "09dea53a4967b39439c04302c71e040b1c0bf475",
+    "current_blob": "3ef07bee2d0eb93126c26317d9007c2f4e6a4008",
+    "test_name": "authority CLI enforces actual acquisition closure before later checks or network access",
+    "scope": "Calls the actual authority CLI in a test-owned fixture using a forbidden-network import. A deliberate next-stage Revision8 schema sentinel proves the closed-acquisition positive control advances beyond the acquisition guard; seven incomplete/false/stale acquisition mutations must fail at the acquisition guard before that sentinel or network. The test does not invent a fully accepted source tree.",
+    "authored_and_executed_in_actions": true,
+    "local_execution_by_auditor": false,
+    "node_contract_count_increased_from": 157,
+    "node_contract_count_now": 158,
+    "schema_tests_unchanged": 37
+  },
+  "previous_exact_run": {
+    "id": 41525211785,
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41525211785",
+    "head_sha": "aed9e8ab10eb4566631a89987511754bdc8dbfe7",
+    "path": ".github/workflows/tdrp-source-review-contract.yml",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "run_attempt": 1,
+    "created_at": "2026-11-02T21:06:00Z",
+    "updated_at": "2026-11-02T21:08:39Z",
+    "jobs": [
+      {
+        "id": 125551058110,
+        "name": "contract",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Exact source relation and frozen upstream contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Run actions/setup-python@v5",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Validate schema behavior with pinned validator",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Check current ledger shape without granting source acceptance",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Run node --check scripts/validate-tdrp-revision9-authority.mjs",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Preserve exact checker evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Post Run actions/setup-python@v5",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 18
+          },
+          {
+            "name": "Post Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 20
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21
+          }
+        ]
+      },
+      {
+        "id": 125552095402,
+        "name": "fixed-source-candidate",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact candidate source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Run actions/setup-python@v5",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Read the two immutable evidence artifacts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Recover complete pinned Git evidence at this H",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Recover complete pinned build-input observations at this H",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Check actual complete inventory and current candidate records",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Prove open candidates cannot enter accepted mode",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Preserve candidate consistency and rejection evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Post Run actions/setup-python@v5",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 20
+          },
+          {
+            "name": "Post Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 22
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 23
+          }
+        ]
+      }
+    ],
+    "actual_counts": {
+      "node_tests": 158,
+      "node_pass": 158,
+      "node_fail": 0,
+      "node_cancelled": 0,
+      "node_skipped": 0,
+      "node_todo": 0,
+      "schema_tests": 37,
+      "schema_result": "OK",
+      "canonical_ledger_schema_errors": 0
+    },
+    "candidate_report": {
+      "status": "unaccepted-candidate-consistent",
+      "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_entries_total": 16381,
+      "root_source_entries_total": 6895,
+      "responsibility_rows": 184,
+      "authored_source_review_records": 6,
+      "completed_source_review_records": 2,
+      "unknown": null,
+      "unread": null,
+      "lexical_observations": 333,
+      "counts_by_scope": {
+        "pinned-cmake-component": 2,
+        "legacy-root-paths": 331
+      },
+      "text_files_read": 203,
+      "opaque_inputs_unread": 2,
+      "unresolved_ref_observations": 76,
+      "baseline_accepted": false,
+      "source_closure_ready": false,
+      "product_accepted": false,
+      "independent_acceptance": false,
+      "target_commit": "aed9e8ab10eb4566631a89987511754bdc8dbfe7",
+      "reused_git_artifact": {
+        "repository": "bhrumom/fabushi-desktop",
+        "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+        "artifact_id": 13118749668,
+        "run_id": 41397005716,
+        "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+      },
+      "reused_build_input_artifact": {
+        "repository": "bhrumom/fabushi-desktop",
+        "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+        "artifact_id": 13121721589,
+        "run_id": 41401970993,
+        "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+      }
+    }
+  },
+  "latest_qualified_exact_run": {
+    "id": 41525539280,
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41525539280",
+    "head_sha": "19df1199779fa7fd66547ba095c277e0306d4c93",
+    "path": ".github/workflows/tdrp-source-review-contract.yml",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "run_attempt": 1,
+    "created_at": "2026-11-02T21:08:04Z",
+    "updated_at": "2026-11-02T21:10:04Z",
+    "jobs": [
+      {
+        "id": 125552176141,
+        "name": "contract",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Exact source relation and frozen upstream contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Run actions/setup-python@v5",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Validate schema behavior with pinned validator",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Check current ledger shape without granting source acceptance",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Run node --check scripts/validate-tdrp-revision9-authority.mjs",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Preserve exact checker evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Post Run actions/setup-python@v5",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 18
+          },
+          {
+            "name": "Post Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 20
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21
+          }
+        ]
+      },
+      {
+        "id": 125552854111,
+        "name": "fixed-source-candidate",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact candidate source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Run actions/setup-python@v5",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Read the two immutable evidence artifacts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Recover complete pinned Git evidence at this H",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Recover complete pinned build-input observations at this H",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Check actual complete inventory and current candidate records",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Prove open candidates cannot enter accepted mode",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Preserve candidate consistency and rejection evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Post Run actions/setup-python@v5",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 20
+          },
+          {
+            "name": "Post Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 22
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 23
+          }
+        ]
+      }
+    ],
+    "actual_counts": {
+      "node_tests": 158,
+      "node_pass": 158,
+      "node_fail": 0,
+      "node_cancelled": 0,
+      "node_skipped": 0,
+      "node_todo": 0,
+      "schema_tests": 37,
+      "schema_result": "OK",
+      "canonical_ledger_schema_errors": 0
+    },
+    "candidate_report": {
+      "status": "unaccepted-candidate-consistent",
+      "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_entries_total": 16381,
+      "root_source_entries_total": 6895,
+      "responsibility_rows": 184,
+      "authored_source_review_records": 6,
+      "completed_source_review_records": 2,
+      "unknown": null,
+      "unread": null,
+      "lexical_observations": 333,
+      "counts_by_scope": {
+        "pinned-cmake-component": 2,
+        "legacy-root-paths": 331
+      },
+      "text_files_read": 203,
+      "opaque_inputs_unread": 2,
+      "unresolved_ref_observations": 76,
+      "baseline_accepted": false,
+      "source_closure_ready": false,
+      "product_accepted": false,
+      "independent_acceptance": false,
+      "target_commit": "19df1199779fa7fd66547ba095c277e0306d4c93",
+      "reused_git_artifact": {
+        "repository": "bhrumom/fabushi-desktop",
+        "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+        "artifact_id": 13118749668,
+        "run_id": 41397005716,
+        "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+      },
+      "reused_build_input_artifact": {
+        "repository": "bhrumom/fabushi-desktop",
+        "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+        "artifact_id": 13121721589,
+        "run_id": 41401970993,
+        "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+      }
+    },
+    "accepted_mode_negative": {
+      "expected": "Error: accepted source accounting cannot contain a rebaseline candidate",
+      "observed": true,
+      "workflow_rejects_unexpected_success": true
+    }
+  },
+  "complete_logs": [
+    {
+      "run_id": 41525211785,
+      "job_id": 125551058110,
+      "name": "contract",
+      "path": "source-after/125551058110.log",
+      "bytes": 90254,
+      "lines": 1294,
+      "sha256": "3b45272f106d9fbaab036b49ff566a5bb70dc2c99974528a0f4c505d0953dc40",
+      "complete_through_cleanup": true
+    },
+    {
+      "run_id": 41525211785,
+      "job_id": 125552095402,
+      "name": "fixed-source-candidate",
+      "path": "source-after/125552095402.log",
+      "bytes": 146046,
+      "lines": 1151,
+      "sha256": "c405d436f21f3a29fc13d8fb8344268c9ec94096a77a835e0970d2d54bdb1927",
+      "complete_through_cleanup": true
+    },
+    {
+      "run_id": 41525539280,
+      "job_id": 125552176141,
+      "name": "contract",
+      "path": "source-after/125552176141.log",
+      "bytes": 90253,
+      "lines": 1294,
+      "sha256": "a6e43b408462c3a8ceb5e2b8be807e4918586b7138ab5956e8e79ed905fa5dfd",
+      "complete_through_cleanup": true
+    },
+    {
+      "run_id": 41525539280,
+      "job_id": 125552854111,
+      "name": "fixed-source-candidate",
+      "path": "source-after/125552854111.log",
+      "bytes": 146047,
+      "lines": 1151,
+      "sha256": "56659b078c5ed3215787354981c1cbfd763183dd6e57c40d65625474fedca07c",
+      "complete_through_cleanup": true
+    }
+  ],
+  "artifacts_metadata": {
+    "archive_contents_not_newly_downloaded": true,
+    "artifacts": [
+      {
+        "id": 13179397429,
+        "name": "tdrp-source-review-contract-19df1199779fa7fd66547ba095c277e0306d4c93",
+        "size_in_bytes": 6840,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179397429",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179397429/zip",
+        "expired": false,
+        "created_at": "2026-11-02T21:08:34Z",
+        "expires_at": "2027-01-31T21:08:05Z",
+        "updated_at": "2026-11-02T21:08:34Z",
+        "digest": "sha256:f134b2fd7438ec3abf74dc56944e7e362740b2614b3cb41902843c0b15b8185c",
+        "workflow_run": {
+          "id": 41525539280,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "19df1199779fa7fd66547ba095c277e0306d4c93"
+        }
+      },
+      {
+        "id": 13178239826,
+        "name": "tdrp-source-candidate-19df1199779fa7fd66547ba095c277e0306d4c93",
+        "size_in_bytes": 79141,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178239826",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178239826/zip",
+        "expired": false,
+        "created_at": "2026-11-02T21:09:57Z",
+        "expires_at": "2027-01-31T21:08:05Z",
+        "updated_at": "2026-11-02T21:09:57Z",
+        "digest": "sha256:7fafa9bf32bb79c7ac3ed66d0d26e62bf798173f55d874844d0cdebabc5f22b9",
+        "workflow_run": {
+          "id": 41525539280,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "19df1199779fa7fd66547ba095c277e0306d4c93"
+        }
+      }
+    ]
+  },
+  "later_branch_observation": {
+    "head_sha": "b2c80f6f0dcdb26ef9e2dd9a08ffea37bd90bda8",
+    "observed_at_utc": "2026-11-02 21:10:19 UTC",
+    "compare_from": "19df1199779fa7fd66547ba095c277e0306d4c93",
+    "compare_status": "ahead",
+    "ahead_by": 7,
+    "changed_paths": [
+      {
+        "path": ".github/checkpoint-round26-object-ops.json",
+        "blob_sha": "d9359101072ae0e4b52fd69161f90a7fc68c4357"
+      },
+      {
+        "path": ".github/round3-protocol-owner-object.json",
+        "blob_sha": "4ee4cbc858ac1f37768a227bbdd3b848f2b4fbc4"
+      },
+      {
+        "path": ".github/workflows/checkpoint-ledger-object-round30.yml",
+        "blob_sha": "7e368d14a2635bcf21736d9db908ecc1b3c518fb"
+      },
+      {
+        "path": ".github/workflows/native-service-contracts.yml",
+        "blob_sha": "12027c755f1b6ff9d070b2df2adc59615a035d5e"
+      },
+      {
+        "path": ".github/workflows/round31-reply-ledger-object.yml",
+        "blob_sha": "3c69c0743ccad42ab65cd586fbf3f963e96d9feb"
+      },
+      {
+        "path": "docs/specs/fbcp-native-message-reconciliation.md",
+        "blob_sha": "f47b3ab2268bf7dfdeacfe0ec5313b571f49e8cb"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json",
+        "blob_sha": "a073fca86b3589fac2075e79ec7898d1cfa78a45"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round31-live-actions-reconciliation.json",
+        "blob_sha": "bb0976f7f66f75ab311ccc3326a99e8c3f9c3fe8"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/task-20bf9475-round1-recursive-membership.json",
+        "blob_sha": "2d655059d2e594c34546f6c805da1e648d32ba24"
+      },
+      {
+        "path": "source/host/src/extensions/session/agent_db.rs",
+        "blob_sha": "0b396511ce827f38377b252ec6e05466be1d8564"
+      },
+      {
+        "path": "source/host/src/extensions/session/agent_db_recovery.rs",
+        "blob_sha": "fee9c2f3f88e713edea0d6f03c70763a8dd8072d"
+      },
+      {
+        "path": "source/host/src/extensions/session/human_creation_storage_tests.rs",
+        "blob_sha": "7be79bc692a857775ef68c0494642ef58f305481"
+      },
+      {
+        "path": "source/host/src/extensions/session/human_creation_tests.rs",
+        "blob_sha": "ad2cec1e1e4dce0ca7e019ccd3cff7b96a214a78"
+      },
+      {
+        "path": "source/host/src/extensions/session/production.rs",
+        "blob_sha": "fafad99ad86d25562c14644343fda58c8506b530"
+      },
+      {
+        "path": "source/host/tests/session_gateway_contract.rs",
+        "blob_sha": "42963ba808cb74048f554c1ad4b4e3963a86264f"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs",
+        "blob_sha": "d823755139870901162e334bca9c6c3db2d762d8"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs",
+        "blob_sha": "f5fa5ba672422f60111d92c90bc218e506e168e7"
+      }
+    ],
+    "source_gate_inputs_unchanged": true,
+    "canonical_ledger_still_1875_by_no_change_compare": true,
+    "scope": "Subsequent native/production/helper/evidence changes do not alter the enumerated source gate inputs. Actual successful source execution remains exact19df; no whole-head or exact-b2c80f6 execution claim."
+  },
+  "result": {
+    "public_source_contract_failure_observed": false,
+    "canonical_candidate_consistent_at_exact_19df": true,
+    "baseline_accepted": false,
+    "source_closure_ready": false,
+    "product_accepted": false,
+    "independent_acceptance": false
+  },
+  "remaining": [
+    "Six source review records are not full disposition/review coverage of 16,381 identities; two complete records do not close product responsibilities or legal/build/generated/LFS acceptance.",
+    "Unknown/unread remain null. All four global acceptance flags remain false.",
+    "A subsequent ledger/input mutation invalidates this exact19df execution for the new H and must receive its own source workflow result.",
+    "No obsolete helper output was applied or treated as canonical by this audit."
+  ],
+  "source_refs": [
+    "https://api.github.com/repos/bhrumom/fabushi-desktop/git/ref/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "https://api.github.com/repos/bhrumom/fabushi-desktop/git/trees/19df1199779fa7fd66547ba095c277e0306d4c93?recursive=1",
+    "https://github.com/bhrumom/fabushi-desktop/actions/runs/41525211785",
+    "https://github.com/bhrumom/fabushi-desktop/actions/runs/41525539280",
+    "https://api.github.com/repos/bhrumom/fabushi-desktop/compare/19df1199779fa7fd66547ba095c277e0306d4c93...b2c80f6f0dcdb26ef9e2dd9a08ffea37bd90bda8"
+  ]
+}
