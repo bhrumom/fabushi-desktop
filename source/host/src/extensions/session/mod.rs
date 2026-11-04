@@ -38,6 +38,7 @@ pub mod ocrm_production_human_conversations;
 pub mod ocrm_production_human_recipients;
 pub mod ocrm_production_human_messaging;
 pub mod ocrm_production_agent_profile_memories;
+pub mod ocrm_production_admission;
 pub mod ocrm_agent_db_persisted_metadata;
 pub mod ocrm_agent_db_persisted_ops;
 pub mod ocrm_agent_db_state_queries;

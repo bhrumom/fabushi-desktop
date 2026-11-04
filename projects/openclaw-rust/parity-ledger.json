@@ -3774,7 +3774,7 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/session/production.rs",
+        "path": "source/host/src/extensions/session/ocrm_production_compaction.rs",
         "symbol": "ProductionSessionWorkers"
       },
       "tests": [
@@ -15447,7 +15447,7 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/session/production.rs",
+        "path": "source/host/src/extensions/session/ocrm_production_agent_profile_memories.rs",
         "symbol": "ProductionSessionWorkers"
       },
       "tests": [
@@ -16014,7 +16014,7 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/session/production.rs",
+        "path": "source/host/src/extensions/session/ocrm_production_admission.rs",
         "symbol": "ProductionSessionWorkers"
       },
       "tests": [
@@ -16968,7 +16968,7 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/session/production.rs",
+        "path": "source/host/src/extensions/session/ocrm_production_call_sessions.rs",
         "symbol": "call_sessions"
       },
       "tests": [

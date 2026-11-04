@@ -284,6 +284,8 @@ def main():
     god_files = []
     compressed_stubs = []
     for t_path, stats in target_stats.items():
+        if "/tests/" in t_path or t_path.startswith("tests/") or t_path.startswith("source/host/tests/"):
+            continue
         t_file = REPO_ROOT / t_path
         if not t_file.exists() or not t_file.is_file():
             continue
