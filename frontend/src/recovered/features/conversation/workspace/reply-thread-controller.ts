@@ -117,7 +117,7 @@ function isValidLocalHumanReplyIntent(
     && entry.authorId === accountSlot
     && entry.clientNonce === nonce
     && entry.remoteMessageId == null
-    && (entry.delivery === "pending" || entry.delivery === "dispatching" || entry.delivery === "sent");
+    && (entry.delivery === "pending" || entry.delivery === "sent");
 }
 
 export function createReplyThreadController(options: ReplyThreadControllerOptions = {}): ReplyThreadController {

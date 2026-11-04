@@ -1771,7 +1771,7 @@
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
       "targetPath": "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
-      "targetBlobSha": "4c56a4a9071e78cc7d7ed700f3b58f7d3d22a371",
+      "targetBlobSha": "9418fa1d1c083f17a79818e1575ca64066124c22",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
         "frontend/src/production/ProductionRenderer.tsx"
@@ -1780,7 +1780,7 @@
         "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.contract.test.ts",
         "desktop/e2e/native-message-projection.spec.ts"
       ],
-      "rationale": "The existing reply-thread controller now rehydrates ComposerDraft.replyToId only after the current account/conversation scope is active. It preserves missing-target identity, resolves the preview when transcript entries arrive, refuses to overwrite a live selection, and lets the existing Host submission path carry the same replyToId.",
+      "rationale": "The existing reply-thread controller now rehydrates ComposerDraft.replyToId only after the current account/conversation scope is active. It preserves missing-target identity, resolves the preview when transcript entries arrive, refuses to overwrite a live selection, and lets the existing Host submission path carry the same replyToId. Human reply selections now follow the Host's durable local nonce identity through a unique same-account canonical server-message rekey; foreign, ambiguous, mismatched or unsettled aliases remain unresolved, while navigation and submission use the canonical ID.",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port"
     }
