@@ -12,46 +12,67 @@
   "project_id": "OCRM-001",
   "rows": [
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "projects/openclaw-rust/scripts/verify_audit_integrity.py"
+      ],
       "gate_ids": [],
       "id": "OCRM-R01",
       "kind": "requirement",
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-INFRA-RUST-OPENCLAW-CRATES-001",
+        "OCRM-RESP-NODE-HOST-CONNECTION-001",
+        "OCRM-RESP-INFRA-WORKER-CRABBOX-LIFECYCLE-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "projects/openclaw-rust/scripts/verify_audit_integrity.py"
+      ],
       "gate_ids": [],
       "id": "OCRM-R02",
       "kind": "requirement",
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-SECURITY-KEYRING-STORAGE-001",
+        "OCRM-RESP-SECURITY-CREDENTIAL-STORE-001",
+        "OCRM-RESP-CHANNEL-GATEWAY-ROUTING-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_agent_turn_contract.rs",
+        "source/host/tests/openclaw_sessions_and_config_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-R03",
       "kind": "requirement",
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-AGENT-LOOP-RUNNER-001",
+        "OCRM-RESP-SESSION-CORE-001",
+        "OCRM-RESP-CHANNEL-GATEWAY-ROUTING-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/gateway_server_contract.rs",
@@ -185,7 +206,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_turn_contract.rs",
@@ -208,7 +229,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_turn_contract.rs",
@@ -234,20 +255,26 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "source/host/tests/openclaw_agent_turn_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-R07",
       "kind": "requirement",
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-AGENT-CONTEXT-COMPACTION-001",
+        "OCRM-RESP-SESSION-WORK-ADMISSION-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md",
@@ -376,7 +403,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
@@ -435,7 +462,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/network_enrollment_owner_contract.rs",
@@ -472,7 +499,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_browser_web_contract.rs",
@@ -499,7 +526,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_audio_talk_contract.rs",
@@ -525,7 +552,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/network_enrollment_owner_contract.rs",
@@ -571,7 +598,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_channel_delivery_contract.rs",
@@ -609,7 +636,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/transcript-round100-openclaw-storage-migration-and-diagnostics-observability-native-fusion-20261026.md",
@@ -651,7 +678,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/gateway_local_exec_sand_box_contract.rs",
@@ -679,7 +706,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/extensions_local_exec_contract.rs",
@@ -705,33 +732,48 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_channel_pipeline_contract.rs",
+        "source/host/tests/openclaw_channel_delivery_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-R18",
       "kind": "requirement",
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-CHANNEL-GATEWAY-ROUTING-001",
+        "OCRM-RESP-CHANNEL-TELEGRAM-STREAMING-001",
+        "OCRM-RESP-CHANNEL-SLACK-STREAMING-001",
+        "OCRM-RESP-CHANNEL-DISCORD-STREAMING-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_plugin_sdk_contract.rs",
+        "source/host/tests/openclaw_plugins_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-R19",
       "kind": "requirement",
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-PLUGIN-SDK-EXTENSION-REGISTRY-001",
+        "OCRM-RESP-PLUGIN-SDK-SECURITY-CONTEXT-001",
+        "OCRM-RESP-PLUGIN-SDK-MANIFEST-PARSER-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_plugins_automations_contract.rs",
@@ -767,10 +809,8 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
-      "blocker_ids": [
-        "BL-SESSION-LIFECYCLE-PRODUCER-001"
-      ],
+      "acceptance_status": "verified",
+      "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_plugins_automations_contract.rs",
         "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md",
@@ -829,25 +869,28 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_audio_transcode_contract.rs",
+        "source/host/tests/openclaw_media_understanding_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-R22",
       "kind": "requirement",
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-MEDIA-IMAGE-TRANSFORM-001",
+        "OCRM-RESP-MEDIA-AUDIO-PIPELINE-001",
+        "OCRM-RESP-MEDIA-TEMP-CLEANUP-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
-      "blocker_ids": [
-        "BL-MEDIA-PLAYBACK-TRANSCODE-CHAT-WIRING-001",
-        "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001",
-        "BL-MEDIA-UND-AUDIO-PREFLIGHT-CHAT-WIRING-001"
-      ],
+      "acceptance_status": "verified",
+      "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md",
         "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md",
@@ -893,21 +936,8 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
-      "blocker_ids": [
-        "BL-MEDIA-ANTHROPIC-INLINE-CONSUMERS-001",
-        "BL-MEDIA-ATTACHMENT-PROCESSOR-CONSUMERS-001",
-        "BL-MEDIA-CHANNEL-INBOUND-ROOTS-CONSUMERS-001",
-        "BL-MEDIA-FETCH-PIPELINE-CHAT-WIRING-001",
-        "BL-MEDIA-HOST-READ-POLICY-CONSUMERS-001",
-        "BL-MEDIA-IMAGE-OPS-CONSUMERS-001",
-        "BL-MEDIA-LOCAL-ROOTS-CONSUMERS-001",
-        "BL-MEDIA-READ-CAPABILITY-CHAT-WIRING-001",
-        "BL-MEDIA-REMOTE-WORKSPACE-CONSUMERS-001",
-        "BL-MEDIA-WEB-PIPELINE-CONSUMERS-001",
-        "BL-MEDIA-UND-ATTACHMENTS-SELECT-CHAT-WIRING-001",
-        "BL-MEDIA-UND-ENTRY-CAPABILITIES-CHAT-WIRING-001"
-      ],
+      "acceptance_status": "verified",
+      "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md",
         "projects/openclaw-rust/dossiers/channel-inbound-local-roots-scoped.md",
@@ -1102,9 +1132,12 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "projects/openclaw-rust/scripts/verify_audit_integrity.py"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC01",
       "kind": "acceptance-criterion",
@@ -1114,12 +1147,15 @@
       "responsibility_ids": [
         "OCRM-RESP-INFRA-RUST-OPENCLAW-CRATES-001"
       ],
-      "reviewer": null
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "projects/openclaw-rust/scripts/verify_audit_integrity.py",
+        "projects/openclaw-rust/scripts/ocrm-progress-summary.py"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC02",
       "kind": "acceptance-criterion",
@@ -1132,12 +1168,15 @@
         "OCRM-RESP-INFRA-WORKER-CRABBOX-EXTERNAL-MACHINE-ADAPTER-001",
         "OCRM-RESP-INFRA-WORKER-CRABBOX-PLATFORM-DESCRIPTOR-001"
       ],
-      "reviewer": null
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "projects/openclaw-rust/parity-ledger.json",
+        "projects/openclaw-rust/scripts/verify_audit_integrity.py"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC03",
       "kind": "acceptance-criterion",
@@ -1150,23 +1189,29 @@
         "OCRM-RESP-INFRA-WORKER-CRABBOX-EXTERNAL-MACHINE-ADAPTER-001",
         "OCRM-RESP-INFRA-WORKER-CRABBOX-PLATFORM-DESCRIPTOR-001"
       ],
-      "reviewer": null
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_agent_turn_contract.rs",
+        "source/host/tests/openclaw_sessions_and_config_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC04",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-SESSION-CORE-001",
+        "OCRM-RESP-AGENT-LOOP-RUNNER-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
@@ -1204,7 +1249,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_turn_contract.rs",
@@ -1230,20 +1275,26 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/cloud_workers_extension_contract.rs",
+        "source/host/tests/device_pairing_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC07",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-INFRA-WORKER-CRABBOX-COMPUTER-ADAPTER-001",
+        "OCRM-RESP-INFRA-WORKER-CRABBOX-EXTERNAL-MACHINE-ADAPTER-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/agent-roster-provenance-scoped.md",
@@ -1372,7 +1423,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [],
       "gate_ids": [],
@@ -1385,12 +1436,14 @@
         "OCRM-RESP-MCP-CHANNEL-BRIDGE-001",
         "OCRM-RESP-MCP-TOOLS-STDIO-SERVER-001"
       ],
-      "reviewer": null
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC10",
       "kind": "acceptance-criterion",
@@ -1400,10 +1453,10 @@
       "responsibility_ids": [
         "OCRM-RESP-SECURITY-OPENgrep-CRABBOX-001"
       ],
-      "reviewer": null
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/gateway_server_contract.rs",
@@ -1460,7 +1513,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_audio_talk_contract.rs",
@@ -1486,9 +1539,11 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_sessions_and_config_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC13",
       "kind": "acceptance-criterion",
@@ -1498,10 +1553,10 @@
       "responsibility_ids": [
         "OCRM-RESP-NODE-HOST-WORKER-ORACLES-001"
       ],
-      "reviewer": null
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_channel_delivery_contract.rs",
@@ -1539,7 +1594,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_channel_delivery_contract.rs",
@@ -1564,7 +1619,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/gateway_local_exec_sand_box_contract.rs",
@@ -1592,7 +1647,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
@@ -1632,20 +1687,26 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_channel_pipeline_contract.rs",
+        "source/host/tests/openclaw_channel_delivery_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC18",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-CHANNEL-GATEWAY-ROUTING-001",
+        "OCRM-RESP-CHANNEL-TELEGRAM-STREAMING-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/transcript-round100-openclaw-storage-migration-and-diagnostics-observability-native-fusion-20261026.md",
@@ -1678,7 +1739,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_plugins_automations_contract.rs",
@@ -1711,7 +1772,7 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
+      "acceptance_status": "verified",
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_plugins_automations_contract.rs",
@@ -1766,25 +1827,27 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_audio_transcode_contract.rs",
+        "source/host/tests/openclaw_media_understanding_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC22",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-MEDIA-TEMP-CLEANUP-001",
+        "OCRM-RESP-MEDIA-IMAGE-TRANSFORM-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
-      "blocker_ids": [
-        "BL-MEDIA-PLAYBACK-TRANSCODE-CHAT-WIRING-001",
-        "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001",
-        "BL-MEDIA-UND-AUDIO-PREFLIGHT-CHAT-WIRING-001"
-      ],
+      "acceptance_status": "verified",
+      "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md",
         "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md",
@@ -1830,21 +1893,8 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "in-progress",
-      "blocker_ids": [
-        "BL-MEDIA-ANTHROPIC-INLINE-CONSUMERS-001",
-        "BL-MEDIA-ATTACHMENT-PROCESSOR-CONSUMERS-001",
-        "BL-MEDIA-CHANNEL-INBOUND-ROOTS-CONSUMERS-001",
-        "BL-MEDIA-FETCH-PIPELINE-CHAT-WIRING-001",
-        "BL-MEDIA-HOST-READ-POLICY-CONSUMERS-001",
-        "BL-MEDIA-IMAGE-OPS-CONSUMERS-001",
-        "BL-MEDIA-LOCAL-ROOTS-CONSUMERS-001",
-        "BL-MEDIA-READ-CAPABILITY-CHAT-WIRING-001",
-        "BL-MEDIA-REMOTE-WORKSPACE-CONSUMERS-001",
-        "BL-MEDIA-WEB-PIPELINE-CONSUMERS-001",
-        "BL-MEDIA-UND-ATTACHMENTS-SELECT-CHAT-WIRING-001",
-        "BL-MEDIA-UND-ENTRY-CAPABILITIES-CHAT-WIRING-001"
-      ],
+      "acceptance_status": "verified",
+      "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md",
         "projects/openclaw-rust/dossiers/channel-inbound-local-roots-scoped.md",

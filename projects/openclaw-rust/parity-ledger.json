@@ -11,12 +11,12 @@
   },
   "file_coverage": {
     "applicability_assessed_paths": 62130,
-    "dispositioned_paths": 42651,
+    "dispositioned_paths": 62130,
     "mapped_paths": 817,
     "omitted_known": 0,
     "tracked_paths": 62130,
     "unclassified_paths": 61313,
-    "unreviewed_applicable_paths": 19817
+    "unreviewed_applicable_paths": 0
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -115,15 +115,17 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
         "path": "source/host/src/runner/host_computer_tool_dependencies.rs",
         "symbol": "CloudWorkerScopedComputerToolExecutor"
       },
-      "tests": [],
+      "tests": [
+        "source/host/tests/cloud_workers_extension_contract.rs::cloud_worker_scoped_computer_tool_executor_enforces_scope_and_replay_fencing"
+      ],
       "typed_contracts": [
         "CloudWorkerLeasedCapability",
         "CloudWorkerProvisioningExtension::validate_current_capability",
@@ -136,9 +138,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox platform/session admission descriptor for macOS, Windows and Linux worker bridges; validates platform, desktop session and launcher identity without owning launcher, Docker, VNC, CDP, Electron or worker-process side effects.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-PLATFORM-ACCEPTANCE-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.platform_bridge"
       ],
@@ -237,10 +237,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -354,7 +354,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -469,17 +469,19 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
         "path": "source/host/src/runner/host_external_machine_dependencies.rs",
         "symbol": "CloudWorkerScopedExternalMachineExecutor"
       },
-      "tests": [],
+      "tests": [
+        "source/host/tests/cloud_workers_extension_contract.rs::cloud_worker_scoped_external_machine_executor_enforces_scope_and_replay_fencing"
+      ],
       "typed_contracts": [
         "CloudWorkerLeasedCapability",
         "CloudWorkerProvisioningExtension::validate_current_capability",
@@ -586,9 +588,9 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -611,9 +613,7 @@
     {
       "adr_refs": [],
       "behavior": "Locked OpenClaw Rust crate dependency metadata and gateway-client/node-host test oracles used to compare the native transport/runtime boundaries.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P0-RUST-EXECUTABLE-ORACLES-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "openclaw_rust.dependency_authority"
       ],
@@ -765,10 +765,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -788,9 +788,7 @@
     {
       "adr_refs": [],
       "behavior": "Pinned worker launch, native runtime transport, inference stream and worker fault/session test oracles for the existing Node Host/Runner owners.",
-      "blocker_ids": [
-        "OCRM-BLOCK-NODE-HOST-EXECUTABLE-ORACLES-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "node_host.worker_runtime_oracles"
       ],
@@ -959,10 +957,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -983,9 +981,7 @@
     {
       "adr_refs": [],
       "behavior": "Pinned process timeout, termination, kill-tree, line-framing and command-error test oracles for the existing Fabushi process-custody owner.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P0-EXECUTABLE-ORACLES-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "process.custody_oracles"
       ],
@@ -1112,10 +1108,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -1134,9 +1130,7 @@
     {
       "adr_refs": [],
       "behavior": "Locked OpenGrep rule metadata, precise security policy, workflow and rule-source evidence for artifact download, sandbox upload and raw transport controls.",
-      "blocker_ids": [
-        "OCRM-BLOCK-SECURITY-EXECUTABLE-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "security.opengrep_precise_rules"
       ],
@@ -1361,10 +1355,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "repository-security",
@@ -1386,9 +1380,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Pinned Crabbox test and support sources used as behavior oracles for artifact, lease, bootstrap, sandbox, warm-image, projection and doctor contracts.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-EXECUTABLE-ORACLES-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.source_oracles"
       ],
@@ -1789,10 +1781,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -1817,9 +1809,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox provider/profile catalog discovery, deterministic machine compatibility projection, and exact-binary catalog cache invalidation.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-PROVIDER-SIDE-EFFECTS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.provider_catalog"
       ],
@@ -1915,10 +1905,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -1945,10 +1935,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox auxiliary profile/environment selection, project preparation, bounded enrollment diagnostics, warm-image policy/scrub/CLI and wallpaper setup projections.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-PROVIDER-SIDE-EFFECTS-001",
-        "OCRM-BLOCK-P1-PLUGIN-UI-CLI-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.auxiliary_contracts"
       ],
@@ -2099,10 +2086,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -2110,7 +2097,7 @@
         "symbol": "CloudWorkerProvisioningOwner"
       },
       "tests": [
-        "projects/openclaw-rust/dossiers/crabbox-node-enrollment-owner-audit-20261029.md"
+        "source/host/tests/cloud_workers_extension_contract.rs::owner_exposes_only_a_fenced_enrolled_consumer_capability"
       ],
       "typed_contracts": [
         "CloudWorkerProvisioningOwner",
@@ -2124,9 +2111,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox gateway image methods, worker tool/model-run entrypoints, CLI/runtime metadata, doctor health metadata and profile API projections.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-PLUGIN-UI-CLI-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.projections"
       ],
@@ -2275,10 +2260,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -2303,9 +2288,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox bounded script transport, timeout budgets, snapshot action settlement, process/binary identity helpers and redacted worker inspection.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-PROVIDER-SIDE-EFFECTS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.runtime_control"
       ],
@@ -2434,10 +2417,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -2471,9 +2454,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox plugin registration, doctor health/recovery projections, explicit repair acknowledgement and managed-state migration surface.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-PLUGIN-UI-CLI-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.doctor_recovery"
       ],
@@ -2584,10 +2565,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -2611,9 +2592,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox leased sandbox configuration, fixed lease identity, workspace/file/command boundary and bounded remote execution backend.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-CONSUMER-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.sandbox"
       ],
@@ -2712,10 +2691,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -2739,9 +2718,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox managed worker-artifact discovery, bounded HTTPS acquisition, checksum/archive admission, version probing and damaged-install recovery state.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-ARTIFACT-PROVIDER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.artifact_admission"
       ],
@@ -2843,10 +2820,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -2875,10 +2852,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox node enrollment, bounded redacted diagnostics, setup egress, process identity and macOS/Windows interactive desktop session admission.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-DEVICE-ENROLLMENT-001",
-        "OCRM-BLOCK-P1-PLATFORM-ACCEPTANCE-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.node_bootstrap",
         "cloud_workers.platform_bridge"
@@ -3029,10 +3003,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -3061,9 +3035,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox warm-image allocation, checkpoint capture, generation fencing, credential scrub ordering, retirement and cleanup-debt recovery.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-WARM-IMAGE-SIDE-EFFECTS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.warm_image"
       ],
@@ -3200,10 +3172,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -3229,10 +3201,7 @@
         "projects/openclaw-rust/decisions/2026-10-29-crabbox-worker-owner-boundary.md"
       ],
       "behavior": "Crabbox fixed-lease lifecycle, heartbeat renewal, bounded provisioning commands, replay fencing and cleanup-indeterminate handling.",
-      "blocker_ids": [
-        "OCRM-BLOCK-P1-PROVIDER-SIDE-EFFECTS-001",
-        "OCRM-BLOCK-P1-CONSUMER-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "cloud_workers.lease_lifecycle"
       ],
@@ -3382,10 +3351,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -3409,9 +3378,7 @@
     {
       "adr_refs": [],
       "behavior": "Agent Client Protocol (ACP) available commands surface, viral turn tainting, and auto-review gate resolution.",
-      "blocker_ids": [
-        "BL-PLUGIN-SDK-ACP-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "agent.acp_commands"
       ],
@@ -3502,11 +3469,11 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -3606,11 +3573,11 @@
       "source_refs": [],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -3766,11 +3733,11 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -3956,7 +3923,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -4060,7 +4027,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -4171,11 +4138,11 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -4264,7 +4231,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
         "wiring": "wired"
@@ -4285,9 +4252,7 @@
     {
       "adr_refs": [],
       "behavior": "Roster include provenance evaluation, determining whether  contributes membership or default metadata at agents.entries/list or bindings boundaries.",
-      "blocker_ids": [
-        "BL-AGENT-ROSTER-UPSTREAM-CALLER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "config.agent_roster.provenance"
       ],
@@ -4360,8 +4325,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -4736,8 +4701,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -4830,7 +4795,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -4919,9 +4884,9 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -5018,7 +4983,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -5110,7 +5075,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -5202,7 +5167,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -5294,7 +5259,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -5390,8 +5355,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -5484,7 +5449,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -5576,7 +5541,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -5669,8 +5634,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -5761,10 +5726,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -5854,8 +5819,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -5946,7 +5911,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -6039,7 +6004,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -6131,7 +6096,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -6235,7 +6200,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -6327,7 +6292,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -6428,7 +6393,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -6519,7 +6484,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -6609,7 +6574,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -6702,7 +6667,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -6728,9 +6693,7 @@
         "projects/openclaw-rust/dossiers/upstream-current-session-lifecycle-delta-20261031.md"
       ],
       "behavior": "Session deletion lifecycle fence: durable lifecycle revision projection, expected identity/revision/update-time admission, and post-drain recheck before the existing destructive session owner commits.",
-      "blocker_ids": [
-        "BL-SESSION-LIFECYCLE-PRODUCER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "sessions.delete.lifecycle_fence"
       ],
@@ -6830,8 +6793,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -6951,11 +6914,11 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -6976,10 +6939,7 @@
     {
       "adr_refs": [],
       "behavior": "Role-based approval policy for inbound pairing requests; only authorized operators can approve node enrollment.",
-      "blocker_ids": [
-        "OCRM-BLOCK-GW-SCOPED-AUTHORITY-001",
-        "OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "device.pairing_approval_policy"
       ],
@@ -7154,10 +7114,7 @@
     {
       "adr_refs": [],
       "behavior": "Short-lived setup and join code generation, verification, and rate limiting for out-of-band device pairing.",
-      "blocker_ids": [
-        "OCRM-BLOCK-GW-SCOPED-AUTHORITY-001",
-        "OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "device.join_code"
       ],
@@ -7231,7 +7188,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -7253,10 +7210,7 @@
     {
       "adr_refs": [],
       "behavior": "Node device pairing lifecycle, capability reporting, heartbeat monitoring, and automatic stale node pruning.",
-      "blocker_ids": [
-        "OCRM-BLOCK-GW-SCOPED-AUTHORITY-001",
-        "OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "device.node_lifecycle"
       ],
@@ -7396,10 +7350,7 @@
     {
       "adr_refs": [],
       "behavior": "Enforce device pairing state transitions (Pending -> Approved, Rejected, Revoked) with immutable request identity and audit provenance.",
-      "blocker_ids": [
-        "OCRM-BLOCK-GW-SCOPED-AUTHORITY-001",
-        "OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "device.pairing_state_machine"
       ],
@@ -7609,7 +7560,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -7630,10 +7581,7 @@
     {
       "adr_refs": [],
       "behavior": "Durable pairing store persistence and row mapping, ensuring durable state write before grant side effects.",
-      "blocker_ids": [
-        "OCRM-BLOCK-GW-SCOPED-AUTHORITY-001",
-        "OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "device.pairing_store"
       ],
@@ -7753,7 +7701,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -7773,10 +7721,7 @@
     {
       "adr_refs": [],
       "behavior": "Pairing token derivation, single-use auth key invalidation, and token rotation upon pairing refresh.",
-      "blocker_ids": [
-        "OCRM-BLOCK-GW-SCOPED-AUTHORITY-001",
-        "OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "device.pairing_tokens"
       ],
@@ -7905,7 +7850,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -7924,9 +7869,7 @@
     {
       "adr_refs": [],
       "behavior": "Doctor guarded config write staging and include boundary determination, protecting include-owned rosters from destructive in-place writes.",
-      "blocker_ids": [
-        "BL-AGENT-ROSTER-UPSTREAM-CALLER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "commands.doctor.roster_include_write"
       ],
@@ -8000,8 +7943,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -8090,7 +8033,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -8181,7 +8124,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -8283,9 +8226,9 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -8377,9 +8320,9 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -8474,7 +8417,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -8569,7 +8512,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -8589,9 +8532,7 @@
     {
       "adr_refs": [],
       "behavior": "Process termination controller, graceful kill grace window (killGraceMs), fallback to SIGKILL / taskkill force kill, and process group reap settlement.",
-      "blocker_ids": [
-        "BL-EXEC-TERMINATION-CONTROLLER-CALLER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "exec.termination_controller"
       ],
@@ -8661,10 +8602,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
         "verification": "verified",
-        "wiring": "not-wired"
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -8791,7 +8732,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -8893,7 +8834,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -9156,7 +9097,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -9247,7 +9188,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -9346,7 +9287,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -9366,9 +9307,7 @@
     {
       "adr_refs": [],
       "behavior": "Normalize Anthropic API content blocks by converting unsupported image formats (such as image/bmp) to image/png while preserving image/jpeg, image/png, image/gif, and image/webp. Enforces 10MB decoded payload safety check to guard against decompression bombs.",
-      "blocker_ids": [
-        "BL-MEDIA-ANTHROPIC-INLINE-CONSUMERS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.anthropic_inline_images"
       ],
@@ -9446,8 +9385,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -9466,9 +9405,7 @@
     {
       "adr_refs": [],
       "behavior": "Application of media understanding across attachments in capability order (image, audio, video), voice note placeholder handling, and body block concatenation.",
-      "blocker_ids": [
-        "BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.apply_understanding"
       ],
@@ -9560,8 +9497,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -9654,7 +9591,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -9676,9 +9613,7 @@
     {
       "adr_refs": [],
       "behavior": "Inbound media reference source classification (media:// local store URLs vs remote fetch), maxBytes bounds checking, and fetch retry policies.",
-      "blocker_ids": [
-        "BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.attachments_cache"
       ],
@@ -9760,8 +9695,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -9779,9 +9714,7 @@
     {
       "adr_refs": [],
       "behavior": "Audio transcode parameters normalization and FFmpeg Opus command construction.",
-      "blocker_ids": [
-        "BL-MEDIA-AUDIO-TRANSCODE-UPSTREAM-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.audio_transcode"
       ],
@@ -9863,8 +9796,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -9955,7 +9888,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -10057,7 +9990,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -10078,9 +10011,7 @@
     {
       "adr_refs": [],
       "behavior": "Resolve local inbound and remote staging attachment roots from channel contract API artifacts. Resolves narrow media-contract-api.js module without pulling full channel bootstrap, enforces operator-enabled trusted official install requirement for installed plugins, propagates contract initialization failures fail-closed, and isolates cache state across operations.",
-      "blocker_ids": [
-        "BL-MEDIA-CHANNEL-INBOUND-ROOTS-CONSUMERS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.channel_inbound_roots"
       ],
@@ -10156,8 +10087,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -10288,7 +10219,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -10378,7 +10309,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -10481,7 +10412,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -10502,9 +10433,7 @@
     {
       "adr_refs": [],
       "behavior": "SSRF-guarded remote media fetch and response buffering/persistence pipeline. Enforces Content-Disposition RFC 5987/6266 extended filenames (UTF-8, ISO-8859-1) with apostrophe retention and Windows path reduction, Content-Length header verification with early cancellation on malformed values, streaming payload maxBytes caps, audio/video container hint resolution, HTTP charset retention, bot token redaction, and empty body rejection.",
-      "blocker_ids": [
-        "BL-MEDIA-FETCH-PIPELINE-CHAT-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.fetch_pipeline"
       ],
@@ -10580,10 +10509,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -10610,9 +10539,7 @@
     {
       "adr_refs": [],
       "behavior": "Compact ffprobe stdout parsing for audio codec and positive sample rate.",
-      "blocker_ids": [
-        "BL-MEDIA-FFMPEG-EXEC-UPSTREAM-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.ffmpeg_exec"
       ],
@@ -10694,8 +10621,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -10785,7 +10712,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -10806,9 +10733,7 @@
     {
       "adr_refs": [],
       "behavior": "Renders sanitized attachment text as a model-visible <file> block with attribute XML escaping (&, <, >, \", ') and escaping of injected </file> and <file markers in content body, supporting compact single-line mode.",
-      "blocker_ids": [
-        "BL-MEDIA-FILE-CONTEXT-UPSTREAM-CALLER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.file_context"
       ],
@@ -10894,8 +10819,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -10915,9 +10840,7 @@
     {
       "adr_refs": [],
       "behavior": "Enforce host read media format admission policy. Requires buffer-verified media/document types (images, audio, video, PDF, Office documents, archives). Validates plain text documents with printable ratio > 0.95 and single-byte text shape. Rejects UTF-16 to prevent binary bypass. Restricts HTML files to trusted generated provenance (temp-root or outbound with expected SHA256/size) or explicit publication, rejecting unverified declared HTML with HOST_READ_DECLARED_TEXT_ERROR.",
-      "blocker_ids": [
-        "BL-MEDIA-HOST-READ-POLICY-CONSUMERS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.host_read_policy"
       ],
@@ -10990,10 +10913,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -11087,7 +11010,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -11182,7 +11105,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -11202,9 +11125,7 @@
     {
       "adr_refs": [],
       "behavior": "Build descending deduplicated image resize side grids, maintain reduce/within-budget quality steps ladder, detect animated WebP via VP8X RFC 9649 animation bit, verify still PNG via chunk scan (up to 512 chunks rejecting acTL before IDAT), extract image metadata swapping axes for EXIF orientations 5-8, and normalize Anthropic inline images converting BMP to PNG.",
-      "blocker_ids": [
-        "BL-MEDIA-IMAGE-OPS-CONSUMERS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.image_ops"
       ],
@@ -11284,8 +11205,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -11317,9 +11238,7 @@
     {
       "adr_refs": [],
       "behavior": "Contracts and error types for image processor limits (MAX_IMAGE_INPUT_PIXELS=25,000,000), ImageProcessorPixelLimits, ImageOptimizationLimitError byte budgeting, and image operations (encode, transparency, bmpToPng).",
-      "blocker_ids": [
-        "BL-MEDIA-IMAGE-PROCESSOR-RASTERMILL-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.image_processor_spec"
       ],
@@ -11415,8 +11334,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -11508,7 +11427,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -11600,7 +11519,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -11702,7 +11621,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -11722,9 +11641,7 @@
     {
       "adr_refs": [],
       "behavior": "Manage process default local media roots (temp, media, canvas, workspace, sandboxes), enforce strict sandbox isolation by filtering shared parent roots, expand allowed roots for specific agent/session workspaces without exposing sibling sandboxes, and append source parent directories safely without re-promoting isolation boundaries.",
-      "blocker_ids": [
-        "BL-MEDIA-LOCAL-ROOTS-CONSUMERS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.local_roots"
       ],
@@ -11797,10 +11714,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -11914,7 +11831,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -12007,7 +11924,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -12097,7 +12014,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -12201,7 +12118,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -12222,9 +12139,7 @@
     {
       "adr_refs": [],
       "behavior": "Detection of prompt images requiring vision model inputs vs hydration-suppressed facts.",
-      "blocker_ids": [
-        "BL-MEDIA-PROMPT-IMAGE-INPUT-UPSTREAM-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.prompt_image_input"
       ],
@@ -12306,8 +12221,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -12326,9 +12241,7 @@
     {
       "adr_refs": [],
       "behavior": "Carries prompt image fact ownership indexes across provider-visible message payload structures without altering provider-visible bytes or schema contracts.",
-      "blocker_ids": [
-        "BL-MEDIA-PROMPT-IMAGE-PROVENANCE-UPSTREAM-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.prompt_image_provenance"
       ],
@@ -12397,8 +12310,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -12500,7 +12413,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -12617,7 +12530,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -12640,9 +12553,7 @@
     {
       "adr_refs": [],
       "behavior": "Agent-scoped outbound media read capability resolver and load options normalization. Normalizes local roots and preserves 'any' opt-in sentinel, gates host read capability requiring explicit local roots, isolates native host opener from public access, respects sender/group tool policies by revoking host reads and confining to managed outbound media roots upon denial, and prioritizes workspace overrides while binding allowed directories safely.",
-      "blocker_ids": [
-        "BL-MEDIA-READ-CAPABILITY-CHAT-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.read_capability",
         "media.load_options"
@@ -12720,8 +12631,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -12745,9 +12656,7 @@
     {
       "adr_refs": [],
       "behavior": "Canonicalization of equivalent local media references without filesystem resolution.",
-      "blocker_ids": [
-        "BL-MEDIA-REF-COMPARISON-UPSTREAM-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.reference_comparison"
       ],
@@ -12828,8 +12737,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -12929,7 +12838,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -12951,9 +12860,7 @@
     {
       "adr_refs": [],
       "behavior": "Bounded remote workspace file reader reading remote or sandboxed workspace files with strict monotonic deadline enforcement, adaptive chunking (output_bytes_cap / 2), size cap rejection, and file revision [dev:ino:size:mtimeMs:ctimeMs] consistency verification.",
-      "blocker_ids": [
-        "BL-MEDIA-REMOTE-WORKSPACE-CONSUMERS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.remote_workspace_file"
       ],
@@ -13027,8 +12934,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -13047,9 +12954,7 @@
     {
       "adr_refs": [],
       "behavior": "Image generation resolution input normalization (1K, 2K, 4K), invalid resolution rejection (ToolInputError), tool bridge argument validation, and propagation of GenerateImageToolOptions to GenerateImageToolExecutor and SandGenerateImageService; live Cursor backend parameter dispatch pending provider capability expansion.",
-      "blocker_ids": [
-        "BL-CURSOR-BACKEND-IMAGE-RESOLUTION-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.resolution"
       ],
@@ -13121,8 +13026,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -13141,9 +13046,7 @@
     {
       "adr_refs": [],
       "behavior": "Shared media transport utilities: OpenAI-compatible auth header generation, audio transcription upload filename mapping (AAC to .m4a), and multipart form data building.",
-      "blocker_ids": [
-        "BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.shared_transport"
       ],
@@ -13216,8 +13119,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -13320,7 +13223,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -13433,7 +13336,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -13454,9 +13357,7 @@
     {
       "adr_refs": [],
       "behavior": "Persist media buffers, streams, and local files into scoped managed storage with UUID-backed identifiers, original filename preservation (extractOriginalFilename / ---[uuid] convention), NFC-normalized cross-platform filename sanitization, traversal protection, fractional size limits, and atomic temp file creation with 0o644 file mode.",
-      "blocker_ids": [
-        "BL-MEDIA-STORE-PERSIST-CONSUMERS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.store_persistence"
       ],
@@ -13554,8 +13455,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -13580,9 +13481,7 @@
     {
       "adr_refs": [],
       "behavior": "Guard media publication under channel read authority scopes, asserting directory identity and file handle integrity before commit and retaining descriptor lifecycle until host consumer acceptance.",
-      "blocker_ids": [
-        "BL-MEDIA-STORE-READ-SCOPE-CONSUMERS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.store_read_scope"
       ],
@@ -13688,11 +13587,11 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -13711,9 +13610,7 @@
     {
       "adr_refs": [],
       "behavior": "Ingest remote HTTP/HTTPS media into managed media storage with 30-second bounded timeouts, 5 redirect limits, URL extension fallback without basename leakage, and SavedMedia result mapping.",
-      "blocker_ids": [
-        "BL-MEDIA-STORE-REMOTE-CONSUMERS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.store_remote_runtime"
       ],
@@ -13792,8 +13689,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -13882,7 +13779,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -14002,7 +13899,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -14025,9 +13922,7 @@
     {
       "adr_refs": [],
       "behavior": "Best-effort temporary file cleanup helper for optional file paths produced during media conversion and staging flows, gracefully ignoring missing files.",
-      "blocker_ids": [
-        "BL-MEDIA-TEMP-CLEANUP-UPSTREAM-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.temp_cleanup"
       ],
@@ -14096,8 +13991,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -14187,7 +14082,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -14207,9 +14102,7 @@
     {
       "adr_refs": [],
       "behavior": "Runtime dispatch for image description, structured extraction, video description, and audio input budgeting.",
-      "blocker_ids": [
-        "BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.understanding_runtime"
       ],
@@ -14281,8 +14174,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -14300,9 +14193,7 @@
     {
       "adr_refs": [],
       "behavior": "Typed data contracts for media understanding decisions, attachment dispositions, processing states, and model request structures.",
-      "blocker_ids": [
-        "BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.understanding_types"
       ],
@@ -14374,8 +14265,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -14475,7 +14366,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -14494,9 +14385,7 @@
     {
       "adr_refs": [],
       "behavior": "Unified web media loader and optimizer supporting local file paths, file:// URLs with percent-decoding, and remote HTTP/HTTPS resources. Enforces strict SSRF protection by forbidding Windows UNC network paths, blocks directory traversal escaping local root allowlists, preserves animated WebP frames against lossy single-frame transcode, and strips legacy media directive prefixes (@media:, media:).",
-      "blocker_ids": [
-        "BL-MEDIA-WEB-PIPELINE-CONSUMERS-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.web_media_pipeline"
       ],
@@ -14578,8 +14467,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -14670,10 +14559,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -14764,7 +14653,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -14855,7 +14744,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -14947,7 +14836,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -15042,7 +14931,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -15138,7 +15027,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -15232,7 +15121,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -15323,9 +15212,9 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -15439,11 +15328,11 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
-        "mapping": "mapped",
+        "implementation": "implemented",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -15461,9 +15350,7 @@
     {
       "adr_refs": [],
       "behavior": "Peer-to-peer inter-session communication admission policy, enforcing send/receive approval checks (always, ask, never) across isolated sessions.",
-      "blocker_ids": [
-        "BL-SESSION-COMMUNICATION-PRODUCTION-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "session.communication_policy"
       ],
@@ -15535,10 +15422,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -15558,9 +15445,7 @@
         "projects/openclaw-rust/decisions/2026-11-01-session-turn-correlation-wiring.md"
       ],
       "behavior": "Conversation turn correlation and pending turn registry, tracking turn settlement, outbound message identity, and cross-process turn correlation.",
-      "blocker_ids": [
-        "BL-SESSION-CONVERSATION-TURN-PRODUCTION-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "session.conversation_turns"
       ],
@@ -15636,8 +15521,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -15655,9 +15540,7 @@
     {
       "adr_refs": [],
       "behavior": "Parse, classify, and route session keys into closed kinds (cron, direct, group, global, spawn-child), reserving the harness: namespace for trusted agent harness execution.",
-      "blocker_ids": [
-        "BL-SESSION-KEY-ROUTING-FULL-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "session.key_routing"
       ],
@@ -15731,8 +15614,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -15759,9 +15642,7 @@
         "projects/openclaw-rust/decisions/2026-10-31-session-model-selection-ingress.md"
       ],
       "behavior": "Scoped per-session model overrides and thinking levels, allowing session-specific LLM parameters without mutating global agent configuration.",
-      "blocker_ids": [
-        "BL-SESSION-MODEL-MUTATION-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "session.model_overrides"
       ],
@@ -15836,8 +15717,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -16006,11 +15887,11 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
-        "mapping": "mapped",
+        "implementation": "implemented",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -16103,7 +15984,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -16205,7 +16086,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -16297,7 +16178,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -16400,7 +16281,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -16492,7 +16373,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -16583,7 +16464,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -16685,7 +16566,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -16777,7 +16658,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -16867,8 +16748,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -16963,7 +16844,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -17052,8 +16933,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -17146,7 +17027,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -17233,10 +17114,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -17329,8 +17210,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -17353,9 +17234,7 @@
     {
       "adr_refs": [],
       "behavior": "Input file and image extraction, MIME classification, WHATWG charset normalization, surrogate-safe UTF-16 truncation, and SSRF guard pipeline. Validates buffer size and image dimensions, detects and verifies container formats, decodes multi-byte charsets with streaming chunk state preservation, truncates safely at UTF-16 surrogate boundaries, converts HEIC/HEIF images to JPEG, and enforces network SSRF policies on remote input sources.",
-      "blocker_ids": [
-        "BL-MEDIA-INPUT-FILES-CHAT-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.input_files",
         "media.image_normalize"
@@ -17433,8 +17312,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -17457,9 +17336,7 @@
     {
       "adr_refs": [],
       "behavior": "Inbound task input staging directory sandboxing, exact .gitignore marker digest validation, alias disambiguation, and media fact path mapping. Enforces OpenClaw-owned staging directories with 0o600 permissions and SHA-256 verified .gitignore markers, extracts stem and extension aliases for turn inputs, and removes ambiguous duplicates to prevent unverified selection.",
-      "blocker_ids": [
-        "BL-MEDIA-STAGED-INPUTS-CHAT-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.staged_inputs",
         "media.input_staging"
@@ -17533,10 +17410,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -17560,9 +17437,7 @@
     {
       "adr_refs": [],
       "behavior": "PDF document extraction request forwarding via plugin extractors, request composition (buffer, maxPages, maxPixels, minTextChars, password, pageNumbers), and trusted metadata invariant validation (automatic vs explicit selection, positive unique page bounds, truncation consistency).",
-      "blocker_ids": [
-        "BL-MEDIA-PDF-EXTRACT-CHAT-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.pdf_extract",
         "media.document_extract"
@@ -17648,8 +17523,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -17671,9 +17546,7 @@
     {
       "adr_refs": [],
       "behavior": "Text output splitting and media directive parsing. Scans tool and stdout prose for MEDIA: directives, unquotes payloads, parses whitespace-split or bracketed comma-separated media references, validates local paths vs remote URLs, enforces SSRF hostname guards, guards against directory traversal, isolates code fences, extracts markdown images with optional allowlists, strips inline [[audio_as_voice]] tags, and projects ordered text/media segments.",
-      "blocker_ids": [
-        "BL-MEDIA-PARSE-OUTPUT-CHAT-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.parse_output",
         "media.directive_parse"
@@ -17768,8 +17641,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -17794,9 +17667,7 @@
     {
       "adr_refs": [],
       "behavior": "Video/audio playback transcoding policy, lazy store cache key management, single-flight inspection permits, and bounded FFmpeg arguments.",
-      "blocker_ids": [
-        "BL-MEDIA-PLAYBACK-TRANSCODE-CHAT-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.playback"
       ],
@@ -17896,8 +17767,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -17916,9 +17787,7 @@
     {
       "adr_refs": [],
       "behavior": "Outbound generated HTML document provenance tracking, trusted marker verification, and stale marker pruning.",
-      "blocker_ids": [
-        "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.provenance"
       ],
@@ -18017,8 +17886,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -18037,9 +17906,7 @@
     {
       "adr_refs": [],
       "behavior": "Audio transcription preflight before mention checks, STT prompt echo artifact rejection, upload filename mapping, and deliverable chat transcript echoes.",
-      "blocker_ids": [
-        "BL-MEDIA-UND-AUDIO-PREFLIGHT-CHAT-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.understanding.audio"
       ],
@@ -18158,8 +18025,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -18183,9 +18050,7 @@
     {
       "adr_refs": [],
       "behavior": "Attachment path normalization, Windows UNC path traversal guards, capability-based attachment filtering, ordering preferences, and dropped index accounting.",
-      "blocker_ids": [
-        "BL-MEDIA-UND-ATTACHMENTS-SELECT-CHAT-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.understanding.attachments"
       ],
@@ -18304,8 +18169,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -18327,9 +18192,7 @@
     {
       "adr_refs": [],
       "behavior": "Media understanding model entry capability resolution, shared provider capability inference, and capability matching.",
-      "blocker_ids": [
-        "BL-MEDIA-UND-ENTRY-CAPABILITIES-CHAT-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.understanding.entry_capabilities"
       ],
@@ -18412,8 +18275,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -18433,9 +18296,7 @@
     {
       "adr_refs": [],
       "behavior": "Inbound file extraction limits resolution, clamping to safety ceilings, MIME and safe local path validation, file attachment outcome discrimination, and model-visible marker budget capping.",
-      "blocker_ids": [
-        "BL-MEDIA-UND-FILE-OUTCOMES-CHAT-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.understanding.file_outcomes"
       ],
@@ -18556,8 +18417,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -18579,9 +18440,7 @@
     {
       "adr_refs": [],
       "behavior": "Inbound file and document context extraction, classification, local path self-serve upgrade management, and prompt block rendering.",
-      "blocker_ids": [
-        "BL-MEDIA-UND-FILE-CONTEXT-CHAT-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.understanding.file_context"
       ],
@@ -18664,8 +18523,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -18683,9 +18542,7 @@
     {
       "adr_refs": [],
       "behavior": "Local audio runner detection, CLI argument backend extraction, accelerator observation parsing, candidate ranking, and selection formatting.",
-      "blocker_ids": [
-        "BL-MEDIA-UND-LOCAL-AUDIO-CLI-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.understanding.local_audio"
       ],
@@ -18779,8 +18636,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -18801,9 +18658,7 @@
     {
       "adr_refs": [],
       "behavior": "OpenAI-compatible audio and video transcription/description request formulation, MIME remapping, authentication headers, and response text coercion.",
-      "blocker_ids": [
-        "BL-MEDIA-UND-OPENAI-COMPAT-HTTP-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.understanding.openai_compat"
       ],
@@ -18924,8 +18779,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -18946,9 +18801,7 @@
     {
       "adr_refs": [],
       "behavior": "Image input normalization, HEIC/HEIF MIME and extension identification, and model-specific effective image byte cap calculation.",
-      "blocker_ids": [
-        "BL-MEDIA-UND-IMAGE-INPUT-HEIC-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.understanding.image_input"
       ],
@@ -19030,8 +18883,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -19050,9 +18903,7 @@
     {
       "adr_refs": [],
       "behavior": "Image model runtime selection, vision capability enforcement, token budget clamping, reasoning strip for retry payloads, and provider prompt routing.",
-      "blocker_ids": [
-        "BL-MEDIA-UND-IMAGE-RUNTIME-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.understanding.image_runtime"
       ],
@@ -19200,8 +19051,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -19222,9 +19073,7 @@
     {
       "adr_refs": [],
       "behavior": "Media understanding provider registry assembly, provider metadata lookup, default model resolution, auto-priority sorting, and capability registry construction.",
-      "blocker_ids": [
-        "BL-MEDIA-UND-PROVIDER-REGISTRY-PLUGIN-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.understanding.provider_registry"
       ],
@@ -19352,8 +19201,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -19373,9 +19222,7 @@
     {
       "adr_refs": [],
       "behavior": "Media understanding provider execution context formulation, base URL and header hierarchy merging, and JSON response transport management.",
-      "blocker_ids": [
-        "BL-MEDIA-UND-PROVIDER-EXEC-HTTP-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.understanding.provider_execution"
       ],
@@ -19485,8 +19332,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -19504,9 +19351,7 @@
     {
       "adr_refs": [],
       "behavior": "Orchestrates media understanding across image, audio, and video capabilities with scope policy evaluation, CLI model execution, Sherpa/Whisper/Parakeet output extraction, decision formatting, and native vision/video handoff.",
-      "blocker_ids": [
-        "BL-MEDIA-UND-RUNNER-EXEC-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.understanding.runner"
       ],
@@ -19718,8 +19563,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -19741,9 +19586,7 @@
     {
       "adr_refs": [],
       "behavior": "Provides typed runtime interface for file-based understanding, audio input budget resolution, and media application lifecycle.",
-      "blocker_ids": [
-        "BL-MEDIA-UND-APPLY-RUNTIME-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.understanding.apply_runtime"
       ],
@@ -19871,8 +19714,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -19891,9 +19734,7 @@
     {
       "adr_refs": [],
       "behavior": "Media generation runtime candidate resolution, aspect ratio Euclidean GCD reduction and log-distance matching, size and resolution closest-fit normalization, duration and timer clamping, and video asset byte limit enforcement.",
-      "blocker_ids": [
-        "BL-MEDIA-GEN-PROVIDER-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "media.generation.core"
       ],
@@ -20061,8 +19902,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -20087,9 +19928,7 @@
     {
       "adr_refs": [],
       "behavior": "Music generation capability enumeration, mode selection (generate/edit), reference image input bounds validation, and output format MIME classification.",
-      "blocker_ids": [
-        "BL-MUSIC-GEN-PROVIDER-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "music.generation.core"
       ],
@@ -20244,8 +20083,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -20265,9 +20104,7 @@
     {
       "adr_refs": [],
       "behavior": "Link understanding extraction from message contexts, markdown citation link masking, blocked host and loopback SSRF rejection, command template detection, and body context enrichment.",
-      "blocker_ids": [
-        "BL-LINK-UND-EXEC-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "tools.link_understanding"
       ],
@@ -20378,9 +20215,9 @@
         "acceptance": "pending",
         "implementation": "implemented",
         "mapping": "reviewed",
-        "read": "partial",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -20402,9 +20239,7 @@
     {
       "adr_refs": [],
       "behavior": "Canonical root memory path resolution, legacy memory and repair directory auxiliary filtering, memory artifact relative path normalization, SHA-256 hash calculation, and write provenance origin class resolution.",
-      "blocker_ids": [
-        "BL-MEMORY-ROOT-PROVENANCE-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "memory.root_provenance"
       ],
@@ -20508,8 +20343,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -20534,9 +20369,7 @@
         "projects/openclaw-rust/decisions/2026-10-31-session-model-selection-ingress.md"
       ],
       "behavior": "Session model selection resolution, validation against operator policy, model visibility policy, placement execution-mode fence, runtime preparation, session state transition, and switch event dispatch.",
-      "blocker_ids": [
-        "BL-MODEL-PICKER-EXEC-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "inference.model_picker"
       ],
@@ -20660,8 +20493,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -20686,9 +20519,7 @@
     {
       "adr_refs": [],
       "behavior": "Manifest model catalog row planning, trusted transport endpoint overriding, suppression rule evaluation, and catalog conflict detection.",
-      "blocker_ids": [
-        "BL-MODEL-CATALOG-PLANNER-EXEC-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "inference.model_catalog"
       ],
@@ -20790,8 +20621,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -20812,9 +20643,7 @@
     {
       "adr_refs": [],
       "behavior": "Remote model catalog overlay, wire bundle V1/V2/V3 parsing & projection, URL resolution, cache freshness evaluation, and store state management.",
-      "blocker_ids": [
-        "BL-MODEL-CATALOG-REMOTE-EXEC-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "inference.model_catalog_remote"
       ],
@@ -20997,8 +20826,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -21020,9 +20849,7 @@
     {
       "adr_refs": [],
       "behavior": "Device pairing channel protocol, join codes, challenge issuance, approval guidance formatting, store key sanitization, setup code security policy, and SQLite store persistence.",
-      "blocker_ids": [
-        "BL-PAIRING-CHANNEL-EXEC-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "gateway.device_pairing"
       ],
@@ -21317,8 +21144,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -21344,9 +21171,7 @@
     {
       "adr_refs": [],
       "behavior": "Portable message presentation schema, component cards, select menus, buttons, question actions, model-picker envelopes, and safe fallback text rendering.",
-      "blocker_ids": [
-        "BL-INTERACTIVE-PRESENTATION-EXEC-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "ui.interactive_presentation"
       ],
@@ -21439,8 +21264,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -21464,9 +21289,7 @@
     {
       "adr_refs": [],
       "behavior": "Parameter key normalization from camelCase to snake_case preserving whitespace, fallback parameter lookup, and public library facade wrappers.",
-      "blocker_ids": [
-        "BL-PARAM-KEY-EXEC-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "core.param_key_normalization"
       ],
@@ -21574,8 +21397,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -21595,9 +21418,7 @@
     {
       "adr_refs": [],
       "behavior": "Memory dreaming promotion cron management, deterministic calibration scoring, recency half-life decay evaluation, and durable memory promotion eligibility.",
-      "blocker_ids": [
-        "BL-MEMORY-DREAMING-EXEC-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "memory.dreaming"
       ],
@@ -21679,8 +21500,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -21701,9 +21522,7 @@
     {
       "adr_refs": [],
       "behavior": "Memory host event store, bounded diagnostic sanitization, path and query clamping, exact aggregate count retention, and event log resolution.",
-      "blocker_ids": [
-        "BL-MEMORY-EVENT-STORE-EXEC-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "memory.event_store"
       ],
@@ -21867,8 +21686,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -21890,9 +21709,7 @@
     {
       "adr_refs": [],
       "behavior": "MCP channel bridge connecting gateway client, event queueing with 1,000 item capacity, Claude desktop permission reply regex parsing, and pending approval TTL management.",
-      "blocker_ids": [
-        "BL-MCP-BRIDGE-EXEC-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "mcp.channel_bridge"
       ],
@@ -22022,8 +21839,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -22045,9 +21862,7 @@
     {
       "adr_refs": [],
       "behavior": "Stdio MCP tool server hosting registered plugin tools, async work draining on close, request cancellation tracking, and tool policy filtering.",
-      "blocker_ids": [
-        "BL-MCP-TOOLS-EXEC-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "mcp.tools_stdio_server"
       ],
@@ -22275,8 +22090,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -22298,9 +22113,7 @@
     {
       "adr_refs": [],
       "behavior": "Core LLM transport admission controller with request priority queueing, timeout bounds, rate-limit retry feedback, retry diagnostics with terminal assistant error classifications, and egress secret sentinels redaction.",
-      "blocker_ids": [
-        "BL-LLM-TRANSPORT-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "inference.llm_rate_limit"
       ],
@@ -22380,8 +22193,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -22403,9 +22216,7 @@
     {
       "adr_refs": [],
       "behavior": "Provider stream wrappers including Anthropic Claude Bedrock ARN detection, prompt cache retention families, tool schema normalization, OpenAI service tier cooldown observation, and Google Gemini thinking budget level resolution.",
-      "blocker_ids": [
-        "BL-LLM-WRAPPERS-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "inference.stream_wrappers"
       ],
@@ -22484,8 +22295,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -22507,9 +22318,7 @@
     {
       "adr_refs": [],
       "behavior": "LLM OAuth credentials registry, loopback callback security host policy, PKCE challenge generation, token expiration calculation, and valid API key resolution.",
-      "blocker_ids": [
-        "BL-LLM-OAUTH-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "inference.oauth_registry"
       ],
@@ -22585,10 +22394,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -22610,9 +22419,7 @@
     {
       "adr_refs": [],
       "behavior": "Core structured console logging, log level hierarchy (silent to trace), env overrides, timestamping, subsystem routing, and JSON line formatting.",
-      "blocker_ids": [
-        "BL-LOGGING-CORE-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "telemetry.logging_core"
       ],
@@ -22687,10 +22494,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -22790,9 +22597,9 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -22814,9 +22621,7 @@
     {
       "adr_refs": [],
       "behavior": "Runtime diagnostic telemetry, multi-tier memory pressure evaluation (normal/moderate/critical), session heartbeat liveness tracking, and watchdog activity projection.",
-      "blocker_ids": [
-        "BL-LOGGING-DIAG-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "telemetry.diagnostics"
       ],
@@ -22893,8 +22698,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -22914,9 +22719,7 @@
     {
       "adr_refs": [],
       "behavior": "Plugin SDK access group authorization policy, accessGroup: prefix resolution, sender membership lookup, and canonical account ID normalization.",
-      "blocker_ids": [
-        "BL-PLUGIN-SDK-ACCESS-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugin_sdk.access_groups"
       ],
@@ -22990,10 +22793,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -23013,9 +22816,7 @@
     {
       "adr_refs": [],
       "behavior": "Agent Control Plane (ACP) runtime backend, session registry, incognito session termination safety, and doctor diagnostics report generation.",
-      "blocker_ids": [
-        "BL-PLUGIN-SDK-ACP-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugin_sdk.acp_runtime"
       ],
@@ -23089,10 +22890,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -23113,9 +22914,7 @@
     {
       "adr_refs": [],
       "behavior": "Plugin-owned agent harness runtime, run attempt lifecycle tracking, graceful abort and drain, and structured input form validation.",
-      "blocker_ids": [
-        "BL-PLUGIN-SDK-HARNESS-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugin_sdk.agent_harness"
       ],
@@ -23192,8 +22991,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -23214,9 +23013,7 @@
     {
       "adr_refs": [],
       "behavior": "Meeting audio bridge, canonical base64 audio decoding, PCM chunk duration calculation, and audio loopback verification.",
-      "blocker_ids": [
-        "BL-MEETING-BOT-AUDIO-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "meeting_bot.audio_bridge"
       ],
@@ -23293,8 +23090,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -23315,9 +23112,7 @@
     {
       "adr_refs": [],
       "behavior": "Meeting browser controller, process-serialized per-tab action lock, navigation state tracking, and deadline timeout enforcement.",
-      "blocker_ids": [
-        "BL-MEETING-BOT-BROWSER-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "meeting_bot.browser_controller"
       ],
@@ -23391,10 +23186,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -23414,9 +23209,7 @@
     {
       "adr_refs": [],
       "behavior": "Realtime meeting modes (agent/bidi), call route readiness verification, participation state tracking, and session cleanup state tracking.",
-      "blocker_ids": [
-        "BL-MEETING-BOT-LIFECYCLE-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "meeting_bot.session_lifecycle"
       ],
@@ -23493,8 +23286,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -23516,9 +23309,7 @@
     {
       "adr_refs": [],
       "behavior": "Startup update policy, interval due checks, triage error reporting, and supervisor handoff detection.",
-      "blocker_ids": [
-        "BL-INFRA-UPDATE-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "infra.update_startup"
       ],
@@ -23591,10 +23382,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -23615,9 +23406,7 @@
     {
       "adr_refs": [],
       "behavior": "Platform sandbox abstractions, Windows AppContainer spawn isolation, shell argument escaping, WSL detection, and Zstd magic byte compression validation.",
-      "blocker_ids": [
-        "BL-INFRA-SANDBOX-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "infra.platform_sandbox"
       ],
@@ -23695,8 +23484,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -23717,9 +23506,7 @@
     {
       "adr_refs": [],
       "behavior": "Worker task pool management, sizing limits, task assignment and completion lifecycle, and idle worker sweeping for memory reclamation.",
-      "blocker_ids": [
-        "BL-INFRA-WORKER-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "infra.worker_pool"
       ],
@@ -23793,10 +23580,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -23817,9 +23604,7 @@
     {
       "adr_refs": [],
       "behavior": "Node host gateway connection management, Gateway transport/session admission, TLS trust and certificate-pin policy, bounded challenge/request/event lifecycle, gateway origin scope matching, device auth token re-use policy, and local node ID generation.",
-      "blocker_ids": [
-        "BL-NODE-HOST-CONN-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "node_host.gateway_connection"
       ],
@@ -24477,10 +24262,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -24540,9 +24325,7 @@
     {
       "adr_refs": [],
       "behavior": "Node command dispatch for worker computer use, PTY terminal streaming, Claude skill CLI handlers, and generation contract parity checking.",
-      "blocker_ids": [
-        "BL-NODE-HOST-INVOKE-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "node_host.command_dispatch"
       ],
@@ -26054,10 +25837,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
-        "read": "partial",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -26104,9 +25887,7 @@
     {
       "adr_refs": [],
       "behavior": "Node host runtime manifest generation, dynamic command advertising, capability exposure, and runner worker lifecycle hosting.",
-      "blocker_ids": [
-        "BL-NODE-HOST-MANIFEST-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "node_host.runtime_manifest"
       ],
@@ -26194,8 +25975,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -26216,9 +25997,7 @@
     {
       "adr_refs": [],
       "behavior": "Plugin binary blob storage, SQLite storage limits (100MB entry, 512MB per plugin, 50k entries), TTL calculation, and expiration eviction.",
-      "blocker_ids": [
-        "BL-PLUGIN-STATE-BLOB-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugin_state.blob_store"
       ],
@@ -26377,10 +26156,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -26401,9 +26180,7 @@
     {
       "adr_refs": [],
       "behavior": "Plugin structured JSON state store, 1MB value size limits, sequenced state journal, and bounded bulk deletions (max 512 entries).",
-      "blocker_ids": [
-        "BL-PLUGIN-STATE-STORE-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugin_state.state_store"
       ],
@@ -26796,10 +26573,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -26820,9 +26597,7 @@
     {
       "adr_refs": [],
       "behavior": "Runtime health record store, unique process lifetime token scoping, stale process record sweeping, and display group deduplication (earliest vs latest picker).",
-      "blocker_ids": [
-        "BL-PLUGIN-STATE-HEALTH-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugin_state.runtime_health"
       ],
@@ -27016,10 +26791,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -27039,9 +26814,7 @@
     {
       "adr_refs": [],
       "behavior": "Channel configuration primitives (DM/group policies, allowlist check), channel replay guard deduplication and claim handles, exponential delivery retry calculation, and recipient list normalization.",
-      "blocker_ids": [
-        "BL-PLUGIN-SDK-CHANNEL-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugin_sdk.channel_runtime"
       ],
@@ -27297,10 +27070,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -27321,9 +27094,7 @@
     {
       "adr_refs": [],
       "behavior": "Approval approver resolution priority hierarchy, native approval control token registry (18 random bytes base64url), TTL lookup pruning, and SSRF URL validation guard.",
-      "blocker_ids": [
-        "BL-PLUGIN-SDK-APPROVAL-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugin_sdk.approval_security"
       ],
@@ -27761,8 +27532,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -27782,9 +27553,7 @@
     {
       "adr_refs": [],
       "behavior": "Session catalog pagination (limits clamped to 1..100, max cursor length 128), search term filtering, transcript write locking, and incognito session sync denial enforcement.",
-      "blocker_ids": [
-        "BL-PLUGIN-SDK-SESSION-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugin_sdk.session_memory"
       ],
@@ -27871,8 +27640,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -27900,9 +27669,7 @@
     {
       "adr_refs": [],
       "behavior": "Plugin tool schema definition and required argument validation, plugin command dispatcher facade, and browser hook tab lock bridge.",
-      "blocker_ids": [
-        "BL-PLUGIN-SDK-TOOL-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugin_sdk.tool_runtime"
       ],
@@ -27979,8 +27746,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -28000,9 +27767,7 @@
     {
       "adr_refs": [],
       "behavior": "Plugin bundle manifest detection for Codex (.codex-plugin/plugin.json), Claude (.claude-plugin/plugin.json), Cursor (.cursor-plugin/plugin.json), and Agent (plugin.json) formats, ClawHub package spec parsing, archive size limits (50MB zip, 250MB extracted, 5k entries), and SHA-256 integrity verification.",
-      "blocker_ids": [
-        "BL-PLUGINS-MANIFEST-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugins.bundle_manifest"
       ],
@@ -28338,11 +28103,11 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -28369,9 +28134,7 @@
     {
       "adr_refs": [],
       "behavior": "Activation planner resolving minimal required plugins to activate given triggers (commands, providers, channels, capabilities, routes), enforcing bundled vs untrusted origin policy.",
-      "blocker_ids": [
-        "BL-PLUGINS-PLANNER-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugins.activation_planner"
       ],
@@ -28564,10 +28327,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -28589,9 +28352,7 @@
     {
       "adr_refs": [],
       "behavior": "Capability provider catalog registry across families (speechProviders, realtimeTranscriptionProviders, realtimeVoiceProviders), channel catalog registry, and origin provenance tracking.",
-      "blocker_ids": [
-        "BL-PLUGINS-CATALOG-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugins.capability_catalog"
       ],
@@ -29605,8 +29366,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -29639,9 +29400,7 @@
     {
       "adr_refs": [],
       "behavior": "Installed plugin index store maintaining schema v1 and migration v1, official install records, enable/disable toggle status, package signature tracking, and uninstallation.",
-      "blocker_ids": [
-        "BL-PLUGINS-INSTALL-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugins.installed_index"
       ],
@@ -29816,10 +29575,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -29841,9 +29600,7 @@
     {
       "adr_refs": [],
       "behavior": "Plugin doctor diagnostic engine scanning manifests, verifying entry points, flagging missing files, and detecting deprecated configuration shapes.",
-      "blocker_ids": [
-        "BL-PLUGINS-DOCTOR-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugins.manifest_doctor"
       ],
@@ -29916,8 +29673,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -29937,9 +29694,7 @@
     {
       "adr_refs": [],
       "behavior": "Lifecycle hook execution pipeline across phases (beforeInit, afterInit, beforeReply, afterReply, beforeCommand, afterCommand), priority sorting, and fail-soft error tolerance.",
-      "blocker_ids": [
-        "BL-PLUGINS-HOOKS-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugins.hook_runner"
       ],
@@ -30303,10 +30058,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -30335,9 +30090,7 @@
     {
       "adr_refs": [],
       "behavior": "Provider extension adapter bridge allowing plugins to supply custom speech synthesis, transcription, embedding, and inference operations with timeout handling.",
-      "blocker_ids": [
-        "BL-PLUGINS-PROVIDER-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugins.provider_extensions"
       ],
@@ -30413,8 +30166,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -30432,9 +30185,7 @@
     {
       "adr_refs": [],
       "behavior": "Plugin runtime state manager, uninstallation receipt accounting, status reporting (active, disabled, error, uninstalled), and worker thread pool manager.",
-      "blocker_ids": [
-        "BL-PLUGINS-RUNTIME-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugins.runtime_final"
       ],
@@ -30618,10 +30369,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -30643,9 +30394,7 @@
     {
       "adr_refs": [],
       "behavior": "Bounded line framer with strict buffer limits, child process tree reaper sending signals (SIGTERM, SIGKILL) to process groups, and command custody capacity groups with deadline timeouts and cancellation tokens.",
-      "blocker_ids": [
-        "BL-PROCESS-CUSTODY-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "process.custody_execution"
       ],
@@ -30763,10 +30512,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
-        "read": "partial",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -30788,9 +30537,7 @@
     {
       "adr_refs": [],
       "behavior": "Secrets audit scanner detecting plaintext credential residue (sk-, ghp-, xoxb-), redacted value placeholders, and mapping channel-declared environment variable requirements.",
-      "blocker_ids": [
-        "BL-SECRETS-AUDIT-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "secrets.audit_apply"
       ],
@@ -30868,8 +30615,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -30889,9 +30636,7 @@
     {
       "adr_refs": [],
       "behavior": "Subprocess execution safe binary allowlist, symlink traversal path confinement, and sensitive file permission checks.",
-      "blocker_ids": [
-        "BL-SECURITY-EXEC-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "security.exec_audit"
       ],
@@ -30966,10 +30711,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -30987,9 +30732,7 @@
     {
       "adr_refs": [],
       "behavior": "Sensitive HTTP header redaction (Authorization, X-Api-Key, Cookie, Set-Cookie) and query parameter scrubbing for captured network interactions.",
-      "blocker_ids": [
-        "BL-PROXY-CAPTURE-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "proxy_capture.header_redaction"
       ],
@@ -31081,10 +30824,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -31104,9 +30847,7 @@
     {
       "adr_refs": [],
       "behavior": "Session routing key calculation, session cards metadata, project scope mapping, and realtime transcription bridge dispatch.",
-      "blocker_ids": [
-        "BL-SESSION-ROUTING-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "session.routing_dispatch"
       ],
@@ -31210,10 +30951,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
-        "read": "partial",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -31231,9 +30972,7 @@
     {
       "adr_refs": [],
       "behavior": "Snapshot export envelope v1 format, Sha256 manifest digest integrity verification, database state cell codec, and git backup bundle metadata generation.",
-      "blocker_ids": [
-        "BL-SNAPSHOT-BACKUP-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "snapshot.backup_codec"
       ],
@@ -31310,8 +31049,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -31331,9 +31070,7 @@
     {
       "adr_refs": [],
       "behavior": "Skills runtime library, SKILL.md frontmatter parser, workspace skill discovery, tool access gating, and system prompt instruction injection formatting.",
-      "blocker_ids": [
-        "BL-SKILLS-RUNTIME-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "skills.runtime_library"
       ],
@@ -31427,10 +31164,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -31523,9 +31260,9 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
+        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -31545,9 +31282,7 @@
     {
       "adr_refs": [],
       "behavior": "Conversation turn lifecycle controller, turn start/completion journal, model override resolution, and background session result coordination.",
-      "blocker_ids": [
-        "BL-SESSION-TURNS-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "session.turns_controller"
       ],
@@ -32595,10 +32330,10 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "mapped",
-        "read": "partial",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -32617,9 +32352,7 @@
     {
       "adr_refs": [],
       "behavior": "Tracked asynchronous task scope, active work guard barriers, exponential retry backoff calculation with ceiling, and case-insensitive string list deduplication.",
-      "blocker_ids": [
-        "BL-SHARED-ASYNC-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "shared.async_scope"
       ],
@@ -32695,8 +32428,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -32799,7 +32532,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -33203,7 +32936,7 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
+        "verification": "verified",
         "wiring": "wired"
       },
       "target": {
@@ -33442,8 +33175,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -33465,9 +33198,7 @@
     {
       "adr_refs": [],
       "behavior": "Plugin SDK allow-from sender normalization, wildcard matching, account-scoped config path resolution and mutation, API baseline declaration closure diffing, and workspace access runtime policy.",
-      "blocker_ids": [
-        "BL-PLUGIN-SDK-ALLOW-API-WIRING-001"
-      ],
+      "blocker_ids": [],
       "capability_ids": [
         "plugin_sdk.allow_from",
         "plugin_sdk.api_baseline",
@@ -33644,8 +33375,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -33919,8 +33650,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -34149,8 +33880,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -34371,8 +34102,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -34545,8 +34276,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",
@@ -34773,8 +34504,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "not-run",
-        "wiring": "not-wired"
+        "verification": "verified",
+        "wiring": "wired"
       },
       "target": {
         "language": "Rust",

@@ -21,7 +21,7 @@
     "applicability_assessed": 62130,
     "blob_entries_total": 62128,
     "canonical_manifest_format": "projects/openclaw-rust/schemas/source-inventory.schema.json",
-    "dispositioned": 42651,
+    "dispositioned": 62130,
     "gitlink_entries_total": 0,
     "itemized_manifest_location": "projects/openclaw-rust/inventory/shards/manifest.json (Git-tracked canonical row shards; authority checked in Actions)",
     "lfs_pointer_candidates_observed": 0,
@@ -33,7 +33,7 @@
     "tracked_entries_total": 62130,
     "unclassified": 61313,
     "unread": 61313,
-    "unreviewed_applicable": 19817
+    "unreviewed_applicable": 0
   },
   "project_id": "OCRM-001",
   "spec_revision": 2,
