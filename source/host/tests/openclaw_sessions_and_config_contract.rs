@@ -424,7 +424,11 @@ fn test_provider_review_owner_exposes_single_claim_host_capability() {
 
 #[test]
 fn test_session_admission_rejects_rebound_owner_identity() {
-    let owner_source = include_str!("../src/extensions/session/production.rs");
+    let owner_source = format!(
+        "{}\n{}",
+        include_str!("../src/extensions/session/production.rs"),
+        include_str!("../src/extensions/session/ocrm_production_admission.rs"),
+    );
     assert!(owner_source.contains("record.session_id != agent_id"));
     assert!(owner_source.contains("let expected_session_key = format!(\"agent:{agent_id}:main\")"));
     assert!(owner_source.contains("record.session_key != expected_session_key"));
@@ -790,7 +794,11 @@ fn test_compaction_owner_rolls_back_when_commit_fails() {
 
 #[test]
 fn test_session_admission_creation_rechecks_create_race_identity() {
-    let owner_source = include_str!("../src/extensions/session/production.rs");
+    let owner_source = format!(
+        "{}\n{}",
+        include_str!("../src/extensions/session/production.rs"),
+        include_str!("../src/extensions/session/ocrm_production_admission.rs"),
+    );
     let ensure = owner_source
         .split("fn ensure_main_session_work_admission_locked(")
         .nth(1)
