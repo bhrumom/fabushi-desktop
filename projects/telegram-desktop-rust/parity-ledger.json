@@ -13300,15 +13300,12 @@
         "source/product/fabushi/fabushi-account-service.ts",
         "source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs",
         "source/host/src/extensions/auth/auth_service.rs",
-        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
         "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs"
       ],
       "fabushi_target_symbols": [
         "telegramStorageSecretName",
         "FabushiAuthService::telegramStorageKey",
         "NativeCredential::telegram_storage_key",
-        "TelegramClientLease",
-        "TelegramClientHandoff",
         "open_platform_telegram_client",
         "create_feature_host -> HostCreateConfig.telegram_client_id"
       ],
@@ -13488,7 +13485,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral account/session/storage lifecycle responsibility mapped from fixed-U Telegram Desktop main_account.cpp; implementation is source-neutral Fabushi TypeScript/Rust and does not copy the upstream C++ account implementation.",
-      "notes": "Stage A implementation only. The adjacent fixed-U storage_account.cpp@afe6f61af833fd32ba02a3bd8a48f6801cb583d5 was read as supporting encrypted-local-storage context. This row does not claim either upstream file fully semantically closed and does not decrement global unknown/unread counters.\n2026-11-02 independent authored-case review at 2fd8d7623a1cfa00b09e90a2d81535c6550425df: previous implementation_status=implemented; current aggregate stage=mapped. source_analysis_path does not exist at exact H; correct or recover the real source-analysis evidence before source-review acceptance. The inspected tests do not prove the whole account -> OS key -> Host lease -> non-owning ConversationProvider chain through restart/account switch. telegram_renderer_auth_contract_has_no_application_credential_parameters tests local literal arrays only and is not used as production schema/wiring evidence. Existing source/implementation history and planned case IDs are retained; these references assert inspected test bodies only, not current-H execution or ACCEPT.",
+      "notes": "FMEP-EXIT-01 E2 (2026-11-04): removed retained legacy crate mahayana-telegram from targets; dropped symbols only provable there: TelegramClientLease, TelegramClientHandoff. Stage A implementation only. The adjacent fixed-U storage_account.cpp@afe6f61af833fd32ba02a3bd8a48f6801cb583d5 was read as supporting encrypted-local-storage context. This row does not claim either upstream file fully semantically closed and does not decrement global unknown/unread counters.\n2026-11-02 independent authored-case review at 2fd8d7623a1cfa00b09e90a2d81535c6550425df: previous implementation_status=implemented; current aggregate stage=mapped. source_analysis_path does not exist at exact H; correct or recover the real source-analysis evidence before source-review acceptance. The inspected tests do not prove the whole account -> OS key -> Host lease -> non-owning ConversationProvider chain through restart/account switch. telegram_renderer_auth_contract_has_no_application_credential_parameters tests local literal arrays only and is not used as production schema/wiring evidence. Existing source/implementation history and planned case IDs are retained; these references assert inspected test bodies only, not current-H execution or ACCEPT.",
       "test_execution_evidence": []
     },
     {
@@ -13572,7 +13569,6 @@
         "source/mahayana/mahayana-rs/providers/telegram-storage/src/sqlite.rs",
         "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
         "source/mahayana/mahayana-rs/providers/telegram-runtime/src/lib.rs",
-        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
         "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
         "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs"
       ],
@@ -13611,7 +13607,7 @@
       ],
       "service_owner": "Existing Fabushi account/platform-login owner + embedded Telegram runtime; no separate Telegram auth service.",
       "deployment_evidence": [],
-      "implementation_status": "implemented",
+      "implementation_status": "mapped",
       "coverage_disposition": "rewritten",
       "blockers": [
         "Stage B executable build/unit/contract/integration/packaged validation has not run.",
@@ -13771,7 +13767,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral account/session authorization responsibility is mapped from fixed-U Telegram Desktop main_account.cpp plus exact fixed-U MTProto API schema declarations in Telegram/SourceFiles/mtproto/scheme/api.tl@8319b7df634d145390c299404129fd161a5dbd2a. Implementation is source-neutral Rust and does not copy the upstream C++ account implementation.",
-      "notes": "Stage A implementation only. Exact fixed-U schema corroborates auth.sentCodeSuccess/auth.Authorization/auth.authorizationSignUpRequired/User constructors. This row does not claim whole-file semantic closure and does not decrement global unknown/unread counters.",
+      "notes": "[FMEP-EXIT-01 legacy-only] FMEP-001 r3 §14: every production entrypoint runs through the legacy TelegramClientLease/embedded Telegram runtime; AppHost now answers feature.auth.telegram* with legacy_telegram_unavailable, so this is not live Fabushi behavior. Corrected implemented->mapped; the applicable account/identity responsibility must be satisfied by FabushiAuthService/native_desktop_session. FMEP-EXIT-01 E2 (2026-11-04): removed retained legacy crate mahayana-telegram from targets. Stage A implementation only. Exact fixed-U schema corroborates auth.sentCodeSuccess/auth.Authorization/auth.authorizationSignUpRequired/User constructors. This row does not claim whole-file semantic closure and does not decrement global unknown/unread counters.",
       "test_execution_evidence": []
     },
     {
@@ -13850,7 +13846,6 @@
         "source/product/fabushi/fabushi-account-service.ts",
         "source/product/fabushi/fabushi-account-service.contract.test.ts",
         "source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs",
-        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
         "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
         "source/shared/rpc/coordinator.ts",
         "frontend/src/production/coordinator-client.ts"
@@ -13860,7 +13855,6 @@
         "normalizeTelegramApplicationCredential",
         "FabushiAuthService::telegramApplicationCredential",
         "NativeCredential::telegram_application_credentials",
-        "TelegramApplicationCredentials",
         "TelegramClientLease::{send_authentication_code,submit_authentication_code,submit_authentication_password,submit_registration}",
         "AppHost::feature_telegram_*",
         "COORDINATOR_METHOD_TABLE feature.auth.telegram*",
@@ -13887,7 +13881,7 @@
       ],
       "service_owner": "Existing Fabushi account/platform-login + embedded Telegram runtime; no new service or sidecar.",
       "deployment_evidence": [],
-      "implementation_status": "implemented",
+      "implementation_status": "mapped",
       "coverage_disposition": "rewritten",
       "blockers": [
         "A real product Telegram application credential value is external configuration and is not committed to the repository.",
@@ -14049,7 +14043,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral login responsibility is anchored to fixed-U telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4 exact intro sources: intro_phone.cpp@ee14ffa7c6f31e171cdcbdfaf627ea9868af1246 (auth.sendCode), intro_code.cpp@2bed39cf0d696ee642e7d18f3f17bec05e8e4489 (auth.signIn), intro_password_check.cpp@d08bf88408b29cb5ec7ed31c4e925074bfb8825e (auth.checkPassword), and intro_signup.cpp@1ba7a38379a6ae2febe615783333fd0822e0bb96 (auth.signUp). The Fabushi implementation is source-neutral and copies no upstream UI/C++ implementation.",
-      "notes": "Stage A implementation only. This row covers the canonical login command/secret boundary and supporting fixed-U intro files without claiming any whole upstream file semantically closed or decrementing global unknown/unread counters. Actual Telegram api_id/api_hash values are external product configuration and are intentionally absent from repository/renderer state.",
+      "notes": "[FMEP-EXIT-01 legacy-only] FMEP-EXIT-01 E2 (2026-11-04): removed retained legacy crate mahayana-telegram from targets; dropped symbols only provable there: TelegramApplicationCredentials; status corrected implemented->mapped because part of the claimed implementation lived only in the legacy crate. Stage A implementation only. This row covers the canonical login command/secret boundary and supporting fixed-U intro files without claiming any whole upstream file semantically closed or decrementing global unknown/unread counters. Actual Telegram api_id/api_hash values are external product configuration and are intentionally absent from repository/renderer state.",
       "test_execution_evidence": []
     },
     {
@@ -14123,7 +14117,6 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
         "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
         "source/shared/rpc/coordinator.ts",
         "frontend/src/production/coordinator-client.ts",
@@ -14157,7 +14150,7 @@
       ],
       "service_owner": "Existing embedded Telegram runtime behind the canonical Fabushi account/platform-login lease; no new service or sidecar.",
       "deployment_evidence": [],
-      "implementation_status": "implemented",
+      "implementation_status": "mapped",
       "coverage_disposition": "rewritten",
       "blockers": [
         "Embedded runtime currently has no protocol builder/command path for auth.resendCode or auth.cancelCode.",
@@ -14317,7 +14310,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral lifecycle/error/backoff responsibility is anchored to fixed-U telegramdesktop/tdesktop exact intro sources: intro_code.cpp@2bed39cf0d696ee642e7d18f3f17bec05e8e4489, intro_password_check.cpp@d08bf88408b29cb5ec7ed31c4e925074bfb8825e, intro_email.cpp@dfb5ceeddeb48ab00773add72e75e0aef8ceb074, intro_phone.cpp@ee14ffa7c6f31e171cdcbdfaf627ea9868af1246 and intro_signup.cpp@1ba7a38379a6ae2febe615783333fd0822e0bb96. The implementation is source-neutral and copies no upstream C++/UI code.",
-      "notes": "Stage A implementation only. This row covers the independently implementable canonical auth state/error/backoff contract. It deliberately does not claim resend/cancel/password-recovery/email-verification remote operations as implemented because the current embedded runtime lacks those protocol primitives. No whole upstream file is claimed semantically closed; unknown/unread/omitted counters remain unchanged. Tests are authored but not executed.",
+      "notes": "[FMEP-EXIT-01 legacy-only] FMEP-001 r3 §14: every production entrypoint runs through the legacy TelegramClientLease/embedded Telegram runtime; AppHost now answers feature.auth.telegram* with legacy_telegram_unavailable, so this is not live Fabushi behavior. Corrected implemented->mapped; the applicable account/identity responsibility must be satisfied by FabushiAuthService/native_desktop_session. FMEP-EXIT-01 E2 (2026-11-04): removed retained legacy crate mahayana-telegram from targets. Stage A implementation only. This row covers the independently implementable canonical auth state/error/backoff contract. It deliberately does not claim resend/cancel/password-recovery/email-verification remote operations as implemented because the current embedded runtime lacks those protocol primitives. No whole upstream file is claimed semantically closed; unknown/unread/omitted counters remain unchanged. Tests are authored but not executed.",
       "test_execution_evidence": []
     },
     {
@@ -14395,21 +14388,18 @@
         "bhrumom/fabushi-platform-core:native/telegram-protocol/src/api.rs",
         "bhrumom/fabushi-platform-core:native/telegram-storage/src/sqlite.rs",
         "bhrumom/fabushi-platform-core:native/telegram-runtime/src/runtime.rs",
-        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
         "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
         "source/shared/rpc/coordinator.ts",
         "frontend/src/production/coordinator-client.ts",
         "source/shared/rpc/coordinator.contract.test.ts",
         "source/mahayana/mahayana-rs/Cargo.toml",
-        "source/mahayana/mahayana-rs/mahayana-telegram/Cargo.toml",
         "source/mahayana/mahayana-rs/providers/telegram-runtime/Cargo.toml",
         "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
         "source/mahayana/mahayana-rs/providers/telegram-protocol/src/srp.rs",
         "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
         "source/mahayana/mahayana-rs/providers/telegram-storage/src/sqlite.rs",
         "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
-        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/lib.rs",
-        "source/mahayana/mahayana-rs/mahayana-telegram/tests/telegram_runtime_composition.rs"
+        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/lib.rs"
       ],
       "fabushi_target_symbols": [
         "build_auth_resend_code/build_auth_cancel_code/build_auth_request_password_recovery/build_auth_check_recovery_password",
@@ -14443,7 +14433,7 @@
       ],
       "service_owner": "Canonical embedded Telegram runtime; no sidecar/provider fallback.",
       "deployment_evidence": [],
-      "implementation_status": "implemented",
+      "implementation_status": "mapped",
       "coverage_disposition": "rewritten",
       "blockers": [
         "Stage B executable build/unit/contract/integration/packaged validation has not run; the static Cargo/dependency and source fusion is not a runtime acceptance result.",
@@ -14628,7 +14618,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral lifecycle/error/backoff responsibility is anchored to fixed-U telegramdesktop/tdesktop exact intro sources: intro_code.cpp@2bed39cf0d696ee642e7d18f3f17bec05e8e4489, intro_password_check.cpp@d08bf88408b29cb5ec7ed31c4e925074bfb8825e, intro_email.cpp@dfb5ceeddeb48ab00773add72e75e0aef8ceb074, intro_phone.cpp@ee14ffa7c6f31e171cdcbdfaf627ea9868af1246 and intro_signup.cpp@1ba7a38379a6ae2febe615783333fd0822e0bb96. The implementation is source-neutral and copies no upstream C++/UI code.",
-      "notes": "Stage A implementation only. The previously open sparse-checkpoint dependency-manifest blocker is statically closed by exact Cargo/path manifests and synchronized provider blobs on desktop commit 43d9d398801f2885da982d106c17a74efb1f9472, with authored-only contracts through 221a661e17f2ad417e349df6604815d3fbfa946f. No build/test/runtime validation has run; validation_status remains not-run and accepted remains false.\n2026-11-02 independent authored-case review at 2fd8d7623a1cfa00b09e90a2d81535c6550425df: previous implementation_status=implemented; current aggregate stage=implemented. No inspected authored case drives a successful resend/email response into active phone_code_hash replacement, cancel clearing the real pending AuthContext, or checkRecoveryPassword remaining WaitPassword. No inspected authored case drives SRP_ID_INVALID -> one explicit refresh -> bounded retry refusal; the classifier and builders alone do not prove it. Existing historical dossier runtime/sparse-manifest blockers require current-source reconciliation; its old no-CI statements are historical, not current execution authority. Existing source/implementation history and planned case IDs are retained; these references assert inspected test bodies only, not current-H execution or ACCEPT.",
+      "notes": "[FMEP-EXIT-01 legacy-only] FMEP-001 r3 §14: every production entrypoint runs through the legacy TelegramClientLease/embedded Telegram runtime; AppHost now answers feature.auth.telegram* with legacy_telegram_unavailable, so this is not live Fabushi behavior. Corrected implemented->mapped; the applicable account/identity responsibility must be satisfied by FabushiAuthService/native_desktop_session. FMEP-EXIT-01 E2 (2026-11-04): removed retained legacy crate mahayana-telegram from targets. Stage A implementation only. The previously open sparse-checkpoint dependency-manifest blocker is statically closed by exact Cargo/path manifests and synchronized provider blobs on desktop commit 43d9d398801f2885da982d106c17a74efb1f9472, with authored-only contracts through 221a661e17f2ad417e349df6604815d3fbfa946f. No build/test/runtime validation has run; validation_status remains not-run and accepted remains false.\n2026-11-02 independent authored-case review at 2fd8d7623a1cfa00b09e90a2d81535c6550425df: previous implementation_status=implemented; current aggregate stage=implemented. No inspected authored case drives a successful resend/email response into active phone_code_hash replacement, cancel clearing the real pending AuthContext, or checkRecoveryPassword remaining WaitPassword. No inspected authored case drives SRP_ID_INVALID -> one explicit refresh -> bounded retry refusal; the classifier and builders alone do not prove it. Existing historical dossier runtime/sparse-manifest blockers require current-source reconciliation; its old no-CI statements are historical, not current execution authority. Existing source/implementation history and planned case IDs are retained; these references assert inspected test bodies only, not current-H execution or ACCEPT.",
       "test_execution_evidence": []
     },
     {
@@ -14709,8 +14699,7 @@
         "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
         "source/mahayana/mahayana-rs/providers/telegram-protocol/src/session.rs",
         "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
-        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
-        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs"
+        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs"
       ],
       "fabushi_target_symbols": [
         "EstablishedSession::invoke_raw",
@@ -14898,7 +14887,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and the corresponding MTProto constructor declarations in Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row records a responsibility slice from session_private.cpp and does not claim whole-file semantic closure, so global unknown/unread counters are intentionally unchanged. Authored tests are not executed; validation_status remains not-run and accepted remains false.\n2026-11-02 recovery round3 current-owner correction at 6660b6516f8936160496496814c298124d09e953: the retained compatibility implementation is not the current Native Human message owner. AppHost has no Telegram lease handoff and the production desktop FeatureHost refuses the old MessagingService route. The current source-neutral owner mapping for this exact protocol obligation remains unresolved; generic native HTTP retry/history behavior is not assumed equivalent. Prior owner: Canonical shared MTProto telegram-network EstablishedSession + telegram-protocol MessageIdGuard, consumed by the existing desktop TelegramClientLease/runtime chain. Prior entrypoints: [\"source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network + providers/telegram-protocol\", \"existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw/send_ping -> bounded bad-message recovery\"]. Prior blockers, retained as historical observations rather than current acquisition state: [\"Stage B executable build/unit/contract/integration/packaged validation has not run.\", \"Broader fixed-U semantic/implementation closure remains open.\", \"Complete Boost/libiconv member enumeration, original-host GitLab blockers, adopted/copied-derived legal closure and independent release ACCEPT remain open.\"]. Protocol122/TCP9 including live handshake/ping/service RPC actually passed at94dcf7a2213808a8ded6baddaf069562d365c6d7/run41513767498; those compatibility results do not establish Native production absorption. Preserve target commits, implementation paths, source identities, legal obligations and all historical evidence. Current state is understood/pending, release blocked, no source or product ACCEPT. See projects/telegram-desktop-rust/evidence/round3-native-owner-recovery-20261102.json. Prior lifecycle_owner (historical): \"Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession production chain.\". Prior composition_root (historical): \"Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition\". Both canonical mapping fields are explicitly reopened with the other current-owner fields; no present Native composition/lifecycle equivalence is assumed. Prior service_owner (historical): \"Canonical embedded Telegram network/session runtime; no external recovery service or provider.\". Prior capability_surface (historical): \"Existing ConversationWorkspace through the same provider/runtime; no new surface\". Prior ui_disposition (historical): \"No UI change. This is transport/session lifecycle inside the existing embedded Telegram runtime used by canonical Fabushi account and conversation owners.\". Unchanged protocol behavior/state/concurrency/security contracts and target paths describe the retained compatibility implementation only; they do not claim equivalent Native service behavior or present desktop wiring.",
+      "notes": "FMEP-EXIT-01 E2 (2026-11-04): removed retained legacy crate mahayana-telegram from targets. Stage A implementation only. This row records a responsibility slice from session_private.cpp and does not claim whole-file semantic closure, so global unknown/unread counters are intentionally unchanged. Authored tests are not executed; validation_status remains not-run and accepted remains false.\n2026-11-02 recovery round3 current-owner correction at 6660b6516f8936160496496814c298124d09e953: the retained compatibility implementation is not the current Native Human message owner. AppHost has no Telegram lease handoff and the production desktop FeatureHost refuses the old MessagingService route. The current source-neutral owner mapping for this exact protocol obligation remains unresolved; generic native HTTP retry/history behavior is not assumed equivalent. Prior owner: Canonical shared MTProto telegram-network EstablishedSession + telegram-protocol MessageIdGuard, consumed by the existing desktop TelegramClientLease/runtime chain. Prior entrypoints: [\"source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network + providers/telegram-protocol\", \"existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw/send_ping -> bounded bad-message recovery\"]. Prior blockers, retained as historical observations rather than current acquisition state: [\"Stage B executable build/unit/contract/integration/packaged validation has not run.\", \"Broader fixed-U semantic/implementation closure remains open.\", \"Complete Boost/libiconv member enumeration, original-host GitLab blockers, adopted/copied-derived legal closure and independent release ACCEPT remain open.\"]. Protocol122/TCP9 including live handshake/ping/service RPC actually passed at94dcf7a2213808a8ded6baddaf069562d365c6d7/run41513767498; those compatibility results do not establish Native production absorption. Preserve target commits, implementation paths, source identities, legal obligations and all historical evidence. Current state is understood/pending, release blocked, no source or product ACCEPT. See projects/telegram-desktop-rust/evidence/round3-native-owner-recovery-20261102.json. Prior lifecycle_owner (historical): \"Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession production chain.\". Prior composition_root (historical): \"Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition\". Both canonical mapping fields are explicitly reopened with the other current-owner fields; no present Native composition/lifecycle equivalence is assumed. Prior service_owner (historical): \"Canonical embedded Telegram network/session runtime; no external recovery service or provider.\". Prior capability_surface (historical): \"Existing ConversationWorkspace through the same provider/runtime; no new surface\". Prior ui_disposition (historical): \"No UI change. This is transport/session lifecycle inside the existing embedded Telegram runtime used by canonical Fabushi account and conversation owners.\". Unchanged protocol behavior/state/concurrency/security contracts and target paths describe the retained compatibility implementation only; they do not claim equivalent Native service behavior or present desktop wiring.",
       "test_execution_evidence": []
     },
     {
@@ -14966,8 +14955,7 @@
       "fabushi_target_paths": [
         "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
         "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
-        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
-        "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs"
+        "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs"
       ],
       "fabushi_target_symbols": [
         "EstablishedSession::invoke_raw",
@@ -15142,7 +15130,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. Implementation is source-neutral Rust and copies no upstream C++ queue implementation.",
-      "notes": "[FMEP-EXIT-01 legacy-only] FMEP-001 r3 §14: previously recorded as implemented, but every product target is in the retained legacy Telegram stack, which is not a Fabushi shipping owner. Corrected to mapped; the responsibility must be re-implemented in a Fabushi-owned Session/native messaging/service owner. Prior evidence remains historical provenance. Stage A implementation only. Higher-level propagation of new_session_created for update/difference recovery remains explicitly open and fail-closed because full/slice difference decoding/application is not yet owned end-to-end. This is a responsibility slice, so unknown/unread counts are unchanged; tests are authored but not executed.",
+      "notes": "FMEP-EXIT-01 E2 (2026-11-04): removed retained legacy crate mahayana-telegram from targets. [FMEP-EXIT-01 legacy-only] FMEP-001 r3 §14: previously recorded as implemented, but every product target is in the retained legacy Telegram stack, which is not a Fabushi shipping owner. Corrected to mapped; the responsibility must be re-implemented in a Fabushi-owned Session/native messaging/service owner. Prior evidence remains historical provenance. Stage A implementation only. Higher-level propagation of new_session_created for update/difference recovery remains explicitly open and fail-closed because full/slice difference decoding/application is not yet owned end-to-end. This is a responsibility slice, so unknown/unread counts are unchanged; tests are authored but not executed.",
       "test_execution_evidence": []
     },
     {
@@ -29023,7 +29011,6 @@
         "bhrumom/fabushi-platform-core:docs/specs/fabushi-product-settings-owner.md",
         "bhrumom/fabushi-desktop:docs/specs/fabushi-product-settings-owner.md",
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
-        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
         "bhrumom/fabushi-desktop:source/shared/rpc/main.ts",
         "bhrumom/fabushi-desktop:source/shared/rpc/coordinator-main.ts",
         "bhrumom/fabushi-desktop:source/electron-main/main-edge.ts",
@@ -29304,7 +29291,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Core::SettingsProxy/Core::Settings/localstorage/connection_box/application/proxy_rotation_manager. No upstream C++ copied and no parallel settings store introduced.",
-      "notes": "Task round99/source evidence round130. ProductSettingsOwner v2 is now projected and edited by the current complete Fabushi shipping SettingsDesktopSurface through source-neutral renderer/Main and coordinator MainData allowlists, with exact settings.snapshot/settings.mutateNetworkProxy Host methods. The complete main shipping tree was fused with the checkpoint migration tree in production commit a9cece6754710ab4f91dd9089e3d4eee9ffb4e57 so the UI/IPC paths retain their dependencies. No Telegram-specific UI/store/runtime was added and selected/list remain durable Settings state only; no selected-proxy carrier consumer is connected. UI/IPC/contracts were authored but not run; Stage-B executable validation remains not-run and accepted=false.\n\nHistorical noncanonical markers from 2fd8d7623a1cfa00b09e90a2d81535c6550425df / rows[114]: {\"accepted\":false,\"validation_status\":\"not-run\"}. Structural normalization asserts no new test execution, source acceptance or product acceptance.\n\nTDRP round 3 authored-case review at 2fd8d7623a1cfa00b09e90a2d81535c6550425df: Current source has genuine migration/reopen/list-state tests in the existing ProductSettingsOwner. The historical round130 dossier's then-unwired comment must not override the later implementation now present. This establishes authored owner/state/persistence cases; it is not full native-shell restart/UI/platform acceptance or secret-at-rest qualification. Existing source/implementation/production/history evidence is retained. Case names are authored traceability, not execution or independent acceptance; prior symbolic plans remain historical plans unless a concrete target symbol is cited.\nResumed round18 current readback replaces the former active not-run/old-carrier description. Initial99/run41456371872 actually passed30 subcases, with missing complete permutations recorded as TEST_FLAW. Subsequent independent work at59 already expanded this to16orders/48removals/48repeats/all6 permutations and passed composition12/Native7; that implementation is retained unchanged. Settings17 typed calls cover15 variants; compatibility, invalid input, failed-write/recovery and subprocess restart passed within that bounded harness. Full Native proxy transport/UI/platform/secret-at-rest/independent acceptance remain open. Original source/counters and historical records stay unchanged. projects/telegram-desktop-rust/evidence/round18-current-host-features-and-delivery.json\n\nRound19 resumed full-log verification closes the requested six-permutation execution evidence at exact94dcf7a while preserving current ProductSettingsOwner, retained data and all other responsibility fields. Complete Native profile consumption, full Settings/platform/security/upgrade/rollback and independent ACCEPT are not inferred from the matrix. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json",
+      "notes": "FMEP-EXIT-01 E2 (2026-11-04): removed retained legacy crate mahayana-telegram from targets. Task round99/source evidence round130. ProductSettingsOwner v2 is now projected and edited by the current complete Fabushi shipping SettingsDesktopSurface through source-neutral renderer/Main and coordinator MainData allowlists, with exact settings.snapshot/settings.mutateNetworkProxy Host methods. The complete main shipping tree was fused with the checkpoint migration tree in production commit a9cece6754710ab4f91dd9089e3d4eee9ffb4e57 so the UI/IPC paths retain their dependencies. No Telegram-specific UI/store/runtime was added and selected/list remain durable Settings state only; no selected-proxy carrier consumer is connected. UI/IPC/contracts were authored but not run; Stage-B executable validation remains not-run and accepted=false.\n\nHistorical noncanonical markers from 2fd8d7623a1cfa00b09e90a2d81535c6550425df / rows[114]: {\"accepted\":false,\"validation_status\":\"not-run\"}. Structural normalization asserts no new test execution, source acceptance or product acceptance.\n\nTDRP round 3 authored-case review at 2fd8d7623a1cfa00b09e90a2d81535c6550425df: Current source has genuine migration/reopen/list-state tests in the existing ProductSettingsOwner. The historical round130 dossier's then-unwired comment must not override the later implementation now present. This establishes authored owner/state/persistence cases; it is not full native-shell restart/UI/platform acceptance or secret-at-rest qualification. Existing source/implementation/production/history evidence is retained. Case names are authored traceability, not execution or independent acceptance; prior symbolic plans remain historical plans unless a concrete target symbol is cited.\nResumed round18 current readback replaces the former active not-run/old-carrier description. Initial99/run41456371872 actually passed30 subcases, with missing complete permutations recorded as TEST_FLAW. Subsequent independent work at59 already expanded this to16orders/48removals/48repeats/all6 permutations and passed composition12/Native7; that implementation is retained unchanged. Settings17 typed calls cover15 variants; compatibility, invalid input, failed-write/recovery and subprocess restart passed within that bounded harness. Full Native proxy transport/UI/platform/secret-at-rest/independent acceptance remain open. Original source/counters and historical records stay unchanged. projects/telegram-desktop-rust/evidence/round18-current-host-features-and-delivery.json\n\nRound19 resumed full-log verification closes the requested six-permutation execution evidence at exact94dcf7a while preserving current ProductSettingsOwner, retained data and all other responsibility fields. Complete Native profile consumption, full Settings/platform/security/upgrade/rollback and independent ACCEPT are not inferred from the matrix. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json",
       "test_execution_evidence": [
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631@59f5fa24827812f78336c464995d161f403dedfb:attempt1:job125494011097:completed/success:composition12/proxy16orders48removals48repeatedNoops/all6permutations; Native7/FeatureHost7/SocialRecovery9/SocialHttp6/Host6/ABI7/CLI3/gatewayExecutable5/gatewayLibrary11/normalization6/futureSalts2/protocol122/TCP9/proxy4/credential1/actualAppHostCopy4; three deliberate copy failures correctly rejected; artifact13173112803 sha256:a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f",
         "round19-resumption-20261102: exact94dcf7a2213808a8ded6baddaf069562d365c6d7/run41513767498 shipping125511939405 composition12 passed; proxy matrix16 ordered subsets/48 removals/48 repeated no-ops, all6 full permutations/18 full-permutation deletions,48 actual per-case markers. This is one existing Rust matrix test, not48 top-level cases. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json"
@@ -29819,7 +29806,6 @@
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
-        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
         "bhrumom/fabushi-platform-core:docs/specs/telegram-socks5-http-selectable-proxy-carrier.md",
         "bhrumom/fabushi-desktop:docs/specs/telegram-socks5-http-selectable-proxy-carrier.md"
       ],
@@ -29832,7 +29818,6 @@
         "resume_auth_key_with_proxy",
         "telegram.applyNetworkProxy",
         "SessionOwner::invalidate_network_transport",
-        "ProductProxySettings::carrier_projection",
         "TelegramClientLease::apply_network_proxy",
         "publish_product_network_proxy",
         "telegram.refreshSpecialConfig",
@@ -29868,7 +29853,7 @@
       ],
       "service_owner": "Existing telegram-network/RuntimeClient only; no new service.",
       "deployment_evidence": [],
-      "implementation_status": "implemented",
+      "implementation_status": "mapped",
       "coverage_disposition": "rewritten",
       "blockers": [
         "Stage B executable validation has not run."
@@ -30062,7 +30047,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
-      "notes": "Task round103/source evidence round134. Canonical ProductSettingsOwner v2 remains the only durable proxy owner and publishes its restored/post-persistence carrier projection through the existing TelegramClientLease. RuntimeClient retains projection-change request/session fencing with reusable auth material preserved. The existing telegram-network owner now implements selectable SOCKS5 and HTTP forward-proxy tunnels before the same MTProto obfuscated/TLS/framing path: SOCKS5 uses the existing direct-NoProxy transient proxy-host resolver and successful-IP promotion; HTTP uses ordinary socket resolution and CONNECT with optional Basic proxy authentication. MTProto and Web carrier paths remain in their existing owners. No carrier failure falls back to direct Telegram transport. Contracts are authored but not run; validation_status=not-run; accepted=false.\n\nHistorical noncanonical markers from 2fd8d7623a1cfa00b09e90a2d81535c6550425df / rows[117]: {\"accepted\":false,\"validation_status\":\"not-run\"}. Structural normalization asserts no new test execution, source acceptance or product acceptance.\n\nTDRP round 3 authored-case review at 2fd8d7623a1cfa00b09e90a2d81535c6550425df: The invalid-projection test supplies a genuine prior-state invariant and real fault. Full projection-change session fencing is not established by the misleadingly broad adjacent test name. Keep authored current-scope binding separate from still-needed seeded session/auth invalidation, live carrier failure and no-direct-fallback behavior. The old FAULT unsupported label is only partially substantiated. Existing source/implementation/production/history evidence is retained. Case names are authored traceability, not execution or independent acceptance; prior symbolic plans remain historical plans unless a concrete target symbol is cited.",
+      "notes": "[FMEP-EXIT-01 legacy-only] FMEP-EXIT-01 E2 (2026-11-04): removed retained legacy crate mahayana-telegram from targets; dropped symbols only provable there: ProductProxySettings::carrier_projection; status corrected implemented->mapped because part of the claimed implementation lived only in the legacy crate. Task round103/source evidence round134. Canonical ProductSettingsOwner v2 remains the only durable proxy owner and publishes its restored/post-persistence carrier projection through the existing TelegramClientLease. RuntimeClient retains projection-change request/session fencing with reusable auth material preserved. The existing telegram-network owner now implements selectable SOCKS5 and HTTP forward-proxy tunnels before the same MTProto obfuscated/TLS/framing path: SOCKS5 uses the existing direct-NoProxy transient proxy-host resolver and successful-IP promotion; HTTP uses ordinary socket resolution and CONNECT with optional Basic proxy authentication. MTProto and Web carrier paths remain in their existing owners. No carrier failure falls back to direct Telegram transport. Contracts are authored but not run; validation_status=not-run; accepted=false.\n\nHistorical noncanonical markers from 2fd8d7623a1cfa00b09e90a2d81535c6550425df / rows[117]: {\"accepted\":false,\"validation_status\":\"not-run\"}. Structural normalization asserts no new test execution, source acceptance or product acceptance.\n\nTDRP round 3 authored-case review at 2fd8d7623a1cfa00b09e90a2d81535c6550425df: The invalid-projection test supplies a genuine prior-state invariant and real fault. Full projection-change session fencing is not established by the misleadingly broad adjacent test name. Keep authored current-scope binding separate from still-needed seeded session/auth invalidation, live carrier failure and no-direct-fallback behavior. The old FAULT unsupported label is only partially substantiated. Existing source/implementation/production/history evidence is retained. Case names are authored traceability, not execution or independent acceptance; prior symbolic plans remain historical plans unless a concrete target symbol is cited.",
       "test_execution_evidence": []
     },
     {

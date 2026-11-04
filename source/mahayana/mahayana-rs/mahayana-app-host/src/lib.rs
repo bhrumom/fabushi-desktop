@@ -15,10 +15,6 @@ use mahayana_plugin_runtime::{
     PluginState,
 };
 use mahayana_product::MahayanaProductClient;
-#[cfg(test)]
-use mahayana_telegram::{
-    NetworkProxyEndpointProjection, NetworkProxyKind, NetworkProxyProjection,
-};
 use serde::{Deserialize, Serialize};
 use rusqlite::{params, Connection, OptionalExtension};
 use serde_json::{Value, json};
@@ -166,27 +162,6 @@ impl Default for ProductProxySettings {
 impl ProductProxySettings {
     fn proxy_enabled(&self) -> bool {
         self.mode == ProductProxyMode::Enabled
-    }
-
-    #[cfg(test)]
-    fn carrier_projection(&self) -> NetworkProxyProjection {
-        let selected = self.selected.as_ref().map(|proxy| NetworkProxyEndpointProjection {
-            kind: match proxy.proxy_type {
-                ProductProxyType::Socks5 => NetworkProxyKind::Socks5,
-                ProductProxyType::Http => NetworkProxyKind::Http,
-                ProductProxyType::Mtproto => NetworkProxyKind::Mtproto,
-                ProductProxyType::Web => NetworkProxyKind::Web,
-            },
-            host: proxy.host.clone(),
-            port: proxy.port,
-            user: proxy.user.clone(),
-            password: proxy.password.clone(),
-        });
-        NetworkProxyProjection {
-            enabled: self.proxy_enabled(),
-            selected,
-            try_ipv6: self.try_ipv6,
-        }
     }
 
     fn normalize_preferred_indices(&mut self, indices: Vec<i64>) {
@@ -2285,27 +2260,6 @@ mod telegram_composition_contract_tests {
         std::fs::write(&path, b"{not-json").expect("write malformed contract fixture");
         assert!(ProductSettingsOwner::open(path.clone()).is_err());
         let _ = std::fs::remove_file(path);
-    }
-
-    #[test]
-    fn carrier_projection_is_derived_from_canonical_product_settings_only() {
-        let mut proxy = ProductProxySettings::default();
-        proxy.mode = ProductProxyMode::Enabled;
-        proxy.try_ipv6 = true;
-        proxy.selected = Some(ProductProxyEndpoint {
-            proxy_type: ProductProxyType::Mtproto,
-            host: "proxy.example".into(),
-            port: 443,
-            user: String::new(),
-            password: "00112233445566778899aabbccddeeff".into(),
-        });
-        let projection = proxy.carrier_projection();
-        assert!(projection.enabled);
-        assert!(projection.try_ipv6);
-        let selected = projection.selected.expect("selected carrier projection");
-        assert_eq!(selected.kind, NetworkProxyKind::Mtproto);
-        assert_eq!(selected.host, "proxy.example");
-        assert_eq!(selected.port, 443);
     }
 
     #[test]

@@ -14,9 +14,9 @@ _自动生成：`scripts/tdrp-progress-summary.py`，ledger U=`f985723b552b`_
 
 | 类别 | 行数 | understood | mapped | implemented | verified | release gate passed |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 产品职责（Fabushi owner） | 19 | 0 | 5 | 14 | 0 | 0 |
+| 产品职责（Fabushi owner） | 14 | 0 | 5 | 9 | 0 | 0 |
 | 领域库实现、桌面未接线（FMEP-STATE-02） | 4 | 0 | 4 | 0 | 0 | 0 |
-| 旧 Telegram 栈（FMEP-EXIT-01，不计产品） | 62 | 2 | 60 | 0 | 0 | 0 |
+| 旧 Telegram 栈（FMEP-EXIT-01，不计产品） | 67 | 2 | 65 | 0 | 0 | 0 |
 | 构建/仓库治理支撑 | 11 | 0 | 10 | 1 | 0 | 0 |
 | 上游开发工具（FMEP-TOOL-01，已处置） | 88 | 0 | 71 | 17 | 0 | 0 |
 | **合计** | 184 | | | | | |
@@ -30,7 +30,7 @@ _自动生成：`scripts/tdrp-progress-summary.py`，ledger U=`f985723b552b`_
 | --- | --- | --- | --- |
 | 1 | 后端 PR137（canonical revisions/tombstones、afterId=0 分页）仍为 draft/未合并；Worker/D1 部署未核验 | PR137 合并到后端 main，部署后用 Actions 核验 Worker 身份与 afterId=0 授权分页 | 待指定（后端） |
 | 2 | 同一消息语义有两个写入者：桌面 Session/Transcript 与移动端 `MessagingService` | **已决**：[FBCP-ADR-004](../../docs/adr/FBCP-ADR-004-single-message-owner.md)（Session 为唯一状态 owner，`fabushi_messaging_core` 为纯领域策略库）。剩余：提取纯函数并接入 Session、移动端 snapshot 导入 | 迁移线 |
-| 3 | 旧 Telegram 栈退出 E2–E4 未完成 | E2 重映射 legacy-only 行并删除 `mahayana-telegram`；E3 旧数据迁移/弃用规范；E4 移除 `providers/telegram-*` 与专属 CI（FMEP-EXIT-01） | 待指定 |
+| 3 | 旧 Telegram 栈退出：E1、E2 已完成，E3 规范已定 | E4：重映射指向 `providers/telegram-*` 的账本行后，删除除 storage/core 外的 provider crate 与专属 CI；storage/core 待 E3 退役版本后删除 | 迁移线 |
 | 4 | Round8 修复（UI 209 用例、reconciliation 125 用例、owner 40、actualMac 2+2）尚未在包含修复的 H 上执行 | 在包含修复的 H 上跑 Actions 并全部通过 | 迁移线 |
 | 5 | 来源闭合：unknown/unread 未统计；source_reviews 只有 6/16 complete | 按 FMEP-SOURCE-01 完成身份对照和必需深读 | 迁移线 |
 
@@ -41,7 +41,8 @@ _自动生成：`scripts/tdrp-progress-summary.py`，ledger U=`f985723b552b`_
 - **账本**：25 行旧栈 implemented → mapped（`[FMEP-EXIT-01 legacy-only]`）；4 行只经桌面被拒的 `MessagingService` 的 implemented → mapped（`[FMEP-STATE-02 domain-only wiring gap]`）；88 行上游开发工具标注 `[FMEP-TOOL-01 upstream-development-tooling]`（状态不变，不计产品）；`rebaseline_candidate` 的 review 计数改为由数据推导（6 complete / 10 pending）。
 - **仓库**：删除与 `STATUS.md` 大小写冲突、内容过时的 `status.md`（两处）。
 - **检查（local-feedback，不是证据）**：`cargo check --locked -p mahayana-ffi` 通过；ledger 对 `contracts/parity-ledger.schema.json` 的 Draft 2020-12 校验 0 错误。Actions：not-run。
-- **下一批**：P0 #4（重跑 Round8）→ P0 #2 ADR → 以 Fabushi owner 重做 legacy-only 行中真正需要的可靠性职责（E2）。
+- **续（同日）**：[FBCP-ADR-004](../../docs/adr/FBCP-ADR-004-single-message-owner.md) 已决（Session 为唯一状态 owner，`fabushi_messaging_core` 为纯策略库）；E2 删除 `mahayana-telegram`（`cargo check --locked -p mahayana-app-host --tests` local-feedback 通过），3 行已被硬禁用的 Telegram 账号行和 2 行依赖该 crate 的行改为 mapped；E3 旧数据规范 `docs/specs/fmep-exit-legacy-telegram-data.md`；后端 PR137 安全/迁移审查无阻塞，已补 400/无 body DELETE/发布顺序修复（后端 `ec37941`）。
+- **下一批**：ADR-004 提取+Session 接线批次（进行中）→ E4 重映射与删除 provider crate → Round8 在包含修复的 H 上重跑 → PR137 合并后按规范顺序部署（需显式批准）。
 
 ## 历史记录
 

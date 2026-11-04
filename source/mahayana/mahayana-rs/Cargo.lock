@@ -9055,7 +9055,6 @@ dependencies = [
  "mahayana-native-engine",
  "mahayana-platform-client",
  "mahayana-plugin-runtime",
- "mahayana-telegram",
  "rusqlite",
  "serde",
  "serde_json",
@@ -9673,19 +9672,6 @@ dependencies = [
  "mahayana-conversation",
  "mahayana-core",
  "mahayana-platform-client",
- "serde_json",
- "tokio",
-]
-
-[[package]]
-name = "mahayana-telegram"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "fabushi-telegram-core",
- "fabushi-telegram-runtime",
- "mahayana-conversation",
- "mahayana-core",
  "serde_json",
  "tokio",
 ]
@@ -17184,4 +17170,3 @@ dependencies = [
  "syn 3.0.9",
  "winnow 1.0.4",
 ]
-

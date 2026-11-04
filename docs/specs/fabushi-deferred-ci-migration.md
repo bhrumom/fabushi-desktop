@@ -144,8 +144,8 @@ accepted 状态门的行为证据必须包含现有 authority entrypoint 的子�
 3. **账本口径。** 实现只落在旧栈中的责任行不算 Fabushi 产品实现：`implementation_status` 设为 `mapped`，并在 `notes` 前缀标注 `[FMEP-EXIT-01 legacy-only]`，原 implemented 主张保留在 notes 中作为历史。旧栈中已有的测试只证明旧栈行为，不证明 Fabushi owner。
 4. **退出步骤（按序执行，每步独立可回滚）：**
    - E1（2026-11-04 已完成）：`mahayana-ffi` 不再依赖 `fabushi-telegram-runtime`，`mahayana_runtime_force_link` 不再锚定 `fabushi_telegram_*` 符号。桌面 AppHost/Host/CLI 的 normal 依赖图早已不含旧栈（CI 负例守卫保留）。
-   - E2：把 `legacy-only` 行的目标重映射到选定 Fabushi owner 之后，删除 `mahayana-telegram` crate 及其 workspace 条目（当前仍被账本 target path 引用，validator 要求路径存在）。
-   - E3：为保留的 Telegram SQLite/WAL/SHM 与 secure-store key 编写版本化数据迁移/弃用规范（含回滚窗口），之后移除 `telegram-storage` 读取器的 dev 依赖。
+   - E2（2026-11-04 已完成）：删除 `mahayana-telegram` crate、workspace 条目、app-host 的 dev 依赖和仅测试用的 `carrier_projection`；9 行账本移除该 crate 的 target，3 行实际经 `TelegramClientLease`（已被 AppHost 硬禁用）的 account 行改为 `legacy-only`。
+   - E3（规范已定，2026-11-04）：`docs/specs/fmep-exit-legacy-telegram-data.md`，不迁移产品数据，保留两个稳定版本后改名再删除。
    - E4：从 workspace 和 CI 中移除 `providers/telegram-*` 成员及其专属 job（`native-service-contracts.yml` 中 telegram-protocol/network/runtime 测试步骤），只保留法律声明与研究 provenance。
 5. 在 E4 完成前，旧 crate 名称（`fabushi-telegram-core/runtime` 等）视为待删除的遗留物，不再作为任何新 owner 的命名先例。
 

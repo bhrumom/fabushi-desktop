@@ -24,8 +24,6 @@ rusqlite.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
-# Retained for the original proxy projection compatibility contract only.
-mahayana-telegram.workspace = true
 # Exercise retention with the original encrypted storage reader in Actions.
 fabushi-telegram-storage = { path = "../providers/telegram-storage" }
 
