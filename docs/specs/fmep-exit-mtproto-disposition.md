@@ -400,3 +400,29 @@ This document records the canonical disposition for each upstream MTProto transp
 - **Disposition (`dependency-replaced`):** Retired legacy crate implementation under `FMEP-EXIT-01` E4.
 - **Fabushi owner & behavioral anchor:** `source/host/src/extensions/session/native_messaging.rs` (`fn upload_direct_message_resource(, fn download_direct_message_resource(, MAX_RESOURCE_BYTES`).
 - **Verification status:** `mapped` only — design-level replacement or pending carrier disposition; end-to-end equivalence is not claimed.
+
+### TDRP-R9-ACCOUNT-EMBEDDED-CLIENT-HANDOFF-001
+- **Upstream source (`Telegram/SourceFiles/main/main_account.cpp`):** TDRP-R9-ACCOUNT-EMBEDDED-CLIENT-HANDOFF-001
+- **Disposition (`dependency-replaced`):** Legacy embedded `TelegramClientLease` handoff removed under `FMEP-EXIT-01` E2 / NMR-38; account credential and storage-key authority remain in `FabushiAccountService` and `NativeCredential`.
+- **Fabushi owner & behavioral anchor:** `source/product/fabushi/fabushi-account-service.ts`, `source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs` (`telegramStorageSecretName`, `pub fn telegram_storage_key(&self)`).
+
+### TDRP-R9-ACCOUNT-TELEGRAM-CANONICAL-LOGIN-ENTRY-001
+- **Upstream source (`Telegram/SourceFiles/intro/intro_phone.cpp`):** TDRP-R9-ACCOUNT-TELEGRAM-CANONICAL-LOGIN-ENTRY-001
+- **Disposition (`dependency-replaced`):** Legacy embedded `TelegramClientLease` login RPCs (`feature.auth.telegram*`) retired and fail-closed under `FMEP-EXIT-01` E2 / NMR-38; Fabushi native account authentication is the sole login authority.
+- **Fabushi owner & behavioral anchor:** `source/product/fabushi/fabushi-account-service.ts`, `source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs`, `source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs` (`FABUSHI_TELEGRAM_APPLICATION_CREDENTIAL_SECRET`, `normalizeTelegramApplicationCredential`, `pub fn telegram_application_credentials(&self)`).
+
+### TDRP-R9-ACCOUNT-TELEGRAM-AUTH-LIFECYCLE-ERROR-BACKOFF-001
+- **Upstream source (`Telegram/SourceFiles/intro/intro_code.cpp`):** TDRP-R9-ACCOUNT-TELEGRAM-AUTH-LIFECYCLE-ERROR-BACKOFF-001
+- **Disposition (`dependency-replaced`):** Legacy embedded `TelegramClientLease` auth-backoff state retired and fail-closed at public dispatch under `FMEP-EXIT-01` E2 / NMR-38; coordinator reply validation and fail-closed legacy Telegram auth dispatch remain covered by contracts.
+- **Fabushi owner & behavioral anchor:** `source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs`, `source/shared/rpc/coordinator.ts` (`legacy_telegram_unavailable`, `TelegramAuthorizationStateProjection`, `TelegramAuthIssueProjection`, `TelegramAuthorizationProjection`, `parseCoordinatorTelegramAuthorizationProjection`, `validateCoordinatorReply`).
+
+### TDRP-R9-PROXY-EXTERNAL-MUTATION-CONSUMER-001
+- **Upstream source (`Telegram/SourceFiles/core/external_control.cpp`):** TDRP-R9-PROXY-EXTERNAL-MUTATION-CONSUMER-001
+- **Disposition (`pending`):** External automation proxy command adapter over canonical `ProductSettingsOwner::mutate_network_proxy` (`docs/specs/fabushi-product-settings-owner.md`, `projects/telegram-desktop-rust/evidence/round114-proxy-non-ui-consumers-boundary-20261101.md`).
+- **Verification status:** `mapped` only — pending external-control command adapter; canonical proxy mutation operations (`enum ProductProxyMutation`) live in `source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs`.
+
+### TDRP-R9-PROXY-CALL-CONSUMER-001
+- **Upstream source (`Telegram/SourceFiles/calls/calls_call.cpp`):** TDRP-R9-PROXY-CALL-CONSUMER-001
+- **Disposition (`pending`):** Fixed-U call proxy consumer is intentionally inert (`ProxyData::supportsCalls()` returns false unconditionally); `use_proxy_for_calls` preference is persisted in `ProductProxySettings` (`docs/specs/fabushi-product-settings-owner.md`, `projects/telegram-desktop-rust/evidence/round114-proxy-non-ui-consumers-boundary-20261101.md`).
+- **Verification status:** `mapped` only — documented non-UI consumer boundary in `source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs` (`pub use_proxy_for_calls: bool`).
+

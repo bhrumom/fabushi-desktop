@@ -78,6 +78,60 @@ jobs:
               print(json.dumps(error)[:2048])
           raise SystemExit(1 if errors else 0)
           PY
+      - name: Validate row-level target paths, literal symbols, and single-owner invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, re
+          from pathlib import Path
+          root = Path('.')
+          ledger = json.loads((root / 'projects/telegram-desktop-rust/parity-ledger.json').read_text())
+          errors = []
+          owners = {}
+          parallel_re = re.compile(
+              r'Telegram(Core|Runtime|Provider|Messaging|Search|Contacts|Media|Workspace|ConversationRoot|MessageStore|DraftStore|ReactionStore)',
+              re.IGNORECASE,
+          )
+          for row in ledger['rows']:
+              rid = row.get('responsibility_id', '<unknown>')
+              sap = row.get('source_analysis_path', '')
+              if not sap or ':' in sap or not (root / sap).is_file():
+                  errors.append(f'{rid}: missing or nonlocal source_analysis_path {sap!r}')
+              parallel_text = ' '.join(
+                  filter(None, [row.get('existing_owner'), row.get('composition_root'), row.get('search_provider'), *(row.get('fabushi_target_paths') or [])])
+              )
+              if parallel_re.search(parallel_text):
+                  errors.append(f'{rid}: source-named parallel owner/root detected')
+              tpaths = row.get('fabushi_target_paths') or []
+              tsyms = row.get('fabushi_target_symbols') or []
+              if not tpaths or not tsyms:
+                  errors.append(f'{rid}: empty fabushi_target_paths or fabushi_target_symbols')
+                  continue
+              texts = []
+              for p in tpaths:
+                  if ':' in p or not (root / p).is_file():
+                      errors.append(f'{rid}: missing or nonlocal target path {p!r}')
+                  else:
+                      texts.append((root / p).read_text(errors='replace'))
+              combined = '\n'.join(texts)
+              key_prefix = ','.join(tpaths) + '#'
+              for sym in tsyms:
+                  if sym not in combined:
+                      errors.append(f'{rid}: target symbol not found in target paths: {sym!r}')
+                  k = key_prefix + sym
+                  prior = owners.get(k)
+                  if prior and prior != rid:
+                      errors.append(f'{rid}: duplicate target symbol owner with {prior}: {k}')
+                  owners[k] = rid
+          Path('artifacts/source-review/ledger-targets.json').write_text(
+              json.dumps({'rows_checked': len(ledger['rows']), 'valid': not errors, 'errors': errors}, indent=2) + '\n'
+          )
+          print(f'Row-level target path/symbol errors: {len(errors)} across {len(ledger["rows"])} rows.')
+          for err in errors[:100]:
+              print(err)
+          raise SystemExit(1 if errors else 0)
+          PY
       - run: node --check scripts/validate-tdrp-revision9-authority.mjs
       - name: Preserve exact checker evidence
         if: always()

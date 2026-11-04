@@ -1,0 +1,46 @@
+{
+  "schema": "tdrp-round9-requalification/v1",
+  "date": "2026-11-04",
+  "desktop_repository": "bhrumom/fabushi-desktop",
+  "desktop_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "desktop_commit": "c29c22144847203128766732989ad3e53316374a",
+  "backend_repository": "bhrumom/fabushi-backend",
+  "backend_main_commit": "4e0878d13e3f1de275a78aeaa759c9f8df3fc207",
+  "backend_pr_merged": 137,
+  "github_actions_runs": {
+    "native_service_contracts": {
+      "run_id": 41755914496,
+      "conclusion": "success",
+      "jobs_passed": [
+        "native-message-reconciliation",
+        "desktop-social-owner-behaviors",
+        "native-message-ui",
+        "windows-update-publisher",
+        "native-message-electron",
+        "gateway-peer-durability (windows-2025)",
+        "gateway-peer-durability (ubuntu-24.04)",
+        "native-message-shipping-compile"
+      ]
+    },
+    "tdrp_source_review_contract": {
+      "run_id": 41755956791,
+      "conclusion": "success",
+      "jobs_passed": [
+        "contract",
+        "fixed-source-candidate"
+      ]
+    },
+    "mahayana_workspace_compile_guard": {
+      "run_id": 41755956794,
+      "conclusion": "success",
+      "jobs_passed": [
+        "cargo-check-all-targets"
+      ]
+    }
+  },
+  "completed_architecture_closures": [
+    "FMEP-EXIT-01 E1-E4: Retired legacy mahayana-telegram and providers/telegram-{runtime,network,protocol,media,wasm} crates; mapped 69 MTProto/legacy-auth rows to docs/specs/fmep-exit-mtproto-disposition.md + retained code symbols.",
+    "FBCP-ADR-004 W1: Selected ProductionSessionWorkers as sole stateful message owner and fabushi_messaging_core (native/mahayana-messaging) as shared pure policy library; wired authorize_destination into ProductionSessionWorkers.",
+    "Backend PR #137 merged into bhrumom/fabushi-backend@4e0878d13e3f1de275a78aeaa759c9f8df3fc207 with fail-closed validation and 39/39 green tests."
+  ]
+}

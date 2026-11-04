@@ -1101,31 +1101,39 @@ test('canonical NMR traceability uses current checkout without promoting candida
   const ledger = JSON.parse(await fs.readFile(
     path.join(root, 'projects/telegram-desktop-rust/parity-ledger.json'), 'utf8',
   ));
-  const matching = ledger.rows.filter(row => row.responsibility_id === 'FBCP-NMR-001');
-  assert.equal(matching.length, 1, 'the current canonical NMR responsibility must be unique');
-  const row = matching[0];
-  const [rtm, dossier] = await Promise.all([
-    fs.readFile(path.join(root, 'projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md'), 'utf8'),
-    fs.readFile(path.join(root, row.source_analysis_path), 'utf8'),
-  ]);
+  const expectedNmrIds = [
+    'FBCP-NMR-001',
+    'FBCP-NMR-FORWARD-PANEL-001',
+    'FBCP-NMR-SPARSE-HISTORY-001',
+    'FBCP-NMR-HISTORY-SEARCH-001',
+  ];
+  const rtm = await fs.readFile(
+    path.join(root, 'projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md'), 'utf8',
+  );
   const before = JSON.stringify(ledger);
-  assert.ok(Array.isArray(row.fabushi_target_paths) && row.fabushi_target_paths.length > 0,
-    'target path missing for ' + row.responsibility_id);
-  assert.ok(Array.isArray(row.fabushi_target_symbols) && row.fabushi_target_symbols.length > 0,
-    'target symbol missing for ' + row.responsibility_id);
-  const targetTexts = [];
-  for (const targetPath of row.fabushi_target_paths) {
-    const target = path.join(root, targetPath);
-    assert.ok(await fs.stat(target).then(() => true).catch(() => false),
-      'target path missing: ' + targetPath);
-    targetTexts.push(await fs.readFile(target, 'utf8'));
+  for (const nmrId of expectedNmrIds) {
+    const matching = ledger.rows.filter(row => row.responsibility_id === nmrId);
+    assert.equal(matching.length, 1, 'the canonical NMR responsibility must be unique: ' + nmrId);
+    const row = matching[0];
+    const dossier = await fs.readFile(path.join(root, row.source_analysis_path), 'utf8');
+    assert.ok(Array.isArray(row.fabushi_target_paths) && row.fabushi_target_paths.length > 0,
+      'target path missing for ' + row.responsibility_id);
+    assert.ok(Array.isArray(row.fabushi_target_symbols) && row.fabushi_target_symbols.length > 0,
+      'target symbol missing for ' + row.responsibility_id);
+    const targetTexts = [];
+    for (const targetPath of row.fabushi_target_paths) {
+      const target = path.join(root, targetPath);
+      assert.ok(await fs.stat(target).then(() => true).catch(() => false),
+        'target path missing: ' + targetPath);
+      targetTexts.push(await fs.readFile(target, 'utf8'));
+    }
+    const combinedTarget = targetTexts.join('\n');
+    for (const symbol of row.fabushi_target_symbols) {
+      assert.ok(combinedTarget.includes(symbol),
+        'target symbol ' + symbol + ' not found for ' + row.responsibility_id);
+    }
+    assert.doesNotThrow(() => assertResponsibilityTraceability(row, rtm, dossier));
   }
-  const combinedTarget = targetTexts.join('\n');
-  for (const symbol of row.fabushi_target_symbols) {
-    assert.ok(combinedTarget.includes(symbol),
-      'target symbol ' + symbol + ' not found for ' + row.responsibility_id);
-  }
-  assert.doesNotThrow(() => assertResponsibilityTraceability(row, rtm, dossier));
   assert.throws(
     () => assertNoOpenSourceCandidate(ledger),
     /accepted source accounting cannot contain a rebaseline candidate/,
