@@ -39,10 +39,31 @@ export function formatForwardNotice(
   settlement: readonly ForwardSettlement[],
   roster: readonly ForwardRosterRecipient[] = [],
 ): string {
-  const sentCount = settlement.filter((item) => item.status === "sent").length;
-  // Only explicit sent is success; unknown runtime statuses fail closed.
-  const failedCount = settlement.filter((item) => item.status !== "sent").length;
-  const names = recipientNamesForSettlement(settlement, roster);
+  const grouped = new Map<string, ForwardSettlement[]>();
+  let failedCount = 0;
+  for (const item of settlement) {
+    const id = typeof item?.conversationId === "string" ? item.conversationId : "";
+    if (id.length === 0 || id.trim() !== id) {
+      failedCount += 1;
+      continue;
+    }
+    const existing = grouped.get(id);
+    if (existing == null) grouped.set(id, [item]);
+    else existing.push(item);
+  }
+
+  const sent: ForwardSettlement[] = [];
+  for (const items of grouped.values()) {
+    // Duplicate results for one destination are ambiguous, never extra successes.
+    if (items.length !== 1 || items[0].status !== "sent") {
+      failedCount += 1;
+    } else {
+      sent.push(items[0]);
+    }
+  }
+  // Only explicit sent with a unique, non-empty identity is success.
+  const sentCount = sent.length;
+  const names = recipientNamesForSettlement(sent, roster);
 
   let summary: string;
   if (sentCount === 0) {

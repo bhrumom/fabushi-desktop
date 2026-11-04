@@ -70,7 +70,7 @@ test("missing, blank, duplicate, unrelated, or partially unresolved roster ident
     { roster: [{ id: "c", name: "Alice" }, { id: "c", name: "Mallory" }], settlement: [sent("c")], expected: "Forwarded to 1 conversation." },
     { roster: [{ id: "other", name: "Secret recipient" }], settlement: [sent("human:private-destination")], expected: "Forwarded to 1 conversation." },
     { roster: [{ id: "a", name: "Alpha" }], settlement: [sent("a"), sent("b")], expected: "Forwarded to 2 conversations." },
-    { roster: [{ id: "c", name: "Alice" }], settlement: [sent("c"), sent("c")], expected: "Forwarded to 2 conversations." },
+    { roster: [{ id: "c", name: "Alice" }], settlement: [sent("c"), sent("c")], expected: "No destinations were forwarded; 1 destination still needs attention." },
   ];
   for (const entry of cases) {
     const h = harness(entry.roster);
