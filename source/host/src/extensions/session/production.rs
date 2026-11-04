@@ -304,6 +304,14 @@ impl std::fmt::Display for MiniAppPostError {
 
 impl std::error::Error for MiniAppPostError {}
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct HumanForwardDestination {
+    pub conversation_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub topic_id: Option<String>,
+}
+
 impl ProductionSessionWorkers {
     pub fn production() -> Self {
         Self::production_with_user_time_zone_resolver(Arc::new(|| None))
@@ -3114,6 +3122,28 @@ impl ProductionSessionWorkers {
     fn validate_human_retry_conversation(
         metadata: &serde_json::Value, conversation_id: &str, account: &str,
     ) -> Result<(), String> {
+        let kind = metadata.get("conversationKind").and_then(serde_json::Value::as_str).unwrap_or("human");
+        if kind == "group" || kind == "channel" {
+            let meta_id = metadata.get("conversationId").and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "Conversation metadata missing conversationId".to_string())?;
+            if meta_id != conversation_id {
+                return Err("Conversation identity mismatch".into());
+            }
+            let expected_prefix = if kind == "group" { "group-" } else { "channel-" };
+            if !conversation_id.starts_with(expected_prefix) {
+                return Err("Conversation id prefix mismatch".into());
+            }
+            let participants = metadata.get("participantIds").and_then(serde_json::Value::as_array)
+                .filter(|p| !p.is_empty())
+                .ok_or_else(|| "participants must be non-empty".to_string())?;
+            for p in participants {
+                let s = p.as_str().ok_or_else(|| "participant must be string".to_string())?;
+                if s.trim().is_empty() || s.trim() != s {
+                    return Err("invalid participant string".into());
+                }
+            }
+            return Ok(());
+        }
         let participants = metadata.get("participantIds").and_then(serde_json::Value::as_array)
             .filter(|participants| participants.len() == 2)
             .ok_or_else(|| "Human retry requires exactly the original two participants".to_string())?;
@@ -3128,6 +3158,485 @@ impl ProductionSessionWorkers {
             return Err("Human retry participants conflict with the original conversation identity".into());
         }
         Ok(())
+    }
+
+    pub fn create_group_conversation(
+        &self,
+        group_id: &str,
+        title: &str,
+        participant_ids: &[String],
+        slow_mode_seconds: Option<u32>,
+    ) -> Result<serde_json::Value, String> {
+        let local_human_id = self.local_human_id()?;
+        let trimmed_id = group_id.trim();
+        if trimmed_id.is_empty()
+            || !trimmed_id
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+        {
+            return Err("group conversation id must be non-empty and contain only safe characters".into());
+        }
+        let conversation_id = format!("group-{}", trimmed_id);
+        let mut unique_participants = Vec::new();
+        unique_participants.push(local_human_id.to_string());
+        for id in participant_ids {
+            let trimmed = id.trim();
+            if !trimmed.is_empty() && !unique_participants.iter().any(|p| p == trimmed) {
+                unique_participants.push(trimmed.to_string());
+            }
+        }
+        let serial = self.human_message_lock(&conversation_id)?;
+        let _exclusive = serial
+            .lock()
+            .map_err(|_| "Human conversation serial lock poisoned".to_string())?;
+
+        let db_path = get_native_conversation_db_path(&self.agents_root, &conversation_id)
+            .map_err(|error| error.to_string())?;
+        let key = Self::native_conversation_owner_key(&conversation_id);
+        let cached_owner = self
+            .db_owners
+            .lock()
+            .map_err(|_| "conversation db owner map poisoned".to_string())?
+            .get(&key)
+            .cloned();
+        let owner = match cached_owner {
+            Some(owner) => owner,
+            None => {
+                let conversation_dir = db_path
+                    .parent()
+                    .ok_or_else(|| "native conversation database has no parent".to_string())?;
+                fs::create_dir_all(conversation_dir).map_err(|error| error.to_string())?;
+                Arc::new(
+                    SandAgentDb::open_human_conversation_store(&db_path, self.busy_timeout_ms)
+                        .map_err(|error| error.to_string())?,
+                )
+            }
+        };
+
+        let display_title = if title.trim().is_empty() {
+            trimmed_id
+        } else {
+            title.trim()
+        };
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as i64;
+        let created_at = now_ms as f64;
+        if owner.read_kv("metadata").map_err(|error| error.to_string())?.is_none() {
+            let mut meta_obj = serde_json::json!({
+                "conversationKind": "group",
+                "conversationId": conversation_id,
+                "title": display_title,
+                "localHumanId": local_human_id,
+                "participantIds": unique_participants,
+                "createdAt": created_at,
+                "lastActivityAt": 0.0,
+            });
+            if let Some(slow) = slow_mode_seconds {
+                meta_obj
+                    .as_object_mut()
+                    .unwrap()
+                    .insert("slowModeSeconds".into(), serde_json::json!(slow));
+            }
+            let _ = owner
+                .initialize_human_metadata_if_empty(meta_obj)
+                .map_err(|error| error.to_string())?;
+        }
+
+        let owner_member = fabushi_messaging_core::CommunityMember {
+            actor_id: fabushi_messaging_core::ActorId::new(local_human_id),
+            status: fabushi_messaging_core::MemberStatus::Owner,
+            admin_title: Some("Owner".into()),
+            admin_rights: fabushi_messaging_core::AdminRights {
+                change_info: true,
+                post_messages: true,
+                edit_messages: true,
+                delete_messages: true,
+                ban_members: true,
+                invite_members: true,
+                pin_messages: true,
+                manage_topics: true,
+                manage_calls: true,
+                add_admins: true,
+                remain_anonymous: false,
+            },
+            restrictions: fabushi_messaging_core::MemberRestrictions::default(),
+            joined_at_ms: now_ms,
+            invited_by: None,
+        };
+        if owner
+            .get_conversation_member(local_human_id)
+            .map_err(|e| e.to_string())?
+            .is_none()
+        {
+            owner
+                .upsert_conversation_member(&owner_member, now_ms)
+                .map_err(|e| e.to_string())?;
+        }
+        for pid in &unique_participants {
+            if pid == local_human_id {
+                continue;
+            }
+            if owner
+                .get_conversation_member(pid)
+                .map_err(|e| e.to_string())?
+                .is_none()
+            {
+                let member = fabushi_messaging_core::CommunityMember {
+                    actor_id: fabushi_messaging_core::ActorId::new(pid),
+                    status: fabushi_messaging_core::MemberStatus::Member,
+                    admin_title: None,
+                    admin_rights: fabushi_messaging_core::AdminRights::default(),
+                    restrictions: fabushi_messaging_core::MemberRestrictions::default(),
+                    joined_at_ms: now_ms,
+                    invited_by: Some(fabushi_messaging_core::ActorId::new(local_human_id)),
+                };
+                owner
+                    .upsert_conversation_member(&member, now_ms)
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+
+        {
+            let mut owners = self
+                .db_owners
+                .lock()
+                .map_err(|_| "conversation db owner map poisoned".to_string())?;
+            owners.entry(key).or_insert_with(|| Arc::clone(&owner));
+        }
+
+        let mut result = serde_json::json!({
+            "id": conversation_id,
+            "kind": "group",
+            "title": display_title,
+            "participantIds": unique_participants,
+            "createdAt": created_at,
+        });
+        if let Some(slow) = slow_mode_seconds {
+            result
+                .as_object_mut()
+                .unwrap()
+                .insert("slowModeSeconds".into(), serde_json::json!(slow));
+        }
+        Ok(result)
+    }
+
+    pub fn create_channel_conversation(
+        &self,
+        channel_id: &str,
+        title: &str,
+        participant_ids: &[String],
+    ) -> Result<serde_json::Value, String> {
+        let local_human_id = self.local_human_id()?;
+        let trimmed_id = channel_id.trim();
+        if trimmed_id.is_empty()
+            || !trimmed_id
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+        {
+            return Err("channel conversation id must be non-empty and contain only safe characters".into());
+        }
+        let conversation_id = format!("channel-{}", trimmed_id);
+        let mut unique_participants = Vec::new();
+        unique_participants.push(local_human_id.to_string());
+        for id in participant_ids {
+            let trimmed = id.trim();
+            if !trimmed.is_empty() && !unique_participants.iter().any(|p| p == trimmed) {
+                unique_participants.push(trimmed.to_string());
+            }
+        }
+        let serial = self.human_message_lock(&conversation_id)?;
+        let _exclusive = serial
+            .lock()
+            .map_err(|_| "Human conversation serial lock poisoned".to_string())?;
+
+        let db_path = get_native_conversation_db_path(&self.agents_root, &conversation_id)
+            .map_err(|error| error.to_string())?;
+        let key = Self::native_conversation_owner_key(&conversation_id);
+        let cached_owner = self
+            .db_owners
+            .lock()
+            .map_err(|_| "conversation db owner map poisoned".to_string())?
+            .get(&key)
+            .cloned();
+        let owner = match cached_owner {
+            Some(owner) => owner,
+            None => {
+                let conversation_dir = db_path
+                    .parent()
+                    .ok_or_else(|| "native conversation database has no parent".to_string())?;
+                fs::create_dir_all(conversation_dir).map_err(|error| error.to_string())?;
+                Arc::new(
+                    SandAgentDb::open_human_conversation_store(&db_path, self.busy_timeout_ms)
+                        .map_err(|error| error.to_string())?,
+                )
+            }
+        };
+
+        let display_title = if title.trim().is_empty() {
+            trimmed_id
+        } else {
+            title.trim()
+        };
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as i64;
+        let created_at = now_ms as f64;
+        if owner.read_kv("metadata").map_err(|error| error.to_string())?.is_none() {
+            let meta_obj = serde_json::json!({
+                "conversationKind": "channel",
+                "conversationId": conversation_id,
+                "title": display_title,
+                "localHumanId": local_human_id,
+                "participantIds": unique_participants,
+                "createdAt": created_at,
+                "lastActivityAt": 0.0,
+            });
+            let _ = owner
+                .initialize_human_metadata_if_empty(meta_obj)
+                .map_err(|error| error.to_string())?;
+        }
+
+        let owner_member = fabushi_messaging_core::CommunityMember {
+            actor_id: fabushi_messaging_core::ActorId::new(local_human_id),
+            status: fabushi_messaging_core::MemberStatus::Owner,
+            admin_title: Some("Owner".into()),
+            admin_rights: fabushi_messaging_core::AdminRights {
+                change_info: true,
+                post_messages: true,
+                edit_messages: true,
+                delete_messages: true,
+                ban_members: true,
+                invite_members: true,
+                pin_messages: true,
+                manage_topics: true,
+                manage_calls: true,
+                add_admins: true,
+                remain_anonymous: false,
+            },
+            restrictions: fabushi_messaging_core::MemberRestrictions::default(),
+            joined_at_ms: now_ms,
+            invited_by: None,
+        };
+        if owner
+            .get_conversation_member(local_human_id)
+            .map_err(|e| e.to_string())?
+            .is_none()
+        {
+            owner
+                .upsert_conversation_member(&owner_member, now_ms)
+                .map_err(|e| e.to_string())?;
+        }
+        for pid in &unique_participants {
+            if pid == local_human_id {
+                continue;
+            }
+            if owner
+                .get_conversation_member(pid)
+                .map_err(|e| e.to_string())?
+                .is_none()
+            {
+                let member = fabushi_messaging_core::CommunityMember {
+                    actor_id: fabushi_messaging_core::ActorId::new(pid),
+                    status: fabushi_messaging_core::MemberStatus::Member,
+                    admin_title: None,
+                    admin_rights: fabushi_messaging_core::AdminRights::default(),
+                    restrictions: fabushi_messaging_core::MemberRestrictions::default(),
+                    joined_at_ms: now_ms,
+                    invited_by: Some(fabushi_messaging_core::ActorId::new(local_human_id)),
+                };
+                owner
+                    .upsert_conversation_member(&member, now_ms)
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+
+        {
+            let mut owners = self
+                .db_owners
+                .lock()
+                .map_err(|_| "conversation db owner map poisoned".to_string())?;
+            owners.entry(key).or_insert_with(|| Arc::clone(&owner));
+        }
+
+        Ok(serde_json::json!({
+            "id": conversation_id,
+            "kind": "channel",
+            "title": display_title,
+            "participantIds": unique_participants,
+            "createdAt": created_at,
+        }))
+    }
+
+    pub fn upsert_conversation_topic(
+        &self,
+        conversation_id: &str,
+        topic_id: &str,
+        title: &str,
+        icon: Option<&str>,
+        closed: bool,
+        pinned: bool,
+        hidden: bool,
+    ) -> Result<serde_json::Value, String> {
+        let local_human_id = self.local_human_id()?;
+        let conversation_id = conversation_id.trim();
+        let topic_id = topic_id.trim();
+        let title = title.trim();
+        if conversation_id.is_empty() || topic_id.is_empty() || title.is_empty() {
+            return Err("upsertConversationTopic requires conversationId, topicId, and title".into());
+        }
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|e| e.to_string())?;
+        let kind = metadata.get("conversationKind").and_then(serde_json::Value::as_str).unwrap_or("human");
+        if kind != "group" && kind != "channel" {
+            return Err("upsertConversationTopic is only supported on group or channel conversations".into());
+        }
+        let caller_member = owner.get_conversation_member(local_human_id)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "caller is not a member of the conversation".to_string())?;
+        let can_manage_topics = caller_member.status == fabushi_messaging_core::MemberStatus::Owner
+            || (caller_member.status == fabushi_messaging_core::MemberStatus::Administrator && caller_member.admin_rights.manage_topics);
+        if !can_manage_topics {
+            return Err("caller lacks manage_topics administrative permission".into());
+        }
+        let existing_topic = owner.get_conversation_topic(topic_id).map_err(|e| e.to_string())?;
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as i64;
+        let topic_state = if let Some(existing) = existing_topic {
+            fabushi_messaging_core::ForumTopicState {
+                id: topic_id.to_string(),
+                conversation_id: fabushi_messaging_core::ConversationId(conversation_id.to_string()),
+                title: title.to_string(),
+                icon: icon.map(str::to_string).or(existing.icon),
+                creator_id: existing.creator_id,
+                created_at_ms: existing.created_at_ms,
+                pinned,
+                closed,
+                hidden,
+                unread_count: existing.unread_count,
+                last_message_id: existing.last_message_id,
+            }
+        } else {
+            fabushi_messaging_core::ForumTopicState {
+                id: topic_id.to_string(),
+                conversation_id: fabushi_messaging_core::ConversationId(conversation_id.to_string()),
+                title: title.to_string(),
+                icon: icon.map(str::to_string),
+                creator_id: fabushi_messaging_core::ActorId::new(local_human_id),
+                created_at_ms: now_ms,
+                pinned,
+                closed,
+                hidden,
+                unread_count: 0,
+                last_message_id: None,
+            }
+        };
+        owner.upsert_conversation_topic(&topic_state).map_err(|e| e.to_string())?;
+        serde_json::to_value(&topic_state).map_err(|e| e.to_string())
+    }
+
+    pub fn list_conversation_topics(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        let conversation_id = conversation_id.trim();
+        if conversation_id.is_empty() {
+            return Err("listConversationTopics requires conversationId".into());
+        }
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let topics = owner.list_conversation_topics().map_err(|e| e.to_string())?;
+        topics.into_iter()
+            .map(|t| serde_json::to_value(t).map_err(|e| e.to_string()))
+            .collect()
+    }
+
+    pub fn upsert_conversation_member(
+        &self,
+        conversation_id: &str,
+        member: fabushi_messaging_core::CommunityMember,
+    ) -> Result<serde_json::Value, String> {
+        let local_human_id = self.local_human_id()?;
+        let conversation_id = conversation_id.trim();
+        if conversation_id.is_empty() {
+            return Err("upsertConversationMember requires conversationId".into());
+        }
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let mut metadata = owner.read_metadata().map_err(|e| e.to_string())?;
+        let kind = metadata.get("conversationKind").and_then(serde_json::Value::as_str).unwrap_or("human");
+        if kind != "group" && kind != "channel" {
+            return Err("upsertConversationMember is only supported on group or channel conversations".into());
+        }
+        let caller_member = owner.get_conversation_member(local_human_id)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "caller is not a member of the conversation".to_string())?;
+        let is_owner = caller_member.status == fabushi_messaging_core::MemberStatus::Owner;
+        let is_admin = caller_member.status == fabushi_messaging_core::MemberStatus::Administrator;
+
+        let target_status = member.status;
+        let authorized = if is_owner {
+            true
+        } else if is_admin {
+            match target_status {
+                fabushi_messaging_core::MemberStatus::Administrator => caller_member.admin_rights.add_admins,
+                fabushi_messaging_core::MemberStatus::Banned | fabushi_messaging_core::MemberStatus::Restricted => {
+                    caller_member.admin_rights.ban_members
+                }
+                fabushi_messaging_core::MemberStatus::Member => {
+                    caller_member.admin_rights.invite_members || caller_member.admin_rights.ban_members
+                }
+                _ => false,
+            }
+        } else {
+            false
+        };
+        if !authorized {
+            return Err("caller lacks permission to update conversation member".into());
+        }
+
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as i64;
+        owner.upsert_conversation_member(&member, now_ms).map_err(|e| e.to_string())?;
+
+        if let Some(participant_ids) = metadata.get_mut("participantIds").and_then(serde_json::Value::as_array_mut) {
+            let actor_str = member.actor_id.0.as_str();
+            let exists = participant_ids.iter().any(|id| id.as_str() == Some(actor_str));
+            match member.status {
+                fabushi_messaging_core::MemberStatus::Banned | fabushi_messaging_core::MemberStatus::Left => {
+                    participant_ids.retain(|id| id.as_str() != Some(actor_str));
+                }
+                _ => {
+                    if !exists {
+                        participant_ids.push(serde_json::json!(actor_str));
+                    }
+                }
+            }
+            let _ = owner.set_metadata("participantIds", serde_json::Value::Array(participant_ids.clone()));
+        }
+
+        serde_json::to_value(&member).map_err(|e| e.to_string())
+    }
+
+    pub fn get_conversation_member(
+        &self,
+        conversation_id: &str,
+        actor_id: &str,
+    ) -> Result<Option<fabushi_messaging_core::CommunityMember>, String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id.trim())?;
+        owner.get_conversation_member(actor_id.trim()).map_err(|e| e.to_string())
+    }
+
+    pub fn list_conversation_members(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Vec<fabushi_messaging_core::CommunityMember>, String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id.trim())?;
+        owner.list_conversation_members().map_err(|e| e.to_string())
     }
 
     pub fn create_human_conversation(
@@ -3309,9 +3818,26 @@ impl ProductionSessionWorkers {
             return Err("existing Human conversation metadata encoding is invalid".into());
         }
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-        if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human")
-            || metadata.get("conversationId").and_then(serde_json::Value::as_str) != Some(conversation_id)
-        {
+        let kind = metadata.get("conversationKind").and_then(serde_json::Value::as_str);
+        if metadata.get("conversationId").and_then(serde_json::Value::as_str) != Some(conversation_id) {
+            return Err(format!("Conversation is not the requested conversation: {conversation_id}"));
+        }
+        if kind == Some("group") || kind == Some("channel") {
+            let expected_prefix = if kind == Some("group") { "group-" } else { "channel-" };
+            if !conversation_id.starts_with(expected_prefix) {
+                return Err(format!("Conversation ID does not match expected prefix: {conversation_id}"));
+            }
+            let participants = metadata.get("participantIds").and_then(serde_json::Value::as_array)
+                .ok_or_else(|| "existing conversation participants are invalid".to_string())?;
+            if participants.is_empty()
+                || participants.iter().any(|value| value.as_str()
+                    .is_none_or(|id| id.trim().is_empty() || id.trim() != id))
+            {
+                return Err("existing conversation participants are invalid".into());
+            }
+            return Ok(metadata);
+        }
+        if kind != Some("human") {
             return Err(format!("Conversation is not the requested Human conversation: {conversation_id}"));
         }
         let participants = metadata.get("participantIds").and_then(serde_json::Value::as_array)
@@ -3442,9 +3968,13 @@ impl ProductionSessionWorkers {
                 .get("lastActivityAt")
                 .and_then(serde_json::Value::as_f64)
                 .unwrap_or_default();
+            let kind = metadata
+                .get("conversationKind")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("human");
             let mut conversation = serde_json::json!({
                 "id": id,
-                "kind": "human",
+                "kind": kind,
                 "title": title,
                 "participantIds": participant_ids,
                 "updatedAt": updated_at,
@@ -3891,13 +4421,18 @@ impl ProductionSessionWorkers {
             .map_err(ForwardSourceFailure::Storage)?;
         let metadata = Self::read_human_conversation_metadata(&owner, source_id, false)
             .map_err(ForwardSourceFailure::Storage)?;
-        let participants = metadata.get("participantIds").and_then(serde_json::Value::as_array)
-            .ok_or_else(|| ForwardSourceFailure::Storage("existing Human conversation participants are invalid".into()))?;
-        let first = participants[0].as_str().expect("structurally validated Human participant");
-        let second = participants[1].as_str().expect("structurally validated Human participant");
-        if Self::human_direct_conversation_id(first, second) != source_id {
-            return Err(ForwardSourceFailure::Policy(
-                "forwardHumanMessage source participant pair no longer matches its canonical identity".into()));
+        let kind = metadata.get("conversationKind").and_then(serde_json::Value::as_str).unwrap_or("human");
+        if kind == "human" {
+            let participants = metadata.get("participantIds").and_then(serde_json::Value::as_array)
+                .ok_or_else(|| ForwardSourceFailure::Storage("existing Human conversation participants are invalid".into()))?;
+            let first = participants[0].as_str().expect("structurally validated Human participant");
+            let second = participants[1].as_str().expect("structurally validated Human participant");
+            if Self::human_direct_conversation_id(first, second) != source_id {
+                return Err(ForwardSourceFailure::Policy(
+                    "forwardHumanMessage source participant pair no longer matches its canonical identity".into()));
+            }
+        } else if !matches!(kind, "group" | "channel") {
+            return Err(ForwardSourceFailure::Policy("invalid conversation kind".into()));
         }
         if !self.metadata_has_local_human(&metadata).map_err(ForwardSourceFailure::Storage)? {
             return Err(ForwardSourceFailure::Policy(
@@ -4009,22 +4544,107 @@ impl ProductionSessionWorkers {
             let result = (|| -> Result<serde_json::Value, String> {
                 let destination_owner = self.open_human_conversation_db_owner(&destination_id)?;
                 let metadata = destination_owner.read_metadata().map_err(|error| error.to_string())?;
+                let kind = metadata.get("conversationKind").and_then(serde_json::Value::as_str).unwrap_or("human");
+                if !matches!(kind, "human" | "group" | "channel") || !self.metadata_has_local_human(&metadata)? {
+                    return Err("forward destination is not an authorized conversation".into());
+                }
                 let participants = metadata.get("participantIds").and_then(serde_json::Value::as_array)
                     .ok_or_else(|| "forward destination participants are invalid".to_string())?;
-                if participants.len() != 2 || !self.metadata_has_local_human(&metadata)? {
+                if kind == "human" && participants.len() != 2 {
                     return Err("forward destination is not an authorized Human conversation".into());
+                } else if (kind == "group" || kind == "channel") && participants.is_empty() {
+                    return Err("forward destination participants are invalid".into());
                 }
+
+                let target_topic_id = batch.context.get("destinationTopics")
+                    .and_then(|m| m.get(&destination_id))
+                    .and_then(serde_json::Value::as_str);
+
+                let member_opt = if matches!(kind, "group" | "channel") || target_topic_id.is_some() {
+                    destination_owner.get_conversation_member(account).map_err(|e| e.to_string())?
+                } else {
+                    None
+                };
+
+                let topic_opt = if let Some(tid) = target_topic_id {
+                    destination_owner.get_conversation_topic(tid).map_err(|e| e.to_string())?
+                } else {
+                    None
+                };
+
+                let can_manage_topics = member_opt.as_ref().map(|m| {
+                    m.status == fabushi_messaging_core::MemberStatus::Owner
+                        || (m.status == fabushi_messaging_core::MemberStatus::Administrator && m.admin_rights.manage_topics)
+                }).unwrap_or(false);
+
+                let topic_requested = target_topic_id.is_some();
+                let topic_exists = topic_opt.is_some();
+                let topic_closed = topic_opt.as_ref().map(|t| t.closed).unwrap_or(false);
+                let topic_hidden = topic_opt.as_ref().map(|t| t.hidden).unwrap_or(false);
+
+                if topic_requested && topic_hidden && !can_manage_topics {
+                    return Err(format!(
+                        "forward destination rejected the topic destination ({:?})",
+                        fabushi_messaging_core::DestinationAuthorizationDenial::TopicNotFound
+                    ));
+                }
+
                 let mut requirements = Self::human_recipient_requirements_from_entry(&source_entry);
                 requirements.require_media |= !batch.attachments.is_empty();
                 let auth_input = Self::human_recipient_authorization_from_metadata(&metadata, true);
-                if let Err(denial) = fabushi_messaging_core::authorize_destination(
+
+                let eligibility = fabushi_messaging_core::TopicDestinationEligibilityInput {
+                    topic_requested,
+                    topic_exists,
+                    topic_closed,
+                    can_manage_topics,
+                };
+                if let Err(denial) = fabushi_messaging_core::authorize_topic_destination(
                     auth_input,
                     requirements,
+                    eligibility,
                 ) {
                     return Err(format!(
                         "forward destination rejected the source message policy ({denial:?})"
                     ));
                 }
+
+                let conv_kind = match kind {
+                    "channel" => fabushi_messaging_core::ConversationKind::Channel,
+                    "group" => fabushi_messaging_core::ConversationKind::Group,
+                    _ => fabushi_messaging_core::ConversationKind::Direct,
+                };
+                if matches!(conv_kind, fabushi_messaging_core::ConversationKind::Group | fabushi_messaging_core::ConversationKind::Channel) {
+                    let existing_dest_entries = destination_owner.get_transcript_entries().unwrap_or_default();
+                    let last_sender_message_at_ms = existing_dest_entries.iter()
+                        .filter(|e| e.get("authorId").and_then(serde_json::Value::as_str) == Some(account))
+                        .filter_map(|e| e.get("timestampMs").and_then(serde_json::Value::as_f64))
+                        .map(|t| t as i64)
+                        .max();
+                    let slow_mode_seconds = metadata.get("slowModeSeconds").and_then(serde_json::Value::as_u64).map(|v| v as u32);
+                    let now_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as i64;
+                    let content_flags = fabushi_messaging_core::CommunitySendContentFlags {
+                        has_media: !batch.attachments.is_empty(),
+                        has_poll: false,
+                        has_other: false,
+                        has_inline: false,
+                        has_game: false,
+                    };
+                    let policy_input = fabushi_messaging_core::CommunitySendPolicyInput {
+                        conversation_kind: conv_kind,
+                        member: member_opt.as_ref(),
+                        slow_mode_seconds,
+                        last_sender_message_at_ms,
+                        now_ms,
+                        target_topic: topic_opt.as_ref(),
+                        topic_requested,
+                        content: content_flags,
+                    };
+                    if let Err(denial) = fabushi_messaging_core::evaluate_community_send_policy(&policy_input) {
+                        return Err(format!("forward destination rejected by community policy: {denial:?}"));
+                    }
+                }
+
                 // If this batch has a comment, and it hasn't completed yet for this destination,
                 // dispatch the comment as an independent text message first!
                 if let Some(comment_val) = batch.context.get("comment") {
@@ -4035,7 +4655,7 @@ impl ProductionSessionWorkers {
                                 .unwrap_or_else(|| format!("{}:comment", nonce));
                             self.append_human_message_from_intent(
                                 &destination_id, comment_text, &c_nonce, None, None,
-                                &[], None, None, require_existing, false,
+                                &[], None, target_topic_id, None, require_existing, false,
                             )?;
                         }
                         batch.destinations[index].comment_completed = true;
@@ -4045,7 +4665,7 @@ impl ProductionSessionWorkers {
 
                 self.append_human_message_from_intent(
                     &destination_id, &batch.text, &nonce, None, None,
-                    &batch.attachments, Some(&batch.context), None, require_existing, false,
+                    &batch.attachments, Some(&batch.context), target_topic_id, None, require_existing, false,
                 )
             })();
             match result {
@@ -4150,11 +4770,11 @@ impl ProductionSessionWorkers {
         )
     }
 
-    pub fn forward_human_message_with_comment(
+    pub fn forward_human_message_to_destinations(
         &self,
         source_conversation_id: &str,
         source_entry_id: &str,
-        destination_conversation_ids: &[String],
+        destinations: &[HumanForwardDestination],
         client_nonce: &str,
         drop_sender_names: bool,
         drop_captions: bool,
@@ -4168,19 +4788,26 @@ impl ProductionSessionWorkers {
         if source_entry_id.is_empty() {
             return Err("forwardHumanMessage requires a sourceEntryId".into());
         }
-        if destination_conversation_ids.is_empty() {
+        if destinations.is_empty() {
             return Err("forwardHumanMessage requires at least one destination".into());
         }
         let mut seen = BTreeSet::new();
-        let mut destinations = Vec::new();
-        for id in destination_conversation_ids {
-            let id = id.trim();
+        let mut unique_destinations: Vec<HumanForwardDestination> = Vec::new();
+        let mut destination_conversation_ids: Vec<String> = Vec::new();
+        for dest in destinations {
+            let id = dest.conversation_id.trim();
             if id.is_empty() {
                 return Err("forwardHumanMessage destination id must not be empty".into());
             }
-            if seen.insert(id.to_string()) { destinations.push(id.to_string()); }
+            if seen.insert(id.to_string()) {
+                unique_destinations.push(HumanForwardDestination {
+                    conversation_id: id.to_string(),
+                    topic_id: dest.topic_id.as_ref().map(|t| t.trim().to_string()).filter(|t| !t.is_empty()),
+                });
+                destination_conversation_ids.push(id.to_string());
+            }
         }
-        if destinations.len() > 32 {
+        if destination_conversation_ids.len() > 32 {
             return Err("forwardHumanMessage supports at most 32 unique destinations".into());
         }
         let requested_privacy = fabushi_messaging_core::ForwardPrivacy { drop_sender_names, drop_captions }.normalized();
@@ -4228,7 +4855,7 @@ impl ProductionSessionWorkers {
             if prior_comment != comment_json.as_ref() {
                 return Err("forwardHumanMessage clientNonce already identifies a different comment".into());
             }
-            if !prior.contains_requested(&destinations) {
+            if !prior.contains_requested(&destination_conversation_ids) {
                 return Err("forwardHumanMessage request may not expand its original destination set".into());
             }
         } else {
@@ -4240,9 +4867,6 @@ impl ProductionSessionWorkers {
             let attachments = source_entry.get("attachments")
                 .and_then(serde_json::Value::as_array).cloned().unwrap_or_default();
             let source_owner = self.open_human_conversation_db_owner(source_conversation_id)?;
-            // A path is only an input to accepting a new forward. Every later
-            // destination uses the source Session's immutable byte snapshot.
-            // No resource/message POST can precede this or the journal commit.
             let attachments = snapshot_forward_attachments(
                 &source_owner, &account, &issuer, client_nonce, &attachments,
             )?;
@@ -4277,6 +4901,18 @@ impl ProductionSessionWorkers {
                     .expect("forward context object")
                     .insert("comment".into(), c_val.clone());
             }
+            let mut destination_topics = serde_json::Map::new();
+            for d in &unique_destinations {
+                if let Some(ref tid) = d.topic_id {
+                    destination_topics.insert(d.conversation_id.clone(), serde_json::Value::String(tid.clone()));
+                }
+            }
+            if !destination_topics.is_empty() {
+                context
+                    .as_object_mut()
+                    .expect("forward context object")
+                    .insert("destinationTopics".into(), serde_json::Value::Object(destination_topics));
+            }
             let source_metadata = source_owner.read_metadata().ok();
             if let Some(origin) = Self::resolve_human_forward_origin(
                 &source_entry,
@@ -4291,7 +4927,7 @@ impl ProductionSessionWorkers {
             }
             let mut batch = HumanForwardBatch::new(
                 account, issuer, client_nonce.to_string(), source_conversation_id.to_string(),
-                source_entry_id.to_string(), text, attachments, context, &destinations,
+                source_entry_id.to_string(), text, attachments, context, &destination_conversation_ids,
             );
             if comment_json.is_some() {
                 for target in &mut batch.destinations {
@@ -4299,13 +4935,39 @@ impl ProductionSessionWorkers {
                     target.comment_completed = false;
                 }
             }
-            // The complete ordered batch (including destinations not yet
-            // dispatched) commits atomically before the first POST.
             store_forward_batch(&source_owner, &batch)?;
         }
         drop(stage_guard);
-        let batch = self.deliver_forward_batch(source_conversation_id, client_nonce, Some(&destinations))?;
-        Ok(batch.response(&destinations))
+        let batch = self.deliver_forward_batch(source_conversation_id, client_nonce, Some(&destination_conversation_ids))?;
+        Ok(batch.response(&destination_conversation_ids))
+    }
+
+    pub fn forward_human_message_with_comment(
+        &self,
+        source_conversation_id: &str,
+        source_entry_id: &str,
+        destination_conversation_ids: &[String],
+        client_nonce: &str,
+        drop_sender_names: bool,
+        drop_captions: bool,
+        comment: Option<fabushi_messaging_core::FormattedText>,
+    ) -> Result<serde_json::Value, String> {
+        let destinations: Vec<HumanForwardDestination> = destination_conversation_ids
+            .iter()
+            .map(|id| HumanForwardDestination {
+                conversation_id: id.clone(),
+                topic_id: None,
+            })
+            .collect();
+        self.forward_human_message_to_destinations(
+            source_conversation_id,
+            source_entry_id,
+            &destinations,
+            client_nonce,
+            drop_sender_names,
+            drop_captions,
+            comment,
+        )
     }
 
     fn normalize_human_reply_identity(
@@ -4470,6 +5132,7 @@ impl ProductionSessionWorkers {
                 return Ok(settled.clone());
             }
             admitted_retry = true;
+            let retry_topic_id = snapshot.get("topicId").and_then(serde_json::Value::as_str);
             self.append_human_message_from_intent(
                 conversation_id,
                 snapshot.get("content").and_then(serde_json::Value::as_str).expect("validated retry content"),
@@ -4477,7 +5140,7 @@ impl ProductionSessionWorkers {
                 snapshot.get("composedAtMs").and_then(serde_json::Value::as_f64),
                 snapshot.get("replyToId").and_then(serde_json::Value::as_str),
                 snapshot.get("attachments").and_then(serde_json::Value::as_array).map(Vec::as_slice).unwrap_or(&[]),
-                None, None, true, false,
+                None, retry_topic_id, None, true, false,
             )
         })();
         let result = result.and_then(|settled| {
@@ -4618,6 +5281,53 @@ impl ProductionSessionWorkers {
         )
     }
 
+    pub fn append_human_message_with_topic(
+        &self,
+        conversation_id: &str,
+        text: &str,
+        client_nonce: &str,
+        composed_at_ms: Option<f64>,
+        reply_to_id: Option<&str>,
+        attachments: &[serde_json::Value],
+        topic_id: Option<&str>,
+    ) -> Result<serde_json::Value, String> {
+        self.append_human_message_with_topic_and_queue_origin(
+            conversation_id,
+            text,
+            client_nonce,
+            composed_at_ms,
+            reply_to_id,
+            attachments,
+            topic_id,
+            false,
+        )
+    }
+
+    pub fn append_human_message_with_topic_and_queue_origin(
+        &self,
+        conversation_id: &str,
+        text: &str,
+        client_nonce: &str,
+        composed_at_ms: Option<f64>,
+        reply_to_id: Option<&str>,
+        attachments: &[serde_json::Value],
+        topic_id: Option<&str>,
+        queued_offline: bool,
+    ) -> Result<serde_json::Value, String> {
+        self.append_human_message_with_topic_and_context(
+            conversation_id,
+            text,
+            client_nonce,
+            composed_at_ms,
+            reply_to_id,
+            attachments,
+            None,
+            topic_id,
+            None,
+            queued_offline,
+        )
+    }
+
     pub fn append_human_message_with_queue_origin(
         &self,
         conversation_id: &str,
@@ -4653,9 +5363,45 @@ impl ProductionSessionWorkers {
         held_conversation_guard: Option<&std::sync::MutexGuard<'_, ()>>,
         queued_offline: bool,
     ) -> Result<serde_json::Value, String> {
+        self.append_human_message_with_topic_and_context(
+            conversation_id,
+            text,
+            client_nonce,
+            composed_at_ms,
+            reply_to_id,
+            attachments,
+            forward_context,
+            None,
+            held_conversation_guard,
+            queued_offline,
+        )
+    }
+
+    pub fn append_human_message_with_topic_and_context(
+        &self,
+        conversation_id: &str,
+        text: &str,
+        client_nonce: &str,
+        composed_at_ms: Option<f64>,
+        reply_to_id: Option<&str>,
+        attachments: &[serde_json::Value],
+        forward_context: Option<&serde_json::Value>,
+        topic_id: Option<&str>,
+        held_conversation_guard: Option<&std::sync::MutexGuard<'_, ()>>,
+        queued_offline: bool,
+    ) -> Result<serde_json::Value, String> {
         self.append_human_message_from_intent(
-            conversation_id, text, client_nonce, composed_at_ms, reply_to_id, attachments,
-            forward_context, held_conversation_guard, false, queued_offline,
+            conversation_id,
+            text,
+            client_nonce,
+            composed_at_ms,
+            reply_to_id,
+            attachments,
+            forward_context,
+            topic_id,
+            held_conversation_guard,
+            false,
+            queued_offline,
         )
     }
 
@@ -4979,6 +5725,7 @@ impl ProductionSessionWorkers {
         reply_to_id: Option<&str>,
         attachments: &[serde_json::Value],
         forward_context: Option<&serde_json::Value>,
+        topic_id: Option<&str>,
         held_conversation_guard: Option<&std::sync::MutexGuard<'_, ()>>,
         require_existing: bool,
         queued_offline: bool,
@@ -5131,8 +5878,9 @@ impl ProductionSessionWorkers {
                 None => normalized_attachments.is_empty(),
             };
             let same_forward_context = entry.get("forwardContext") == forward_context;
-            if !(same_sender && same_text && same_reply && same_attachments && same_forward_context) {
-                return Err("sendHumanMessage clientNonce already identifies different content or forward context".into());
+            let same_topic = entry.get("topicId").and_then(serde_json::Value::as_str) == topic_id;
+            if !(same_sender && same_text && same_reply && same_attachments && same_forward_context && same_topic) {
+                return Err("sendHumanMessage clientNonce already identifies different content, topic, or forward context".into());
             }
             if entry.get("remoteMessageId").is_some()
                 || entry.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
@@ -5157,28 +5905,111 @@ impl ProductionSessionWorkers {
             existing_pending = Some(entry.clone());
         }
 
-        if let Some(client) = self.shipping_native_messaging()? {
-            let local_entry_id = format!("human-message:{client_nonce}");
-            let mut pending_entry = existing_pending.unwrap_or_else(|| {
-                let mut entry = serde_json::json!({
-                    "id": local_entry_id.clone(),
-                    "kind": "message",
-                    "role": "user",
-                    "authorKind": "human",
-                    "authorId": sender_id,
-                    "content": text,
-                    "clientNonce": client_nonce,
-                    "composedAtMs": composed_at_ms,
-                    "timestampMs": timestamp_ms,
-                    "delivery": "pending",
+        let kind_str = metadata
+            .get("conversationKind")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("human");
+
+        if matches!(kind_str, "group" | "channel") || topic_id.is_some() {
+            let member_opt = owner.get_conversation_member(sender_id).map_err(|e| e.to_string())?;
+            let topic_requested = topic_id.is_some();
+            let topic_opt = if let Some(tid) = topic_id {
+                owner.get_conversation_topic(tid).map_err(|e| e.to_string())?
+            } else {
+                None
+            };
+
+            let can_manage_topics = member_opt.as_ref().map(|m| {
+                m.status == fabushi_messaging_core::MemberStatus::Owner
+                    || (m.status == fabushi_messaging_core::MemberStatus::Administrator && m.admin_rights.manage_topics)
+            }).unwrap_or(false);
+
+            if topic_requested {
+                if let Some(ref t) = topic_opt {
+                    if t.hidden && !can_manage_topics {
+                        return Err(format!(
+                            "sendHumanMessage rejected the topic destination ({:?})",
+                            fabushi_messaging_core::CommunitySendDenial::TopicNotFound
+                        ));
+                    }
+                }
+            }
+
+            let last_sender_message_at_ms = existing
+                .iter()
+                .filter(|e| {
+                    e.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id)
+                        && e.get("clientNonce").and_then(serde_json::Value::as_str) != Some(client_nonce)
+                        && e.get("delivery").and_then(serde_json::Value::as_str) != Some("failed")
+                })
+                .filter_map(|e| e.get("timestampMs").and_then(serde_json::Value::as_f64))
+                .map(|t| t as i64)
+                .max();
+
+            let slow_mode_seconds = metadata
+                .get("slowModeSeconds")
+                .and_then(serde_json::Value::as_u64)
+                .map(|v| v as u32);
+
+            let now_ms = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as i64;
+
+            let conv_kind = match kind_str {
+                "channel" => fabushi_messaging_core::ConversationKind::Channel,
+                "group" => fabushi_messaging_core::ConversationKind::Group,
+                _ => fabushi_messaging_core::ConversationKind::Direct,
+            };
+
+            let content_flags = fabushi_messaging_core::CommunitySendContentFlags {
+                has_media: !normalized_attachments.is_empty(),
+                has_poll: false,
+                has_other: false,
+                has_inline: false,
+                has_game: false,
+            };
+
+            let policy_input = fabushi_messaging_core::CommunitySendPolicyInput {
+                conversation_kind: conv_kind,
+                member: member_opt.as_ref(),
+                slow_mode_seconds,
+                last_sender_message_at_ms,
+                now_ms,
+                target_topic: topic_opt.as_ref(),
+                topic_requested,
+                content: content_flags,
+            };
+
+            if let Err(denial) = fabushi_messaging_core::evaluate_community_send_policy(&policy_input) {
+                return Err(format!("sendHumanMessage rejected by community send policy: {denial:?}"));
+            }
+        }
+
+        if kind_str == "human" {
+            if let Some(client) = self.shipping_native_messaging()? {
+                let local_entry_id = format!("human-message:{client_nonce}");
+                let mut pending_entry = existing_pending.unwrap_or_else(|| {
+                    let mut entry = serde_json::json!({
+                        "id": local_entry_id.clone(),
+                        "kind": "message",
+                        "role": "user",
+                        "authorKind": "human",
+                        "authorId": sender_id,
+                        "content": text,
+                        "clientNonce": client_nonce,
+                        "composedAtMs": composed_at_ms,
+                        "timestampMs": timestamp_ms,
+                        "delivery": "pending",
+                    });
+                    let object = entry.as_object_mut().expect("Human pending message must be an object");
+                    if queued_offline { object.insert("queuedOffline".into(), serde_json::json!(true)); }
+                    if let Some(reply_id) = normalized_reply { object.insert("replyToId".into(), serde_json::json!(reply_id)); }
+                    if !normalized_attachments.is_empty() { object.insert("attachments".into(), serde_json::Value::Array(normalized_attachments.clone())); }
+                    if let Some(context) = forward_context { object.insert("forwardContext".into(), context.clone()); }
+                    if let Some(tid) = topic_id { object.insert("topicId".into(), serde_json::json!(tid)); }
+                    entry
                 });
-                let object = entry.as_object_mut().expect("Human pending message must be an object");
-                if queued_offline { object.insert("queuedOffline".into(), serde_json::json!(true)); }
-                if let Some(reply_id) = normalized_reply { object.insert("replyToId".into(), serde_json::json!(reply_id)); }
-                if !normalized_attachments.is_empty() { object.insert("attachments".into(), serde_json::Value::Array(normalized_attachments.clone())); }
-                if let Some(context) = forward_context { object.insert("forwardContext".into(), context.clone()); }
-                entry
-            });
             if let Some(reply_id) = normalized_reply {
                 pending_entry["replyToId"] = serde_json::json!(reply_id);
             }
@@ -5396,6 +6227,7 @@ impl ProductionSessionWorkers {
             }
             return dispatch_result;
         }
+    }
 
         let mut entry = serde_json::json!({
             "id": format!("human-message:{client_nonce}"),
@@ -5424,6 +6256,9 @@ impl ProductionSessionWorkers {
         }
         if let Some(context) = forward_context {
             object.insert("forwardContext".into(), context.clone());
+        }
+        if let Some(tid) = topic_id {
+            object.insert("topicId".into(), serde_json::json!(tid));
         }
         if !owner
             .append_transcript_entry(&entry)

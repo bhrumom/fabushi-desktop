@@ -1384,18 +1384,23 @@
       ],
       "service_owner": "Existing Fabushi messaging service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
         "Current-head Rust GitHub Actions evidence is pending",
         "Shipping nested picker UI has not yet composed the typed child identity/destruction contract"
       ],
       "production_entrypoints": [
+        "source/host/src/extensions/session/gateway.rs#forwardHumanMessage",
+        "source/host/src/extensions/session/production.rs#ProductionSessionWorkers::forward_human_message_to_destinations",
+        "source/host/src/extensions/session/production.rs#ProductionSessionWorkers::deliver_forward_batch_while_locked",
         "Canonical recipient/topic selection -> ClientCommand::ForwardMessage -> MessagingService -> MessagingEngine -> Message.thread_root_message_id",
         "ClientCommand::ReplaceConversationChildWindow -> MessagingEngine::saved_sublist_participant_for_message -> ConversationChildRuntimeState",
         "MessagingEngine::from_state -> MessagingState::migrate_legacy_topic_child_states -> conversation_child_states"
       ],
       "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#ProductionSessionWorkers::forward_human_message_to_destinations",
+        "path:source/host/src/extensions/session/gateway.rs#forwardHumanMessage",
         "commit:18289a68a55a3166f42013b9ea8cb84b7565faf1",
         "path:native/mahayana-messaging/src/protocol.rs#ForwardMessage",
         "path:native/mahayana-messaging/src/engine.rs#Command::ForwardMessage",
@@ -1409,6 +1414,7 @@
         "path:native/mahayana-messaging/src/engine.rs#Event::MessagesDeleted"
       ],
       "test_evidence": [
+        "source/host/tests/session_group_creation_contract.rs#forward_to_topic_destination_contract",
         "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content",
         "native/mahayana-messaging/src/conversation.rs#child_destination_tests::topic_saved_sublist_and_nested_conversation_keep_distinct_identity",
         "native/mahayana-messaging/src/conversation.rs#child_destination_tests::destroying_exact_child_clears_selection_without_parent_fallback",
@@ -1556,7 +1562,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox typed-thread selection semantics using canonical Fabushi Conversation/Topic/Message owners. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
       "reviewer": null,
-      "notes": "[FMEP-STATE-02 domain-only wiring gap] FMEP-001 r3 §14: previously recorded as implemented, but the only production path is ClientCommand -> MessagingService, which desktop production rejects (ensure_desktop_messaging_owner). Domain implementation retained; mapped until ProductionSessionWorkers/Transcript consumes it or an ADR selects MessagingService as the desktop owner. First SB-02 source-neutral identity slice implemented in the existing Conversation owner: Topic=root Message identity, SavedSublist=participant identity, nested/community child=Conversation identity; exact destroyed-child selection fencing and upstream-derived unread-toggle distinctions are covered by focused Rust unit tests. This does not close SavedSublist lifecycle/state: pagination/read/draft/pin/active-child/payment-exception and shipping picker composition remain open, so the row stays implemented/pending and global unknown does not decrement. FBCP-ADR-004 (2026-11-04): stays mapped because desktop ProductionSessionWorkers currently owns 1:1 Human direct conversations only and has no Group/Topic/Channel child destination surface.",
+      "notes": "[FMEP-STATE-02 wired via Session] FBCP-ADR-005 slice W2-C (Step 3 / S1b): ProductionSessionWorkers wired forward_human_message_to_destinations with destinationTopics mapping, persisting target topicId into transcript entries and forward batch recovery context across direct, group, and channel conversations. Verified by session_group_creation_contract.rs.",
       "additional_source_identities": [
         {
           "repository": "telegramdesktop/tdesktop",
@@ -1654,20 +1660,26 @@
       ],
       "service_owner": "Existing Fabushi messaging service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
         "Current-head Rust GitHub Actions evidence is pending",
         "Shipping nested picker lifecycle/destruction and saved/community child destination UI evidence remain open"
       ],
       "production_entrypoints": [
+        "source/host/src/extensions/session/gateway.rs#forwardHumanMessage",
+        "source/host/src/extensions/session/production.rs#ProductionSessionWorkers::deliver_forward_batch_while_locked",
+        "native/mahayana-messaging/src/community.rs#authorize_topic_destination",
         "Canonical topic picker -> ClientCommand::ForwardMessage -> MessagingService -> MessagingEngine topic eligibility -> Event::MessageQueued"
       ],
       "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#ProductionSessionWorkers::deliver_forward_batch_while_locked",
+        "path:native/mahayana-messaging/src/community.rs#authorize_topic_destination",
         "commit:df02b3bd1146bac38fcf41a37c819d0662851890",
         "path:native/mahayana-messaging/src/engine.rs#Command::ForwardMessage"
       ],
       "test_evidence": [
+        "source/host/tests/session_group_creation_contract.rs#topic_destination_eligibility_fail_closed_contract",
         "commit:c13a85a2a193660f95cfa9cefe29808cdb368fd4",
         "native/mahayana-messaging/tests/m6_channels_topics_contract.rs#channel_subscription_broadcast_pagination_and_topic_state_are_actor_scoped"
       ],
@@ -1820,7 +1832,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox typed-topic destination semantics using canonical Fabushi Conversation/Community/Topic owners. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
       "reviewer": null,
-      "notes": "[FMEP-STATE-02 domain-only wiring gap] FMEP-001 r3 §14: previously recorded as implemented, but the only production path is ClientCommand -> MessagingService, which desktop production rejects (ensure_desktop_messaging_owner). Domain implementation retained; mapped until ProductionSessionWorkers/Transcript consumes it or an ADR selects MessagingService as the desktop owner. This row closes only native topic existence/closed/hidden eligibility at the forward boundary. Nested picker lifecycle/destruction, saved-message sublists/community-child selection, UI evidence, and exact-head runtime evidence remain open, so global unknown does not decrement. FBCP-ADR-004 (2026-11-04): stays mapped because desktop ProductionSessionWorkers currently owns 1:1 Human direct conversations only and has no Group/Topic/Channel child destination surface.",
+      "notes": "[FMEP-STATE-02 wired via Session] FBCP-ADR-005 slice W2-C (Step 3 / S1b): ProductionSessionWorkers::deliver_forward_batch_while_locked enforces pure authorize_topic_destination and evaluate_community_send_policy before dispatch. Missing, closed (for non-managers), and hidden topics fail closed with TopicNotFound / TopicClosed denial without mutating destination transcripts. Verified by session_group_creation_contract.rs.",
       "additional_source_identities": [
         {
           "repository": "telegramdesktop/tdesktop",

@@ -113,12 +113,16 @@ pub fn init_configured_db(
         );
     }
     db.execute_batch(AGENT_DB_SCHEMA)?;
-    let _ = db.pragma_update(None, "user_version", 2);
+    let _ = ensure_conversation_schema_version(&db);
     Ok(db)
 }
 
 pub fn ensure_conversation_schema_version(db: &Connection) -> Result<(), rusqlite::Error> {
-    db.pragma_update(None, "user_version", 2)
+    let current = db.pragma_query_value(None, "user_version", |row| row.get::<_, i64>(0))?;
+    if current != 2 {
+        db.pragma_update(None, "user_version", 2)?;
+    }
+    Ok(())
 }
 
 pub fn is_store_db_healthy(db: &Connection) -> bool {
