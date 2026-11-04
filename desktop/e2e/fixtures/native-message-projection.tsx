@@ -7,7 +7,7 @@ import type { CoordinatorPortBridge, CursorAuthStatus, DesktopBridge, Transferre
 // Only the external desktop port and service replies are controlled by the test.
 type Row = Record<string, unknown> & { id: string };
 type Request = { requestId: string; method: string; args: Record<string, unknown> };
-type Pending = { request: Request; value: unknown; account?: string | null };
+type Pending = { request: Request; value: unknown; account?: string | null; settled?: boolean };
 const clone = <T,>(value: T): T => structuredClone(value);
 const accountListeners = new Set<(status: CursorAuthStatus) => void>();
 const focusListeners = new Set<(value: unknown) => void>();
@@ -57,7 +57,10 @@ const humans = () => [
   { id: 'human:b', kind: 'human', title: 'Bob', participantIds: [account.kind === 'logged-in' ? account.authId : '', 'peer-b'], updatedAt: 100 },
 ];
 const sendFrame = (frame: unknown) => portListener?.({ data: clone(frame) });
-const reply = (pending: Pending) => sendFrame({ kind: 'reply', requestId: pending.request.requestId, outcome: { status: 'ok', value: pending.value } });
+const reply = (pending: Pending) => {
+  pending.settled = true;
+  sendFrame({ kind: 'reply', requestId: pending.request.requestId, outcome: { status: 'ok', value: pending.value } });
+};
 const emit = (payload: unknown) => sendFrame({ kind: 'event', family: 'transcript', payload });
 
 function receive(request: Request) {
@@ -117,11 +120,24 @@ function receive(request: Request) {
     }
     case 'sendHumanMessage': {
       const remoteMessageId = String(100 + sends.length);
+      const replyToId = typeof request.args.replyToId === 'string' ? request.args.replyToId : undefined;
+      const parent = replyToId == null ? undefined : transcript.find((entry) => entry.id === replyToId);
+      const parentRemoteId = typeof parent?.remoteMessageId === 'string' ? parent.remoteMessageId : undefined;
+      const currentAccountId = account.kind === 'logged-in' ? account.authId ?? '' : '';
+      if (replyToId != null && (parent == null || parent.authorKind !== 'human'
+        || parent.authorId !== currentAccountId || parent.delivery !== 'sent'
+        || parentRemoteId == null || parent.id !== `human-server-message:${parentRemoteId}`)) {
+        throw new Error('Host fixture rejected a non-canonical, unsettled or foreign reply target');
+      }
       const entry = row(`human-server-message:${remoteMessageId}`, String(request.args.text), {
-        authorId: account.kind === 'logged-in' ? account.authId : '', clientNonce: request.args.clientNonce,
+        authorKind: 'human',
+        authorId: currentAccountId,
+        clientNonce: request.args.clientNonce,
         remoteMessageId,
+        delivery: 'sent',
+        ...(replyToId == null ? {} : { replyToId, remoteReplyToMessageId: parentRemoteId! }),
       });
-      sends.push({ request, value: entry });
+      sends.push({ request, value: entry, settled: false });
       sendPositions.set(request.requestId, transcript.length);
       return;
     }
@@ -217,7 +233,7 @@ const bridge = optionalCapability('', {
 const fixture = {
   requests,
   approvalClears,
-  pending: () => ({ initials: initials.length, older: older.length, refreshes: refreshes.length, sends: sends.length, retries: retries.length, reactions: reactions.length, forwards: forwards.length, sendRosterRefreshes: sendRosterRefreshes.length }),
+  pending: () => ({ initials: initials.length, older: older.length, refreshes: refreshes.length, sends: sends.length, unsettledSends: sends.filter((pending) => pending.settled !== true).length, retries: retries.length, reactions: reactions.length, forwards: forwards.length, sendRosterRefreshes: sendRosterRefreshes.length }),
   retryAccounts: () => retries.map((pending) => pending.account ?? null),
   seedFailedIntent(clientNonce = 'shared-retry-nonce') {
     const id = `human-message:${clientNonce}`;
@@ -255,6 +271,56 @@ const fixture = {
   releaseOlder() { holdOlder = false; for (const pending of older.splice(0)) reply(pending); },
   releaseRefreshes() { for (const pending of refreshes.splice(0)) reply(pending); },
   baseline(id: string, ids: string[]) { emit({ type: 'snapshot', activeAgentId: id, entries: clone((rows.get(id) ?? []).filter((entry) => ids.includes(entry.id))) }); },
+  stageReplyParent() {
+    const id = 'human:a';
+    const transcript = rows.get(id) ?? [];
+    const index = transcript.findIndex((entry) => entry.id === 'm1');
+    if (index < 0) throw new Error('Missing fixture reply parent');
+    const before = clone(transcript[index]);
+    const nonce = 'nmr-ui-01d-parent';
+    const after: Row = {
+      ...before,
+      id: `human-message:${nonce}`,
+      authorKind: 'human',
+      authorId: account.kind === 'logged-in' ? account.authId ?? '' : '',
+      clientNonce: nonce,
+      delivery: 'pending',
+    };
+    delete after.remoteMessageId;
+    delete after.remoteCreatedAt;
+    transcript[index] = after;
+    rows.set(id, transcript);
+    persistRows();
+    emit({ type: 'updated', agentId: id, before, entry: clone(after) });
+    return after.id;
+  },
+  settleReplyParent() {
+    const id = 'human:a';
+    const aliasId = 'human-message:nmr-ui-01d-parent';
+    const transcript = rows.get(id) ?? [];
+    const index = transcript.findIndex((entry) => entry.id === aliasId);
+    if (index < 0) throw new Error('Missing local reply parent before Host canonical rekey');
+    const before = clone(transcript[index]);
+    const remoteMessageId = '900';
+    const after: Row = {
+      ...before,
+      id: `human-server-message:${remoteMessageId}`,
+      remoteMessageId,
+      remoteCreatedAt: '2026-11-04T00:00:00.000Z',
+      delivery: 'sent',
+    };
+    delete after.lastDispatchError;
+    delete after.lastDispatchFailedAtMs;
+    transcript[index] = after;
+    rows.set(id, transcript);
+    persistRows();
+    emit({ type: 'updated', agentId: id, before, entry: clone(after) });
+    return after.id;
+  },
+  readRow(id: string, entryId: string) {
+    const entry = (rows.get(id) ?? []).find((candidate) => candidate.id === entryId);
+    return entry == null ? null : clone(entry);
+  },
   clear(id: string) {
     rows.set(id, []);
     persistRows();
@@ -295,7 +361,20 @@ const fixture = {
     persistRows();
     emit({ type: 'appended', agentId: id, entry });
   },
-  settleSend(index = 0) { const pending = sends[index]; if (pending == null) throw new Error('No pending send'); reply(pending); },
+  settleSend(index = 0) {
+    const pending = sends[index];
+    if (pending == null) throw new Error('No pending send');
+    const id = String(pending.request.args.conversationId);
+    const entry = clone(pending.value as Row);
+    const transcript = rows.get(id) ?? [];
+    if (!transcript.some((candidate) => candidate.id === entry.id)) {
+      transcript.splice(sendPositions.get(pending.request.requestId) ?? transcript.length, 0, entry);
+    }
+    rows.set(id, transcript);
+    persistRows();
+    emit({ type: 'updated', agentId: id, before: { id: `pending-${pending.request.args.clientNonce}` }, entry });
+    reply(pending);
+  },
   holdSendRosterRefresh() { holdNextSendRoster = true; },
   failSendRosterRefresh() {
     for (const pending of sendRosterRefreshes.splice(0)) sendFrame({

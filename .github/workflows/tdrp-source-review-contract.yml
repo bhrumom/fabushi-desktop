@@ -17,6 +17,12 @@ on:
       - projects/telegram-desktop-rust/contracts/parity-ledger.schema.json
       - projects/telegram-desktop-rust/parity-ledger.json
       - .github/workflows/tdrp-source-review-contract.yml
+      - frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts
+      - frontend/src/recovered/features/conversation/workspace/reply-thread-controller.contract.test.ts
+      - desktop/e2e/native-message-projection.spec.ts
+      - desktop/e2e/fixtures/native-message-projection.tsx
+      - source/host/src/extensions/session/**
+      - source/host/tests/session_gateway_contract.rs
   workflow_dispatch:
 permissions:
   contents: read

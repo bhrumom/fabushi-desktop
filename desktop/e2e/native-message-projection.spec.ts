@@ -531,38 +531,59 @@ test('NMR-FWD-DRAFT-RECOVERY-001 removing a source narrows recipients and keeps 
 });
 
 
-test("NMR-UI-01d persisted reply draft restores its target and Host reply identity after conversation navigation", async ({ page }, info) => {
+test("NMR-UI-01d Host canonical reply rekey preserves preview, remote identity, settlement and draft cleanup", async ({ page }, info) => {
   await openAlice(page);
   await loadOlder(page);
 
-  const source = messageRow(page, "m1");
+  const localParentId = await page.evaluate(() => window.nativeMessageFixture.stageReplyParent());
+  const source = messageRow(page, localParentId);
   await source.locator(".sand-message-action-anchor").hover();
   await source.getByRole("button", { name: "Reply to your message", exact: true }).click();
 
   const replyPill = page.locator(".sand-prompt-reply-pill");
   await expect(replyPill).toContainText("Old first message");
   const editor = page.locator(".sand-prompt-form [contenteditable='true']");
-  await editor.fill("Reply draft survives conversation navigation");
-  await expect(editor).toHaveText("Reply draft survives conversation navigation");
+  await editor.fill("Reply draft survives Host canonical rekey");
+  await expect(editor).toHaveText("Reply draft survives Host canonical rekey");
+
+  const canonicalParentId = await page.evaluate(() => window.nativeMessageFixture.settleReplyParent());
+  expect(canonicalParentId).toBe("human-server-message:900");
+  await expect(messageRow(page, canonicalParentId)).toBeVisible();
+  await expect(replyPill).toContainText("Old first message");
 
   await page.getByRole("button", { name: "Bob", exact: true }).click();
   await expect(messageRow(page, "b1")).toBeVisible();
   await page.getByRole("button", { name: "Alice", exact: true }).click();
-  await expect(messageRow(page, "m3")).toBeVisible();
-
+  await expect(messageRow(page, canonicalParentId)).toBeVisible();
   await expect(replyPill).toContainText("Old first message");
-  await expect(editor).toHaveText("Reply draft survives conversation navigation");
-  await page.locator(".sand-prompt-form").evaluate((form) => (form as HTMLFormElement).requestSubmit());
+  await expect(editor).toHaveText("Reply draft survives Host canonical rekey");
 
+  await page.locator(".sand-prompt-form").evaluate((form) => (form as HTMLFormElement).requestSubmit());
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(1);
   const request = await page.evaluate(() =>
     window.nativeMessageFixture.requests.filter((item) => item.method === "sendHumanMessage").at(-1) ?? null
   );
-  expect(request?.args.replyToId).toBe("m1");
-  expect(request?.args.text).toBe("Reply draft survives conversation navigation");
+  expect(request?.args.replyToId).toBe(canonicalParentId);
+  expect(request?.args.text).toBe("Reply draft survives Host canonical rekey");
 
   await page.evaluate(() => window.nativeMessageFixture.settleSend());
-  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(0);
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().unsettledSends)).toBe(0);
+  const settled = await page.evaluate(() => window.nativeMessageFixture.readRow("human:a", "human-server-message:100"));
+  expect(settled).toMatchObject({
+    id: "human-server-message:100",
+    remoteMessageId: "100",
+    replyToId: "human-server-message:900",
+    remoteReplyToMessageId: "900",
+    delivery: "sent",
+  });
+  await expect(messageRow(page, "human-server-message:100")).toContainText("Old first message");
   await expect(replyPill).toHaveCount(0);
-  await milestone(page, info, "reply-draft-restored-after-conversation-navigation");
+  await expect(editor).toHaveText("");
+
+  await page.getByRole("button", { name: "Bob", exact: true }).click();
+  await expect(messageRow(page, "b1")).toBeVisible();
+  await page.getByRole("button", { name: "Alice", exact: true }).click();
+  await expect(replyPill).toHaveCount(0);
+  await expect(editor).toHaveText("");
+  await milestone(page, info, "host-canonical-reply-rekey-settled-and-draft-cleared");
 });

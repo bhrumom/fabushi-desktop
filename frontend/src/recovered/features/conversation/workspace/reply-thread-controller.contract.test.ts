@@ -9,7 +9,7 @@ function draft(replyToId: string): ComposerDraft {
   return { prompt: "Reply draft", attachments: [], replyToId };
 }
 
-function message(id: string, text: string): ConversationTranscriptEntry {
+function message(id: string, text: string, patch: Record<string, unknown> = {}): ConversationTranscriptEntry {
   return {
     kind: "message",
     id,
@@ -19,7 +19,27 @@ function message(id: string, text: string): ConversationTranscriptEntry {
     timestampMs: 1,
     attachments: [],
     reactions: [],
+    ...patch,
   } as unknown as ConversationTranscriptEntry;
+}
+
+function localHumanParent(nonce: string, text: string, authorId = "account-a"): ConversationTranscriptEntry {
+  return message(`human-message:${nonce}`, text, {
+    authorKind: "human", authorId, clientNonce: nonce, delivery: "pending",
+  });
+}
+
+function canonicalHumanParent(
+  nonce: string,
+  remoteMessageId: string,
+  text: string,
+  authorId = "account-a",
+  delivery = "sent",
+  id = `human-server-message:${remoteMessageId}`,
+): ConversationTranscriptEntry {
+  return message(id, text, {
+    authorKind: "human", authorId, clientNonce: nonce, remoteMessageId, delivery,
+  });
 }
 
 function submission(agentId: string, replyToId?: string): ComposerSubmission {
@@ -98,4 +118,96 @@ test("persisted draft restoration never overwrites a newer live reply selection"
 
   controller.dispose();
   assert.equal(controller.restoreReplyFromDraft(draft("after-dispose")), false);
+});
+
+
+test("an active local Human reply selection follows Host canonical rekey and refreshes its preview", () => {
+  const alias = "human-message:parent-nonce";
+  const canonicalId = "human-server-message:42";
+  const controller = createReplyThreadController({
+    scope: { accountSlot: "account-a", agentId: "human:alice" },
+  });
+
+  controller.replaceEntries([localHumanParent("parent-nonce", "Local parent before Host settlement")]);
+  assert.equal(controller.selectReply(alias), true);
+  assert.equal(controller.getSelection()?.targetId, alias);
+  assert.deepEqual(controller.getSelection()?.preview, {
+    kind: "user-text",
+    text: "Local parent before Host settlement",
+  });
+
+  controller.replaceEntries([canonicalHumanParent("parent-nonce", "42", "Canonical parent after Host rekey")]);
+
+  assert.equal(controller.getSelection()?.status, "resolved");
+  assert.equal(controller.getSelection()?.targetId, canonicalId);
+  assert.deepEqual(controller.getSelection()?.preview, {
+    kind: "user-text",
+    text: "Canonical parent after Host rekey",
+  });
+  assert.equal(controller.projectSubmission(submission("human:alice")).replyToId, canonicalId);
+  controller.dispose();
+});
+
+test("a persisted local Human reply draft restores through its unique canonical Host parent", () => {
+  const alias = "human-message:parent-nonce";
+  const canonicalId = "human-server-message:42";
+  const controller = createReplyThreadController({
+    scope: { accountSlot: "account-a", agentId: "human:alice" },
+  });
+
+  assert.equal(controller.restoreReplyFromDraft(draft(alias)), true);
+  assert.equal(controller.getSelection()?.status, "missing");
+  controller.replaceEntries([canonicalHumanParent("parent-nonce", "42", "Canonical restored parent")]);
+
+  assert.equal(controller.getSelection()?.status, "resolved");
+  assert.equal(controller.getSelection()?.targetId, canonicalId);
+  assert.deepEqual(controller.getSelection()?.preview, {
+    kind: "user-text",
+    text: "Canonical restored parent",
+  });
+  assert.equal(controller.applyReplyToDraft({ prompt: "Reply draft", attachments: [] }).replyToId, canonicalId);
+  assert.equal(controller.projectSubmission(submission("human:alice", alias)).replyToId, canonicalId);
+  controller.dispose();
+});
+
+test("historical local Human reply aliases fail closed for foreign, ambiguous and non-canonical rows", () => {
+  const alias = "human-message:parent-nonce";
+  const cases: Array<{ name: string; entries: ConversationTranscriptEntry[] }> = [
+    {
+      name: "foreign canonical parent",
+      entries: [canonicalHumanParent("parent-nonce", "42", "Foreign parent", "account-b")],
+    },
+    {
+      name: "ambiguous canonical parents",
+      entries: [
+        canonicalHumanParent("parent-nonce", "42", "First parent"),
+        canonicalHumanParent("parent-nonce", "43", "Second parent"),
+      ],
+    },
+    {
+      name: "canonical ID disagrees with remote identity",
+      entries: [canonicalHumanParent("parent-nonce", "43", "Mismatched parent", "account-a", "sent", "human-server-message:42")],
+    },
+    {
+      name: "canonical parent is unsettled",
+      entries: [canonicalHumanParent("parent-nonce", "42", "Unsettled parent", "account-a", "pending")],
+    },
+    {
+      name: "direct local alias belongs to another account",
+      entries: [localHumanParent("parent-nonce", "Foreign local alias", "account-b")],
+    },
+  ];
+
+  for (const scenario of cases) {
+    const controller = createReplyThreadController({
+      scope: { accountSlot: "account-a", agentId: "human:alice" },
+    });
+    assert.equal(controller.restoreReplyFromDraft(draft(alias)), true, scenario.name);
+    controller.replaceEntries(scenario.entries);
+    assert.equal(controller.getSelection()?.status, "missing", scenario.name);
+    assert.equal(controller.getSelection()?.targetId, alias, scenario.name);
+    assert.equal(controller.resolve(alias).status, "missing", scenario.name);
+    assert.equal(controller.projectSubmission(submission("human:alice")).replyToId, alias, scenario.name);
+    controller.dispose();
+  }
 });

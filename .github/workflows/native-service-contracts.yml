@@ -805,8 +805,8 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild frontend/src/recovered/features/conversation/workspace/reply-thread-controller.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/reply-thread-controller.test.mjs 2>&1 | tee artifacts/native-message-ui/reply-thread-controller-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/reply-thread-controller.test.mjs 2>&1 | tee artifacts/native-message-ui/reply-thread-controller.log
-          grep -Fx '# tests 4' artifacts/native-message-ui/reply-thread-controller.log
-          grep -Fx '# pass 4' artifacts/native-message-ui/reply-thread-controller.log
+          grep -Fx '# tests 7' artifacts/native-message-ui/reply-thread-controller.log
+          grep -Fx '# pass 7' artifacts/native-message-ui/reply-thread-controller.log
           grep -Fx '# fail 0' artifacts/native-message-ui/reply-thread-controller.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/reply-thread-controller.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/reply-thread-controller.log
