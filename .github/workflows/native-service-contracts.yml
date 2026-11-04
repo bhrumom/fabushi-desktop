@@ -1143,6 +1143,8 @@ jobs:
           if-no-files-found: error
   native-messaging-core-contracts:
     if: github.event_name == 'push' || github.event_name == 'pull_request' || inputs.message_batch
+    permissions:
+      contents: write
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -1179,6 +1181,17 @@ jobs:
           if test -f native/mahayana-messaging/Cargo.lock; then
             cp native/mahayana-messaging/Cargo.lock artifacts/native-messaging-core/Cargo.lock
           fi
+      - name: Publish resolved native messaging lock blob for exact-H CAS
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          lock_content="$(base64 -w0 native/mahayana-messaging/Cargo.lock)"
+          lock_blob="$(gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" -f content="$lock_content" -f encoding=base64 --jq .sha)"
+          test "${#lock_blob}" -eq 40
+          printf 'NATIVE_MESSAGING_CARGO_LOCK_BLOB_SHA=%s\n' "$lock_blob"
       - name: Preserve native messaging core evidence
         if: always()
         uses: actions/upload-artifact@v4
