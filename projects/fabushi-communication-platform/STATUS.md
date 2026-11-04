@@ -33,6 +33,7 @@ _自动生成：`scripts/tdrp-progress-summary.py`，ledger U=`f985723b552b`_
 | 3 | ~~旧 Telegram 栈退出：E1–E4~~ **已完成**：删除 `mahayana-telegram` 与 `providers/telegram-{runtime,network,protocol,media,wasm}`，仅保留 `telegram-storage`/`telegram-core` 供 E3 只读退役迁移；69 行旧栈职责完成真实替代符号与规范锚点（`docs/specs/fmep-exit-mtproto-disposition.md`）重映射 | 待 E3 退役窗口结束后删除 `telegram-storage`/`telegram-core` | — |
 | 4 | ~~Round8/Round9 修复待在包含修复的 H 上执行~~ **已解决**：Round9 @ `c29c22144` 三套核心工作流全绿（`Native service contracts` run `41755914496` 8/8 jobs passed；`TDRP source review contract` run `41755956791` passed；`Mahayana workspace compile guard` run `41755956794` passed）。证据：`telegram-desktop-rust/evidence/round9-requalification-20261104.json` | 之后的 H 仍需各自的 Actions 结果 | — |
 | 5 | 来源闭合：unknown/unread 未统计；source_reviews 只有 6/16 complete | 按 FMEP-SOURCE-01 完成身份对照和必需深读 | 迁移线 |
+| 6 | 后端缺乏 Group / Channel / Forum Topic 服务端线协议与 D1 存储表（仅有 1:1 私聊） | 服务端实现群组/频道资源与多人群消息端点；客户端按 [FBCP-ADR-005](../../docs/adr/FBCP-ADR-005-session-group-topic-conversations.md) 先落地桌面 SQLite Schema 与无状态策略接入，远端同步保持 blocked | 后端服务团队 / 迁移线 |
 
 ## 当前批次
 
