@@ -3154,12 +3154,148 @@ impl ProductionSessionWorkers {
         format!("human-direct-{:x}", digest.finalize())
     }
 
-    fn sync_human_calls_with_recovery(
+    pub(crate) fn sync_call_session_from_remote_with_recovery(
+        &self,
+        call_id: &str,
+        recovery: Option<&HumanSyncRecoveryContext>,
+    ) -> Result<CallSession, String> {
+        const PAGE_LIMIT: usize = 200;
+        const MAX_PAGES: usize = 32;
+
+        self.check_human_sync_continuation(recovery)?;
+        let local = self.authorized_call_session(call_id)?;
+        let Some(client) = self.shipping_native_messaging()? else {
+            return Ok(local);
+        };
+        let identity = client.identity()?;
+        if identity.user_id != self.local_human_id()? {
+            return Err("Fabushi call credential identity does not match active Human identity".into());
+        }
+
+        let continuation_owner = if recovery.is_some_and(HumanSyncRecoveryContext::is_continuing) {
+            let owner = self.open_human_conversation_db_owner(&local.scope_id)?;
+            let metadata = Self::read_human_conversation_metadata(&owner, &local.scope_id, true)?;
+            if self.peer_human_id_from_metadata(&metadata)? != self.local_call_peer(&local.participant_ids)? {
+                return Err("remote Human call participants do not match CallSession owner".into());
+            }
+            Some((owner, metadata))
+        } else { None };
+        let check_continuation = || -> Result<(), String> {
+            self.check_human_sync_continuation(recovery)?;
+            if let Some((owner, metadata)) = &continuation_owner {
+                self.revalidate_human_recovery_owner(&local.scope_id, owner, metadata)?;
+                let current = self.authorized_call_session(call_id)?;
+                if current.scope_id != local.scope_id {
+                    return Err("remote Human call resolved to a different canonical conversation scope".into());
+                }
+                if current.participant_ids != local.participant_ids {
+                    return Err("remote Human call participants do not match CallSession owner".into());
+                }
+            }
+            Ok(())
+        };
+        check_continuation()?;
+        let mut cursor = self.call_sessions()?.remote_event_seq(call_id)?;
+        for _ in 0..MAX_PAGES {
+            check_continuation()?;
+            let (remote, events, next_after_seq) =
+                client.get_human_call(call_id, cursor, PAGE_LIMIT)?;
+            check_continuation()?;
+            self.validate_remote_call(&remote, &self.authorized_call_session(call_id)?)?;
+            let prior_cursor = cursor;
+            for event in events {
+                if continuation_owner.is_some() && event.call_id != call_id {
+                    return Err("remote Human call event does not match requested CallSession owner".into());
+                }
+                if event.seq <= cursor {
+                    continue;
+                }
+                if event.seq != cursor + 1 {
+                    return Err(format!(
+                        "remote Human call event sequence gap: expected {}, received {}",
+                        cursor + 1,
+                        event.seq
+                    ));
+                }
+                check_continuation()?;
+                self.apply_remote_call_event(&event)?;
+                check_continuation()?;
+                self.call_sessions()?.set_remote_event_seq(call_id, event.seq)?;
+                cursor = event.seq;
+            }
+            if cursor >= remote.event_seq {
+                check_continuation()?;
+                return self.authorized_call_session(call_id);
+            }
+            if cursor == prior_cursor || next_after_seq <= cursor {
+                return Err("remote Human call sync made no progress before reaching backend head".into());
+            }
+        }
+        Err("remote Human call sync exceeded the bounded replay window".into())
+    }
+
+    pub(crate) fn sync_human_calls_with_recovery(
         &self,
         recovery: Option<&HumanSyncRecoveryContext>,
     ) -> Result<Vec<CallSession>, String> {
         self.check_human_sync_continuation(recovery)?;
-        let synced = self.sync_human_calls()?;
+        let Some(client) = self.shipping_native_messaging()? else {
+            return Ok(Vec::new());
+        };
+        let local_human_id = self.local_human_id()?.to_string();
+        let identity = client.identity()?;
+        if identity.user_id != local_human_id {
+            return Err("Fabushi call credential identity does not match active Human identity".into());
+        }
+        self.check_human_sync_continuation(recovery)?;
+        let remote_calls = client.list_human_calls(200)?;
+        self.check_human_sync_continuation(recovery)?;
+        let mut synced = Vec::with_capacity(remote_calls.len());
+        for remote in remote_calls {
+            self.check_human_sync_continuation(recovery)?;
+            let peer = self.remote_call_peer(&remote)?;
+            let conversation = self.create_human_conversation_with_recovery(&peer, &peer, recovery)?;
+            self.check_human_sync_continuation(recovery)?;
+            let scope_id = conversation
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "Human call discovery could not resolve canonical conversation scope".to_string())?;
+            let continuation_owner = if recovery.is_some_and(HumanSyncRecoveryContext::is_continuing) {
+                let owner = self.open_human_conversation_db_owner(scope_id)?;
+                let metadata = Self::read_human_conversation_metadata(&owner, scope_id, true)?;
+                if self.peer_human_id_from_metadata(&metadata)? != peer {
+                    return Err("remote Human call participants do not match CallSession owner".into());
+                }
+                Some((owner, metadata))
+            } else { None };
+            let check_continuation = || -> Result<(), String> {
+                self.check_human_sync_continuation(recovery)?;
+                if let Some((owner, metadata)) = &continuation_owner {
+                    self.revalidate_human_recovery_owner(scope_id, owner, metadata)?;
+                }
+                Ok(())
+            };
+            check_continuation()?;
+            if self.call_sessions()?.get(&remote.call_id)?.is_none() {
+                let creator = fabushi_identity_text(&remote.creator_user_id)?;
+                let participants = vec![local_human_id.clone(), peer.clone()];
+                check_continuation()?;
+                self.call_sessions()?.create_with_id(
+                    &remote.call_id,
+                    scope_id,
+                    &creator,
+                    &participants,
+                )?;
+            }
+            check_continuation()?;
+            let call = self.authorized_call_session(&remote.call_id)?;
+            if call.scope_id != scope_id {
+                return Err("remote Human call resolved to a different canonical conversation scope".into());
+            }
+            self.validate_remote_call(&remote, &call)?;
+            synced.push(self.sync_call_session_from_remote_with_recovery(&remote.call_id, recovery)?);
+            check_continuation()?;
+        }
         self.check_human_sync_continuation(recovery)?;
         Ok(synced)
     }
@@ -3244,11 +3380,7 @@ impl ProductionSessionWorkers {
                             expected_session_key.to_string(),
                         );
                         return owner
-                            .update_transcript_entry_if_session_admitted(
-                                expected_session_key,
-                                &entry_id,
-                                &enriched,
-                            )
+                            .update_transcript_entry(&entry_id, &enriched)
                             .map_err(|error| error.to_string())?
                             .ok_or_else(|| {
                                 "Human handoff Agent result disappeared during provenance settlement"
@@ -3279,17 +3411,10 @@ impl ProductionSessionWorkers {
         if let Some(session_key) = session_key {
             entry["sessionKey"] = serde_json::Value::String(session_key.to_string());
         }
-        let inserted = if let Some(session_key) = session_key {
-            owner
-                .append_transcript_entries_if_session_admitted(session_key, &[entry.clone()])
-                .map_err(|error| error.to_string())?
-                == 1
-        } else {
-            owner
-                .append_transcript_entry(&entry)
-                .map_err(|error| error.to_string())?
-        };
-        if !inserted {
+        if !owner
+            .append_transcript_entry(&entry)
+            .map_err(|error| error.to_string())?
+        {
             let replay = owner
                 .get_transcript_entries()
                 .map_err(|error| error.to_string())?
@@ -3320,11 +3445,7 @@ impl ProductionSessionWorkers {
                             expected_session_key.to_string(),
                         );
                         return owner
-                            .update_transcript_entry_if_session_admitted(
-                                expected_session_key,
-                                &entry_id,
-                                &enriched,
-                            )
+                            .update_transcript_entry(&entry_id, &enriched)
                             .map_err(|error| error.to_string())?
                             .ok_or_else(|| {
                                 "Human handoff Agent result disappeared during replay provenance settlement"

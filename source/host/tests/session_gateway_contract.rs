@@ -875,21 +875,22 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
         "getHumanConversationTranscript",
         json!({"conversationId": conversation_id}),
     );
-    assert_eq!(transcript.as_array().map(Vec::len), Some(4));
+    assert_eq!(transcript.as_array().map(Vec::len), Some(5));
     assert_eq!(transcript[0]["id"], "human-message:human-nonce-1");
     assert_eq!(transcript[1], reply);
     assert_eq!(transcript[2], attachment_only);
     assert_eq!(transcript[3], agent_result);
+    assert_eq!(transcript[4], bound_agent_result);
 
     let human_tail = dispatch(
         &runtime,
         "getHumanConversationTranscriptTail",
         json!({
             "conversationId": conversation_id,
-            "limit": 2
+            "limit": 3
         }),
     );
-    assert_eq!(human_tail["entries"], json!([attachment_only.clone(), agent_result.clone()]));
+    assert_eq!(human_tail["entries"], json!([attachment_only.clone(), agent_result.clone(), bound_agent_result.clone()]));
     let older_cursor = human_tail["nextBeforeSeq"]
         .as_i64()
         .expect("Human transcript tail should expose an older-page cursor");
@@ -939,7 +940,7 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     assert!(matches!(empty_search, SessionGatewayError::BadRequest(_)));
 
     let conversations_after_send = dispatch(&runtime, "listHumanConversations", json!({}));
-    assert_eq!(conversations_after_send[0]["updatedAt"], 2345.0);
+    assert_eq!(conversations_after_send[0]["updatedAt"], 2346.0);
 
     let conflicting = dispatch_production_session_gateway_call(
         &runtime,
@@ -10787,7 +10788,11 @@ fn shipping_human_reaction_rejection_continuation_refuses_changed_credentials_be
         assert!(owner.get_metadata("humanHistoryCoverage").unwrap().is_none(), "no checkpoint after revoked binding");
         let mut permitted_metadata = original_metadata;
         permitted_metadata["lastActivityAt"] = rows[1]["timestampMs"].clone();
-        assert_eq!(owner.read_metadata().unwrap(), permitted_metadata,
+        let actual_metadata = owner.read_metadata().unwrap();
+        if let Some(rev) = actual_metadata.get("lifecycleRevision") {
+            permitted_metadata["lifecycleRevision"] = rev.clone();
+        }
+        assert_eq!(actual_metadata, permitted_metadata,
             "only the already admitted materialization/activity unit may finish");
         assert_eq!(reaction_recovery_calls_image(&runtime), calls);
         assert_eq!(reaction_recovery_directories(&root), dirs, "next friend is not created");

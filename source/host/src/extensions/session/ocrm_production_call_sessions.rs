@@ -8,7 +8,7 @@ use super::native_messaging::{
 use super::production::ProductionSessionWorkers;
 
 impl ProductionSessionWorkers {
-    fn local_call_peer(&self, participant_ids: &[String]) -> Result<String, String> {
+    pub(crate) fn local_call_peer(&self, participant_ids: &[String]) -> Result<String, String> {
         let local = self
             .local_human_id
             .as_deref()
@@ -30,7 +30,7 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "shipping Human call peer is unavailable".to_string())
     }
 
-    fn remote_call_peer(&self, remote: &FabushiRemoteHumanCall) -> Result<String, String> {
+    pub(crate) fn remote_call_peer(&self, remote: &FabushiRemoteHumanCall) -> Result<String, String> {
         let local = self
             .local_human_id
             .as_deref()
@@ -46,7 +46,7 @@ impl ProductionSessionWorkers {
         }
     }
 
-    fn validate_remote_call(
+    pub(crate) fn validate_remote_call(
         &self,
         remote: &FabushiRemoteHumanCall,
         local: &CallSession,
@@ -76,7 +76,7 @@ impl ProductionSessionWorkers {
         Ok(format!("{prefix}:{generation}:{suffix}"))
     }
 
-    fn apply_remote_call_event(
+    pub(crate) fn apply_remote_call_event(
         &self,
         event: &FabushiRemoteHumanCallEvent,
     ) -> Result<(), String> {
@@ -158,47 +158,7 @@ impl ProductionSessionWorkers {
     }
 
     pub fn sync_call_session_from_remote(&self, call_id: &str) -> Result<CallSession, String> {
-        const PAGE_LIMIT: usize = 200;
-        const MAX_PAGES: usize = 32;
-
-        let local = self.authorized_call_session(call_id)?;
-        let Some(client) = self.shipping_native_messaging()? else {
-            return Ok(local);
-        };
-        let identity = client.identity()?;
-        if identity.user_id != self.local_human_id()? {
-            return Err("Fabushi call credential identity does not match active Human identity".into());
-        }
-
-        let mut cursor = self.call_sessions()?.remote_event_seq(call_id)?;
-        for _ in 0..MAX_PAGES {
-            let (remote, events, next_after_seq) =
-                client.get_human_call(call_id, cursor, PAGE_LIMIT)?;
-            self.validate_remote_call(&remote, &self.authorized_call_session(call_id)?)?;
-            let prior_cursor = cursor;
-            for event in events {
-                if event.seq <= cursor {
-                    continue;
-                }
-                if event.seq != cursor + 1 {
-                    return Err(format!(
-                        "remote Human call event sequence gap: expected {}, received {}",
-                        cursor + 1,
-                        event.seq
-                    ));
-                }
-                self.apply_remote_call_event(&event)?;
-                self.call_sessions()?.set_remote_event_seq(call_id, event.seq)?;
-                cursor = event.seq;
-            }
-            if cursor >= remote.event_seq {
-                return self.authorized_call_session(call_id);
-            }
-            if cursor == prior_cursor || next_after_seq <= cursor {
-                return Err("remote Human call sync made no progress before reaching backend head".into());
-            }
-        }
-        Err("remote Human call sync exceeded the bounded replay window".into())
+        self.sync_call_session_from_remote_with_recovery(call_id, None)
     }
 
     pub fn call_transport_identity(&self) -> Result<serde_json::Value, String> {
@@ -271,41 +231,7 @@ impl ProductionSessionWorkers {
     }
 
     pub fn sync_human_calls(&self) -> Result<Vec<CallSession>, String> {
-        let Some(client) = self.shipping_native_messaging()? else {
-            return Ok(Vec::new());
-        };
-        let local_human_id = self.local_human_id()?.to_string();
-        let identity = client.identity()?;
-        if identity.user_id != local_human_id {
-            return Err("Fabushi call credential identity does not match active Human identity".into());
-        }
-        let remote_calls = client.list_human_calls(200)?;
-        let mut synced = Vec::with_capacity(remote_calls.len());
-        for remote in remote_calls {
-            let peer = self.remote_call_peer(&remote)?;
-            let conversation = self.create_human_conversation(&peer, &peer)?;
-            let scope_id = conversation
-                .get("id")
-                .and_then(serde_json::Value::as_str)
-                .ok_or_else(|| "Human call discovery could not resolve canonical conversation scope".to_string())?;
-            if self.call_sessions()?.get(&remote.call_id)?.is_none() {
-                let creator = fabushi_identity_text(&remote.creator_user_id)?;
-                let participants = vec![local_human_id.clone(), peer.clone()];
-                self.call_sessions()?.create_with_id(
-                    &remote.call_id,
-                    scope_id,
-                    &creator,
-                    &participants,
-                )?;
-            }
-            let call = self.authorized_call_session(&remote.call_id)?;
-            if call.scope_id != scope_id {
-                return Err("remote Human call resolved to a different canonical conversation scope".into());
-            }
-            self.validate_remote_call(&remote, &call)?;
-            synced.push(self.sync_call_session_from_remote(&remote.call_id)?);
-        }
-        Ok(synced)
+        self.sync_human_calls_with_recovery(None)
     }
 
     pub fn create_call_session(
@@ -341,7 +267,7 @@ impl ProductionSessionWorkers {
             .create_with_id(&call_id, scope_id, creator_id, participant_ids)
     }
 
-    fn authorized_call_session(&self, call_id: &str) -> Result<CallSession, String> {
+    pub(crate) fn authorized_call_session(&self, call_id: &str) -> Result<CallSession, String> {
         let local_human_id = self
             .local_human_id
             .as_deref()
