@@ -10800,6 +10800,102 @@ fn shipping_human_history_coverage_incomplete_signal_is_exposed_until_sync_reach
     let _ = fs::remove_dir_all(root);
 }
 
+fn create_test_miniapp_bundle(
+    app_id: &str,
+    version: &str,
+) -> (Vec<u8>, mahayana_host_runtime::extensions::mcp::installable_package::CatalogAuthorization) {
+    use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
+    use ed25519_dalek::{Signer, SigningKey};
+    use sha2::{Digest, Sha256};
+    use std::io::{Cursor, Write};
+    use zip::{ZipWriter, write::SimpleFileOptions};
+
+    let key = SigningKey::from_bytes(&[7; 32]);
+    let expected = b"<!doctype html><p>offline</p>";
+    let mut hasher = Sha256::new();
+    hasher.update(expected);
+    let expected_hash = {
+        let hash = hasher.finalize();
+        let mut out = String::with_capacity(64);
+        for byte in hash {
+            use std::fmt::Write;
+            let _ = write!(&mut out, "{byte:02x}");
+        }
+        out
+    };
+
+    let mut manifest = serde_json::json!({
+        "manifestVersion": 1, "packageClass": "catalog", "appId": app_id,
+        "publisherId": "test-publisher", "version": version, "displayName": "Test App",
+        "entrypoint": "index.html", "runtime": "web", "minHostApi": 1, "offlineCore": true,
+        "requestedCapabilities": [], "networkPolicy": { "mode": "deny", "allowedOrigins": [] },
+        "files": { "index.html": { "sha256": expected_hash, "bytes": expected.len(), "mime": "text/html" } }
+    });
+
+    fn sorted(value: &serde_json::Value) -> serde_json::Value {
+        match value {
+            serde_json::Value::Object(map) => {
+                let ordered: std::collections::BTreeMap<_, _> =
+                    map.iter().map(|(k, v)| (k.clone(), sorted(v))).collect();
+                serde_json::Value::Object(ordered.into_iter().collect())
+            }
+            serde_json::Value::Array(items) => serde_json::Value::Array(items.iter().map(sorted).collect()),
+            _ => value.clone(),
+        }
+    }
+
+    let domain = b"fabushi.fabapp.manifest.v1\0";
+    let mut payload = domain.to_vec();
+    payload.extend(serde_json::to_vec(&sorted(&manifest)).unwrap());
+    manifest["signature"] = serde_json::json!({
+        "algorithm": "Ed25519", "keyId": "fixture-only",
+        "value": URL_SAFE_NO_PAD.encode(key.sign(&payload).to_bytes())
+    });
+
+    let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+    let items = vec![
+        ("manifest.json".to_string(), serde_json::to_vec(&manifest).unwrap()),
+        ("index.html".to_string(), expected.to_vec()),
+    ];
+    for (name, data) in items {
+        writer
+            .start_file(
+                name,
+                SimpleFileOptions::default()
+                    .compression_method(zip::CompressionMethod::Stored)
+                    .unix_permissions(0o644),
+            )
+            .unwrap();
+        writer.write_all(&data).unwrap();
+    }
+    let bytes = writer.finish().unwrap().into_inner();
+
+    let mut pkg_hasher = Sha256::new();
+    pkg_hasher.update(&bytes);
+    let pkg_hash = {
+        let hash = pkg_hasher.finalize();
+        let mut out = String::with_capacity(64);
+        for byte in hash {
+            use std::fmt::Write;
+            let _ = write!(&mut out, "{byte:02x}");
+        }
+        out
+    };
+
+    let policy = mahayana_host_runtime::extensions::mcp::installable_package::CatalogAuthorization {
+        app_id: app_id.into(),
+        publisher_id: "test-publisher".into(),
+        version: version.into(),
+        package_sha256: pkg_hash,
+        key_id: "fixture-only".into(),
+        public_key: key.verifying_key().to_bytes(),
+        trust_epoch: 1,
+        host_api: 1,
+        requested_capabilities: vec![],
+    };
+    (bytes, policy)
+}
+
 #[test]
 fn miniapp_post_to_conversation_contract_enforces_host_authoritative_session_and_safety_fences() {
     let root = temp_root("miniapp-conversation-contract");
@@ -10830,10 +10926,20 @@ fn miniapp_post_to_conversation_contract_enforces_host_authoritative_session_and
         let db = package_db.lock().unwrap();
         mahayana_host_runtime::extensions::mcp::installable_package::ledger::initialize(&db).expect("ledger initialized");
     }
+
+    // Dynamic scope provider: generation is NOT hardcoded!
+    let current_gen = Arc::new(std::sync::atomic::AtomicU64::new(1));
+    let gen_clone = Arc::clone(&current_gen);
+    let scope_provider: Arc<dyn Fn() -> Result<mahayana_host_runtime::extensions::mcp::installable_package::ledger::HostInstallScope, String> + Send + Sync> = Arc::new(move || {
+        Ok(mahayana_host_runtime::extensions::mcp::installable_package::ledger::HostInstallScope {
+            account_scope: "human-local".into(),
+            generation: gen_clone.load(std::sync::atomic::Ordering::SeqCst),
+        })
+    });
     runtime.set_mini_app_package_verifier(
         ProductionSessionWorkers::create_ledger_package_verifier(
             Arc::clone(&package_db),
-            "human-local".into(),
+            scope_provider,
         ),
     );
 
@@ -10851,7 +10957,7 @@ fn miniapp_post_to_conversation_contract_enforces_host_authoritative_session_and
     assert!(matches!(uninstalled, SessionGatewayError::BadRequest(ref msg) if msg.contains("not installed")));
 
     // Install real verified package into installable_package ledger owner (Point 4)
-    let (bundle_bytes, policy) = mahayana_host_runtime::extensions::mcp::installable_package::create_test_bundle_and_authorization("org.fabushi.shop", "1.0.0");
+    let (bundle_bytes, policy) = create_test_miniapp_bundle("org.fabushi.shop", "1.0.0");
     let verified_pkg = mahayana_host_runtime::extensions::mcp::installable_package::verify_catalog_bundle(&bundle_bytes, &policy).expect("verified package");
     let real_digest = verified_pkg.digest().to_string();
     {
@@ -10861,6 +10967,9 @@ fn miniapp_post_to_conversation_contract_enforces_host_authoritative_session_and
             generation: 1,
         };
         mahayana_host_runtime::extensions::mcp::installable_package::ledger::activate(&mut db, &scope, &scope, "op-1", verified_pkg).expect("activated");
+        mahayana_host_runtime::extensions::mcp::installable_package::ledger::verified_native_account(
+            &db, "human-local", "binding-test", 9_999_999_999_999, 1000
+        ).expect("verified native account initialized");
     }
 
     // 2. Digest mismatch fails closed
@@ -10878,7 +10987,25 @@ fn miniapp_post_to_conversation_contract_enforces_host_authoritative_session_and
     .expect_err("digest mismatch must be rejected");
     assert!(matches!(mismatch, SessionGatewayError::BadRequest(ref msg) if msg.contains("digest mismatch")));
 
-    // 3. issueMiniAppLaunchSession on non-participant conversation fails closed
+    // 3. Generation mismatch (account rotated to generation 2) fails closed (Point 2)
+    current_gen.store(2, std::sync::atomic::Ordering::SeqCst);
+    let gen_mismatch = dispatch_production_session_gateway_call(
+        &runtime,
+        "issueMiniAppLaunchSession",
+        &json!({
+            "appId": "org.fabushi.shop",
+            "conversationId": conversation_id,
+            "version": "1.0.0",
+            "packageDigest": real_digest,
+        }),
+    )
+    .expect("handled call")
+    .expect_err("generation mismatch must fail closed");
+    assert!(matches!(gen_mismatch, SessionGatewayError::BadRequest(_)));
+    // Restore generation for remaining tests
+    current_gen.store(1, std::sync::atomic::Ordering::SeqCst);
+
+    // 4. issueMiniAppLaunchSession on non-participant conversation fails closed
     let non_participant = dispatch_production_session_gateway_call(
         &runtime,
         "issueMiniAppLaunchSession",
@@ -10891,7 +11018,7 @@ fn miniapp_post_to_conversation_contract_enforces_host_authoritative_session_and
     .expect_err("non-participant conversation must be rejected");
     assert!(matches!(non_participant, SessionGatewayError::BadRequest(_)));
 
-    // 4. issueMiniAppLaunchSession succeeds for verified package + participant + matching digest
+    // 5. issueMiniAppLaunchSession succeeds for verified package + participant + matching digest
     // Notice: without prior user grant, effective permissions are EMPTY (Point 2: no self-granting!)
     let launch_res = dispatch(
         &runtime,

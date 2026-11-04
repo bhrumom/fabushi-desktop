@@ -704,62 +704,6 @@ pub fn verify_catalog_bundle(
     })
 }
 
-pub fn create_test_bundle_and_authorization(
-    app_id: &str,
-    version: &str,
-) -> (Vec<u8>, CatalogAuthorization) {
-    use ed25519_dalek::{Signer, SigningKey};
-    use std::io::Write;
-    use zip::{ZipWriter, write::SimpleFileOptions};
-
-    let key = SigningKey::from_bytes(&[7; 32]);
-    let expected = b"<!doctype html><p>offline</p>";
-    let mut manifest = serde_json::json!({
-        "manifestVersion": 1, "packageClass": "catalog", "appId": app_id,
-        "publisherId": "test-publisher", "version": version, "displayName": "Test App",
-        "entrypoint": "index.html", "runtime": "web", "minHostApi": 1, "offlineCore": true,
-        "requestedCapabilities": [], "networkPolicy": { "mode": "deny", "allowedOrigins": [] },
-        "files": { "index.html": { "sha256": digest(expected), "bytes": expected.len(), "mime": "text/html" } }
-    });
-    let mut payload = DOMAIN.to_vec();
-    payload.extend(canonical(&manifest).unwrap());
-    manifest["signature"] = serde_json::json!({
-        "algorithm": "Ed25519", "keyId": "fixture-only",
-        "value": URL_SAFE_NO_PAD.encode(key.sign(&payload).to_bytes())
-    });
-
-    let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
-    let items = vec![
-        ("manifest.json".to_string(), serde_json::to_vec(&manifest).unwrap()),
-        ("index.html".to_string(), expected.to_vec()),
-    ];
-    for (name, data) in items {
-        writer
-            .start_file(
-                name,
-                SimpleFileOptions::default()
-                    .compression_method(zip::CompressionMethod::Stored)
-                    .unix_permissions(0o644),
-            )
-            .unwrap();
-        writer.write_all(&data).unwrap();
-    }
-    let bytes = writer.finish().unwrap().into_inner();
-
-    let policy = CatalogAuthorization {
-        app_id: app_id.into(),
-        publisher_id: "test-publisher".into(),
-        version: version.into(),
-        package_sha256: digest(&bytes),
-        key_id: "fixture-only".into(),
-        public_key: key.verifying_key().to_bytes(),
-        trust_epoch: 1,
-        host_api: 1,
-        requested_capabilities: vec![],
-    };
-    (bytes, policy)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -266,6 +266,7 @@ pub enum MiniAppPostError {
     ConversationNotFound(String),
     AppNotInstalled(String),
     PackageDigestMismatch(String),
+    StaleScope(String),
     Conflict(String),
     PersistenceFailed(String),
 }
@@ -294,6 +295,7 @@ impl std::fmt::Display for MiniAppPostError {
             Self::ConversationNotFound(id) => write!(f, "Conversation not found: {id}"),
             Self::AppNotInstalled(id) => write!(f, "MiniApp package is not installed or verified: {id}"),
             Self::PackageDigestMismatch(msg) => write!(f, "MiniApp package digest or version mismatch: {msg}"),
+            Self::StaleScope(msg) => write!(f, "MiniApp account scope or generation is stale or invalid: {msg}"),
             Self::Conflict(msg) => write!(f, "MiniApp message conflict: {msg}"),
             Self::PersistenceFailed(err) => write!(f, "MiniApp message persistence failed: {err}"),
         }
@@ -4585,16 +4587,33 @@ impl ProductionSessionWorkers {
 
     pub fn create_ledger_package_verifier(
         db: Arc<Mutex<rusqlite::Connection>>,
-        account_scope: String,
+        scope_provider: Arc<dyn Fn() -> Result<crate::extensions::mcp::installable_package::ledger::HostInstallScope, String> + Send + Sync>,
     ) -> MiniAppPackageVerifier {
         Arc::new(move |app_id: &str, version: Option<&str>, digest: Option<&str>| {
             let conn = db
                 .lock()
                 .map_err(|_| MiniAppPostError::PersistenceFailed("db lock poisoned".into()))?;
-            let scope = crate::extensions::mcp::installable_package::ledger::HostInstallScope {
-                account_scope: account_scope.clone(),
-                generation: 1,
-            };
+            let scope = scope_provider().map_err(MiniAppPostError::StaleScope)?;
+            if scope.account_scope.is_empty() || scope.generation == 0 {
+                return Err(MiniAppPostError::StaleScope("invalid account scope or zero generation".into()));
+            }
+            use rusqlite::OptionalExtension;
+            let current_account: Option<(String, i64)> = conn
+                .query_row(
+                    "SELECT account_scope_hash, generation FROM host_miniapp_native_account WHERE singleton=1",
+                    [],
+                    |r| Ok((r.get(0)?, r.get(1)?)),
+                )
+                .optional()
+                .map_err(|e| MiniAppPostError::PersistenceFailed(format!("account query error: {e:?}")))?;
+            if let Some((active_scope, active_gen)) = current_account {
+                if active_scope != scope.account_scope || active_gen as u64 != scope.generation {
+                    return Err(MiniAppPostError::StaleScope(format!(
+                        "account generation mismatch: scope generation {}, active account generation {}",
+                        scope.generation, active_gen
+                    )));
+                }
+            }
             let installed = crate::extensions::mcp::installable_package::ledger::installed(&conn, &scope, app_id)
                 .map_err(|e| MiniAppPostError::PersistenceFailed(format!("ledger query error: {e:?}")))?;
             let Some(record) = installed else {
