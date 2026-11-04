@@ -157,7 +157,7 @@ test("account scope replacement fences pre-read, late successful, and late rejec
   assert.deepEqual(lateFailure.rosters, []);
 });
 
-\ntest("unknown runtime settlement statuses fail closed without exposing unconfirmed names", async () => {
+test("unknown runtime settlement statuses fail closed without exposing unconfirmed names", async () => {
   const h = harness([{ id: "c", name: "Alice" }, { id: "x", name: "Private target" }]);
   const unknown = { conversationId: "x", status: "queued" } as unknown as ReturnType<typeof failed>;
   await settleForwardProjection({
