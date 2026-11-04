@@ -8,6 +8,8 @@ Enforces Spec §6.2-§6.3, §17-§18, and AC03:
 - Forbids bulk 1-END shortcuts, null reviewers, or unclassified language kinds on read rows
 - OCRM-HYGIENE-01: verifies target.path file existence, literal target.symbol presence,
   and evidence_refs path existence across parity-ledger.json
+- OCRM-MODULAR-01: inspects target files for god-files (>1,200 lines) and N-to-1 stub compression
+  (>=15 mapped source_refs in <150 lines) to guide Wave 1 decomposition down to 0
 """
 import glob
 import gzip
@@ -246,7 +248,65 @@ def main():
             fail(f"Schema {schema_name} error at {list(err.absolute_path)}: {err.message}")
 
     print("-> Schema & OCRM-HYGIENE-01 validation: PASS (239 responsibilities verified)")
-    print("=== Audit Integrity Check PASSED! 0 violations found. ===")
+
+    # 4. OCRM-MODULAR-01 Modularity & Anti-Stub-Compression Audit
+    def get_module_line_count(target_file: Path) -> int:
+        if not target_file.exists() or not target_file.is_file():
+            return 0
+        total = len(target_file.read_text(encoding="utf-8", errors="replace").splitlines())
+        if target_file.name == "mod.rs":
+            for sibling in target_file.parent.glob("*.rs"):
+                if sibling != target_file:
+                    total += len(sibling.read_text(encoding="utf-8", errors="replace").splitlines())
+        sub_dir = target_file.parent / target_file.stem
+        if sub_dir.is_dir():
+            for sub_file in sub_dir.glob("**/*.rs"):
+                total += len(sub_file.read_text(encoding="utf-8", errors="replace").splitlines())
+        return total
+
+    target_stats = {}
+    for responsibility in ledger.get("responsibilities", []):
+        rid = responsibility.get("id")
+        target = responsibility.get("target") or {}
+        t_path = target.get("path")
+        if not t_path:
+            continue
+        if t_path not in target_stats:
+            target_stats[t_path] = {
+                "source_refs": [],
+                "responsibilities": [],
+            }
+        target_stats[t_path]["responsibilities"].append(rid)
+        for source_ref in responsibility.get("source_refs", []):
+            if isinstance(source_ref, dict) and source_ref.get("path"):
+                target_stats[t_path]["source_refs"].append(source_ref.get("path"))
+
+    god_files = []
+    compressed_stubs = []
+    for t_path, stats in target_stats.items():
+        t_file = REPO_ROOT / t_path
+        if not t_file.exists() or not t_file.is_file():
+            continue
+        single_lines = len(t_file.read_text(encoding="utf-8", errors="replace").splitlines())
+        module_lines = get_module_line_count(t_file)
+        total_sources = len(stats["source_refs"])
+        unique_sources = len(set(stats["source_refs"]))
+
+        if single_lines > 1200:
+            god_files.append((t_path, single_lines))
+        if total_sources >= 15 and module_lines < 150:
+            compressed_stubs.append((t_path, total_sources, unique_sources, module_lines))
+
+    print(f"\n-> 4. OCRM-MODULAR-01 Modularity & Anti-Stub-Compression Audit:")
+    print(f"   - Target files exceeding 1,200 lines (God-file metric): {len(god_files)}")
+    for gf, lines in sorted(god_files, key=lambda x: x[1], reverse=True):
+        print(f"     * [GOD-FILE] {gf}: {lines:,} lines (> 1,200 line threshold)")
+    print(f"   - N-to-1 compressed stubs (>= 15 source_refs & < 150 lines): {len(compressed_stubs)}")
+    for cs, total_s, uniq_s, lines in sorted(compressed_stubs, key=lambda x: x[1], reverse=True):
+        print(f"     * [STUB-COMPRESSION] {cs}: {total_s} source_refs ({uniq_s} unique paths) mapped into {lines} lines (< 150 line threshold)")
+    print(f"   - OCRM-MODULAR-01 Tracking Status: {len(god_files)} god-files, {len(compressed_stubs)} compressed stubs (slated for Wave 1 decomposition down to 0)")
+
+    print("=== Audit Integrity Check PASSED! 0 fatal validation violations found. ===")
 
 
 if __name__ == "__main__":

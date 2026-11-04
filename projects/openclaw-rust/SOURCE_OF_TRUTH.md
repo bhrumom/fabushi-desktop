@@ -1,6 +1,6 @@
 # OpenClaw 全源码 Rust 迁移 — Source of Truth
 
-> 执行修订（2026-11-04）：主 Spec Revision 3（`§17 OCRM-EXEC-02` 与 `§18 OCRM-EXEC-03`）优先于历史漂移快照。本轮实现严格锁定上游基线 `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845`（tree `90c8aab39972da11cfad220361781d49e1bc6700`），禁止在功能实施与生产接线批次中轮询上游浮动 `main`。
+> 执行修订（2026-11-04）：主 Spec Revision 3（`§17 OCRM-EXEC-02`、`§18 OCRM-EXEC-03` 与 `§18.1 OCRM-MODULAR-01`）优先于历史漂移快照。本轮实现严格锁定上游基线 `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845`（tree `90c8aab39972da11cfad220361781d49e1bc6700`），禁止在功能实施与生产接线批次中轮询上游浮动 `main`。所有实现严格遵守模块化解耦与反空壳压缩红线。
 
 Status: active  
 Project ID: OCRM-001  
@@ -18,7 +18,7 @@ Implementation/acceptance: **进行中（230/239 职责已实现 Rust 代码，8
 ## 2. 权威文件与适用顺序
 
 1. 最新明确用户要求与根 [`AGENTS.md`](../../AGENTS.md)。
-2. 主规范 [`docs/specs/openclaw-rust-equivalence-migration.md`](../../docs/specs/openclaw-rust-equivalence-migration.md)（OCRM-001 Revision 3）与批量裁决规范 [`docs/specs/ocrm-bulk-subtrees-disposition.md`](../../docs/specs/ocrm-bulk-subtrees-disposition.md)（OCRM-BULK-01）。
+2. 主规范 [`docs/specs/openclaw-rust-equivalence-migration.md`](../../docs/specs/openclaw-rust-equivalence-migration.md)（OCRM-001 Revision 3，含 `§18.1 OCRM-MODULAR-01`）与批量裁决规范 [`docs/specs/ocrm-bulk-subtrees-disposition.md`](../../docs/specs/ocrm-bulk-subtrees-disposition.md)（OCRM-BULK-01）。
 3. 当前 canonical Fabushi 真实源码/接线，以及相关 Bot、FBCP、TDRP、插件、Mini App、设备网络领域合同。
 4. 本项目 [`module-map.md`](module-map.md)、[`upstream.lock.json`](upstream.lock.json)、[`inventory/index.json`](inventory/index.json)、[`parity-ledger.json`](parity-ledger.json)、[`requirements-traceability-matrix.json`](requirements-traceability-matrix.json) 及 `inventory/shards/manifest.json`。
 5. 自动化校验与进度汇总脚本：
@@ -33,6 +33,7 @@ Implementation/acceptance: **进行中（230/239 职责已实现 Rust 代码，8
 - 先读当前 existing owners（Phase 0 五问侦察 + `Trust Boundary Table`）；只有无合理承接者时通过 rejected-owner analysis 与 ADR 新增最小 source-neutral owner。
 - Coordinator、Host、Runner、box-exec、Electron、renderer、服务端与设备边界保留；无第二 Agent loop、Conversation/Transcript store、scheduler、Marketplace、权限真相或 OpenClaw 运行时。
 - `enumerated`、`applicability-assessed`、`dispositioned`、`read`、`mapped`、`implemented`、`wired`、`verified`、`accepted` 状态正交独立；单独 helper/测试通过不等于 `wired`。
+- **模块化解耦与反空壳压缩红线（`OCRM-MODULAR-01`）**：`Same Owner != Same File`（共享状态 Owner 扩展必须物理拆分为 `ocrm_*.rs` 子模块，严禁污染 `production.rs` / `agent_db.rs` / `main.rs` 根文件）；单文件代码行数控制在 200–600 行（上限 800–1,000 行，>1,200 行必须解耦为 `<domain>/mod.rs` 目录模块）；严禁将 >10 个上游源文件机械压缩为 <150 行空壳 stub。
 
 ## 4. 锁定上游基线与机械进度快照（2026-11-04）
 
@@ -49,6 +50,8 @@ Implementation/acceptance: **进行中（230/239 职责已实现 Rust 代码，8
 | **宿主生产接线** | `wiring = wired` | 89 / 239 | **`implemented + not-wired = 141`**（Wave 1–2 主战场） |
 | **契约验证状态** | `verification` | 239 | `verified=8`, `not-run=231` |
 | **RTM 门禁矩阵** | `OCRM-R01..R24` + `OCRM-AC01..AC24` | 48 | `in-progress=31`, `not-started=17` |
+| **模块解耦红线** | `OCRM-MODULAR-01` 巨石文件 (`> 1,200` 行) | 13 处 | 待解耦目录化模块（Wave 1 目标降至 0） |
+| **模块解耦红线** | `OCRM-MODULAR-01` 多合一空壳压缩 (`>= 15` 源映射但 `< 150` 行) | 3 处 | 待拆分子模块补齐状态机（Wave 1 目标降至 0） |
 
 ## 5. 全局完成标志（Completion Flags）
 
@@ -79,3 +82,18 @@ Implementation/acceptance: **进行中（230/239 职责已实现 Rust 代码，8
    - 将 Plugin SDK 表面、Skills 配置变更、Exec Approvals、命令混淆检测、Docker/SSH 沙箱与 SSRF 策略接入工具执行与插件加载主路径。
 5. **Slice `OC-S5` — Cron / Subagent / Memory QMD / Media / Node Host & Companion Closure**：
    - 将 Cron Session Reaper、Subagent Spawn Queue、Memory QMD 混合检索、Media Understanding Runner、TTS/Talk 控制器与 Node Host 重连/Computer 动作派发接入生产后台服务与协调器。
+
+## 7. 模块化解耦与反多合一压缩红线（OCRM-MODULAR-01）
+
+针对模块膨胀与过度压缩两大架构隐患，所有切片开发必须严格执行以下三条红线：
+
+1. **Rule 1: 共享状态 Owner 与物理文件解耦（`Same Owner != Same File`）**：
+   - 复用现有规范 Owner（`ProductionSessionWorkers`、`SandAgentDb`、`HostApp`、`ChannelRuntime` 等）**绝不直接向根物理文件追加代码**。
+   - 所有 OpenClaw 扩展必须通过 Rust `impl OwnerStruct` 分块实现，安置于独立的内聚领域子模块中（如 `session/ocrm_*.rs`、`app/src/ocrm_handlers/*.rs`）。
+   - 保持根 Owner 物理文件整洁，与并行 Telegram（`tdrp_*.rs`）等其他分支零冲突。
+2. **Rule 2: 单文件内聚与体积预算红线（`Cohesive File Size Budget`）**：
+   - 领域实现文件目标行数为 **200–600 行**，新建模块严格上限为 **800–1,000 行**。
+   - 超出 **1,200 行** 的多能力巨石文件（如 `capability_catalog.rs`、`media_understanding_service.rs`、`device_pairing_owner.rs`、`agent_db.rs`、`production.rs`、`main.rs` 等当前共 13 处）必须解耦拆分为目录化模块（`<domain>/mod.rs` + `<domain>/<sub_capability>.rs`）。
+3. **Rule 3: 禁止多合一空壳压缩（`Anti-N-to-1 Stub Compression`）**：
+   - 严禁将 **>10 个** 独立上游产品源码文件映射到单一 **<150 行** 的空壳 target 文件（当前存量 3 处：`command_dispatch.rs` 96 源 101 行、`session_turns_controller.rs` 40 源 73 行、`state_store.rs` 19 源 126 行）。
+   - 多文件上游子系统必须拆分为具名子模块，完整补齐状态机、事件流转与生产接线，并在 Wave 1 迭代周期内将空壳压缩与巨石文件指标全部归零。

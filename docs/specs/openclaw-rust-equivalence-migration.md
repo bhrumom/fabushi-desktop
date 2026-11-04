@@ -733,3 +733,24 @@ G02 final 与 responsibility_mapping_complete 的来源部分要求：完整集�
 6. **两阶段验证法（Stage A 本地快速反馈 + Stage B GitHub Actions 权威验印）**：
    - **Stage A（日常开发与切片联调）**：允许并要求在本地运行 `python3 projects/openclaw-rust/scripts/verify_audit_integrity.py` 与受影响包的 `cargo test`（如 `cargo test --manifest-path source/host/Cargo.toml --test <contract_test>`）快速验证编译、状态机与契约测试。
    - **Stage B（阶段封板与权威晋升）**：本地 Stage A 全绿后，在 GitHub Actions 运行 exact-head 权威工作流，凭不可变 artifact receipt 更新 RTM/Ledger 验收状态。
+
+### 18.1 OCRM-MODULAR-01 — 模块化解耦、单文件体积红线与反多合一压缩规范
+
+为彻底杜绝 OpenClaw 迁移实现过程中出现的“单文件膨胀为数千行巨石代码（God-file）”、“数十个上游生产文件被机械压缩进单一百行空壳（Stub Compression）”以及“向根 Owner 物理文件直接追加代码导致并行开发分支严重冲突”等架构退化问题，建立强制性模块解耦与体积红线标准：
+
+1. **Rule 1: 共享状态 Owner 与物理文件解耦（`Same Owner != Same File`）**：
+   - 复用现有规范宿主或运行时 Owner（如 `ProductionSessionWorkers`、`SandAgentDb`、`HostApp`、`ChannelRuntime` 等）**绝不等于将数千行新功能直接追加到根宿主文件**（如 `source/host/src/extensions/session/production.rs`、`source/host/src/agent_db.rs`、`source/host/app/src/main.rs` 等）。
+   - 所有针对共享 Owner 的 OpenClaw 扩展能力，**必须通过 Rust `impl OwnerStruct` 分块实现机制拆分到独立的内聚领域子模块文件中**（例如 `source/host/src/extensions/session/ocrm_*.rs`、`source/host/app/src/ocrm_handlers/*.rs` 等）。
+   - 根 Owner 文件仅保留核心生命周期编排与子模块挂载入口，保持文件整洁精简，与并行进行的 Telegram（`tdrp_*.rs`）等其他渠道/子系统研发保持物理文件解耦与零合并冲突。
+
+2. **Rule 2: 单文件内聚与体积预算红线（`Cohesive File Size Budget`）**：
+   - 领域实现文件必须遵循单一职责原则（Single Responsibility Principle, SRP），常规推荐代码行数控制在 **200–600 行** 舒适区间，新建领域模块严格执行 **800–1,000 行** 上限红线。
+   - 任何超过 **1,200 行** 的多能力超大文件（包括但不限于 `capability_catalog.rs`、`media_understanding_service.rs`、`device_pairing_owner.rs`、`agent_db.rs`、`production.rs`、`main.rs` 等）属于巨石上帝文件（God-file）架构违规，必须按能力维度重构解耦为目录化模块：`<domain>/mod.rs`（薄聚合入口与公共导出） + `<domain>/<sub_capability>.rs`（内聚子能力实现）。
+
+3. **Rule 3: 禁止多合一空壳压缩（`Anti-N-to-1 Stub Compression`）**：
+   - 严禁将 **>10 个** 独立上游产品源码文件映射到单一 **<150 行** 的空壳 target 文件中（典型反例：将 96 个上游节点管理与派发文件压缩为 101 行的 `node_host/command_dispatch.rs`，或将 40 个会话控制文件压缩为 73 行的 `session_turns_controller.rs`）。
+   - 覆盖多上游源码文件的产品子系统，必须按领域职责拆分为具名 Rust 目录化子模块，并完整实现状态机流转、事件派发、存储持久化与生产挂载，严禁以伪代理、空函数或无状态骨架敷衍映射。
+
+4. **机器门禁审计追踪与指标归零**：
+   - 门禁脚本 `python3 projects/openclaw-rust/scripts/verify_audit_integrity.py` 与 `python3 projects/openclaw-rust/scripts/ocrm-progress-summary.py` 将实时扫描 `parity-ledger.json` 中所有 `target.path`，追踪汇报 `> 1,200` 行巨石文件与 `>= 15` 上游源文件映射且 `< 150` 行的压缩空壳。
+   - 在 Wave 1 迭代周期内，该指标必须逐步消减并最终归零。
