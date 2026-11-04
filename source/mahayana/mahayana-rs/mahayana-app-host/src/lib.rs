@@ -160,6 +160,7 @@ impl Default for ProductProxySettings {
 }
 
 impl ProductProxySettings {
+    #[cfg(test)]
     fn proxy_enabled(&self) -> bool {
         self.mode == ProductProxyMode::Enabled
     }
@@ -2302,6 +2303,27 @@ mod telegram_composition_contract_tests {
         let renderer_parameters = ["phoneNumber", "code", "password", "firstName", "lastName"];
         assert!(!renderer_parameters.contains(&"apiId"));
         assert!(!renderer_parameters.contains(&"apiHash"));
+    }
+
+    #[test]
+    fn product_proxy_mode_tracks_canonical_enabled_projection_without_legacy_carrier() {
+        let mut proxy = ProductProxySettings::default();
+        assert!(!proxy.proxy_enabled());
+        proxy
+            .apply(ProductProxyMutation::SetSelectedAndMode {
+                proxy: Some(proxy_endpoint("primary")),
+                mode: ProductProxyMode::Enabled,
+            })
+            .expect("enable canonical proxy");
+        assert!(proxy.proxy_enabled());
+        assert_eq!(proxy.selected, Some(proxy_endpoint("primary")));
+        proxy
+            .apply(ProductProxyMutation::SetMode {
+                mode: ProductProxyMode::Disabled,
+            })
+            .expect("disable canonical proxy");
+        assert!(!proxy.proxy_enabled());
+        assert_eq!(proxy.selected, Some(proxy_endpoint("primary")));
     }
 
 }
