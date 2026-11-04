@@ -5,7 +5,7 @@ import { ConversationComposer } from "../recovered/features/conversation/workspa
 import { commitComposerAttachments, stageComposerFiles } from "../recovered/features/conversation/workspace/desktop";
 import { transcriptAttachmentIdentity, type ComposerDraft, type ConversationTranscriptEntry, type DraftAttachment, type TranscriptMessage } from "../recovered/features/conversation/workspace/model";
 import { createComposerDraftPersistence, createComposerDraftStateStore } from "../recovered/features/conversation/workspace/draft-state";
-import { createComposerSubmissionQueue, composerSubmissionBusyState, type ComposerSubmission, type ComposerSubmissionQueue, type ComposerSubmissionAdmission } from "../recovered/features/conversation/workspace/submission";
+import { type ComposerSubmission, type ComposerSubmissionQueue, type ComposerSubmissionAdmission } from "../recovered/features/conversation/workspace/submission";
 import { createSendJournalApprovalLifecycle } from "../recovered/features/conversation/workspace/send-journal-approval-lifecycle";
 import { createTranscriptAcknowledgementController } from "../recovered/features/conversation/workspace/acknowledgement";
 import { createReplyThreadController, isActionableReplyTargetEntry, type ReplySelection } from "../recovered/features/conversation/workspace/reply-thread-controller";
@@ -46,8 +46,40 @@ import { createUrlCardProvider } from "../recovered/features/conversation/cards/
 import { createLocalToolPermissionStore } from "../recovered/features/permissions/local-tool/store";
 import { createLocalToolPermissionScopeGate } from "./local-tool-permission-scope";
 import { createTranscriptPaginationController, mergeOlderTranscriptEntries } from "../recovered/features/conversation/workspace/pagination";
-import { applyTranscriptReadUpdates, createHumanReactionSettlement, currentTranscriptReadBuffers, isSettledTranscriptMessage, localTranscriptClientNonce, recordTranscriptReadUpdate, reconcileForwardTargetMessage, reconcileTranscriptMutation, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, filterTranscriptEntriesByTopic, type TranscriptReadUpdateBuffer } from "./transcript-projection";
-import { resolveCommunityComposerGuard, resolvePinnedMessageBanner, selectVisibleForumTopics, type ForumTopicItem } from "./topic-workspace-projection";
+import { applyTranscriptReadUpdates, createHumanReactionSettlement, isSettledTranscriptMessage, localTranscriptClientNonce, reconcileTranscriptRefresh, type TranscriptReadUpdateBuffer } from "./transcript-projection";
+import { ConversationPinnedBanner } from "./tdrp/ConversationPinnedBanner";
+import { ForumTopicSwitcher } from "./tdrp/ForumTopicSwitcher";
+import { CommunityComposerGuardBanner } from "./tdrp/CommunityComposerGuardBanner";
+import { TdrpForwardMessageModal } from "./tdrp/TdrpForwardMessageModal";
+import {
+  type TranscriptLoadErrorState,
+  type TranscriptOperationScope,
+  type TranscriptSpreadsheetSource,
+  type TranscriptDraftOwnership,
+  type TranscriptSubmissionScope,
+  type ScopedComposerSubmission,
+  submissionScope,
+} from "./tdrp/tdrp-transcript-scope";
+import {
+  applyAuthoritativeReactionUpdate,
+  clearAuthoritativeReactions,
+  useTdrpReactionRenderers,
+} from "./tdrp/tdrp-reactions";
+import { useTdrpTopicWorkspace } from "./tdrp/tdrp-topic-workspace";
+import { useTdrpForwardController } from "./tdrp/tdrp-forward-controller";
+import { useTdrpTranscriptOperations } from "./tdrp/tdrp-transcript-operations";
+import { sendHumanTranscriptSubmission } from "./tdrp/tdrp-human-send";
+import { useTdrpHumanFind } from "./tdrp/tdrp-human-find";
+import { useTdrpHistoryCoverage } from "./tdrp/tdrp-history-coverage";
+import { useTdrpTranscriptRetryHelpers } from "./tdrp/tdrp-transcript-retry-helpers";
+import { createTranscriptFeedObservers } from "./tdrp/tdrp-transcript-feed-reconciler";
+import { useTdrpHumanHandoff } from "./tdrp/tdrp-human-handoff";
+import { createProductionComposerSubmissionQueue } from "./tdrp/tdrp-submission-queue";
+import {
+  createHumanReactionTransport,
+  createProductionHumanMessageRetryController,
+} from "./tdrp/tdrp-reaction-transport";
+import { useTdrpOpenAgent } from "./tdrp/tdrp-open-agent";
 import { createRoutinesController } from "../recovered/features/automations/routines/controller";
 import { mountRoutinesInfoPane } from "../recovered/features/automations/routines/view";
 import { createAgentSettingsController, projectAgentSettingsAgent } from "../recovered/features/agent-info/settings/model";
@@ -103,11 +135,7 @@ import { WorkspaceIndicator } from "../recovered/features/window-chrome/workspac
 import { applyRootShellTheme, applyRootShellZoomFactor, shouldRefreshRootShellOnFocus, WINDOW_CHROME_METRICS } from "../recovered/features/window-chrome/model";
 import { createRuntimeThemeInstaller, RUNTIME_THEME_CLASS, type ThemeDocument } from "../recovered/features/runtime-theme-token-installer";
 import { CommandPalette } from "./CommandPalette";
-import { ForwardMessageDialog, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
-import { settleForwardProjection } from "./forward-settlement";
 import { useForwardAccountScopeUnmountFence } from "./forward-account-scope";
-import { createHumanMessageRetryController } from "./human-message-retry";
-import { observeHumanOfflineQueueOrigin, sendHumanComposerSubmission } from "./human-message-submission";
 import { AgentDeleteConfirmation, type AgentDeleteTarget } from "./AgentDeleteConfirmation";
 import type { CommandPaletteCommand } from "./command-palette-model";
 import { createCommandPaletteMessageProvider, type CommandPaletteMessage } from "./command-palette-message-provider";
@@ -256,33 +284,6 @@ const EMPTY_SHARED_ROOM_SNAPSHOT: SharedRoomSnapshot = {
 const EMPTY_SHARED_ROOM_SUBSCRIBE = (_listener: () => void): (() => void) => () => {};
 const readEmptySharedRoomSnapshot = (): SharedRoomSnapshot => EMPTY_SHARED_ROOM_SNAPSHOT;
 
-function applyAuthoritativeReactionUpdate(
-  entries: readonly ConversationTranscriptEntry[],
-  entryId: string,
-  projection: Pick<import("../recovered/features/conversation/cards/transcript-card/reaction-actions").ReactionAuthoritativeUpdate, "projection">["projection"],
-): readonly ConversationTranscriptEntry[] {
-  let changed = false;
-  const next = entries.map((entry) => {
-    if (entry.id !== entryId) return entry;
-    changed = true;
-    if (entry.kind === "message") return { ...entry, reactions: projection.reactions, myReactions: projection.myReactions };
-    if (entry.kind === "send-message") return { ...entry, reactions: projection.reactions, myReactions: projection.myReactions };
-    return entry;
-  });
-  return changed ? next : entries;
-}
-
-function clearAuthoritativeReactions(entries: readonly ConversationTranscriptEntry[]): readonly ConversationTranscriptEntry[] {
-  let changed = false;
-  const next = entries.map((entry) => {
-    if (entry.kind !== "message" && entry.kind !== "send-message") return entry;
-    if (entry.reactions == null && entry.myReactions == null) return entry;
-    changed = true;
-    return { ...entry, reactions: [], myReactions: new Set<string>() };
-  });
-  return changed ? next : entries;
-}
-
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=4911684 (wSn subagentId/subagentType/title/status tabs)
 function projectConversationOutlineSubagents(value: unknown): ConversationOutlineSubagent[] {
   if (!Array.isArray(value)) return [];
@@ -304,51 +305,6 @@ function scrollToFindMatch(match: FindInChatMatch): void {
 
 type SettingsComputerActionKind = "update" | "reset";
 
-type TranscriptLoadErrorState = {
-  readonly agentId: string;
-  readonly accountScopeGeneration: number;
-};
-type TranscriptOperationScope = {
-  readonly accountSlot: string;
-  readonly accountGeneration: number;
-  readonly agentId: string;
-  readonly conversationGeneration: number;
-  readonly humanAuthorId: string | null | undefined;
-};
-
-type TranscriptSpreadsheetSource = TranscriptOperationScope & {
-  readonly entryId: string;
-  readonly attachmentIdentity: string;
-  mount: SpreadsheetViewerMount;
-};
-
-type TranscriptDraftOwnership = {
-  draft: ComposerDraft | null;
-  draftIdentity: { agentId: string; draftId: string } | null;
-  recovery: ComposerDraft | null;
-  recoveryIdentity: { agentId: string; recoveryId: string } | null;
-  settled: boolean;
-};
-
-type TranscriptSubmissionScope = TranscriptOperationScope & {
-  readonly nonce: string;
-  readonly cancelled: Promise<void>;
-  invalidate(): void;
-  invalidated: boolean;
-  canonicalSettled: boolean;
-  /** Proven by this existing queue scope before possible Human admission. */
-  humanQueuedOffline: boolean;
-  draftOwnership?: TranscriptDraftOwnership;
-  /** Acknowledged Agent attachment commits stay with the existing queue scope. */
-  agentCommittedAttachments?: DraftAttachment[];
-  onSettled?(): void;
-};
-
-type ScopedComposerSubmission = ComposerSubmission & { readonly transcriptScope: TranscriptSubmissionScope };
-
-function submissionScope(submission: ComposerSubmission): TranscriptSubmissionScope | undefined {
-  return (submission as Partial<ScopedComposerSubmission>).transcriptScope;
-}
 type SettingsComputerActionState = {
   scope: string;
   pending: SettingsComputerActionKind | null;
@@ -956,15 +912,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [pluginQuery, setPluginQuery] = useState("");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [newAgentDialogOpen, setNewAgentDialogOpen] = useState(false);
-  const [forwardTarget, setForwardTarget] = useState<{ sourceConversationId: string; message: TranscriptMessage; accountScopeGeneration: number } | null>(null);
   const [newAgentName, setNewAgentName] = useState("New chat");
   const [newAgentDescription, setNewAgentDescription] = useState("");
   const [newAgentAvatarShape, setNewAgentAvatarShape] = useState<(typeof AVATAR_SHAPES)[number]>("wedge");
   const [newAgentAvatarColor, setNewAgentAvatarColor] = useState<(typeof AVATAR_COLORS)[number]["id"]>("cyan");
   const [humanHandoffAgentId, setHumanHandoffAgentId] = useState("");
-  const [activeTopicId, setActiveTopicId] = useState<string | null>(null);
-  const [conversationTopics, setConversationTopics] = useState<readonly ForumTopicItem[]>([]);
-  const [conversationPins, setConversationPins] = useState<readonly string[]>([]);
   const lastSentAtMsRef = useRef<number | undefined>(undefined);
   const [account, setAccount] = useState<CursorAuthStatus | null>(null);
   const applyAccountStatus = useCallback((status: CursorAuthStatus) => {
@@ -1013,9 +965,6 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const renderedAccountScopeGeneration = accountScopeGenerationRef.current;
   const accountObservationGenerationRef = useRef(0);
   const accountRef = useRef<CursorAuthStatus | null>(account);
-  const isForwardAccountScopeCurrent = useCallback((generation: number) =>
-    accountScopeGenerationRef.current === generation
-    && accountIdentityRef.current?.startsWith("logged-in:") === true, []);
   useForwardAccountScopeUnmountFence(accountScopeGenerationRef);
   const spreadsheetTriggerRef = useRef<HTMLElement | null>(null);
   const spreadsheetViewerSourceRef = useRef<TranscriptSpreadsheetSource | null>(null);
@@ -1070,167 +1019,40 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   pinnedAgentIdsRef.current = pinnedAgentIds;
   entriesByAgentRef.current = entriesByAgent;
 
-  const isTranscriptScopeCurrent = useCallback((scope: TranscriptOperationScope) => {
-    const current = accountRef.current;
-    return current?.kind === "logged-in"
-      && (current.authId ?? current.email ?? "account") === scope.accountSlot
-      && accountIdentityRef.current === `logged-in:${scope.accountSlot}`
-      && accountScopeGenerationRef.current === scope.accountGeneration
-      && (transcriptConversationGenerationsRef.current.get(scope.agentId) ?? 0) === scope.conversationGeneration;
-  }, []);
-
-  const captureTranscriptScope = useCallback((agentId: string): TranscriptOperationScope | null => {
-    const current = accountRef.current;
-    if (current?.kind !== "logged-in") return null;
-    if (accountIdentityRef.current !== `logged-in:${current.authId ?? current.email ?? "account"}`) return null;
-    return {
-      accountSlot: current.authId ?? current.email ?? "account",
-      accountGeneration: accountScopeGenerationRef.current,
-      agentId,
-      conversationGeneration: transcriptConversationGenerationsRef.current.get(agentId) ?? 0,
-      humanAuthorId: humanConversationsRef.current.some((conversation) => conversation.id === agentId)
-        ? current.authId || null : undefined,
-    };
-  }, []);
-
-  const isSpreadsheetSourceCurrent = useCallback((source: TranscriptSpreadsheetSource) => {
-    if (spreadsheetViewerSourceRef.current !== source || !isTranscriptScopeCurrent(source)
-      || selectionStore.get().currentAgentId !== source.agentId) return false;
-    const entry = spreadsheetEntriesRef.current.find((candidate) => candidate.id === source.entryId);
-    return entry?.kind === "message" && entry.attachments?.some((attachment) =>
-      transcriptAttachmentIdentity(attachment) === source.attachmentIdentity) === true;
-  }, [isTranscriptScopeCurrent, selectionStore]);
-
-  const invalidateActiveHumanSearch = useCallback((ownerId: string) => {
-    if (selectionStore.get().currentAgentId !== ownerId
-      || !humanConversationsRef.current.some((conversation) => conversation.id === ownerId)) return;
-    // An event can arrive before React commits the next effect. Revoke old
-    // responses synchronously, then let that effect refresh the existing query.
-    humanFindGenerationRef.current += 1;
-    humanFindUpdateGenerationRef.current += 1;
-    setHumanFindUpdateGeneration(humanFindUpdateGenerationRef.current);
-  }, [selectionStore]);
-
-  const settlePersistedHumanDraft = useCallback((operation: TranscriptOperationScope, nonce: string) => {
-    if (typeof operation.humanAuthorId !== "string" || !isTranscriptScopeCurrent(operation)) return;
-    void composerDraftStore.settleHumanSubmission({
-      accountSlot: operation.accountSlot, agentId: operation.agentId, authorId: operation.humanAuthorId, nonce,
-    }).then(({ clearedDraft, clearedRecovery }) => {
-      if (!isTranscriptScopeCurrent(operation) || (!clearedDraft && !clearedRecovery)) return;
-      const current = composerDraftStore.snapshotsFor(operation.agentId).get();
-      // An edit made while the durable write was pending owns the mounted editor.
-      if (current.draft != null || current.recovery != null || activeAgentIdRef.current !== operation.agentId) return;
-      setComposerClearGeneration((generation) => {
-        const latest = composerDraftStore.snapshotsFor(operation.agentId).get();
-        return isTranscriptScopeCurrent(operation) && activeAgentIdRef.current === operation.agentId
-          && latest.draft == null && latest.recovery == null ? generation + 1 : generation;
-      });
-    }).catch((error: unknown) => {
-      if (isTranscriptScopeCurrent(operation)) setNotice(`Human draft recovery unavailable: ${error instanceof Error ? error.message : String(error)}`);
-    });
-  }, [composerDraftStore, isTranscriptScopeCurrent]);
-
-  const settleTranscriptDraft = useCallback((scope: TranscriptSubmissionScope) => {
-    if (scope.invalidated || !isTranscriptScopeCurrent(scope)) return;
-    if (typeof scope.humanAuthorId === "string") {
-      if (scope.canonicalSettled) settlePersistedHumanDraft(scope, scope.nonce);
-      return;
-    }
-    const ownership = scope.draftOwnership;
-    if (ownership == null || ownership.settled || scope.invalidated || !isTranscriptScopeCurrent(scope)) return;
-    ownership.settled = true;
-    const currentDraft = composerDraftStore.snapshotsFor(scope.agentId).get();
-    const clearsRecovery = ownership.recovery != null && currentDraft.recovery === ownership.recovery;
-    if (clearsRecovery) composerDraftStore.clearRecovery(scope.agentId);
-    const cleared = ownership.draftIdentity != null
-      ? composerDraftStore.clearDraftIfCurrent(ownership.draftIdentity)
-      : ownership.draft != null && currentDraft.draft === ownership.draft
-        && composerDraftStore.clearDraftIfMatches({ agentId: scope.agentId, draft: ownership.draft });
-    if ((cleared || clearsRecovery && currentDraft.draft == null) && activeAgentIdRef.current === scope.agentId) {
-      setComposerClearGeneration((current) => scope.invalidated || !isTranscriptScopeCurrent(scope) ? current : current + 1);
-    }
-  }, [composerDraftStore, isTranscriptScopeCurrent, settlePersistedHumanDraft]);
-
-  const scopeComposerSubmission = useCallback((submission: ComposerSubmission): ScopedComposerSubmission | null => {
-    const operation = captureTranscriptScope(submission.agentId);
-    if (operation == null || operation.humanAuthorId === null) return null;
-    let cancel = () => {};
-    const scope: TranscriptSubmissionScope = {
-      ...operation,
-      nonce: submission.nonce,
-      cancelled: new Promise<void>((resolve) => { cancel = resolve; }),
-      invalidated: false,
-      canonicalSettled: false,
-      humanQueuedOffline: false,
-      invalidate() { scope.invalidated = true; cancel(); },
-      onSettled() { settleTranscriptDraft(scope); },
-    };
-    submissionScopesRef.current.set(submission.nonce, scope);
-    return { ...submission, transcriptScope: scope };
-  }, [captureTranscriptScope, settleTranscriptDraft]);
-
-  const markTranscriptSubmissionSettled = useCallback((scope: TranscriptSubmissionScope) => {
-    if (scope.invalidated || !isTranscriptScopeCurrent(scope)) return;
-    scope.canonicalSettled = true;
-    acknowledgementController.reconcileEcho({
-      accountSlot: scope.accountSlot, agentId: scope.agentId, nonce: scope.nonce, echoedNonce: scope.nonce,
-    });
-    scope.onSettled?.();
-  }, [acknowledgementController, isTranscriptScopeCurrent]);
-
-  const observeTranscriptSettlement = useCallback((agentId: string, entry: ConversationTranscriptEntry) => {
-    const current = accountRef.current;
-    if (current?.kind !== "logged-in") return;
-    const scope = entry.kind === "message" && entry.clientNonce != null
-      ? submissionScopesRef.current.get(entry.clientNonce) : undefined;
-    const human = humanConversationsRef.current.some((conversation) => conversation.id === agentId)
-      || (scope?.agentId === agentId && scope.humanAuthorId !== undefined)
-      || (entry.kind === "message" && entry.authorKind === "human");
-    const nonce = localTranscriptClientNonce(entry, human ? current.authId || null : undefined);
-    if (nonce == null) return;
-    if (scope?.agentId === agentId && (scope.invalidated || !isTranscriptScopeCurrent(scope)
-      || localTranscriptClientNonce(entry, scope.humanAuthorId) !== scope.nonce)) return;
-    // A durable dispatching row is not a send receipt. Agent attachment echoes
-    // retain the existing acknowledgement controller's multi-attachment rule.
-    const attachmentEcho = "sourceKind" in entry && entry.sourceKind === "user-attachment";
-    if (!isSettledTranscriptMessage(entry) && (human || !attachmentEcho)) return;
-    if (scope != null && scope.agentId === agentId
-      && localTranscriptClientNonce(entry, scope.humanAuthorId) === scope.nonce
-      && isSettledTranscriptMessage(entry)) markTranscriptSubmissionSettled(scope);
-    else if (human && isSettledTranscriptMessage(entry)) {
-      const operation = captureTranscriptScope(agentId);
-      if (operation != null) settlePersistedHumanDraft({ ...operation, humanAuthorId: current.authId || null }, nonce);
-    }
-    acknowledgementController.ingestTranscriptEvent({
-      accountSlot: current.authId ?? current.email ?? "account", agentId,
-      entry: { id: entry.id, kind: attachmentEcho ? "user-attachment" : "message", clientNonce: nonce },
-    });
-  }, [acknowledgementController, captureTranscriptScope, isTranscriptScopeCurrent, markTranscriptSubmissionSettled, settlePersistedHumanDraft]);
-
-  const invalidateTranscriptConversation = useCallback((agentId: string) => {
-    const operation = captureTranscriptScope(agentId);
-    if (operation != null) composerDraftStore.forgetHumanSubmissions({ accountSlot: operation.accountSlot, agentId });
-    humanCoverageContinuationInFlightRef.current.delete(agentId);
-    transcriptConversationGenerationsRef.current.set(agentId, (transcriptConversationGenerationsRef.current.get(agentId) ?? 0) + 1);
-    for (const [nonce, scope] of submissionScopesRef.current) {
-      if (scope.agentId !== agentId) continue;
-      scope.invalidate();
-      acknowledgementController.removeOptimistic({ accountSlot: scope.accountSlot, nonce });
-      composerSubmissionQueueRef.current?.cancelQueued(nonce);
-      composerSubmissionQueueRef.current?.discard(nonce);
-      submissionScopesRef.current.delete(nonce);
-    }
-    for (const read of pendingTranscriptReceiptsRef.current) {
-      if (read.agentId === agentId) pendingTranscriptReceiptsRef.current.delete(read);
-    }
-    setPendingSendScopes((current) => {
-      const scope = current.get(agentId);
-      if (scope == null || (!scope.invalidated && isTranscriptScopeCurrent(scope))) return current;
-      const next = new Map(current);
-      next.delete(agentId);
-      return next;
-    });
-  }, [acknowledgementController, captureTranscriptScope, composerDraftStore, isTranscriptScopeCurrent]);
+  const {
+    isTranscriptScopeCurrent,
+    captureTranscriptScope,
+    isSpreadsheetSourceCurrent,
+    invalidateActiveHumanSearch,
+    settlePersistedHumanDraft,
+    settleTranscriptDraft,
+    scopeComposerSubmission,
+    markTranscriptSubmissionSettled,
+    observeTranscriptSettlement,
+    invalidateTranscriptConversation,
+  } = useTdrpTranscriptOperations({
+    accountRef,
+    accountIdentityRef,
+    accountScopeGenerationRef,
+    transcriptConversationGenerationsRef,
+    humanConversationsRef,
+    spreadsheetViewerSourceRef,
+    spreadsheetEntriesRef,
+    selectionStore,
+    humanFindGenerationRef,
+    humanFindUpdateGenerationRef,
+    setHumanFindUpdateGeneration,
+    composerDraftStore,
+    activeAgentIdRef,
+    setComposerClearGeneration,
+    setNotice,
+    submissionScopesRef,
+    acknowledgementController,
+    humanCoverageContinuationInFlightRef,
+    composerSubmissionQueueRef,
+    pendingTranscriptReceiptsRef,
+    setPendingSendScopes,
+  });
 
   const reconcileCompleteRosterSelection = useCallback((projected: readonly RendererAgent[]) => {
     const allAgentIds = projected.map((agent) => agent.id);
@@ -1305,85 +1127,24 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   useStrictModeSafeDisposal(replyThreadController);
   useStrictModeSafeDisposal(hiddenChatsMutationController);
 
-  const searchForwardRecipients = useCallback(async (input: {
-    sourceConversationId: string;
-    sourceEntryId: string;
-    query: string;
-    limit: number;
-  }): Promise<readonly ForwardRecipient[]> => {
-    if (client == null) throw new Error("coordinator is unavailable for recipient search");
-    const raw = await client.call("searchHumanRecipients", input);
-    return projectHumanConversations(raw).map((conversation) => {
-      const rawItem = conversation.raw as Record<string, unknown>;
-      const topicId = typeof rawItem.topicId === "string" ? rawItem.topicId : undefined;
-      const topicTitle = typeof rawItem.topicTitle === "string" ? rawItem.topicTitle : undefined;
-      const topicClosed = typeof rawItem.topicClosed === "boolean" ? rawItem.topicClosed : undefined;
-      const topicDeleted = typeof rawItem.topicDeleted === "boolean" ? rawItem.topicDeleted : undefined;
-      return {
-        id: conversation.id,
-        name: conversation.name,
-        ...(topicId !== undefined ? { topicId } : {}),
-        ...(topicTitle !== undefined ? { topicTitle } : {}),
-        ...(topicClosed !== undefined ? { topicClosed } : {}),
-        ...(topicDeleted !== undefined ? { topicDeleted } : {}),
-      };
-    });
-  }, [client]);
-
-  const forwardHumanMessage = useCallback(async (input: {
-    sourceConversationId: string;
-    sourceEntryId: string;
-    destinationConversationIds: readonly string[];
-    clientNonce: string;
-    dropSenderNames: boolean;
-    dropCaptions: boolean;
-    comment?: { text: string; entities?: readonly unknown[] };
-    destinationTopics?: Readonly<Record<string, string>>;
-  }, admission?: Parameters<ProductionCoordinatorClient["call"]>[2]): Promise<readonly ForwardSettlement[]> => {
-    if (client == null) throw new Error("coordinator is unavailable for forwarding");
-    const result = await client.call("forwardHumanMessage", input, admission);
-    if (result == null || typeof result !== "object" || !("destinations" in result) || !Array.isArray(result.destinations)) {
-      throw new Error("forwardHumanMessage returned an invalid settlement");
-    }
-    return result.destinations.map((candidate) => {
-      if (candidate == null || typeof candidate !== "object") {
-        throw new Error("forwardHumanMessage returned an invalid destination settlement");
-      }
-      const conversationId = "conversationId" in candidate && typeof candidate.conversationId === "string"
-        ? candidate.conversationId
-        : null;
-      const status = "status" in candidate && (candidate.status === "sent" || candidate.status === "failed")
-        ? candidate.status
-        : null;
-      if (conversationId == null || status == null) {
-        throw new Error("forwardHumanMessage returned an invalid destination settlement");
-      }
-      return {
-        conversationId,
-        status,
-        ...("error" in candidate && typeof candidate.error === "string" ? { error: candidate.error } : {}),
-      };
-    });
-  }, [client]);
-
-  const settleForward = useCallback((settlement: readonly ForwardSettlement[], accountScopeGeneration: number, recipientNames: ReadonlyMap<string, string>) => {
-    const currentAccount = accountRef.current;
-    const selfAuthorId = currentAccount?.kind === "logged-in" && typeof currentAccount.authId === "string" && currentAccount.authId.trim().length > 0
-      ? currentAccount.authId.trim()
-      : null;
-    void settleForwardProjection({
-      settlement, recipientNames,
-      selfConversationId: selfAuthorId == null ? null : `human:${selfAuthorId}`,
-      accountScopeGeneration, isAccountScopeCurrent: isForwardAccountScopeCurrent, setNotice,
-      readRoster: client == null ? null : () => client.call("listHumanConversations"),
-      applyRoster: (value) => {
-        const projected = projectHumanConversations(value);
-        humanConversationsRef.current = projected;
-        setHumanConversations(projected);
-        reconcileCompleteRosterSelection([...projected, ...agentsRef.current].sort((left, right) => right.updatedAt - left.updatedAt));
-      },
-    });
-  }, [client, isForwardAccountScopeCurrent, reconcileCompleteRosterSelection]);
+  const {
+    forwardTarget,
+    setForwardTarget,
+    isForwardAccountScopeCurrent,
+    searchForwardRecipients,
+    forwardHumanMessage,
+    settleForward,
+  } = useTdrpForwardController({
+    client,
+    accountRef,
+    accountIdentityRef,
+    accountScopeGenerationRef,
+    humanConversationsRef,
+    agentsRef,
+    setHumanConversations,
+    reconcileCompleteRosterSelection,
+    setNotice,
+  });
 
   const sendComposerPrompt = async (submission: ComposerSubmission, admission?: ComposerSubmissionAdmission): Promise<void> => {
     if (client == null) throw new Error("coordinator is unavailable for sendPrompt");
@@ -1396,53 +1157,22 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     if (scope.humanAuthorId !== undefined) {
       if (humanConversation == null) throw new Error("Human send conversation is unavailable");
       if (typeof scope.humanAuthorId !== "string") throw new Error("Human send author is unavailable");
-      await composerDraftStore.bindHumanSubmission({
-        accountSlot: scope.accountSlot, agentId: scope.agentId, authorId: scope.humanAuthorId, nonce: scope.nonce,
-        draftId: scope.draftOwnership?.draftIdentity?.draftId ?? null,
-        recoveryId: scope.draftOwnership?.recoveryIdentity?.recoveryId ?? null,
+      await sendHumanTranscriptSubmission({
+        submission,
+        scope,
+        humanConversation,
+        client,
+        bridge,
+        isCurrent,
+        stagedPaths,
+        pendingTranscriptReceiptsRef,
+        markTranscriptSubmissionSettled,
+        setEntriesByAgent,
+        humanConversationsRef,
+        setHumanConversations,
+        setNotice,
+        composerDraftStore,
       });
-      if (!isCurrent()) throw new Error("Transcript send scope was cleared");
-      const receipt: TranscriptReadUpdateBuffer = {
-        accountSlot: scope.accountSlot, agentId: scope.agentId, isCurrent, updates: new Map(),
-      };
-      pendingTranscriptReceiptsRef.current.add(receipt);
-      try {
-        const result = await sendHumanComposerSubmission(submission, {
-          client, bridge, isCurrent, queuedOffline: scope.humanQueuedOffline,
-          onCommitted: (originalPath) => { if (isCurrent()) stagedPaths.current.delete(originalPath); },
-        });
-        if (!receipt.isCurrent()) throw new Error("Transcript send scope was cleared");
-        const authoritative = projectTranscriptEntry(result, 0, humanConversation.name, humanConversation.id);
-        if (authoritative == null || !isSettledTranscriptMessage(authoritative)
-          || localTranscriptClientNonce(authoritative, scope.humanAuthorId) !== submission.nonce) {
-          throw new Error("Human send settlement returned an invalid transcript entry");
-        }
-        const settled = applyTranscriptReadUpdates([authoritative], receipt.updates)[0];
-        markTranscriptSubmissionSettled(scope);
-        setEntriesByAgent((current) => {
-          if (!receipt.isCurrent()) return current;
-          return {
-            ...current,
-            [submission.agentId]: reconcileTranscriptMutation(current[submission.agentId] ?? [], settled, {
-              previousId: `pending-${submission.nonce}`, appendIfMissing: true, preserveSettled: true,
-            }),
-          };
-        });
-        try {
-          const projectedHumans = projectHumanConversations(await client.call("listHumanConversations"));
-          if (!receipt.isCurrent()) throw new Error("Transcript send scope was cleared");
-          humanConversationsRef.current = projectedHumans;
-          setHumanConversations(projectedHumans);
-        } catch (error) {
-          if (!receipt.isCurrent()) throw new Error("Transcript send scope was cleared");
-          // The Host has already settled this send; roster refresh cannot fail it.
-          setNotice((current) => !receipt.isCurrent() ? current : error instanceof Error
-            ? `Human roster refresh unavailable: ${error.message}`
-            : `Human roster refresh unavailable: ${String(error)}`);
-        }
-      } finally {
-        pendingTranscriptReceiptsRef.current.delete(receipt);
-      }
       return;
     }
     const committed = scope.agentCommittedAttachments ??= [];
@@ -1521,116 +1251,21 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     { clearApprovals: () => localToolPermissionStore.clearApprovals() }
   ));
   const [composerSubmissionQueue] = useState(() => {
-    const queue = createComposerSubmissionQueue({
-      isTransportDown: () => transportRef.current !== "connected",
-      send: (submission, admission) => {
-        const scope = submissionScope(submission);
-        if (scope == null || scope.invalidated || !isTranscriptScopeCurrent(scope)) return Promise.resolve();
-        const sending = admission != null || resendSubmissionNoncesRef.current.has(submission.nonce)
-          ? sendComposerPrompt(submission, admission) : sendJournalApprovalLifecycle.sendPrompt(submission);
-        return Promise.race([sending, scope.cancelled.then(() => { throw new Error("Transcript send scope was cleared"); })]);
-      },
-    onPhase: (submission) => {
-      const scope = submissionScope(submission);
-      if (scope == null || scope.invalidated || !isTranscriptScopeCurrent(scope) || submission.isCurrentAttempt?.() === false) return;
-      if (typeof scope.humanAuthorId === "string" && !scope.canonicalSettled) {
-        scope.humanQueuedOffline = observeHumanOfflineQueueOrigin(
-          scope.humanQueuedOffline, submission.phase, transportRef.current !== "connected",
-          submission.humanDispatch?.requestPosted === true,
-        );
-      }
-      const composerBusy = composerSubmissionBusyState(submission);
-      setPendingSendScopes((current) => {
-        if (composerBusy === undefined || submission.isCurrentAttempt?.() === false) return current;
-        if (composerBusy) {
-          if (scope.invalidated || !isTranscriptScopeCurrent(scope) || current.get(scope.agentId) === scope) return current;
-          return new Map(current).set(scope.agentId, scope);
-        }
-        // A late completion may release only its own pending send. Other
-        // conversations and a replacement scope keep their independent state.
-        if (current.get(scope.agentId) !== scope) return current;
-        const next = new Map(current);
-        next.delete(scope.agentId);
-        return next;
-      });
-      if (!scope.canonicalSettled) {
-        if (submission.phase === "pending") acknowledgementController.markDispatching(scope.accountSlot, submission.nonce);
-        if (submission.phase === "sent") acknowledgementController.markAcceptedAwaitingEcho(scope.accountSlot, submission.nonce);
-        if (submission.phase === "failed") acknowledgementController.markFailed(scope.accountSlot, submission.nonce, Date.now());
-        if (submission.phase === "cancelled") acknowledgementController.removeOptimistic({ accountSlot: scope.accountSlot, nonce: submission.nonce });
-      }
-      setEntriesByAgent((current) => {
-        if (scope.invalidated || !isTranscriptScopeCurrent(scope) || submission.isCurrentAttempt?.() === false) return current;
-        const matches = (entry: ConversationTranscriptEntry) => localTranscriptClientNonce(entry, scope.humanAuthorId) === submission.nonce;
-        if (submission.phase === "cancelled") {
-          return {
-            ...current,
-            [submission.agentId]: (current[submission.agentId] ?? []).filter((entry) => !matches(entry) || isSettledTranscriptMessage(entry))
-          };
-        }
-        const delivery: "pending" | "queued" | "failed" | "sent" = submission.phase === "pending" || submission.phase === "queued" || submission.phase === "failed" || submission.phase === "sent"
-          ? submission.phase
-          : "pending";
-        return {
-          ...current,
-          [submission.agentId]: (current[submission.agentId] ?? []).map((entry) => entry.kind === "message" && matches(entry)
-            && !scope.canonicalSettled && !isSettledTranscriptMessage(entry)
-            ? { ...entry, delivery }
-            : entry)
-        };
-      });
-      if (submission.phase === "sent" || submission.phase === "cancelled") {
-        if (submissionScopesRef.current.get(submission.nonce) === scope) submissionScopesRef.current.delete(submission.nonce);
-      }
-    },
-    onFailure: (submission, error) => {
-      if (submission.isCurrentAttempt?.() === false) return;
-      const scope = submissionScope(submission);
-      if (scope == null || scope.invalidated || !isTranscriptScopeCurrent(scope) || scope.canonicalSettled) {
-        // The queue has already released its active slot before this callback.
-        // Discard the stale/settled failure so it cannot block new queued work.
-        composerSubmissionQueueRef.current?.discard(submission.nonce);
-        composerSubmissionQueueRef.current?.flush();
-        if (scope != null && !scope.invalidated && isTranscriptScopeCurrent(scope) && scope.canonicalSettled) {
-          markTranscriptSubmissionSettled(scope);
-          if (submissionScopesRef.current.get(submission.nonce) === scope) submissionScopesRef.current.delete(submission.nonce);
-          if (!submission.isRetry) setNotice(error instanceof Error ? error.message : String(error));
-        }
-        return;
-      }
-      if (submission.isRetry) {
-        setNotice((current) => {
-          if (scope.invalidated || !isTranscriptScopeCurrent(scope) || submission.isCurrentAttempt?.() === false
-            || scope.canonicalSettled || entriesByAgentRef.current[submission.agentId]?.some((entry) =>
-              localTranscriptClientNonce(entry, scope.humanAuthorId) === submission.nonce && isSettledTranscriptMessage(entry))) return current;
-          return error instanceof Error ? error.message : String(error);
-        });
-        return;
-      }
-      const beforeRecovery = composerDraftStore.snapshotsFor(submission.agentId).get();
-      composerDraftStore.recoverDraft(submission.agentId, {
-        prompt: submission.prompt,
-        attachments: [...submission.attachments],
-        ...(submission.richText === undefined ? {} : { richText: submission.richText }),
-        ...(submission.replyToId === undefined ? {} : { replyToId: submission.replyToId }),
-        ...(submission.isFork === undefined ? {} : { isFork: submission.isFork }),
-      }, typeof scope.humanAuthorId === "string" ? {
-        accountSlot: scope.accountSlot, authorId: scope.humanAuthorId, nonce: submission.nonce,
-      } : undefined);
-      const recovered = composerDraftStore.snapshotsFor(submission.agentId).get();
-      const ownership = scope.draftOwnership ??= { draft: null, draftIdentity: null, recovery: null, recoveryIdentity: null, settled: false };
-      if (beforeRecovery.draft == null || beforeRecovery.draft === ownership.draft) {
-        ownership.draft = recovered.draft;
-        ownership.draftIdentity = recovered.draft == null ? null
-          : composerDraftStore.identifyDraft({ agentId: submission.agentId, draft: recovered.draft });
-      }
-      if (beforeRecovery.draft != null) {
-        ownership.recovery = recovered.recovery;
-        ownership.recoveryIdentity = recovered.recovery == null ? null
-          : composerDraftStore.identifyRecovery({ agentId: submission.agentId, draft: recovered.recovery });
-      }
-      setNotice(error instanceof Error ? error.message : String(error));
-      }
+    const queue = createProductionComposerSubmissionQueue({
+      transportRef,
+      submissionScopesRef,
+      isTranscriptScopeCurrent,
+      resendSubmissionNoncesRef,
+      sendComposerPrompt,
+      sendJournalApprovalLifecycle,
+      setPendingSendScopes,
+      acknowledgementController,
+      setEntriesByAgent,
+      composerSubmissionQueueRef,
+      markTranscriptSubmissionSettled,
+      setNotice,
+      entriesByAgentRef,
+      composerDraftStore,
     });
     composerSubmissionQueueRef.current = queue;
     return queue;
@@ -1655,34 +1290,20 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     && !activeSendScope.invalidated && isTranscriptScopeCurrent(activeSendScope);
   const renderedRetrySelection = selectionStore.get();
   const renderedRetrySelectionGeneration = openAgentRequestGenerationRef.current;
-  const [humanMessageRetryController] = useState(() => createHumanMessageRetryController({
+  const [humanMessageRetryController] = useState(() => createProductionHumanMessageRetryController({
     client,
-    readScope: () => {
-      const status = accountRef.current;
-      if (status?.kind !== "logged-in") return null;
-      const accountSlot = status.authId ?? status.email ?? "account";
-      if (accountIdentityRef.current !== `logged-in:${accountSlot}`) return null;
-      return {
-        accountGeneration: accountScopeGenerationRef.current,
-        selectionGeneration: openAgentRequestGenerationRef.current,
-        accountSlot,
-        selection: selectionStore.get(),
-      };
-    },
-    acknowledgement: acknowledgementController,
-    setEntries: setEntriesByAgent,
+    accountRef,
+    accountIdentityRef,
+    accountScopeGenerationRef,
+    openAgentRequestGenerationRef,
+    selectionStore,
+    acknowledgementController,
+    setEntriesByAgent,
     setNotice,
-    onAuthoritativeEntry: (scope, conversationId, entry, isCurrent) => {
-      if (!isCurrent()) return;
-      for (const reads of [pendingTranscriptReadsRef.current, pendingTranscriptReceiptsRef.current]) {
-        for (const read of currentTranscriptReadBuffers(reads, scope.accountSlot, conversationId)) {
-          recordTranscriptReadUpdate(read.updates, entry);
-        }
-      }
-      if (!isCurrent()) return;
-      observeTranscriptSettlement(conversationId, entry);
-      transcriptPaginationController.ingestEntryUpdate(scope.accountSlot, conversationId, entry);
-    },
+    pendingTranscriptReadsRef,
+    pendingTranscriptReceiptsRef,
+    observeTranscriptSettlement,
+    transcriptPaginationController,
   }));
   useStrictModeSafeDisposal(humanMessageRetryController);
   localToolPermissionScopeGate.enter(transcriptAccountSlot);
@@ -1725,105 +1346,35 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [humanReactionSettlement] = useState(() => createHumanReactionSettlement(() => accountScopeGenerationRef.current));
   useStrictModeSafeDisposal(humanReactionSettlement);
   const activeIsHuman = humanConversations.some((conversation) => conversation.id === activeAgentId);
-  const humanReactionTransport = useMemo(() => activeIsHuman && client != null ? {
-    async reactToMessage(input: { entryId: string; emoji: string; agentId: string }) {
-      const currentAccount = accountRef.current;
-      if (currentAccount?.kind !== "logged-in") return;
-      const accountSlot = currentAccount.authId ?? currentAccount.email ?? "account";
-      await humanReactionSettlement.run(
-        { conversationId: input.agentId, entryId: input.entryId },
-        async () => {
-          const conversation = humanConversationsRef.current.find((candidate) => candidate.id === input.agentId);
-          if (conversation == null) throw new Error("Human reaction conversation is unavailable");
-          const value = await client.call("reactHumanMessage", {
-            conversationId: input.agentId,
-            entryId: input.entryId,
-            emoji: input.emoji
-          });
-          const projected = projectTranscriptEntry(value, 0, conversation.name, conversation.id);
-          if (projected == null || projected.id !== input.entryId) throw new Error("Human reaction settlement returned an invalid transcript entry");
-          return projected;
-        },
-        (projected, isCurrent) => {
-          transcriptPaginationController.ingestEntryUpdate(accountSlot, input.agentId, projected);
-          setEntriesByAgent((current) => {
-            if (!isCurrent()) return current;
-            const entries = current[input.agentId];
-            if (entries == null || !entries.some((entry) => entry.id === input.entryId)) return current;
-            return {
-              ...current,
-              [input.agentId]: entries.map((entry) => entry.id !== input.entryId ? entry
-                : entry.kind === "message" && projected.kind === "message"
-                  ? mergeAuthoritativeTranscriptMessage(entry, projected)
-                  : projected)
-            };
-          });
-        },
-        (error, isCurrent) => setNotice((current) => isCurrent()
-          ? error instanceof Error ? `Human reaction unavailable: ${error.message}` : `Human reaction unavailable: ${String(error)}`
-          : current),
-      );
-    }
-  } : undefined, [activeIsHuman, client, humanReactionSettlement, transcriptPaginationController]);
+  const humanReactionTransport = useMemo(() => createHumanReactionTransport({
+    activeIsHuman,
+    client,
+    accountRef,
+    humanReactionSettlement,
+    humanConversationsRef,
+    transcriptPaginationController,
+    setEntriesByAgent,
+    setNotice,
+  }), [activeIsHuman, client, humanReactionSettlement, setEntriesByAgent, setNotice, transcriptPaginationController]);
   const reactionScope = useMemo(() => ({
     accountSlot: transcriptAccountSlot,
     agentId: activeIsHuman || activeAgentId.length === 0 ? null : activeAgentId
   }), [activeAgentId, activeIsHuman, transcriptAccountSlot]);
   const reactionScopeGenerationRef = useRef(0);
   const reactionLifecycleGenerationRef = useRef(0);
-  const resolveReactionReactorName = useCallback((reactor: string) => agentsRef.current.find((agent) => agent.id === reactor)?.name ?? "the agent", []);
-  const renderReactionPills = useCallback((props: TranscriptMessageReactionPillsProps) => {
-    if (!props.isDeliveryActionable || (props.entry.kind !== "message" && props.entry.kind !== "send-message" && props.entry.kind !== "user-attachment")) return null;
-    const reactions = "reactions" in props.entry && Array.isArray(props.entry.reactions) ? props.entry.reactions : [];
-    if (activeIsHuman) {
-      if (humanReactionTransport == null || activeAgentId.length === 0) return null;
-      return <ReactionPills
-        key={`${accountScopeGenerationRef.current}:${transcriptConversationGenerationsRef.current.get(activeAgentId) ?? 0}:${props.entry.id}`}
-        agentId={activeAgentId}
-        entryId={props.entry.id}
-        reactions={reactions}
-        resolveReactorName={resolveReactionReactorName}
-        transport={humanReactionTransport}
-      />;
-    }
-    if (reactionRoot == null) return null;
-    return <ReactionPills
-      agentId={activeAgentId.length > 0 ? activeAgentId : null}
-      controller={reactionRoot.pair.controller}
-      entryId={props.entry.id}
-      reactions={reactions}
-      resolveReactorName={resolveReactionReactorName}
-    />;
-  }, [activeAgentId, activeIsHuman, humanReactionTransport, reactionRoot, resolveReactionReactorName]);
-  const renderReactionActions = useCallback((props: TranscriptMessageReactionSlotProps) => {
-    if (props.isReadOnly || !props.isDeliveryActionable) return null;
-    if (props.entry.kind !== "message" && props.entry.kind !== "send-message" && props.entry.kind !== "user-attachment") return null;
-    const reactions = "reactions" in props.entry && Array.isArray(props.entry.reactions) ? props.entry.reactions : [];
-    const myReactions = "myReactions" in props.entry && props.entry.myReactions != null
-      ? props.entry.myReactions
-      : new Set(reactions.filter((reaction) => reaction.by === "me").map((reaction) => reaction.emoji));
-    if (activeIsHuman) {
-      if (humanReactionTransport == null || activeAgentId.length === 0) return null;
-      return <MessageReactionAction
-        key={`${accountScopeGenerationRef.current}:${transcriptConversationGenerationsRef.current.get(activeAgentId) ?? 0}:${props.entry.id}`}
-        agentId={activeAgentId}
-        entryId={props.entry.id}
-        myReactions={myReactions}
-        onExpandPicker={() => undefined}
-        onOpenChange={props.onOpenChange}
-        transport={humanReactionTransport}
-      />;
-    }
-    if (reactionRoot == null) return null;
-    return <MessageReactionAction
-      agentId={activeAgentId.length > 0 ? activeAgentId : null}
-      controller={reactionRoot.pair.controller}
-      entryId={props.entry.id}
-      myReactions={myReactions}
-      onExpandPicker={() => undefined}
-      onOpenChange={props.onOpenChange}
-    />;
-  }, [activeAgentId, activeIsHuman, humanReactionTransport, reactionRoot]);
+  const {
+    resolveReactionReactorName,
+    renderReactionPills,
+    renderReactionActions,
+  } = useTdrpReactionRenderers({
+    activeIsHuman,
+    activeAgentId,
+    agentsRef,
+    humanReactionTransport,
+    reactionRoot,
+    accountScopeGenerationRef,
+    transcriptConversationGenerationsRef,
+  });
   useEffect(() => {
     if (reactionRoot == null) return;
     reactionRoot.setScope(reactionScope);
@@ -2303,62 +1854,6 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [activeIsHuman, availableHandoffAgents, humanHandoffAgentId]);
   const orgChartAgents = useMemo(() => agents.map((agent) => ({ ...agent, isRunning: agent.isRunning === true })), [agents]);
 
-  const rawMetadata = (activeAgent?.raw ?? {}) as Record<string, unknown>;
-  const rawTopics = useMemo((): readonly ForumTopicItem[] => {
-    if (Array.isArray(rawMetadata.topics)) return rawMetadata.topics as ForumTopicItem[];
-    if (Array.isArray(rawMetadata.forumTopics)) return rawMetadata.forumTopics as ForumTopicItem[];
-    return [];
-  }, [rawMetadata.topics, rawMetadata.forumTopics]);
-
-  const rawPins = useMemo((): readonly string[] => {
-    if (Array.isArray(rawMetadata.pins)) return rawMetadata.pins as string[];
-    if (Array.isArray(rawMetadata.pinnedMessageIds)) return rawMetadata.pinnedMessageIds as string[];
-    return [];
-  }, [rawMetadata.pins, rawMetadata.pinnedMessageIds]);
-
-  const canManageTopics = Boolean(
-    rawMetadata.canManageTopics === true
-    || (rawMetadata.permissions as any)?.canManageTopics === true
-    || rawMetadata.memberStatus === "creator"
-    || rawMetadata.memberStatus === "administrator"
-    || rawMetadata.memberStatus === "owner"
-  );
-
-  const effectiveTopics = conversationTopics.length > 0 ? conversationTopics : rawTopics;
-  const visibleTopics = useMemo(() => {
-    return selectVisibleForumTopics(effectiveTopics, canManageTopics);
-  }, [effectiveTopics, canManageTopics]);
-
-  useEffect(() => {
-    setActiveTopicId(null);
-    setConversationTopics([]);
-    setConversationPins([]);
-  }, [activeAgentId]);
-
-  useEffect(() => {
-    if (client == null || activeAgent == null) return;
-    const isForum = rawMetadata.isForum === true;
-    const isCommunity = rawMetadata.conversationKind === "group" || rawMetadata.conversationKind === "channel";
-    if (!isForum && !isCommunity) return;
-    const agentId = activeAgent.id;
-    let cancelled = false;
-    if (isForum && rawTopics.length === 0) {
-      client.call("listConversationTopics", { conversationId: agentId })
-        .then((res) => {
-          if (!cancelled && Array.isArray(res)) setConversationTopics(res as ForumTopicItem[]);
-        })
-        .catch(() => {});
-    }
-    if (isCommunity && rawPins.length === 0) {
-      client.call("listConversationPins", { conversationId: agentId, ...(activeTopicId ? { topicId: activeTopicId } : {}) })
-        .then((res) => {
-          if (!cancelled && Array.isArray(res)) setConversationPins(res as string[]);
-        })
-        .catch(() => {});
-    }
-    return () => { cancelled = true; };
-  }, [client, activeAgent?.id, activeTopicId, rawMetadata.isForum, rawMetadata.conversationKind, rawTopics.length, rawPins.length]);
-
   const liveEntries = activeAgent == null ? EMPTY_ENTRIES : entriesByAgent[activeAgent.id] ?? EMPTY_ENTRIES;
   const entries = useMemo(
     () => transcriptPaginationSnapshot.agentId === activeAgentId && transcriptPaginationSnapshot.accountSlot === transcriptAccountSlot
@@ -2367,137 +1862,46 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     [activeAgentId, liveEntries, transcriptAccountSlot, transcriptPaginationSnapshot.accountSlot, transcriptPaginationSnapshot.agentId, transcriptPaginationSnapshot.entries]
   );
 
-  const effectivePins = conversationPins.length > 0 ? conversationPins : rawPins;
-  const pinnedBanner = useMemo(() => {
-    return resolvePinnedMessageBanner(effectivePins, entries as any, activeTopicId);
-  }, [effectivePins, entries, activeTopicId]);
-
-  const activeTopic = useMemo(() => {
-    return visibleTopics.find((t) => t.id === activeTopicId) ?? null;
-  }, [visibleTopics, activeTopicId]);
-
-  const composerGuard = useMemo(() => {
-    if (activeAgent == null) {
-      return { canSend: true, bannerKind: "none" as const, remainingCooldownSeconds: 0, message: null };
-    }
-    const convKind = typeof rawMetadata.conversationKind === "string"
-      ? rawMetadata.conversationKind
-      : undefined;
-    const memberStatus = typeof rawMetadata.memberStatus === "string" ? rawMetadata.memberStatus : undefined;
-    const canPostMessages = typeof rawMetadata.canPostMessages === "boolean"
-      ? rawMetadata.canPostMessages
-      : (rawMetadata.permissions as any)?.canPostMessages;
-    const canSendMessages = typeof rawMetadata.canSendMessages === "boolean"
-      ? rawMetadata.canSendMessages
-      : (rawMetadata.permissions as any)?.canSendMessages;
-    const slowModeSeconds = typeof rawMetadata.slowModeSeconds === "number"
-      ? rawMetadata.slowModeSeconds
-      : undefined;
-
-    return resolveCommunityComposerGuard({
-      conversationKind: convKind,
-      memberStatus,
-      canPostMessages,
-      canSendMessages,
-      slowModeSeconds,
-      lastSentAtMs: typeof rawMetadata.lastSentAtMs === "number" ? rawMetadata.lastSentAtMs : lastSentAtMsRef.current,
-      activeTopicClosed: activeTopic?.closed === true || rawMetadata.activeTopicClosed === true,
-      canManageTopics,
-    });
-  }, [activeAgent, rawMetadata, activeTopic, canManageTopics]);
-
-  const displayedEntries = useMemo(() => {
-    if (visibleTopics.length > 0) {
-      return filterTranscriptEntriesByTopic(entries, activeTopicId);
-    }
-    return entries;
-  }, [entries, visibleTopics.length, activeTopicId]);
+  const {
+    activeTopicId,
+    setActiveTopicId,
+    visibleTopics,
+    pinnedBanner,
+    activeTopic,
+    composerGuard,
+    displayedEntries,
+  } = useTdrpTopicWorkspace({
+    activeAgent,
+    activeAgentId,
+    client,
+    entries,
+    lastSentAtMsRef,
+  });
   spreadsheetEntriesRef.current = entries;
-  findNavigateHandlerRef.current = (match) => {
-    if (transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId) === true) return;
-    const conversationId = activeAgentIdRef.current;
-    const isHumanConversation = humanConversationsRef.current.some((conversation) => conversation.id === conversationId);
-    if (!isHumanConversation) {
-      scrollToFindMatch(match);
-      return;
-    }
-    const accountSlot = transcriptAccountSlot;
-    const accountGeneration = accountScopeGenerationRef.current;
-    const searchGeneration = humanFindGenerationRef.current;
-    const query = findInChatController.getSnapshot().query.trim();
-    const isCurrent = () => {
-      const current = findInChatController.getSnapshot();
-      return accountSlot != null && accountScopeGenerationRef.current === accountGeneration
-        && accountIdentityRef.current === `logged-in:${accountSlot}`
-        && selectionStore.get().currentAgentId === conversationId
-        && humanFindGenerationRef.current === searchGeneration
-        && current.scope.accountSlot === accountSlot && current.scope.agentId === conversationId
-        && current.query.trim() === query && findInChatOpenRef.current;
-    };
-    void (async () => {
-      for (let page = 0; page < 32; page += 1) {
-        if (!isCurrent()) return;
-        if (transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId) === true) return;
-        const pagination = transcriptPaginationController.getSnapshot();
-        if (pagination.agentId !== conversationId || pagination.accountSlot !== accountSlot || !pagination.hasOlder || pagination.olderFailure != null) return;
-        await transcriptPaginationController.loadOlder();
-      }
-      if (isCurrent()) transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId);
-    })().catch((error: unknown) => {
-      if (!isCurrent()) return;
-      setNotice(error instanceof Error ? `Human search navigation unavailable: ${error.message}` : `Human search navigation unavailable: ${String(error)}`);
-    });
-  };
-  useEffect(() => {
-    findInChatController.setScope(transcriptAccountSlot, activeAgentId.length > 0 ? activeAgentId : null);
-    if (account?.kind !== "logged-in" || activeAgentId.length === 0) setFindInChatOpen(false);
-  }, [account?.kind, activeAgentId, findInChatController, transcriptAccountSlot]);
-  useEffect(() => {
-    const query = findInChatSnapshot.query.trim();
-    if (!activeIsHuman || query.length === 0) findInChatController.replaceEntries(entries);
-  }, [activeIsHuman, entries, findInChatController, findInChatSnapshot.query]);
-  useEffect(() => {
-    const query = findInChatSnapshot.query.trim();
-    if (!findInChatOpen || !activeIsHuman || query.length === 0 || client == null || activeAgent == null || transcriptAccountSlot == null) return;
-    const generation = ++humanFindGenerationRef.current;
-    const updateGeneration = humanFindUpdateGenerationRef.current;
-    const accountGeneration = accountScopeGenerationRef.current;
-    const accountSlot = transcriptAccountSlot;
-    const conversationId = activeAgent.id;
-    const conversationName = activeAgent.name;
-    const isCurrent = () => {
-      const current = findInChatController.getSnapshot();
-      return humanFindGenerationRef.current === generation
-        && humanFindUpdateGenerationRef.current === updateGeneration
-        && accountScopeGenerationRef.current === accountGeneration
-        && accountIdentityRef.current === `logged-in:${accountSlot}`
-        && selectionStore.get().currentAgentId === conversationId
-        && current.scope.accountSlot === accountSlot && current.scope.agentId === conversationId
-        && current.query.trim() === query && findInChatOpenRef.current;
-    };
-    // setScope can clear the controller query earlier in this same effect pass.
-    if (!isCurrent()) return;
-    void client.call("searchHumanMessages", {
-      conversationId,
-      query,
-      limit: 200
-    }).then((value) => {
-      if (!isCurrent()) return;
-      findInChatController.replaceEntries(
-        projectHumanConversationTranscript(value, conversationName, conversationId)
-      );
-      const settledSearch = findInChatController.getSnapshot();
-      if (settledSearch.current == null && settledSearch.matches.length > 0) {
-        findInChatController.step(1);
-      }
-    }).catch((error: unknown) => {
-      if (!isCurrent()) return;
-      setNotice(error instanceof Error ? `Human search unavailable: ${error.message}` : `Human search unavailable: ${String(error)}`);
-    });
-    return () => {
-      if (humanFindGenerationRef.current === generation) humanFindGenerationRef.current += 1;
-    };
-  }, [activeAgent?.id, activeAgent?.name, activeIsHuman, client, findInChatController, findInChatOpen, findInChatSnapshot.query, humanFindUpdateGeneration, renderedAccountScopeGeneration, selectionStore, transcriptAccountSlot]);
+
+  useTdrpHumanFind({
+    findNavigateHandlerRef,
+    transcriptHandleRef,
+    activeAgentIdRef,
+    humanConversationsRef,
+    transcriptAccountSlot,
+    accountScopeGenerationRef,
+    humanFindGenerationRef,
+    humanFindUpdateGenerationRef,
+    accountIdentityRef,
+    selectionStore,
+    findInChatController,
+    findInChatOpenRef,
+    transcriptPaginationController,
+    setNotice,
+    activeIsHuman,
+    activeAgent,
+    findInChatOpen,
+    findInChatSnapshot,
+    client,
+    renderedAccountScopeGeneration,
+    scrollToFindMatch,
+  });
   useEffect(() => {
     const scopedAccountKey = account?.kind === "logged-in" && transport === "connected" ? transcriptAccountSlot : null;
     const scopedAgentId = scopedAccountKey == null || activeAgentId.length === 0 ? null : activeAgentId;
@@ -2797,48 +2201,17 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     },
     isEntryInScope: (targetId) => replyThreadController.resolve(targetId).isInScope,
   }), [activeAgent, activeIsHuman, entries, replyThreadController, selectComposerReply]);
-  const handoffHumanConversationToAgent = useCallback(async () => {
-    if (client == null || activeAgent == null || !activeIsHuman || humanHandoffAgentId.length === 0) return;
-    const targetAgent = agentsRef.current.find((agent) => agent.id === humanHandoffAgentId);
-    if (targetAgent == null) {
-      setNotice("Choose an available Agent for the handoff.");
-      return;
-    }
-    const transcriptContext = entries
-      .filter((entry): entry is TranscriptMessage => entry.kind === "message" && entry.text.trim().length > 0)
-      .slice(-20)
-      .map((entry) => `${entry.author}: ${entry.text.trim()}`)
-      .join("\n");
-    if (transcriptContext.length === 0) {
-      setNotice("Send at least one Human message before handing the conversation to an Agent.");
-      return;
-    }
-    const clientNonce = makeClientNonce();
-    const now = Date.now();
-    setBusy(true);
-    try {
-      await client.call("sendPrompt", {
-        agentId: targetAgent.id,
-        prompt: `Continue from this Human conversation and help with the user's explicit handoff request. Preserve the Human/Agent distinction and use tools or artifacts when useful.\n\nHuman conversation: ${activeAgent.name}\n\n${transcriptContext}`,
-        directAddressedAcceptance: true,
-        requestSource: "human-handoff",
-        humanHandoffConversationId: activeAgent.id,
-        attachmentPaths: [],
-        attachmentNames: [],
-        clientNonce,
-        enterEpochMs: now,
-        composedAtMs: now
-      });
-      // Host/Runner durably projects the trusted Agent result into this Human
-      // transcript. Renderer state never fabricates an Agent-authored message
-      // and the user remains in the same conversation workspace.
-      setNotice(null);
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : String(error));
-    } finally {
-      setBusy(false);
-    }
-  }, [activeAgent, activeIsHuman, client, entries, humanHandoffAgentId]);
+  const { handoffHumanConversationToAgent } = useTdrpHumanHandoff({
+    client,
+    activeAgent,
+    activeIsHuman,
+    humanHandoffAgentId,
+    agentsRef,
+    entries,
+    setNotice,
+    setBusy,
+    makeClientNonce,
+  });
 
   const loadOlderTranscript = useCallback(() => transcriptPaginationController.loadOlder(), [transcriptPaginationController]);
   const paletteLinks = useMemo(
@@ -3123,106 +2496,26 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     else if (!computerInfoOpen) setComputerViewerRetained(false);
   }, [computer.isOpen, computerInfoOpen]);
 
-  const continueHumanHistoryCoverage = useCallback((conversationId: string) => {
-    if (client == null || transportRef.current !== "connected" || accountRef.current?.kind !== "logged-in") return;
-    if (selectionStore.get().currentAgentId !== conversationId) return;
-    if (humanCoverageContinuationInFlightRef.current.has(conversationId)) return;
-    const accountScopeGeneration = accountScopeGenerationRef.current;
-    const transportScopeGeneration = transportScopeGenerationRef.current;
-    const conversationGeneration = transcriptConversationGenerationsRef.current.get(conversationId) ?? 0;
-    const isCurrent = () => accountScopeGenerationRef.current === accountScopeGeneration
-      && transportScopeGenerationRef.current === transportScopeGeneration
-      && transportRef.current === "connected"
-      && accountRef.current?.kind === "logged-in"
-      && selectionStore.get().currentAgentId === conversationId
-      && (transcriptConversationGenerationsRef.current.get(conversationId) ?? 0) === conversationGeneration;
-    humanCoverageContinuationInFlightRef.current.add(conversationId);
-    void (async () => {
-      try {
-        const MAX_CONTINUATION_WINDOWS = 16;
-        for (let windowIndex = 0; windowIndex < MAX_CONTINUATION_WINDOWS; windowIndex += 1) {
-          if (!isCurrent()) return;
-          const currentConversation = humanConversationsRef.current.find((candidate) => candidate.id === conversationId);
-          if (currentConversation == null || currentConversation.raw.historyCoverageComplete !== false) return;
-          try {
-            await client.call("syncHumanConversation", { conversationId });
-          } catch (error) {
-            if (isCurrent()) {
-              setNotice(error instanceof Error
-                ? `Human sync unavailable: ${error.message}`
-                : `Human sync unavailable: ${String(error)}`);
-            }
-            return;
-          }
-          if (!isCurrent()) return;
-          let refreshedRosterValue: unknown;
-          try {
-            refreshedRosterValue = await client.call("listHumanConversations");
-          } catch {
-            return;
-          }
-          if (!isCurrent()) return;
-          const refreshedHumans = projectHumanConversations(refreshedRosterValue);
-          humanConversationsRef.current = refreshedHumans;
-          setHumanConversations(refreshedHumans);
-          const refreshedConversation = refreshedHumans.find((candidate) => candidate.id === conversationId);
-          if (refreshedConversation == null) return;
-          if (entriesByAgentRef.current[conversationId] != null) {
-            const accountNow = accountRef.current;
-            const requestGeneration = openAgentRequestGenerationRef.current;
-            const pendingRead: TranscriptReadUpdateBuffer = {
-              accountSlot: accountNow?.kind === "logged-in" ? accountNow.authId ?? accountNow.email ?? "account" : null,
-              agentId: conversationId,
-              isCurrent: () => isCurrent() && openAgentRequestGenerationRef.current === requestGeneration,
-              updates: new Map(),
-            };
-            pendingTranscriptReadsRef.current.add(pendingRead);
-            try {
-              const entriesAtRequest = entriesByAgentRef.current[conversationId] ?? [];
-              const transcriptValue = await client.call("getHumanConversationTranscript", { conversationId });
-              if (pendingRead.isCurrent()) {
-                const projectedEntries = projectHumanConversationTranscript(
-                  transcriptValue,
-                  refreshedConversation.name,
-                  conversationId
-                );
-                for (const entry of projectedEntries) observeTranscriptSettlement(conversationId, entry);
-                setEntriesByAgent((current) => !pendingRead.isCurrent() ? current : ({
-                  ...current,
-                  [conversationId]: applyTranscriptReadUpdates(reconcileTranscriptRefresh(
-                    current[conversationId] ?? [],
-                    projectedEntries,
-                    entriesAtRequest,
-                  ), pendingRead.updates)
-                }));
-                const latestAccount = accountRef.current;
-                if (latestAccount?.kind === "logged-in") {
-                  transcriptHistoryCursorsRef.current.set(conversationId, {
-                    accountSlot: latestAccount.authId ?? latestAccount.email ?? "account",
-                  });
-                }
-                openAgentRequestGenerationRef.current += 1;
-                pendingTranscriptReadsRef.current.clear();
-                transcriptPaginationController.installInitialPage({ entries: [] });
-              }
-            } catch (error) {
-              if (pendingRead.isCurrent()) {
-                setNotice(error instanceof Error
-                  ? `Human transcript refresh unavailable: ${error.message}`
-                  : `Human transcript refresh unavailable: ${String(error)}`);
-              }
-              return;
-            } finally {
-              pendingTranscriptReadsRef.current.delete(pendingRead);
-            }
-          }
-          if (refreshedConversation.raw.historyCoverageComplete !== false) return;
-        }
-      } finally {
-        humanCoverageContinuationInFlightRef.current.delete(conversationId);
-      }
-    })();
-  }, [client, observeTranscriptSettlement, selectionStore, transcriptPaginationController]);
+  const { continueHumanHistoryCoverage } = useTdrpHistoryCoverage({
+    client,
+    transportRef,
+    accountRef,
+    selectionStore,
+    humanCoverageContinuationInFlightRef,
+    accountScopeGenerationRef,
+    transportScopeGenerationRef,
+    transcriptConversationGenerationsRef,
+    humanConversationsRef,
+    setNotice,
+    setHumanConversations,
+    entriesByAgentRef,
+    openAgentRequestGenerationRef,
+    pendingTranscriptReadsRef,
+    observeTranscriptSettlement,
+    setEntriesByAgent,
+    transcriptHistoryCursorsRef,
+    transcriptPaginationController,
+  });
 
   const refreshRoster = useCallback(async () => {
     if (client == null) return;
@@ -3408,165 +2701,38 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     }
   }, [client]);
 
-  const openAgent = useCallback(async (agentId: string, options?: { background?: boolean }) => {
-    const conversationGeneration = transcriptConversationGenerationsRef.current.get(agentId) ?? 0;
-    const accountScopeGeneration = accountScopeGenerationRef.current;
-    const transportScopeGeneration = transportScopeGenerationRef.current;
-    if (accountRef.current?.kind !== "logged-in") return;
-    if (options?.background === true && selectionStore.get().currentAgentId !== agentId) return;
-    if (options?.background !== true) {
-      // Explicit navigation owns the surface change, including reselecting a
-      // conversation whose first page is already loading. Background roster,
-      // restore and clear recovery must not dismiss a user's open surface.
-      setOverlay(null);
-      setWorkspaceRoute(null);
-      setCommandPaletteOpen(false);
-      setPaletteMessageTarget((current) => {
-        if (current == null || current.agentId === agentId) return current;
-        paletteMessagePagesLoadedRef.current = 0;
-        return null;
-      });
-    }
-    const isHumanTranscript = humanConversationsRef.current.some((conversation) => conversation.id === agentId);
-    if (initialTranscriptRequestRef.current?.agentId === agentId
-      && initialTranscriptRequestRef.current.accountGeneration === accountScopeGeneration
-      && initialTranscriptRequestRef.current.requestGeneration === openAgentRequestGenerationRef.current
-      && initialTranscriptRequestRef.current.isHuman === isHumanTranscript
-      && (isHumanTranscript || initialTranscriptRequestRef.current.transportGeneration === transportScopeGeneration)) return;
-    const cachedCursor = transcriptHistoryCursorsRef.current.get(agentId);
-    const hasLoadedEntries = entriesByAgentRef.current[agentId] != null
-      && cachedCursor != null && cachedCursor.accountSlot === transcriptAccountSlot;
-    const paginationScope = transcriptPaginationController.getSnapshot();
-    if (activeAgentIdRef.current === agentId && hasLoadedEntries
-      && paginationScope.accountSlot === transcriptAccountSlot && paginationScope.agentId === agentId) {
-      // Reselecting the already-active, loaded conversation is a presentation
-      // no-op. In particular, do not reinstall its cached cursor: doing so
-      // invalidates an older-page request that may already be in flight.
-      setOverlay(null);
-      setWorkspaceRoute(null);
-      setCommandPaletteOpen(false);
-      if (isHumanTranscript
-        && humanConversationsRef.current.find((conversation) => conversation.id === agentId)?.raw.historyCoverageComplete === false) {
-        continueHumanHistoryCoverage(agentId);
-      }
-      return;
-    }
-    const requestGeneration = ++openAgentRequestGenerationRef.current;
-    pendingTranscriptReadsRef.current.clear();
-    setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
-    transcriptPaginationController.setScope(transcriptAccountSlot, agentId);
-    selectionStore.select(agentId);
-    if (hasLoadedEntries) {
-      // A changed scope needs its cached cursor restored; reselecting the
-      // current scope must preserve its in-flight page and failure overlays.
-      if (transcriptPaginationController.getSnapshot().cursor.kind === "unprobed") {
-        transcriptPaginationController.installInitialPage({
-          entries: [],
-          nextBeforeSeq: cachedCursor?.nextBeforeSeq,
-          nextBeforeCursor: cachedCursor?.nextBeforeCursor,
-        });
-      }
-      selectionStore.settle(agentId);
-    }
-    if (hasLoadedEntries || client == null) {
-      if (client == null) selectionStore.settle(agentId);
-      else if (isHumanTranscript
-        && humanConversationsRef.current.find((conversation) => conversation.id === agentId)?.raw.historyCoverageComplete === false) {
-        continueHumanHistoryCoverage(agentId);
-      }
-      return;
-    }
-    const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === agentId);
-    const agentName = humanConversation?.name ?? agentsRef.current.find((agent) => agent.id === agentId)?.name ?? UI_TEXT.title;
-    const pendingRead: TranscriptReadUpdateBuffer = {
-      accountSlot: transcriptAccountSlot,
-      agentId,
-      isCurrent: () => accountScopeGenerationRef.current === accountScopeGeneration
-        && openAgentRequestGenerationRef.current === requestGeneration
-        && (transcriptConversationGenerationsRef.current.get(agentId) ?? 0) === conversationGeneration
-        && selectionStore.get().currentAgentId === agentId
-        && (humanConversation != null || transportScopeGenerationRef.current === transportScopeGeneration)
-        && accountRef.current?.kind === "logged-in",
-      updates: new Map(),
-    };
-    initialTranscriptRequestRef.current = {
-      agentId, accountGeneration: accountScopeGeneration, requestGeneration,
-      transportGeneration: transportScopeGeneration, isHuman: humanConversation != null,
-    };
-    try {
-      let page: unknown;
-      if (humanConversation == null) {
-        pendingTranscriptReadsRef.current.add(pendingRead);
-        page = await client.call("openAgentTail", { id: agentId, limit: 200 });
-      } else {
-        if (transportRef.current === "connected") {
-          try {
-            await client.call("syncHumanConversation", { conversationId: agentId });
-          } catch (error) {
-            if (pendingRead.isCurrent()) setNotice(error instanceof Error ? `Human sync unavailable: ${error.message}` : `Human sync unavailable: ${String(error)}`);
-          }
-        }
-        if (!pendingRead.isCurrent()) return;
-        pendingTranscriptReadsRef.current.add(pendingRead);
-        page = await client.call("getHumanConversationTranscriptTail", { conversationId: agentId, limit: 200 });
-      }
-      // Human conversations are read from the Host-local durable Session store.
-      // A transport ready/reconnect notification may advance the Agent transport
-      // generation while this local read is in flight; that must not discard an
-      // otherwise current Human transcript. Agent tail reads remain transport-fenced.
-      if (!pendingRead.isCurrent()) return;
-      const projectedPage = projectTranscriptPageResult(page, agentName, agentId);
-      const projectedEntries = applyTranscriptReadUpdates(projectedPage.entries, pendingRead.updates);
-      for (const entry of projectedEntries) observeTranscriptSettlement(agentId, entry);
-      setEntriesByAgent((current) => !pendingRead.isCurrent() ? current : ({
-        ...current,
-        // Preserve canonical rows already projected by the feed, then apply
-        // events captured during this read over both snapshot projections.
-        [agentId]: applyTranscriptReadUpdates(reconcileLateInitialTranscriptPage(current[agentId] ?? [], projectedEntries), pendingRead.updates)
-      }));
-      if (transcriptAccountSlot != null) transcriptHistoryCursorsRef.current.set(agentId, {
-        accountSlot: transcriptAccountSlot,
-        nextBeforeSeq: projectedPage.nextBeforeSeq,
-        nextBeforeCursor: projectedPage.nextBeforeCursor,
-      });
-      // The root projection already contains the tail and concurrent events.
-      transcriptPaginationController.installInitialPage({
-        entries: [],
-        nextBeforeSeq: projectedPage.nextBeforeSeq,
-        nextBeforeCursor: projectedPage.nextBeforeCursor,
-      });
-      selectionStore.settle(agentId);
-      selectionStore.reconcile({ agentIds: completeRosterAgentIdsRef.current, isRosterComplete: hasLoadedAgentsRef.current });
-      setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
-      if (humanConversation != null) {
-        const tailCoverageIncomplete = typeof page === "object" && page != null
-          && (page as { historyCoverageComplete?: unknown }).historyCoverageComplete === false;
-        const previousIncomplete = humanConversationsRef.current.find((candidate) => candidate.id === agentId)?.raw.historyCoverageComplete === false;
-        if (tailCoverageIncomplete !== previousIncomplete) {
-          const updatedHumans = humanConversationsRef.current.map((candidate) => {
-            if (candidate.id !== agentId) return candidate;
-            const nextRaw = { ...candidate.raw };
-            if (tailCoverageIncomplete) nextRaw.historyCoverageComplete = false;
-            else delete nextRaw.historyCoverageComplete;
-            return { ...candidate, raw: nextRaw };
-          });
-          humanConversationsRef.current = updatedHumans;
-          setHumanConversations(updatedHumans);
-        }
-        if (tailCoverageIncomplete) {
-          continueHumanHistoryCoverage(agentId);
-        }
-      }
-    } catch {
-      if (!pendingRead.isCurrent()) return;
-      selectionStore.settle(agentId);
-      selectionStore.reconcile({ agentIds: completeRosterAgentIdsRef.current, isRosterComplete: hasLoadedAgentsRef.current });
-      setTranscriptLoadError({ agentId, accountScopeGeneration });
-    } finally {
-      pendingTranscriptReadsRef.current.delete(pendingRead);
-      if (initialTranscriptRequestRef.current?.requestGeneration === requestGeneration) initialTranscriptRequestRef.current = null;
-    }
-  }, [client, continueHumanHistoryCoverage, observeTranscriptSettlement, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
+  const { openAgent } = useTdrpOpenAgent({
+    client,
+    accountRef,
+    transcriptConversationGenerationsRef,
+    accountScopeGenerationRef,
+    transportScopeGenerationRef,
+    selectionStore,
+    setOverlay,
+    setWorkspaceRoute,
+    setCommandPaletteOpen,
+    setPaletteMessageTarget,
+    paletteMessagePagesLoadedRef,
+    humanConversationsRef,
+    initialTranscriptRequestRef,
+    openAgentRequestGenerationRef,
+    transcriptHistoryCursorsRef,
+    entriesByAgentRef,
+    transcriptAccountSlot,
+    transcriptPaginationController,
+    activeAgentIdRef,
+    continueHumanHistoryCoverage,
+    pendingTranscriptReadsRef,
+    setTranscriptLoadError,
+    agentsRef,
+    transportRef,
+    setNotice,
+    observeTranscriptSettlement,
+    setEntriesByAgent,
+    completeRosterAgentIdsRef,
+    hasLoadedAgentsRef,
+    setHumanConversations,
+  });
 
   const openGroupMemberChat = useCallback((agentId: string) => {
     setGroupInfoPaneOpen(false);
@@ -3660,171 +2826,37 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const projected = projectRendererAgentUpsert(value);
       if (projected != null) setAgents((current) => [projected, ...current.filter((agent) => agent.id !== projected.id)].sort((a, b) => b.updatedAt - a.updatedAt));
     });
-    const transcriptBaselineSeen = new Set<string>();
-    const entriesAtFeedStart = entriesByAgentRef.current;
-    const preBaselineFeedEntryIds = new Map<string, Set<string>>();
-    const rememberPreBaselineFeedEntry = (ownerId: string, entryId: string) => {
-      if (transcriptBaselineSeen.has(ownerId)) return;
-      const ids = preBaselineFeedEntryIds.get(ownerId) ?? new Set<string>();
-      ids.add(entryId);
-      preBaselineFeedEntryIds.set(ownerId, ids);
-    };
-    const rememberTranscriptUpdate = (ownerId: string, entry: ConversationTranscriptEntry, previousId?: string) => {
-      // Each in-flight read/receipt owns its overlay. Completing one cannot
-      // consume an event still needed by a concurrent read or delayed receipt.
-      for (const reads of [pendingTranscriptReadsRef.current, pendingTranscriptReceiptsRef.current]) {
-        for (const read of currentTranscriptReadBuffers(reads, transcriptAccountSlot, ownerId)) {
-          recordTranscriptReadUpdate(read.updates, entry, previousId);
-        }
-      }
-    };
-    const retireChangedSpreadsheetSource = (ownerId: string, entry: ConversationTranscriptEntry, previousId?: string) => {
-      const source = spreadsheetViewerSourceRef.current;
-      if (source == null || source.agentId !== ownerId || !isTranscriptScopeCurrent(source)) return;
-      const current = spreadsheetEntriesRef.current.find((candidate) => candidate.id === source.entryId);
-      if (current == null) return;
-      // Use the same merge as the existing row owner: Human empty attachments
-      // replace the set, while an Agent partial echo can retain prior resources.
-      const isAgentAttachment = localTranscriptClientNonce(entry, undefined) != null
-        && "sourceKind" in entry && entry.sourceKind === "user-attachment";
-      const next = reconcileTranscriptMutation([current], entry, { previousId, preserveCurrentId: isAgentAttachment })
-        .find((candidate) => candidate.id === source.entryId);
-      if (next?.kind !== "message" || !next.attachments?.some((attachment) =>
-        transcriptAttachmentIdentity(attachment) === source.attachmentIdentity)) source.mount.close();
-    };
-    const retireOrRefreshForwardTarget = (ownerId: string, entry: ConversationTranscriptEntry, previousId?: string) => {
-      setForwardTarget((current) => {
-        if (current == null || current.sourceConversationId !== ownerId) return current;
-        if (current.accountScopeGeneration !== accountScopeGenerationRef.current) return null;
-        const nextMessage = reconcileForwardTargetMessage(current.message, entry, { previousId });
-        if (nextMessage == null) return null;
-        return nextMessage === current.message ? current : { ...current, message: nextMessage };
-      });
-    };
-    const resolveAgentRetryEcho = (ownerId: string, entry: ConversationTranscriptEntry): ConversationTranscriptEntry => {
-      if (humanConversationsRef.current.some((conversation) => conversation.id === ownerId)) return entry;
-      const nonce = localTranscriptClientNonce(entry, undefined);
-      if (nonce == null || entry.kind !== "message") return entry;
-      const record = acknowledgementController.getSnapshot().records.find((candidate) => candidate.agentId === ownerId
-        && (candidate.nonce === nonce || candidate.priorNonces.includes(nonce)));
-      return record == null || record.nonce === nonce ? entry : { ...entry, clientNonce: record.nonce };
-    };
-    const stopTranscript = reactionRoot?.feed.observeEntriesFeed({
-      onBaseline: ({ agentId: ownerId, entries: rawEntries }) => {
-        if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
-        const conversationGeneration = transcriptConversationGenerationsRef.current.get(ownerId) ?? 0;
-        const owner = agentsRef.current.find((agent) => agent.id === ownerId);
-        let projectedEntries = projectTranscriptFeedEntries(rawEntries, owner?.name ?? UI_TEXT.title, ownerId);
-        for (const reads of [pendingTranscriptReadsRef.current, pendingTranscriptReceiptsRef.current]) {
-          for (const read of currentTranscriptReadBuffers(reads, transcriptAccountSlot, ownerId)) {
-            projectedEntries = applyTranscriptReadUpdates(projectedEntries, read.updates);
-          }
-        }
-        for (const entry of projectedEntries) {
-          retireChangedSpreadsheetSource(ownerId, entry);
-          retireOrRefreshForwardTarget(ownerId, entry);
-          humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: entry.id });
-          humanMessageRetryController.observeEntry(ownerId, entry);
-          observeTranscriptSettlement(ownerId, entry);
-        }
-        const preserveEntryIds = new Set(preBaselineFeedEntryIds.get(ownerId) ?? []);
-        setEntriesByAgent((current) => !isCurrent()
-          || (transcriptConversationGenerationsRef.current.get(ownerId) ?? 0) !== conversationGeneration ? current : ({
-          ...current,
-          [ownerId]: reconcileTranscriptTail(current[ownerId] ?? [], projectedEntries, preserveEntryIds, entriesAtFeedStart[ownerId] ?? [])
-        }));
-        transcriptBaselineSeen.add(ownerId);
-        preBaselineFeedEntryIds.delete(ownerId);
-        invalidateActiveHumanSearch(ownerId);
-      },
-      onUpdated: ({ agentId: ownerId, before, after: event }) => {
-        if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
-        const owner = agentsRef.current.find((agent) => agent.id === ownerId);
-        const rawProjected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
-        if (rawProjected == null || !ownerId) return;
-        const projected = resolveAgentRetryEcho(ownerId, rawProjected);
-        humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: projected.id });
-        humanMessageRetryController.observeEntry(ownerId, projected);
-        const conversationGeneration = transcriptConversationGenerationsRef.current.get(ownerId) ?? 0;
-        rememberPreBaselineFeedEntry(ownerId, projected.id);
-        const previousId = before != null && typeof before === "object" && "id" in before && typeof before.id === "string" ? before.id : undefined;
-        if (previousId != null) {
-          humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: previousId });
-          rememberPreBaselineFeedEntry(ownerId, previousId);
-        }
-        rememberTranscriptUpdate(ownerId, projected, previousId);
-        retireChangedSpreadsheetSource(ownerId, projected, previousId);
-        retireOrRefreshForwardTarget(ownerId, projected, previousId);
-        invalidateActiveHumanSearch(ownerId);
-        observeTranscriptSettlement(ownerId, projected);
-        transcriptPaginationController.ingestEntryUpdate(transcriptAccountSlot, ownerId, projected, previousId);
-        setEntriesByAgent((current) => {
-          if (!isCurrent() || (transcriptConversationGenerationsRef.current.get(ownerId) ?? 0) !== conversationGeneration) return current;
-          const existing = current[ownerId] ?? [];
-          const isAgentAttachment = localTranscriptClientNonce(projected, undefined) != null
-            && "sourceKind" in projected && projected.sourceKind === "user-attachment";
-          const next = reconcileTranscriptMutation(existing, projected, { previousId, preserveCurrentId: isAgentAttachment });
-          return next === existing ? current : { ...current, [ownerId]: next };
-        });
-      },
-      onCleared: (ownerId) => {
-        if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
-        humanReactionSettlement.clearConversation(ownerId);
-        if (spreadsheetViewerSourceRef.current?.agentId === ownerId) spreadsheetViewerSourceRef.current.mount.close();
-        setForwardTarget((current) => current?.sourceConversationId === ownerId ? null : current);
-        invalidateActiveHumanSearch(ownerId);
-        invalidateTranscriptConversation(ownerId);
-        sendJournalApprovalLifecycle.reset();
-        transcriptBaselineSeen.add(ownerId);
-        preBaselineFeedEntryIds.delete(ownerId);
-        transcriptHistoryCursorsRef.current.delete(ownerId);
-        for (const read of pendingTranscriptReadsRef.current) {
-          if (read.agentId === ownerId) pendingTranscriptReadsRef.current.delete(read);
-        }
-        setEntriesByAgent((current) => {
-          if (!isCurrent()) return current;
-          if (!(ownerId in current)) return current;
-          const next = { ...current };
-          delete next[ownerId];
-          return next;
-        });
-        if (activeAgentIdRef.current !== ownerId && transcriptPaginationController.getSnapshot().agentId !== ownerId) return;
-        // A pending first-page response must never repopulate a cleared
-        // transcript after its authoritative clear event.
-        openAgentRequestGenerationRef.current += 1;
-        initialTranscriptRequestRef.current = null;
-        acknowledgementController.reset();
-        transcriptPaginationController.reset();
-        // An initial load can still have no cache entry to delete. Schedule
-        // its replacement directly instead of depending on a cache re-render.
-        if (activeAgentIdRef.current === ownerId) void openAgentRef.current(ownerId, { background: true });
-      },
-      onAppended: ({ agentId: ownerId, entry: event }) => {
-      if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
-      const owner = agentsRef.current.find((agent) => agent.id === ownerId);
-      const rawProjected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
-      if (rawProjected == null || !ownerId) return;
-      const projected = resolveAgentRetryEcho(ownerId, rawProjected);
-      humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: projected.id });
-      humanMessageRetryController.observeEntry(ownerId, projected);
-      const conversationGeneration = transcriptConversationGenerationsRef.current.get(ownerId) ?? 0;
-      rememberPreBaselineFeedEntry(ownerId, projected.id);
-      rememberTranscriptUpdate(ownerId, projected);
-      retireChangedSpreadsheetSource(ownerId, projected);
-      retireOrRefreshForwardTarget(ownerId, projected);
-      invalidateActiveHumanSearch(ownerId);
-      observeTranscriptSettlement(ownerId, projected);
-      transcriptPaginationController.ingestEntryUpdate(transcriptAccountSlot, ownerId, projected);
-      setEntriesByAgent((current) => {
-        if (!isCurrent() || (transcriptConversationGenerationsRef.current.get(ownerId) ?? 0) !== conversationGeneration) return current;
-        const isAgentAttachment = localTranscriptClientNonce(projected, undefined) != null
-          && "sourceKind" in projected && projected.sourceKind === "user-attachment";
-        return { ...current, [ownerId]: reconcileTranscriptMutation(current[ownerId] ?? [], projected, {
-          appendIfMissing: true, preserveCurrentId: isAgentAttachment,
-        }) };
-      });
-      }
-    }) ?? null;
+    const transcriptObservers = createTranscriptFeedObservers({
+      isCurrent,
+      accountRef,
+      transcriptConversationGenerationsRef,
+      agentsRef,
+      humanConversationsRef,
+      pendingTranscriptReadsRef,
+      pendingTranscriptReceiptsRef,
+      transcriptAccountSlot,
+      spreadsheetViewerSourceRef,
+      spreadsheetEntriesRef,
+      isTranscriptScopeCurrent,
+      setForwardTarget,
+      accountScopeGenerationRef,
+      acknowledgementController,
+      humanReactionSettlement,
+      humanMessageRetryController,
+      observeTranscriptSettlement,
+      setEntriesByAgent,
+      entriesByAgentRef,
+      invalidateActiveHumanSearch,
+      transcriptPaginationController,
+      invalidateTranscriptConversation,
+      sendJournalApprovalLifecycle,
+      transcriptHistoryCursorsRef,
+      activeAgentIdRef,
+      openAgentRequestGenerationRef,
+      initialTranscriptRequestRef,
+      openAgentRef,
+    });
+    const stopTranscript = reactionRoot?.feed.observeEntriesFeed(transcriptObservers) ?? null;
     return () => {
       active = false;
       stopTransport();
@@ -4537,176 +3569,40 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     setNotice(null);
   };
 
-  const removeTranscriptMessage = useCallback((entry: TranscriptMessage) => {
-    const agentId = activeAgentIdRef.current;
-    const operation = captureTranscriptScope(agentId);
-    if (!agentId || operation == null || entry.delivery !== "failed") return;
-    const nonce = localTranscriptClientNonce(entry, operation.humanAuthorId);
-    if (nonce == null) return;
-    const currentEntry = (entriesByAgentRef.current[agentId] ?? []).find((candidate) => candidate.id === entry.id);
-    if (currentEntry == null || isSettledTranscriptMessage(currentEntry)) return;
-    const scope = submissionScopesRef.current.get(nonce);
-    if (scope?.canonicalSettled === true) return;
-    if (scope != null && scope.agentId === agentId) { scope.invalidate(); submissionScopesRef.current.delete(nonce); }
-    composerDraftStore.forgetHumanSubmissions({ accountSlot: operation.accountSlot, agentId, nonce });
-    composerSubmissionQueueRef.current?.discard(nonce);
-    acknowledgementController.removeOptimistic({ accountSlot: operation.accountSlot, nonce });
-    setEntriesByAgent((current) => !isTranscriptScopeCurrent(operation) ? current : ({
-      ...current,
-      [agentId]: (current[agentId] ?? []).filter((candidate) => candidate.kind !== "message" || candidate.id !== entry.id)
-    }));
-  }, [acknowledgementController, captureTranscriptScope, composerDraftStore, isTranscriptScopeCurrent]);
-
-  const resendFailedSend = useCallback(async (entry: TranscriptMessage) => {
-    if (activeIsHuman) {
-      const operation = captureTranscriptScope(activeAgentId);
-      if (operation == null || localTranscriptClientNonce(entry, operation.humanAuthorId) == null
-        || isSettledTranscriptMessage(entry)) return;
-      // A pre-frame failure still belongs to the original Composer record.
-      // Once any request may have posted, only the durable Host retry is safe.
-      const original = composerSubmissionQueue.snapshot().find((record) => record.agentId === activeAgentId
-        && record.nonce === entry.clientNonce && (record.phase === "pending" || record.phase === "queued"
-          || record.humanDispatch?.requestPosted !== true));
-      const originalScope = entry.clientNonce == null ? null : submissionScopesRef.current.get(entry.clientNonce);
-      const retryIsCurrent = () => originalScope != null && !originalScope.invalidated
-        && isTranscriptScopeCurrent(originalScope)
-        && originalScope.accountGeneration === renderedAccountScopeGeneration
-        && renderedAccountScopeGeneration === accountScopeGenerationRef.current
-        && accountRef.current?.kind === "logged-in"
-        && (accountRef.current.authId ?? accountRef.current.email ?? "account") === transcriptAccountSlot
-        && openAgentRequestGenerationRef.current === renderedRetrySelectionGeneration
-        && selectionStore.get() === renderedRetrySelection
-        && renderedRetrySelection.currentAgentId === activeAgentId;
-      if (original != null && entry.delivery === "failed" && retryIsCurrent()) {
-        setNotice((current) => retryIsCurrent() ? null : current);
-        const retry = composerSubmissionQueue.retryFailed(original.nonce, { isCurrent: retryIsCurrent });
-        if (retry != null) { await retry.completion; return; }
-      }
-      try {
-        await composerDraftStore.bindHumanSubmission({
-          accountSlot: operation.accountSlot, agentId: activeAgentId, authorId: operation.humanAuthorId!, nonce: entry.clientNonce!,
-          draftId: originalScope?.draftOwnership?.draftIdentity?.draftId ?? null,
-          recoveryId: originalScope?.draftOwnership?.recoveryIdentity?.recoveryId ?? null,
-        });
-      } catch (error) {
-        if (isTranscriptScopeCurrent(operation)) setNotice(error instanceof Error ? error.message : String(error));
-        return;
-      }
-      if (!isTranscriptScopeCurrent(operation)) return;
-      await humanMessageRetryController.retry({
-        scope: {
-          accountGeneration: renderedAccountScopeGeneration,
-          selectionGeneration: renderedRetrySelectionGeneration,
-          accountSlot: transcriptAccountSlot,
-          selection: renderedRetrySelection,
-        },
-        conversationId: activeAgentId,
-        conversationName: activeAgent?.name ?? UI_TEXT.title,
-        entry,
-      });
-      return;
-    }
-    const agentId = activeAgentIdRef.current;
-    if (client == null || !agentId) return;
-    const operation = captureTranscriptScope(agentId);
-    if (operation == null || entry.delivery !== "failed") return;
-    const failedNonce = localTranscriptClientNonce(entry, operation.humanAuthorId);
-    if (failedNonce == null) return;
-    const currentEntry = (entriesByAgentRef.current[agentId] ?? []).find((candidate) => candidate.id === entry.id);
-    if (currentEntry == null || isSettledTranscriptMessage(currentEntry)) return;
-    const previousScope = submissionScopesRef.current.get(failedNonce);
-    if (previousScope?.canonicalSettled === true) return;
-    const retained = previousScope != null && !previousScope.invalidated && isTranscriptScopeCurrent(previousScope)
-      ? composerSubmissionQueue.snapshot().find((record) => record.nonce === failedNonce && record.agentId === agentId
-        && record.phase === "failed" && submissionScope(record) === previousScope)
-      : undefined;
-    const clientNonce = makeClientNonce();
-    const pendingId = `pending-${clientNonce}`;
-    const enteredAt = Date.now();
-    const retryAttachments = (retained?.attachments ?? entry.attachments ?? []).map((attachment) => ({ ...attachment }));
-    const retryRichText = retained == null ? entry.richText : retained.richText;
-    const retryReplyToId = retained == null ? entry.replyToId : retained.replyToId;
-    const retrySubmission = scopeComposerSubmission({
-      nonce: clientNonce,
-      agentId,
-      prompt: retained?.prompt ?? entry.text.trim(),
-      attachments: retryAttachments,
-      createdAtMs: enteredAt,
-      ...(retryRichText === undefined ? {} : { richText: retryRichText }),
-      ...(retryReplyToId === undefined ? {} : { replyToId: retryReplyToId }),
-      ...(retained?.isFork === undefined ? {} : { isFork: retained.isFork }),
-    });
-    if (retrySubmission == null) return;
-    const retryScope = retrySubmission.transcriptScope;
-    // Retry inherits the original submit/recovery identity. Equal text cannot
-    // authorize clearing a draft the user edited or recreated after failure.
-    if (previousScope?.agentId === agentId && !previousScope.invalidated && isTranscriptScopeCurrent(previousScope)) {
-      retryScope.draftOwnership = previousScope.draftOwnership;
-      retryScope.agentCommittedAttachments = previousScope.agentCommittedAttachments?.map((attachment) => ({ ...attachment }));
-    }
-    if (retained == null) {
-      // Without an in-memory Composer input these are durable transcript
-      // resources, not staging paths to upload for a second time.
-      retryScope.agentCommittedAttachments = retryAttachments.map((attachment) => ({ ...attachment }));
-    }
-    if (previousScope != null && previousScope.agentId === agentId) {
-      previousScope.invalidate();
-      if (submissionScopesRef.current.get(failedNonce) === previousScope) submissionScopesRef.current.delete(failedNonce);
-    }
-    composerSubmissionQueue.discard(failedNonce);
-    const retried = acknowledgementController.retryFailed({
-      accountSlot: retryScope.accountSlot,
-      agentId,
-      nonce: failedNonce,
-      freshNonce: clientNonce,
-      entries: optimisticAcknowledgementEntries(clientNonce, retryAttachments)
-    });
-    if (!retried) acknowledgementController.insertOptimistic({
-      accountSlot: retryScope.accountSlot,
-      agentId,
-      nonce: clientNonce,
-      entries: optimisticAcknowledgementEntries(clientNonce, retryAttachments),
-      phase: "pending"
-    });
-    setEntriesByAgent((current) => retryScope.invalidated || !isTranscriptScopeCurrent(retryScope) ? current : ({
-      ...current,
-      [agentId]: (current[agentId] ?? []).map((candidate) => candidate.kind === "message" && candidate.id === entry.id
-        ? { ...candidate, id: pendingId, clientNonce, delivery: "pending", composedAtMs: undefined, remoteMessageId: undefined }
-        : candidate)
-    }));
-    const journaledRetry = sendJournalApprovalLifecycle.resendFailed({ submission: retrySubmission, onJournaled: () => {} });
-    void journaledRetry.then((phase) => {
-      if (phase === "sent") retryScope.onSettled?.();
-    });
-  }, [activeAgent?.name, activeAgentId, activeIsHuman, acknowledgementController, captureTranscriptScope, client, composerDraftStore, composerSubmissionQueue, humanMessageRetryController, isTranscriptScopeCurrent, renderedAccountScopeGeneration, renderedRetrySelection, renderedRetrySelectionGeneration, scopeComposerSubmission, selectionStore, sendJournalApprovalLifecycle, transcriptAccountSlot]);
-
-  const cancelQueuedSend = useCallback((entry: TranscriptMessage) => {
-    const agentId = activeAgentIdRef.current;
-    const operation = captureTranscriptScope(agentId);
-    if (operation == null) return;
-    const nonce = localTranscriptClientNonce(entry, operation.humanAuthorId);
-    if (nonce == null) return;
-    const currentEntry = (entriesByAgentRef.current[agentId] ?? []).find((candidate) => candidate.id === entry.id);
-    if (currentEntry == null || isSettledTranscriptMessage(currentEntry)) return;
-    if (submissionScopesRef.current.get(nonce)?.canonicalSettled === true) return;
-    const queuedSubmission = composerSubmissionQueue.snapshot().find((submission) =>
-      submission.nonce === nonce && submission.agentId === agentId && submission.phase === "queued");
-    if (composerSubmissionQueue.cancelQueued(nonce)) {
-      composerDraftStore.forgetHumanSubmissions({ accountSlot: operation.accountSlot, agentId, nonce });
-      acknowledgementController.removeOptimistic({ accountSlot: operation.accountSlot, nonce });
-      if (agentId.length > 0) composerDraftStore.recoverDraft(agentId, {
-        prompt: queuedSubmission?.prompt ?? entry.text,
-        attachments: queuedSubmission == null
-          ? (entry.attachments ?? []).map(({ path, name }) => ({ path, name }))
-          : [...queuedSubmission.attachments],
-        ...(queuedSubmission?.richText === undefined ? {} : { richText: queuedSubmission.richText }),
-        ...(queuedSubmission?.replyToId === undefined ? {} : { replyToId: queuedSubmission.replyToId }),
-        ...(queuedSubmission?.isFork === undefined ? {} : { isFork: queuedSubmission.isFork }),
-      });
-      return;
-    }
-    removeTranscriptMessage(entry);
-  }, [acknowledgementController, captureTranscriptScope, composerDraftStore, composerSubmissionQueue, removeTranscriptMessage]);
+  const {
+    removeTranscriptMessage,
+    resendFailedSend,
+    cancelQueuedSend,
+  } = useTdrpTranscriptRetryHelpers({
+    activeAgentIdRef,
+    captureTranscriptScope,
+    entriesByAgentRef,
+    submissionScopesRef,
+    composerDraftStore,
+    composerSubmissionQueueRef,
+    acknowledgementController,
+    setEntriesByAgent,
+    isTranscriptScopeCurrent,
+    activeIsHuman,
+    activeAgentId,
+    activeAgent,
+    composerSubmissionQueue,
+    renderedAccountScopeGeneration,
+    accountScopeGenerationRef,
+    accountRef,
+    transcriptAccountSlot,
+    openAgentRequestGenerationRef,
+    renderedRetrySelectionGeneration,
+    selectionStore,
+    renderedRetrySelection,
+    setNotice,
+    humanMessageRetryController,
+    client,
+    scopeComposerSubmission,
+    sendJournalApprovalLifecycle,
+    makeClientNonce,
+    optimisticAcknowledgementEntries,
+  });
 
   const setAgentHiddenFromSidebar = useCallback((agentId: string, isHidden: boolean) => {
     void hiddenChatsMutationController.setAgentHiddenFromSidebar(agentId, isHidden).catch((error: unknown) => {
@@ -5241,48 +4137,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             </>}
           />}
           {findInChatOpen ? <FindInChatBar controller={findInChatController} focusNonce={findInChatFocusNonce} onClose={closeFindInChat} transcriptContainer={findTranscriptContainer} transcriptHandleRef={transcriptHandleRef} /> : null}
-          {visibleTopics.length > 0 ? (
-            <nav className="sand-forum-topic-switcher" data-testid="forum-topic-switcher" aria-label="Forum topics">
-              <button
-                type="button"
-                className={activeTopicId == null ? "sand-topic-chip active" : "sand-topic-chip"}
-                aria-selected={activeTopicId == null}
-                onClick={() => setActiveTopicId(null)}
-              >
-                General
-              </button>
-              {visibleTopics.map((topic) => (
-                <button
-                  key={topic.id}
-                  type="button"
-                  className={activeTopicId === topic.id ? "sand-topic-chip active" : "sand-topic-chip"}
-                  aria-selected={activeTopicId === topic.id}
-                  onClick={() => setActiveTopicId(topic.id)}
-                >
-                  {topic.title}
-                  {topic.closed ? " (Closed)" : null}
-                </button>
-              ))}
-            </nav>
-          ) : null}
-          {pinnedBanner.count > 0 && pinnedBanner.activePinId != null ? (
-            <div
-              className="sand-conversation-pinned-banner"
-              data-testid="conversation-pinned-banner"
-              role="button"
-              tabIndex={0}
-              onClick={() => {
-                if (pinnedBanner.activePinId) {
-                  transcriptHandleRef.current?.scrollToEntryWithoutHighlight(pinnedBanner.activePinId);
-                }
-              }}
-            >
-              <span className="sand-pinned-title">Pinned Message{pinnedBanner.count > 1 ? ` (${pinnedBanner.count})` : ""}</span>
-              {pinnedBanner.previewText ? (
-                <span className="sand-pinned-preview">{pinnedBanner.previewText}</span>
-              ) : null}
-            </div>
-          ) : null}
+          <ForumTopicSwitcher
+            visibleTopics={visibleTopics}
+            activeTopicId={activeTopicId}
+            onSelectTopic={setActiveTopicId}
+          />
+          <ConversationPinnedBanner
+            pinnedBanner={pinnedBanner}
+            onClickPin={(pinId) => transcriptHandleRef.current?.scrollToEntryWithoutHighlight(pinId)}
+          />
           {showTranscriptLoadError
             ? <TranscriptLoadErrorSurface onRetry={() => void openAgent(activeAgent.id)} />
             : <ConversationTranscript
@@ -5326,31 +4189,20 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </main>
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
-            {composerGuard.bannerKind !== "none" ? (
-              <div
-                className="sand-community-composer-guard-banner"
-                data-testid="community-composer-guard-banner"
-                data-banner-kind={composerGuard.bannerKind}
-                role="status"
-              >
-                <span>{composerGuard.message}</span>
-              </div>
-            ) : null}
+            <CommunityComposerGuardBanner composerGuard={composerGuard} />
             <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || isActiveSendPending || client == null || !composerGuard.canSend} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
       </div>
 
-      <ForwardMessageDialog
-        accountScopeGeneration={forwardTarget?.accountScopeGeneration ?? accountScopeGenerationRef.current}
-        forwardMessage={forwardHumanMessage}
+      <TdrpForwardMessageModal
+        forwardTarget={forwardTarget}
+        fallbackAccountScopeGeneration={accountScopeGenerationRef.current}
         isAccountScopeCurrent={isForwardAccountScopeCurrent}
-        message={forwardTarget?.message ?? null}
+        forwardHumanMessage={forwardHumanMessage}
+        searchForwardRecipients={searchForwardRecipients}
+        settleForward={settleForward}
         onClose={() => setForwardTarget((current) => current === forwardTarget ? null : current)}
-        onSettled={settleForward}
-        open={forwardTarget != null && isForwardAccountScopeCurrent(forwardTarget.accountScopeGeneration)}
-        searchRecipients={searchForwardRecipients}
-        sourceConversationId={forwardTarget?.sourceConversationId ?? null}
         shareUrl={activeAgent != null ? ((activeAgent.raw as any)?.shareUrl ?? (activeAgent.raw as any)?.inviteLink ?? undefined) : undefined}
       />
 
