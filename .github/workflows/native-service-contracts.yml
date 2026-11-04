@@ -1143,8 +1143,6 @@ jobs:
           if-no-files-found: error
   native-messaging-core-contracts:
     if: github.event_name == 'push' || github.event_name == 'pull_request' || inputs.message_batch
-    permissions:
-      contents: write
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -1167,31 +1165,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cargo test --manifest-path native/mahayana-messaging/Cargo.toml --lib -- --nocapture 2>&1 | tee artifacts/native-messaging-core/unit.log
+          cargo test --locked --manifest-path native/mahayana-messaging/Cargo.toml --lib -- --nocapture 2>&1 | tee artifacts/native-messaging-core/unit.log
       - name: Execute authenticated service protocol contracts
         shell: bash
         run: |
           set -euo pipefail
-          cargo test --manifest-path native/mahayana-messaging/Cargo.toml --test service_contract -- --nocapture 2>&1 | tee artifacts/native-messaging-core/service-contract.log
-      - name: Preserve generated native messaging lock for exact source review
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          if test -f native/mahayana-messaging/Cargo.lock; then
-            cp native/mahayana-messaging/Cargo.lock artifacts/native-messaging-core/Cargo.lock
-          fi
-      - name: Publish resolved native messaging lock blob for exact-H CAS
-        if: github.event_name == 'push'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          lock_content="$(base64 -w0 native/mahayana-messaging/Cargo.lock)"
-          lock_blob="$(gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" -f content="$lock_content" -f encoding=base64 --jq .sha)"
-          test "${#lock_blob}" -eq 40
-          printf 'NATIVE_MESSAGING_CARGO_LOCK_BLOB_SHA=%s\n' "$lock_blob"
+          cargo test --locked --manifest-path native/mahayana-messaging/Cargo.toml --test service_contract -- --nocapture 2>&1 | tee artifacts/native-messaging-core/service-contract.log
       - name: Preserve native messaging core evidence
         if: always()
         uses: actions/upload-artifact@v4
