@@ -51,6 +51,14 @@ async function loadOlder(page: Page, expectedIds = ['m1', 'm2', 'm3', 'm4', 'm5'
   expect(olderRequests.every((request) => request.args.beforeCursor === 'fixture-human-walk:3')).toBe(true);
 }
 
+async function selectForward(page: Page, entryId: string) {
+  const row = messageRow(page, entryId);
+  await row.scrollIntoViewIfNeeded();
+  await row.hover();
+  await row.getByRole('button', { name: 'More message actions', exact: true }).click();
+  await page.getByRole('menu', { name: 'More message actions' }).getByRole('menuitem', { name: 'Forward', exact: true }).click();
+}
+
 async function milestone(page: Page, info: TestInfo, name: string) {
   const manifest = await page.getByRole('log', { name: 'Conversation transcript' }).locator('[data-entry-id]').evaluateAll((entries) => entries.map((entry) => ({
     id: entry.getAttribute('data-entry-id'), text: entry.querySelector('.sand-message')?.textContent,
@@ -403,4 +411,119 @@ test('NMR-26 a disconnected Human send queues and reconnect dispatches it exactl
   expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'sendHumanMessage').length)).toBe(1);
   await expect.poll(() => domIds(page)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5', 'human-server-message:100']);
   await milestone(page, info, 'queued-send-settled-after-reconnect');
+});
+
+test('NMR-FWD-RENDERER-001 multi-source forwarding intersects recipients and retries only the failed source', async ({ page }, info) => {
+  await openAlice(page);
+  await loadOlder(page);
+  await selectForward(page, 'm1');
+  const dialog = page.getByRole('dialog', { name: 'Forward message' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('option', { name: 'Bob' })).toBeVisible();
+  await expect(dialog.getByRole('option', { name: 'Carol' })).toBeVisible();
+
+  await dialog.getByRole('button', { name: 'Add another message', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByRole('status', { name: 'Forward draft' })).toContainText('1 message in forwarding draft from Alice');
+  await selectForward(page, 'm2');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('Old first message', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('Old second message', { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('option', { name: 'Bob' })).toBeVisible();
+  await expect(dialog.getByRole('option', { name: 'Carol' })).toHaveCount(0);
+  await expect(dialog.getByRole('option', { name: 'Dave' })).toHaveCount(0);
+  const searchedSources = await page.evaluate(() => window.nativeMessageFixture.requests
+    .filter((request) => request.method === 'searchHumanRecipients')
+    .map((request) => request.args.sourceEntryId));
+  expect(searchedSources).toContain('m1');
+  expect(searchedSources).toContain('m2');
+
+  await dialog.getByRole('option', { name: 'Bob' }).click();
+  await expect(dialog.getByText('1 selected', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Forward', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().forwards)).toBe(1);
+  const firstRequests = await page.evaluate(() => window.nativeMessageFixture.requests
+    .filter((request) => request.method === 'forwardHumanMessage'));
+  expect(firstRequests).toHaveLength(1);
+  expect(firstRequests[0].args.sourceConversationId).toBe('human:a');
+  expect(firstRequests[0].args.sourceEntryId).toBe('m1');
+  expect(firstRequests[0].args.destinationConversationIds).toEqual(['human:b']);
+  expect(firstRequests[0].args.dropSenderNames).toBe(false);
+  expect(firstRequests[0].args.dropCaptions).toBe(false);
+
+  await page.evaluate(() => window.nativeMessageFixture.settleForward(0, [
+    { conversationId: 'human:b', status: 'sent' },
+  ]));
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().forwards)).toBe(2);
+  const secondRequests = await page.evaluate(() => window.nativeMessageFixture.requests
+    .filter((request) => request.method === 'forwardHumanMessage'));
+  expect(secondRequests[1].args.sourceEntryId).toBe('m2');
+  expect(secondRequests[1].args.destinationConversationIds).toEqual(['human:b']);
+  expect(secondRequests[1].args.clientNonce).not.toBe(firstRequests[0].args.clientNonce);
+
+  await page.evaluate(() => window.nativeMessageFixture.settleForward(1, [
+    { conversationId: 'human:b', status: 'failed', error: 'fixture: second source failed' },
+  ]));
+  await expect(dialog.getByRole('button', { name: 'Retry', exact: true })).toBeVisible();
+  await expect(dialog.getByRole('alert')).toContainText('fixture: second source failed');
+  await dialog.getByRole('button', { name: 'Retry', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().forwards)).toBe(3);
+  const retryRequests = await page.evaluate(() => window.nativeMessageFixture.requests
+    .filter((request) => request.method === 'forwardHumanMessage'));
+  expect(retryRequests).toHaveLength(3);
+  expect(retryRequests[2].args.sourceEntryId).toBe('m2');
+  expect(retryRequests[2].args.clientNonce).toBe(secondRequests[1].args.clientNonce);
+  expect(retryRequests[2].args.destinationConversationIds).toEqual(['human:b']);
+
+  await page.evaluate(() => window.nativeMessageFixture.settleForward(2, [
+    { conversationId: 'human:b', status: 'sent' },
+  ]));
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByRole('status', { name: 'Forward draft' })).toHaveCount(0);
+  await milestone(page, info, 'multi-source-forward-partial-retry');
+});
+
+test('NMR-FWD-DRAFT-RECOVERY-001 removing a source narrows recipients and keeps its draft reviewable after navigation', async ({ page }, info) => {
+  await openAlice(page);
+  await loadOlder(page);
+  await selectForward(page, 'm1');
+  const dialog = page.getByRole('dialog', { name: 'Forward message' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Add another message', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await selectForward(page, 'm2');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('Old first message', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('Old second message', { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('option', { name: 'Bob' })).toBeVisible();
+  await expect(dialog.getByRole('option', { name: 'Carol' })).toHaveCount(0);
+  await expect(dialog.getByRole('option', { name: 'Dave' })).toHaveCount(0);
+
+  await dialog.getByRole('button', { name: 'Remove message m1', exact: true }).click();
+  await expect(dialog.getByText('Old first message', { exact: true })).toHaveCount(0);
+  await expect(dialog.getByText('Old second message', { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('option', { name: 'Dave' })).toBeVisible();
+  await expect(dialog.getByRole('option', { name: 'Carol' })).toHaveCount(0);
+  const searches = await page.evaluate(() => window.nativeMessageFixture.requests
+    .filter((request) => request.method === 'searchHumanRecipients'));
+  expect(searches[searches.length - 1]?.args.sourceEntryId).toBe('m2');
+
+  await dialog.getByRole('button', { name: 'Add another message', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  const draft = page.getByRole('status', { name: 'Forward draft' });
+  await expect(draft).toContainText('1 message in forwarding draft from Alice');
+  await page.getByRole('button', { name: 'Bob', exact: true }).click();
+  await expect(messageRow(page, 'b1')).toBeVisible();
+  await expect(draft).toBeVisible();
+  await draft.getByRole('button', { name: 'Review forward draft', exact: true }).click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('Old second message', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('Old first message', { exact: true })).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Add another message', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await draft.getByRole('button', { name: 'Discard draft', exact: true }).click();
+  await expect(draft).toHaveCount(0);
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests
+    .filter((request) => request.method === 'forwardHumanMessage').length)).toBe(0);
+  await milestone(page, info, 'forward-draft-removal-navigation-recovery');
 });

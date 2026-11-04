@@ -4305,10 +4305,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             </>}
           />}
           {findInChatOpen ? <FindInChatBar controller={findInChatController} focusNonce={findInChatFocusNonce} onClose={closeFindInChat} transcriptContainer={findTranscriptContainer} transcriptHandleRef={transcriptHandleRef} /> : null}
-          {activeIsHuman && forwardDraft?.sourceConversationId === activeAgent.id
-            ? <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "flex-end", padding: "6px 12px" }}>
+          {forwardDraft != null && isForwardAccountScopeCurrent(forwardDraft.accountScopeGeneration)
+            ? <div aria-label="Forward draft" role="status" style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "flex-end", padding: "6px 12px" }}>
                 <span style={{ color: "var(--fabushi-text-secondary, var(--cursor-text-secondary))", fontSize: 12 }}>
-                  {forwardDraft.sources.length} message(s) in forwarding draft
+                  {forwardDraft.sources.length} {forwardDraft.sources.length === 1 ? "message" : "messages"} in forwarding draft from{" "}
+                  {humanConversations.find((conversation) => conversation.id === forwardDraft.sourceConversationId)?.name ?? forwardDraft.sourceConversationId}
                 </span>
                 <SandButton onClick={() => setForwardDialogOpen(true)} size="sm" variant="secondary">Review forward draft</SandButton>
                 <SandButton onClick={() => { setForwardDraft(null); setForwardDialogOpen(false); }} size="sm" variant="secondary">Discard draft</SandButton>

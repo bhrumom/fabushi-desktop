@@ -23,6 +23,7 @@ const refreshes: Pending[] = [];
 const sends: Pending[] = [];
 const retries: Pending[] = [];
 const reactions: Pending[] = [];
+const forwards: Pending[] = [];
 const sendRosterRefreshes: Pending[] = [];
 const sendPositions = new Map<string, number>();
 let holdOlder = true;
@@ -95,6 +96,25 @@ function receive(request: Request) {
       if (holdInitial && id === 'human:a') { initials.push({ request, value }); return; }
       break;
     case 'openAgentTail': case 'getAgentTranscriptTail': value = { entries: [] }; break;
+    case 'searchHumanRecipients': {
+      const sourceEntryId = String(request.args.sourceEntryId ?? '');
+      const query = typeof request.args.query === 'string' ? request.args.query.trim().toLowerCase() : '';
+      const candidates = sourceEntryId === 'm1'
+        ? [{ id: 'human:b', title: 'Bob', peer: 'peer-b' }, { id: 'human:c', title: 'Carol', peer: 'peer-c' }]
+        : sourceEntryId === 'm2'
+          ? [{ id: 'human:b', title: 'Bob', peer: 'peer-b' }, { id: 'human:d', title: 'Dave', peer: 'peer-d' }]
+          : [];
+      value = candidates
+        .filter((candidate) => query.length === 0 || candidate.title.toLowerCase().includes(query))
+        .map((candidate) => ({
+          id: candidate.id,
+          kind: 'human',
+          title: candidate.title,
+          participantIds: [account.kind === 'logged-in' ? account.authId ?? '' : '', candidate.peer],
+          updatedAt: candidate.id === 'human:b' ? 100 : candidate.id === 'human:c' ? 90 : 80,
+        }));
+      break;
+    }
     case 'sendHumanMessage': {
       const remoteMessageId = String(100 + sends.length);
       const entry = row(`human-server-message:${remoteMessageId}`, String(request.args.text), {
@@ -107,6 +127,10 @@ function receive(request: Request) {
     }
     case 'retryHumanMessage': {
       retries.push({ request, value: null, account: account.kind === 'logged-in' ? account.authId ?? null : null });
+      return;
+    }
+    case 'forwardHumanMessage': {
+      forwards.push({ request, value: null });
       return;
     }
     case 'reactHumanMessage': {
@@ -193,7 +217,7 @@ const bridge = optionalCapability('', {
 const fixture = {
   requests,
   approvalClears,
-  pending: () => ({ initials: initials.length, older: older.length, refreshes: refreshes.length, sends: sends.length, retries: retries.length, reactions: reactions.length, sendRosterRefreshes: sendRosterRefreshes.length }),
+  pending: () => ({ initials: initials.length, older: older.length, refreshes: refreshes.length, sends: sends.length, retries: retries.length, reactions: reactions.length, forwards: forwards.length, sendRosterRefreshes: sendRosterRefreshes.length }),
   retryAccounts: () => retries.map((pending) => pending.account ?? null),
   seedFailedIntent(clientNonce = 'shared-retry-nonce') {
     const id = `human-message:${clientNonce}`;
@@ -280,6 +304,15 @@ const fixture = {
     });
   },
   settleReaction(index = 0) { const pending = reactions[index]; if (pending == null) throw new Error('No pending reaction'); reply(pending); },
+  settleForward(index = 0, destinations: Array<{ conversationId: string; status: 'sent' | 'failed'; error?: string }> = [{ conversationId: 'human:b', status: 'sent' }]) {
+    const pending = forwards[index];
+    if (pending == null) throw new Error('No pending forward');
+    sendFrame({
+      kind: 'reply',
+      requestId: pending.request.requestId,
+      outcome: { status: 'ok', value: { destinations: clone(destinations) } },
+    });
+  },
   disconnect() { sendFrame({ kind: 'event', family: 'coordinator-transport-state', payload: { state: 'down' } }); },
   reconnect() { sendFrame({ kind: 'event', family: 'coordinator-transport-state', payload: { state: 'connected' } }); },
   setAccount(authId: string | null) {
