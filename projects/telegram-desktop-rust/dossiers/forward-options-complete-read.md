@@ -10,20 +10,43 @@ and `43d70a62d6fd47785f15b85a70e9e3350a17cef4` respectively. New Host attachment
 snapshots and journal recovery are preserved. Historical counters, upstream and
 owner statements below are retained as history, not current acceptance.
 
-All six complete file bodies below were read at fixed U. The unique ledger
-records two complete source reviews with an existing exact responsibility
-mapping and four pending reviews whose additional business obligations have
-not been fully decomposed/mapped. Complete reading is not complete product
-implementation, legal review, source closure or independent acceptance.
+All six complete file bodies below were read at fixed U. The unique ledger now
+records six complete source reviews with exact responsibility mappings: the
+forward-panel files map to the existing forward-privacy and thread-destination
+owners; the phrase-factory files map to the existing forward settlement /
+idempotency and forward-privacy owners. Review completion certifies exact
+identity, deep reading and owner mapping only. Multi-source draft/lifecycle,
+forced-provenance eligibility, self/premium settlement feedback, production
+wiring, legal closure, source closure and independent acceptance remain open.
 
 | Path relative to `Telegram/SourceFiles/` | Exact blob | Current review record |
 | --- | --- | --- |
 | `ui/chat/forward_options_box.h` | `65db5fbe067e340e0259a23ae57cda59096ccda0` | complete: `ForwardOptions` state/callback contract maps to FORWARD-PRIVACY-001 |
 | `ui/chat/forward_options_box.cpp` | `708ae65e92dc435bf798f8c0220b0547f35ab2bf` | complete: both privacy transition directions and callback lifetime map to the same responsibility |
-| `history/view/controls/history_view_forward_panel.h` | `b5847bfe6e651f5e3bc52480192afd664a37c8b8` | pending: entire file read; full draft/thread/reply responsibility mapping remains open |
-| `history/view/controls/history_view_forward_panel.cpp` | `eaa0108dd32dbadc21727ed4583c329d3badc85e` | pending: entire file read; forced provenance, source removal, typed destination, reply/suggestion/cloud-save obligations remain open |
-| `chat_helpers/share_message_phrase_factory.h` | `86865db47439dbce848fc812df2554335d3e004c` | pending: entire file read; precise terminal feedback responsibility remains open |
-| `chat_helpers/share_message_phrase_factory.cpp` | `1437bbfbd86b9d6649faae0bed7eed755e06337e` | pending: entire file read; saved/self/premium/one/two/many feedback and navigation are not fully mapped |
+| `history/view/controls/history_view_forward_panel.h` | `b5847bfe6e651f5e3bc52480192afd664a37c8b8` | complete: deep review mapped to `FORWARD-PRIVACY-001` and `THREAD-DESTINATION-001`; implementation gaps remain |
+| `history/view/controls/history_view_forward_panel.cpp` | `eaa0108dd32dbadc21727ed4583c329d3badc85e` | complete: deep review mapped to `FORWARD-PRIVACY-001` and `THREAD-DESTINATION-001`; implementation gaps remain |
+| `chat_helpers/share_message_phrase_factory.h` | `86865db47439dbce848fc812df2554335d3e004c` | complete: deep review mapped to `FORWARD-IDEMPOTENCY-001` and `FORWARD-PRIVACY-001`; implementation gaps remain |
+| `chat_helpers/share_message_phrase_factory.cpp` | `1437bbfbd86b9d6649faae0bed7eed755e06337e` | complete: deep review mapped to `FORWARD-IDEMPOTENCY-001` and `FORWARD-PRIVACY-001`; implementation gaps remain |
+
+## Fixed-U forward-panel and settlement mapping 2026-11-04
+
+The four formerly pending mixed-UI source reviews are now mapped to existing
+responsibility owners without adding or deleting responsibility rows. The
+exact source objects remain pinned to U=f985723b552b30fe1c17d377d57f44e61a15a8c4:
+
+| Exact source path | Reviewed contract and source symbols | Existing responsibility mapping | Current Fabushi gap (still open) |
+| --- | --- | --- | --- |
+| `history/view/controls/history_view_forward_panel.h` | `ForwardPanel`, `Data::Thread`, `ResolvedForwardDraft`, `ClearDraftReplyTo`, `NormalizeForwardOptions` declarations | `TDRP-R9-SHARE-FORWARD-PRIVACY-001`; `TDRP-R9-SHARE-THREAD-DESTINATION-001` | Current `ForwardMessageDialog` accepts one `TranscriptMessage`; typed child destinations and multi-source draft ownership are not wired |
+| `history/view/controls/history_view_forward_panel.cpp` | `ForwardPanel::update`, `itemRemoved`, topic/sublist destruction, option normalization, forced-forward-info/rich-page author eligibility, `ClearDraftReplyTo` reply/suggestion cleanup and delayed cloud-save | Same two existing rows | Source-item removal, typed topic/sublist destruction, exact reply matching, suggestion clearing and cloud-save lifecycle remain open |
+| `chat_helpers/share_message_phrase_factory.h` | `ForwardedMessagePhraseArgs`, phrase producer, icon and saved-history click-filter API | `TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001`; `TDRP-R9-SHARE-FORWARD-PRIVACY-001` | Current roster projection has only id/name; no explicit self/premium metadata or typed saved-history route |
+| `chat_helpers/share_message_phrase_factory.cpp` | saved/self and premium suppression; single, exactly-two and many-recipient phrases; saved-message icon; default session-window navigation | Same two existing rows | Current settlement projection is generic text; named destination feedback and Saved Messages navigation are not wired |
+
+These mappings are source accounting, not product closure. The four existing
+responsibility rows retain explicit blockers for these behaviors; their
+implementation/verification/acceptance states are not promoted. The ledger still
+contains 184 responsibilities and six source reviews. The 76 unresolved build
+reference observations, opaque inputs, external/legal checks, real-service and
+release gates remain unchanged; all acceptance flags remain false.
 
 `FillForwardOptions` emits one state snapshot: hiding captions also hides names;
 showing names restores captions. Names/captions controls share the supplied

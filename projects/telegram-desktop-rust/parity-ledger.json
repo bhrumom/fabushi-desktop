@@ -1196,7 +1196,13 @@
         "selected",
         "chooseForumTopic",
         "chooseMonoforumSublist",
-        "chooseCommunityChat"
+        "chooseCommunityChat",
+        "ForwardPanel::update",
+        "ForwardPanel::itemRemoved",
+        "ClearDraftReplyTo",
+        "Data::Thread::destroyed",
+        "Data::Thread::asTopic",
+        "Data::Thread::asSublist"
       ],
       "capability_ids": [
         "CAP-CONVERSATION-TYPED-THREAD-DESTINATION"
@@ -1279,7 +1285,8 @@
         "Child-scoped pagination, skipped-gap/retry/cancellation and client-side merge are not yet keyed by ConversationChildIdentity",
         "Existing topic read/draft state has not yet been generalized to SavedSublist/nested child identity",
         "Pin/list restoration, active-child continuity, notification/unread reconciliation and child-level no-paid-messages exception remain open",
-        "Shipping nested picker UI has not yet composed the typed child identity/destruction contract"
+        "Shipping nested picker UI has not yet composed the typed child identity/destruction contract",
+        "ForwardPanel source-item removal and typed topic/sublist destruction must invalidate the live draft; ClearDraftReplyTo reply/suggestion cleanup and delayed cloud-save semantics are not yet wired into Fabushi."
       ],
       "production_entrypoints": [
         "Canonical recipient/topic selection -> ClientCommand::ForwardMessage -> MessagingService -> MessagingEngine -> Message.thread_root_message_id"
@@ -1435,7 +1442,21 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox typed-thread selection semantics using canonical Fabushi Conversation/Topic/Message owners. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
       "reviewer": null,
-      "notes": "First SB-02 source-neutral identity slice implemented in the existing Conversation owner: Topic=root Message identity, SavedSublist=participant identity, nested/community child=Conversation identity; exact destroyed-child selection fencing and upstream-derived unread-toggle distinctions are covered by focused Rust unit tests. This does not close SavedSublist lifecycle/state: pagination/read/draft/pin/active-child/payment-exception and shipping picker composition remain open, so the row stays implemented/pending and global unknown does not decrement."
+      "notes": "First SB-02 source-neutral identity slice implemented in the existing Conversation owner: Topic=root Message identity, SavedSublist=participant identity, nested/community child=Conversation identity; exact destroyed-child selection fencing and upstream-derived unread-toggle distinctions are covered by focused Rust unit tests. This does not close SavedSublist lifecycle/state: pagination/read/draft/pin/active-child/payment-exception and shipping picker composition remain open, so the row stays implemented/pending and global unknown does not decrement.",
+      "additional_source_identities": [
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+          "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -1696,7 +1717,10 @@
       "source_symbols": [
         "ShareBox::submit",
         "ShareBox::DefaultForwardCallback",
-        "Api::SendOptions"
+        "Api::SendOptions",
+        "ForwardedMessagePhrase",
+        "ForwardedMessagePhraseIcon",
+        "ForwardedToSavedMessagesFilter"
       ],
       "capability_ids": [
         "CAP-MESSAGE-FORWARD-IDEMPOTENT-SETTLEMENT"
@@ -1777,7 +1801,8 @@
       "coverage_disposition": "rewritten",
       "blockers": [
         "Current-head Rust GitHub Actions evidence is pending",
-        "Multi-recipient fan-out settlement and forward privacy option semantics remain open"
+        "Multi-recipient fan-out settlement and forward privacy option semantics remain open",
+        "Terminal feedback remains generic: self/Saved Messages and premium behavior, one/two/many destination phrases, saved-message icon and default-window navigation are not yet wired after settlement."
       ],
       "production_entrypoints": [
         "ClientCommand::ForwardMessage -> MessagingService::idempotent_send_replay -> canonical forward execution/replay",
@@ -1924,7 +1949,21 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox forward submission semantics using canonical Fabushi MessagingService/Message identity owners. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
       "reviewer": null,
-      "notes": "This row closes only single-destination forward replay/conflict behavior. Multi-recipient fan-out settlement, privacy options, paid-send revalidation, UI duplicate-click fencing, and exact-head runtime evidence remain open, so global unknown does not decrement.\nRound27 target-owner reconciliation: the desktop route is the existing Session/Transcript chain listed above; the old native/mahayana-messaging entry and historical target_commit remain domain evidence and are not a second shipping writer. Existing whole-batch journaling and deterministic target nonces survive restart; NMR-47g prevents damaged version/context markers from escaping that source owner through generic outbox replay. This batch does not replace concurrent attachment/reply/NMR-50 changes. New case execution remains not-run until exact-H Actions; full source/legal/product/platform/independent acceptance remains blocked. See projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json."
+      "notes": "This row closes only single-destination forward replay/conflict behavior. Multi-recipient fan-out settlement, privacy options, paid-send revalidation, UI duplicate-click fencing, and exact-head runtime evidence remain open, so global unknown does not decrement.\nRound27 target-owner reconciliation: the desktop route is the existing Session/Transcript chain listed above; the old native/mahayana-messaging entry and historical target_commit remain domain evidence and are not a second shipping writer. Existing whole-batch journaling and deterministic target nonces survive restart; NMR-47g prevents damaged version/context markers from escaping that source owner through generic outbox replay. This batch does not replace concurrent attachment/reply/NMR-50 changes. New case execution remains not-run until exact-H Actions; full source/legal/product/platform/independent acceptance remains blocked. See projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json.",
+      "additional_source_identities": [
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+          "object": "86865db47439dbce848fc812df2554335d3e004c"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+          "object": "1437bbfbd86b9d6649faae0bed7eed755e06337e"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -1937,7 +1976,14 @@
       "source_symbols": [
         "Ui::ForwardOptions",
         "Ui::FillForwardOptions",
-        "ShareBox::submit"
+        "ShareBox::submit",
+        "ForwardPanel::applyOptions",
+        "NormalizeForwardOptions",
+        "CanHideForwardAuthor",
+        "HideForwardAuthorPremiumRequired",
+        "ForwardedMessagePhrase",
+        "ForwardedMessagePhraseIcon",
+        "ForwardedToSavedMessagesFilter"
       ],
       "capability_ids": [
         "CAP-MESSAGE-FORWARD-PRIVACY-OPTIONS"
@@ -2026,7 +2072,8 @@
         "Bounded native UI/reconciliation/shipping execution passed at b969b7c88c934fe0e0d382378df6fa426812edb6; current ad015021b01c723305546d862675ced83e27bb7c differs only in the ledger, so do not treat that run as a full exact-current-head native-service or product acceptance.",
         "Remote forward provenance and forced-provenance/rich-page/source eligibility remain unclosed.",
         "Typed topic/sublist/source-removal/reply-draft lifetimes, paid-send, exact self/destination feedback and remaining ShareBox options remain separate open source responsibilities.",
-        "Real service, signed supported-platform packages, complete visual/a11y/temporal/Bot/performance/soak, upgrade/rollback and independent ACCEPT remain open."
+        "Real service, signed supported-platform packages, complete visual/a11y/temporal/Bot/performance/soak, upgrade/rollback and independent ACCEPT remain open.",
+        "ForwardPanel forced-provenance/rich-page author eligibility and its option normalization must be enforced by the native owner; the current single-message dialog does not implement the multi-source draft and reply-draft lifecycle."
       ],
       "production_entrypoints": [
         "ProductionRenderer transcript Forward action -> existing ForwardMessageDialog immutable request -> Session gateway forwardHumanMessage -> ProductionSessionWorkers.forward_human_message -> source-conversation HumanForwardBatch -> destination append_human_message_with_context -> Fabushi native service -> same SandAgentDb/Transcript projection",
@@ -2228,6 +2275,30 @@
           "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
           "path": "Telegram/SourceFiles/ui/chat/forward_options_box.cpp",
           "object": "708ae65e92dc435bf798f8c0220b0547f35ab2bf"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+          "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+          "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+          "object": "86865db47439dbce848fc812df2554335d3e004c"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+          "object": "1437bbfbd86b9d6649faae0bed7eed755e06337e"
         }
       ]
     },
@@ -51628,12 +51699,15 @@
       "category": "mixed-ui",
       "risk": "high",
       "review_depth": "deep",
-      "status": "pending",
-      "rationale": "Entire file read at fixed U. Full forward/reply draft, destination lifetime and source eligibility obligations still require decomposition and exact responsibility mapping; not credited as complete.",
+      "status": "complete",
+      "rationale": "Deep review of the complete fixed-U declaration confirms ForwardPanel's typed Data::Thread destination, multi-item draft, option application/cycle, ClearDraftReplyTo and source-eligibility API. Mapped to the existing forward-privacy and thread-destination responsibilities. The shipping Fabushi dialog remains single-message; source removal, topic/sublist lifetime and reply/suggestion/cloud-save behavior remain open blockers, not completed implementation.",
       "evidence": [
-        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-panel-and-settlement-mapping-2026-11-04"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "TDRP-R9-SHARE-FORWARD-PRIVACY-001",
+        "TDRP-R9-SHARE-THREAD-DESTINATION-001"
+      ]
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -51643,12 +51717,15 @@
       "category": "mixed-ui",
       "risk": "high",
       "review_depth": "deep",
-      "status": "pending",
-      "rationale": "Entire file and scoped consumers read. Forced provenance/rich-page eligibility, source removal, typed destination destruction, matching reply/suggestion clearing and delayed cloud-save obligations remain open; source reading alone does not close these mappings.",
+      "status": "complete",
+      "rationale": "Deep review of update/lifetime state, itemRemoved, topic/sublist destroyed events, forced-forward-info and rich-page author eligibility, NormalizeForwardOptions, and ClearDraftReplyTo's exact thread/reply match, suggestion clearing and delayed cloud save. Mapped to existing forward-privacy and thread-destination owners. Current shipping composition does not yet wire these draft/lifecycle semantics.",
       "evidence": [
-        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-panel-and-settlement-mapping-2026-11-04"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "TDRP-R9-SHARE-FORWARD-PRIVACY-001",
+        "TDRP-R9-SHARE-THREAD-DESTINATION-001"
+      ]
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -51658,12 +51735,15 @@
       "category": "mixed-ui",
       "risk": "medium",
       "review_depth": "deep",
-      "status": "pending",
-      "rationale": "Entire declaration read. Complete destination/self/premium-aware terminal feedback and navigation responsibility mapping remains open.",
+      "status": "complete",
+      "rationale": "Deep review of ForwardedMessagePhraseArgs and the producer/icon/click-filter contracts establishes self/Saved Messages, premium suppression, single/two/many destination feedback and saved-history navigation semantics. Mapped to existing forward settlement/idempotency and privacy responsibilities; current renderer has no self/premium projection or typed saved-history navigation.",
       "evidence": [
-        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-panel-and-settlement-mapping-2026-11-04"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001",
+        "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
+      ]
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -51673,12 +51753,15 @@
       "category": "mixed-ui",
       "risk": "medium",
       "review_depth": "deep",
-      "status": "pending",
-      "rationale": "Entire implementation read. Saved/self/premium, one/two/many destination feedback and session-window navigation exceed the existing generic settlement count; decomposition and production closure remain open.",
+      "status": "complete",
+      "rationale": "Deep review of every terminal phrase branch confirms saved/self and premium behavior, single destination, exactly two named destinations, many-recipient count, saved-message icon and default-session-window navigation. These are post-settlement projections, not pre-send success. Mapped to existing forward settlement/idempotency and privacy owners; current generic settlement notice remains an explicit product gap.",
       "evidence": [
-        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-panel-and-settlement-mapping-2026-11-04"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001",
+        "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
+      ]
     }
   ]
 }
