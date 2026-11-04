@@ -1767,6 +1767,20 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "The incoming current-owner adaptation adds reset() to the existing composer submission queue. Account replacement advances its generation, retires queued renderer records and releases the local per-agent lane without cancelling any Host-admitted work. Disposal reuses that same retirement operation. ProductionRenderer supplies account-scoped submission records and invokes reset through its existing account lifecycle; late outcomes cannot requeue a prior account or block a fresh account behind its unresolved response. Existing send, offline queue, failure and Agent semantics remain on the original owner. The actual renderer fixture covers queued and in-flight account replacement; these authored contracts do not implement Human message Retry or prove complete packaged acceptance."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
+      "targetPath": "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
+      "targetBlobSha": "4c56a4a9071e78cc7d7ed700f3b58f7d3d22a371",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.contract.test.ts",
+        "desktop/e2e/native-message-projection.spec.ts"
+      ],
+      "rationale": "The existing reply-thread controller now rehydrates ComposerDraft.replyToId only after the current account/conversation scope is active. It preserves missing-target identity, resolves the preview when transcript entries arrive, refuses to overwrite a live selection, and lets the existing Host submission path carry the same replyToId."
     }
   ]
 }

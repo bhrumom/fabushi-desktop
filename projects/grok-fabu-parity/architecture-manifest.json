@@ -3202,14 +3202,17 @@
       "architecturalRole": "renderer/conversation",
       "processOrPackage": "renderer",
       "behavioralEvidence": [
-        "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts"
+        "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
+        "frontend/src/production/ProductionRenderer.tsx"
       ],
       "testEvidence": [
         "scripts/check-grok-architecture.mjs",
-        ".github/workflows/grok-architecture-migrate.yml"
+        ".github/workflows/grok-architecture-migrate.yml",
+        "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.contract.test.ts",
+        "desktop/e2e/native-message-projection.spec.ts"
       ],
-      "parityMode": "reference-copy",
-      "notes": "Byte-identical frozen Grok 0.18 source restored at the mapped production path; Git blob SHA is enforced by the architecture gate."
+      "parityMode": "typescript-port",
+      "notes": "Frozen Grok source SHA remains the upstream reference; the production target is a scoped TypeScript adaptation that rehydrates persisted reply context into the existing account/conversation owner. Exact target SHA is enforced by the semantic-adaptations registry, with account isolation, stale-target handling and Host submission identity covered by focused tests."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
