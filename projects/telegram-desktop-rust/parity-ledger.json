@@ -13563,13 +13563,14 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/mahayana/mahayana-rs/providers/telegram-storage/src/sqlite.rs",
-        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
         "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/product/fabushi/fabushi-account-service.ts"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-ACCOUNT-AUTHORIZATION-SELF-IDENTITY-001",
         "pub struct FabushiNativeIdentity",
         "pub fn verify_account_identity(",
         "private async resolveIdentity("
@@ -14374,7 +14375,7 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/shared/rpc/coordinator.ts",
         "frontend/src/production/coordinator-client.ts",
         "source/shared/rpc/coordinator.contract.test.ts",
@@ -14383,6 +14384,7 @@
         "source/product/fabushi/fabushi-account-service.ts"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-ACCOUNT-TELEGRAM-AUTH-LIFECYCLE-PRIMITIVES-001",
         "login(): Promise<SandAuthStatus>",
         "async cancelLogin()",
         "private async refreshSession("
@@ -14668,12 +14670,13 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
-        "fn revalidate_human_recovery_owner(",
-        "fn unix_now_ms("
+        "### TDRP-R9-MTPROTO-BAD-MESSAGE-RECOVERY-001",
+        "fn revalidate_human_recovery_owner("
       ],
       "target_language": "Rust",
       "language_rationale": "MTProto session message ids, encryption-adjacent replay fencing, connection retry policy and sequence state are already owned by the shared Rust protocol/network crates. Keeping recovery there preserves one transport/session owner and keeps renderer/product code protocol-neutral.",
@@ -14917,10 +14920,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-NEW-SESSION-REPLAY-001",
         "fn sync_human_conversation_history(",
         "fn replay_human_reaction_intent("
       ],
@@ -15157,10 +15162,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-DETAILED-ANSWER-RESEND-001",
         "pub fn retry_human_message("
       ],
       "target_language": "Rust",
@@ -15417,10 +15424,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-SINGLE-RPC-STATE-RECONCILIATION-001",
         "pub fn human_conversation_coverage_incomplete(",
         "fn check_human_sync_continuation("
       ],
@@ -15673,10 +15682,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-SINGLE-RPC-ACKNOWLEDGEMENT-001",
         "fn acquire_human_send_settlement_guard"
       ],
       "target_language": "Rust",
@@ -15920,10 +15931,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-SINGLE-PING-PONG-001",
         "pub fn verify_account_identity("
       ],
       "target_language": "Rust",
@@ -16177,10 +16190,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-SINGLE-RPC-RESULT-001",
         "pub fn send_direct_message(",
         "struct SendEnvelope"
       ],
@@ -16426,10 +16441,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-SINGLE-RPC-MESSAGE-CONTAINER-001",
         "struct ListEnvelope",
         "struct ListData"
       ],
@@ -16670,10 +16687,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-NEW-DETAILED-INFO-WIRE-001",
         "fn materialize_remote_human_message("
       ],
       "target_language": "Rust",
@@ -16921,10 +16940,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-NEW-SESSION-WIRE-001",
         "fn capture_human_sync_recovery("
       ],
       "target_language": "Rust",
@@ -17186,11 +17207,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/src/extensions/session/production.rs"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "fn request_credential_fingerprint("
+        "### TDRP-R9-MTPROTO-FUTURE-SALTS-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "The shared Rust protocol/network crates already own MTProto service parsing and the single outstanding encrypted RPC lifecycle, so exact future-salts decoding belongs there rather than in a new provider or history subsystem.",
@@ -17460,11 +17480,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/src/extensions/session/production.rs"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "Fabushi native messaging credential changed during Human request"
+        "### TDRP-R9-MTPROTO-BAD-SERVER-SALT-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "The shared Rust protocol/network crates already own authenticated MTProto service parsing and live server-salt/session retry policy, so exact bad-server-salt decoding belongs there rather than in a new history or provider subsystem.",
@@ -17738,10 +17757,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-BAD-MSG-NOTIFICATION-WIRE-001",
         "fn validate_remote_human_message("
       ],
       "target_language": "Rust",
@@ -18006,11 +18027,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/src/extensions/session/production.rs"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "fn check_human_sync_binding("
+        "### TDRP-R9-MTPROTO-RPC-DROP-ANSWER-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "The existing Rust telegram-protocol crate already owns exact TL decoding for adjacent MTProto objects; this wire-only responsibility belongs there without creating a request-history subsystem.",
@@ -18255,10 +18275,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-DESTROY-SESSION-WIRE-001",
         "fn shutdown_inner("
       ],
       "target_language": "Rust",
@@ -18501,10 +18523,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-HTTP-WAIT-WIRE-001",
         "pub fn list_direct_messages_after("
       ],
       "target_language": "Rust",
@@ -18755,9 +18779,11 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-CONFIG-SIMPLE-WIRE-001",
         "pub fn from_env(",
         "FABUSHI_API_BASE_URL_ENV"
       ],
@@ -19018,10 +19044,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-PING-DELAY-DISCONNECT-WIRE-001",
         ".timeout(Duration::from_secs(30))"
       ],
       "target_language": "Rust",
@@ -19256,10 +19284,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-DESTROY-SESSION-REQUEST-WIRE-001",
         "pub fn shutdown_with_checkpoint("
       ],
       "target_language": "Rust",
@@ -19495,11 +19525,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/src/extensions/session/production.rs"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "pub fn credential_claim("
+        "### TDRP-R9-MTPROTO-GET-FUTURE-SALTS-REQUEST-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "The existing Rust telegram-protocol crate already owns exact TL request builders and the separate FutureSalts parser; this independent request serializer belongs there without creating a salt scheduler or second session runtime.",
@@ -19734,11 +19763,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/src/extensions/session/production.rs"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "pub fn identity(&self)"
+        "### TDRP-R9-MTPROTO-PING-REQUEST-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "The existing Rust telegram-protocol crate already owns exact TL request builders and the separate strict Pong parser; this independent request serializer belongs there without creating a second ping/session lifecycle owner.",
@@ -19973,11 +20001,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/src/extensions/session/production.rs"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "fn human_message_lock("
+        "### TDRP-R9-MTPROTO-RPC-DROP-ANSWER-REQUEST-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "The existing Rust telegram-protocol crate already owns exact TL request builders and the separate strict RpcDropAnswer parser; this independent request serializer belongs there without creating a request-history subsystem.",
@@ -20207,10 +20234,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/product/fabushi/fabushi-account-service.ts"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-DESTROY-AUTH-KEY-REQUEST-WIRE-001",
         "async logout()",
         "private async clearHostCredential()"
       ],
@@ -20430,12 +20459,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.toml",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "Client::builder()"
+        "### TDRP-R9-MTPROTO-REQ-PQ-REQUEST-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "This is protocol wire logic and belongs in the existing Rust telegram-protocol owner; no Telegram C++ core, FFI, sidecar, subprocess, or second protocol runtime is retained.",
@@ -20659,12 +20686,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.toml",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "name = \"hyper-rustls\""
+        "### TDRP-R9-MTPROTO-REQ-PQ-MULTI-REQUEST-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "This is protocol wire logic and belongs in the existing Rust telegram-protocol owner; no Telegram C++ core, FFI, sidecar, subprocess, or second protocol runtime is retained.",
@@ -20898,12 +20923,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.toml",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "reqwest::redirect::Policy::none()"
+        "### TDRP-R9-MTPROTO-SET-CLIENT-DH-PARAMS-REQUEST-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "This is protocol wire logic and belongs in the existing Rust telegram-protocol owner; no Telegram C++ core, FFI, sidecar, subprocess, or second protocol runtime is retained.",
@@ -21134,12 +21157,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.toml",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        ".connect_timeout(Duration::from_secs(10))"
+        "### TDRP-R9-MTPROTO-CLIENT-DH-INNER-DATA-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "This is protocol wire logic and belongs in the existing Rust telegram-protocol owner; no Telegram C++ core, FFI, sidecar, subprocess, or second protocol runtime is retained.",
@@ -21373,12 +21394,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.toml",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "name = \"tokio-rustls\""
+        "### TDRP-R9-MTPROTO-P-Q-INNER-DATA-TEMP-DC-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "This is protocol wire logic and belongs in the existing Rust telegram-protocol owner; no Telegram C++ core, FFI, sidecar, subprocess, or second protocol runtime is retained.",
@@ -21624,10 +21643,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/product/fabushi/fabushi-account-service.ts"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-DESTROY-AUTH-KEY-RESULT-WIRE-001",
         "FabushiIdentityVerificationError",
         "async revokeForAccountRefusal()"
       ],
@@ -21863,12 +21884,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.toml",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "name = \"rustls-webpki\""
+        "### TDRP-R9-MTPROTO-SERVER-DH-PARAMS-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "Exact MTProto handshake wire parsing and its active state machine already belong to the existing canonical Rust telegram-protocol owner.",
@@ -22107,12 +22126,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.toml",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "could not create Fabushi messaging HTTP client"
+        "### TDRP-R9-MTPROTO-DH-GEN-RESULT-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "Exact MTProto handshake result parsing and its AwaitingDhGen state already belong to the existing canonical Rust telegram-protocol owner.",
@@ -22352,12 +22369,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.toml",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "name = \"rustls-pki-types\""
+        "### TDRP-R9-MTPROTO-RES-PQ-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "Exact MTProto resPQ parsing and AwaitingResPq state already belong to the existing canonical Rust telegram-protocol owner.",
@@ -22608,12 +22623,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.toml",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "name = \"webpki-roots\""
+        "### TDRP-R9-MTPROTO-SERVER-DH-INNER-DATA-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "Exact MTProto handshake cryptographic parsing and state continuity already belong to the existing canonical Rust telegram-protocol owner.",
@@ -22858,10 +22871,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-MSGS-STATE-REQ-REQUEST-WIRE-001",
         "fn check_human_history_continuation("
       ],
       "target_language": "Rust",
@@ -23113,10 +23128,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-MSG-RESEND-REQ-REQUEST-WIRE-001",
         "fn human_retry_entry"
       ],
       "target_language": "Rust",
@@ -23358,10 +23375,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-RPC-ERROR-WIRE-001",
         "FabushiHumanSendError",
         "fn classify_identity_http_status("
       ],
@@ -23604,10 +23623,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-MSGS-STATE-INFO-WIRE-001",
         "fn store_human_coverage("
       ],
       "target_language": "Rust",
@@ -23854,10 +23875,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-MSGS-ALL-INFO-WIRE-001",
         "struct HistoryCursorEcho"
       ],
       "target_language": "Rust",
@@ -24107,10 +24130,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-MSG-DETAILED-INFO-WIRE-001",
         "fn list_direct_messages_window("
       ],
       "target_language": "Rust",
@@ -24353,10 +24378,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-MSG-NEW-DETAILED-INFO-WIRE-001",
         "pub fn sync_human_conversations("
       ],
       "target_language": "Rust",
@@ -24611,12 +24638,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.toml",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "rustls-tls"
+        "### TDRP-R9-MTPROTO-TLS-CLIENT-HELLO-TEMPLATE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "The eventual non-UI transport/generator responsibility belongs in the shared Rust networking stack, not a duplicate Telegram-specific product subsystem.",
@@ -24863,10 +24888,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-MSGS-ACK-REQUEST-WIRE-001",
         "fn update_human_replay_snapshot("
       ],
       "target_language": "Rust",
@@ -25116,12 +25143,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.toml",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "name = \"hyper\""
+        "### TDRP-R9-MTPROTO-P-Q-INNER-DATA-ADJACENT-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "Exact MTProto handshake wire serialization is already owned by the source-neutral Rust telegram-protocol handshake module; no duplicate serializer/runtime is needed.",
@@ -25364,12 +25389,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.toml",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "name = \"ring\""
+        "### TDRP-R9-MTPROTO-REQ-DH-PARAMS-REQUEST-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "Exact MTProto handshake wire serialization is already owned by the source-neutral Rust telegram-protocol handshake module; no duplicate serializer/runtime is needed.",
@@ -25617,11 +25640,11 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.toml",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md",
+        "source/host/src/extensions/session/native_messaging.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-PLAINTEXT-HANDSHAKE-ENVELOPE-WIRE-001",
         "fn validate_base_url("
       ],
       "target_language": "Rust",
@@ -25876,13 +25899,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.toml",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "name = \"rustls\"",
-        "Fabushi messaging API must use HTTPS outside loopback development."
+        "### TDRP-R9-MTPROTO-ENCRYPTED-ENVELOPE-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "The existing source-neutral Rust protocol/network owners already carry the shipping auth-key handshake; the exact wire responsibility belongs there rather than in a new source-specific runtime.",
@@ -26133,11 +26153,11 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.toml",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md",
+        "source/host/src/extensions/session/native_messaging.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-SECURE-INNER-MESSAGE-WIRE-001",
         "fn ensure_request_credential_stable(",
         "fn read_bound_credentials("
       ],
@@ -26395,12 +26415,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "name = \"hyper\"",
-        "fn endpoint("
+        "### TDRP-R9-MTPROTO-ABRIDGED-TRANSPORT-FRAME-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "The existing source-neutral Rust telegram-protocol transport codec already owns this shipping wire boundary; the fixed-U canonical-length guard belongs there rather than in a duplicate/source-specific transport.",
@@ -26652,11 +26670,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "name = \"http\""
+        "### TDRP-R9-MTPROTO-PADDED-INTERMEDIATE-TRANSPORT-FRAME-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "The existing source-neutral Rust telegram-protocol transport codec already owns this shipping frame boundary; fixed-U VersionD framing belongs there rather than in a Telegram-specific duplicate runtime.",
@@ -26930,12 +26947,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "name = \"hyper-util\"",
-        "name = \"rustls\""
+        "### TDRP-R9-MTPROTO-OBFUSCATED-CONNECTION-START-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "Connection-start wire state is non-UI protocol logic. The existing Rust telegram-protocol owner already carries transport framing and mature AES/SHA dependencies, so this exact responsibility belongs there without preserving the C++ owner.",
@@ -27219,12 +27234,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "DEFAULT_FABUSHI_API_BASE_URL",
-        "name = \"url\""
+        "### TDRP-R9-MTPROTO-PROTOCOL-DC-ID-WIRE-001"
       ],
       "target_language": "Rust",
       "language_rationale": "Pure MTProto wire identity and the existing native socket carrier are already canonical Rust responsibilities; no Telegram C++ core, FFI, sidecar, subprocess, or Web wrapper is retained.",
@@ -27495,10 +27508,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-QUICK-ACK-WIRE-001",
         "fn materialize_remote_human_message_with_snapshot("
       ],
       "target_language": "Rust",
@@ -27763,18 +27778,19 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/electron-main/main-edge.ts",
-        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
         "source/mahayana/mahayana-rs/mahayana-unified-app-host/src/lib.rs",
         "source/mahayana/mahayana-rs/mahayana-app-host-desktop/src/main.rs",
         "source/node-agent-coordinator/src/main.rs",
         "source/electron-main/coordinator/coordinator-main-port-client.ts",
         "source/electron-main/coordinator/coordinator-main-legs.ts",
-        "source/electron-main/main-production-services.ts"
+        "source/electron-main/main-production-services.ts",
+        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-WEB-PROXY-RELAY-STREAM-001",
         "parseWebProxyBootstrapUrl",
-        "startup_native_shell_event_for_carrier",
         "openWebProxyBootstrapUrlInSystemBrowser",
         "struct ProductProxyRotationSettings"
       ],
@@ -28048,9 +28064,11 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-WEB-PROXY-BRIDGE-CAPABILITY-001",
         "enum ProductProxyMode"
       ],
       "target_language": "Rust",
@@ -28307,9 +28325,11 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-WEB-PROXY-CANONICAL-ADDRESS-SETTINGS-001",
         "struct ProductProxyEndpoint",
         "enum ProductProxyMutation"
       ],
@@ -29368,13 +29388,14 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
         "source/host/src/extensions/session/native_messaging.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-PROXY-MTPROTO-CONSUMER-001",
         "struct ProductProxySettings",
-        "enum ProductProxyType",
-        "Client::builder()"
+        "enum ProductProxyType"
       ],
       "target_language": "Rust in the existing source-neutral product Settings adapter, RuntimeClient/SessionOwner and telegram-network owners; no retained C++ or second runtime/store.",
       "language_rationale": "The exact consumer must live in the existing source-neutral domain owner; no retained C++ or Telegram-specific parallel runtime is introduced.",
@@ -29661,9 +29682,11 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-SPECIAL-CONFIG-PAYLOAD-001",
         "CI_ISOLATED_FABUSHI_AUTH_BASE_URL",
         "Fabushi messaging API must use an approved Native issuer origin."
       ],
@@ -29912,10 +29935,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "fn validate_base_url("
+        "### TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001"
       ],
       "target_language": "Rust",
       "language_rationale": "The responsibility is deterministic source-neutral response decoding and normalization; Rust reuses the existing protocol JSON dependency and avoids retaining Qt/C++ or adding a parallel carrier.",
@@ -30184,10 +30207,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "DEFAULT_FABUSHI_API_BASE_URL"
+        "### TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001"
       ],
       "target_language": "Rust in the existing telegram-network request/carrier owner, telegram-protocol normalization/decode owner, and the single telegram-runtime RuntimeClient/SessionOwner. Aggregate acquisition-to-application production composition is implemented; validation remains deferred to Stage B.",
       "language_rationale": "The exact consumer must live in the existing source-neutral domain owner; no retained C++ or Telegram-specific parallel runtime is introduced.",
@@ -30578,10 +30601,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "pub fn new(base_url: &str"
+        "### TDRP-R9-MTPROTO-REQUEST-NORMALIZATION-001"
       ],
       "target_language": "Rust",
       "language_rationale": "The responsibility is source-neutral carrier request shaping. Rust extends the existing telegram-network owner and reuses its existing entropy dependency without retaining Qt/C++ or inventing an HTTP runtime.",
@@ -30818,9 +30841,11 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-HTTP-DERIVED-NETWORK-TIME-001",
         "fn unix_now_ms(",
         "credentials.expires_at_ms <= unix_now_ms()"
       ],
@@ -31097,10 +31122,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-MULTI-SESSION-OWNER-001",
         "pub struct FabushiNativeMessagingClient",
         "fn shipping_native_messaging("
       ],
@@ -31408,12 +31435,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "source/host/src/extensions/session/native_messaging.rs",
-        "source/host/Cargo.lock"
+        "docs/specs/fmep-exit-mtproto-disposition.md"
       ],
       "fabushi_target_symbols": [
-        "name = \"socket2\"",
-        "fn ensure_request_credential_stable("
+        "### TDRP-R9-MTPROTO-TCP-SOCKET-LIFECYCLE-FENCING-001"
       ],
       "target_language": "Rust in the existing canonical telegram-network/runtime owners; no retained C++ or second socket/runtime owner.",
       "language_rationale": "Socket/carrier lifecycle and cancellation are already owned by the shared Rust telegram-network layer; request/session invalidation is already owned by RuntimeClient SessionOwner.",
@@ -31694,9 +31719,11 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
+        "docs/specs/fmep-exit-mtproto-disposition.md",
         "source/host/src/extensions/session/native_messaging.rs"
       ],
       "fabushi_target_symbols": [
+        "### TDRP-R9-MTPROTO-FILE-TRANSFER-SOCKET-BUFFER-001",
         "fn upload_direct_message_resource(",
         "fn download_direct_message_resource(",
         "MAX_RESOURCE_BYTES"
