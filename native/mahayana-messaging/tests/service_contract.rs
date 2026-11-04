@@ -320,6 +320,7 @@ fn realtime_state_tracks_group_call_media_and_typing() {
         actor_id,
         action: "typing".into(),
         expires_at_ms: 50,
+        topic_id: None,
     });
     realtime.expire_typing(51);
     assert!(realtime.typing.is_empty());
