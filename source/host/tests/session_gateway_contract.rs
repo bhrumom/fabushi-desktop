@@ -7150,7 +7150,7 @@ fn shipping_human_agent_handoff_and_history_download_keep_activity_monotonic() {
     let handoff = thread::spawn(move || {
         started_tx.send(()).expect("Agent handoff started");
         let result = worker.append_human_agent_message(
-            &conversation, "fixture-agent", "history-race-stream", "new Agent result", 1900000000000.0,
+            &conversation, "fixture-agent", "history-race-stream", None, "new Agent result", 1900000000000.0,
         );
         completed_tx.send(result).expect("Agent handoff result");
     });
@@ -7173,13 +7173,13 @@ fn shipping_human_agent_handoff_and_history_download_keep_activity_monotonic() {
     let agent_entry = handoff_result.expect("handoff observed after release").expect("Agent handoff succeeds");
     assert_eq!(agent_entry["authorKind"], "agent");
     assert_eq!(owner.get_metadata("lastActivityAt").expect("new activity"), Some(json!(1900000000000.0)));
-    runtime.append_human_agent_message(&id, "fixture-agent", "older-completion-stream", "late older Agent result", 1800000000000.0)
+    runtime.append_human_agent_message(&id, "fixture-agent", "older-completion-stream", None, "late older Agent result", 1800000000000.0)
         .expect("older completed stream still materializes");
     assert_eq!(owner.get_metadata("lastActivityAt").expect("monotonic older completion"), Some(json!(1900000000000.0)));
     let rows = runtime.read_human_conversation_transcript(&id).expect("Human and Agent rows share owner");
     assert_eq!(rows.len(), 3);
     for timestamp in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
-        assert!(runtime.append_human_agent_message(&id, "fixture-agent", "invalid-clock", "invalid clock", timestamp).is_err(),
+        assert!(runtime.append_human_agent_message(&id, "fixture-agent", "invalid-clock", None, "invalid clock", timestamp).is_err(),
             "non-finite activity must fail before persistence");
     }
     assert_eq!(runtime.read_human_conversation_transcript(&id).expect("unchanged after invalid clocks"), rows);
@@ -7191,7 +7191,7 @@ fn shipping_human_agent_handoff_and_history_download_keep_activity_monotonic() {
     assert_eq!(restarted.read_human_conversation_transcript(&id).expect("restart shared transcript"), rows);
     let owner = restarted.open_human_conversation_db_owner(&id).expect("reopened owner");
     assert_eq!(owner.get_metadata("lastActivityAt").expect("reopened activity"), Some(json!(1900000000000.0)));
-    assert_eq!(restarted.append_human_agent_message(&id, "fixture-agent", "history-race-stream", "new Agent result", 0.0)
+    assert_eq!(restarted.append_human_agent_message(&id, "fixture-agent", "history-race-stream", None, "new Agent result", 0.0)
         .expect("idempotent Agent replay retains original completion"), agent_entry);
     assert_eq!(owner.get_metadata("lastActivityAt").expect("replay cannot regress activity"), Some(json!(1900000000000.0)));
     restarted.shutdown(); drop(owner); drop(restarted);
@@ -7245,7 +7245,7 @@ fn shipping_human_activity_write_failure_keeps_committed_rows_and_repairs_after_
     db.busy_timeout(std::time::Duration::from_secs(5)).expect("bounded second SQLite fixture");
     db.execute_batch(reject_activity).expect("reject Agent activity persistence");
     let error = restarted.append_human_agent_message(
-        &id, "fixture-agent", "durable-agent-stream", "durable Agent result", 1900000000000.0,
+        &id, "fixture-agent", "durable-agent-stream", None, "durable Agent result", 1900000000000.0,
     ).expect_err("Agent handoff must report its failed metadata commit");
     assert!(error.contains("NMR-ACTIVITY injected persistence failure"), "{error}");
     let both = owner.get_transcript_entries().expect("both durable rows");
@@ -7258,7 +7258,7 @@ fn shipping_human_activity_write_failure_keeps_committed_rows_and_repairs_after_
 
     let recovered = human_message_fixture_runtime(&root, &url);
     assert_eq!(recovered.append_human_agent_message(
-        &id, "fixture-agent", "durable-agent-stream", "durable Agent result", 1900000001000.0,
+        &id, "fixture-agent", "durable-agent-stream", None, "durable Agent result", 1900000001000.0,
     ).expect("idempotent Agent replay repairs the interrupted metadata write"), both[1]);
     assert_eq!(recovered.read_human_conversation_transcript(&id).expect("no duplicated replay row"), both);
     let owner = recovered.open_human_conversation_db_owner(&id).expect("recovered owner");
