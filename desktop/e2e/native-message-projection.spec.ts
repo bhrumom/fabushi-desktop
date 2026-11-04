@@ -253,7 +253,7 @@ for (const oldPhase of ['in-flight', 'queued']) {
     if (oldPhase === 'in-flight') {
       await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(1);
     } else {
-      await expect(page.locator('[data-entry-id^="human-message:"]')).toContainText('Will send when reconnected');
+      await expect(page.locator('[data-entry-id^="pending-"]')).toContainText('Will send when reconnected');
       expect(await page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(0);
     }
     await page.evaluate(() => window.nativeMessageFixture.setAccount(null));
