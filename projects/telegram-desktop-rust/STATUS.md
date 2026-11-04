@@ -1,7 +1,7 @@
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
 Date: 2026-11-04
-Spec: TDRP-001 Revision 10 / FMEP-001 Revision 3
+Spec: TDRP-001 Revision 10 / FMEP-001 Revision 4
 Parent: FBCP-001 Revision 8
 Fixed U: `f985723b552b30fe1c17d377d57f44e61a15a8c4`
 Complete: false
@@ -41,6 +41,7 @@ _自动生成：`scripts/tdrp-progress-summary.py`，ledger U=`f985723b552b`_
 - **单一消息 Owner 接线（ADR-004 W1）**：在 `native/mahayana-messaging` 提取无状态纯策略 API（`authorize_destination`、`resolve_send_menu_details_from_inputs`、`resolve_paid_restriction_from_capabilities`），并在桌面 `ProductionSessionWorkers`（`source/host/src/extensions/session/production.rs`）转发批次投递与收件人搜索中直接调用 `fabushi_messaging_core::authorize_destination`，推进 `TDRP-R9-SHARE-DESTINATION-POLICY-001` 为 `implemented`。
 - **全量编译守卫与 CI 卫生**：修复 `mahayana-web` 与 `mahayana-native-engine` 历史编译断层，新增 `.github/workflows/mahayana-workspace-compile-guard.yml`；清理 `.github/` 下 27 个一次性历史 `round*`/`checkpoint-*` 工作流与脚本文件；将 `native-service-contracts.yml` 中脆弱的硬编码测试条数正则统一升级为 `[1-9][0-9]* passed; 0 failed;`（保留全部具名测试断言）。
 - **账本全量符号归一化与 `FBCP-NMR-001` 拆解**：修复全部 32 行历史 `fabushi_target_paths`/`fabushi_target_symbols` 伪修饰符与跨仓前缀，在 `tdrp-source-review-contract.yml` 启用逐行本地路径、字面量符号与单 owner 强校验（187 行 0 错误）；将原 252 KB 的 `FBCP-NMR-001` 拆解为 4 个内聚产品职责行（`FBCP-NMR-001`、`FBCP-NMR-FORWARD-PANEL-001`、`FBCP-NMR-SPARSE-HISTORY-001`、`FBCP-NMR-HISTORY-SEARCH-001`），历史流水归档至 `evidence/fbcp-nmr-001-history-through-20261103.md`。
+- **最佳执行路线固化（[FMEP-001 r4 §15](../../docs/specs/fabushi-deferred-ci-migration.md)）**：确立“非产品子树批量分类裁决（`FMEP-BULK-01`）+ 存量 2.7 万行 `fabushi_messaging_core` 五步纵向切片接线（`FMEP-SLICE-01`，S1–S5 预估 6～8.5 个工作日）”与账本/CI 卫生门禁（`FMEP-HYGIENE-01`）。
 
 ## 历史记录
 

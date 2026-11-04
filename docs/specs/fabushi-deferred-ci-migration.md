@@ -2,11 +2,11 @@
 
 Status: active / normative execution addendum
 Spec ID: FMEP-001
-Revision: 3
+Revision: 4
 Updated: 2026-11-04
 Applies to: FBCP-001 / TDRP-001
 
-> Revision 3（2026-11-04，用户批准）新增 §14：旧 Telegram 栈冻结与退出、上游开发工具处置、阶段 A 本地快速反馈、领域库接线判定、STATUS 格式与后端阻塞管理。§1–§13 继续有效；冲突处以 §14 为准。
+> Revision 4（2026-11-04，用户批准）新增 §15：非产品子树批量分类裁决（`FMEP-BULK-01`）、存量 2.7 万行 `fabushi_messaging_core` 五步纵向切片接线（`FMEP-SLICE-01`）与账本/CI 长期卫生门禁（`FMEP-HYGIENE-01`）。Revision 3 新增 §14（旧 Telegram 栈冻结与退出、上游开发工具处置、阶段 A 本地快速反馈、领域库接线判定、STATUS 格式与后端阻塞管理）。§1–§14 继续有效；冲突处以 §15 为准。
 
 ## 1. 权威与目标
 
@@ -188,3 +188,47 @@ accepted 状态门的行为证据必须包含现有 authority entrypoint 的子�
 ### 口径澄清
 
 ledger/lock/schema 中的 `spec_revision: 9` 是**账本数据合同（schema）版本**，由 validator 以常量校验，不是 TDRP 文档 Revision（当前 10）。两者不需要一致；文档 Revision 变化不应修改该字段，除非同时升级 schema 与 validator。
+
+
+## 15. 迁移加速与存量领域库纵向接线规范 Revision 4（2026-11-04）
+
+本节固化 2026-11-04 盘点结论与最佳推进方式：消除“对 16,381 个上游文件逐个手写数千字报告”与“在孤立领域库重复堆代码却不接通桌面宿主”两大瓶颈，全面转向**批量子树分类裁决 + 存量 2.7 万行领域库五步纵向切片接线**。
+
+### FMEP-BULK-01 — 非产品子树批量分类裁决（Bulk Subtree Disposition）
+
+固定 U（`telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`）的 16,381 个递归对象必须 100% 保留精确身份核算，但**严禁对非产品底层或平台壳文件逐个手写长篇 Dossier**。按模块语义边界与精确成员列表批量生成 `source_reviews` 处置：
+
+1. **第三方 gitlink 子模块（9,486 项，如 `tg_owt`、`cppgir`、`lib_ui`、`lib_base`、`lib_rpl`、`lib_crl`、`lib_tl`、`lib_spellcheck`、`lib_storage`、`lib_webrtc` 等）**：
+   - 统一归类为 `category: "dependency"`、`review_depth: "contract"`，在 Fabushi 的 Rust + Electron/Chromium 架构下由 Cargo 标准依赖树与 Chromium 原生媒体/渲染栈替代，按子模块精确成员清单成组引用对应架构处置证据。
+2. **Qt Widget 渲染层与原生平台窗口适配层（`Telegram/SourceFiles/ui/`、`Telegram/SourceFiles/platform/{win,mac,linux}/`、`qt_*`）**：
+   - 纯视图绘制与窗口宿主部分由 React/TypeScript（`ProductionRenderer` + 设计系统组件）与 Electron/AppHost 平台桥替代；仅当文件中混有非 UI 业务状态或权限判定时，才将该业务语义提取并映射至对应产品职责行。
+3. **MTProto 传输与加密协议栈（`Telegram/SourceFiles/mtproto/`）**：
+   - 已按 `FMEP-EXIT-01` E4 统一归口至 [`docs/specs/fmep-exit-mtproto-disposition.md`](fmep-exit-mtproto-disposition.md)，由标准 HTTPS/TLS 1.3（`rustls`/`reqwest`）与 `FabushiNativeMessagingClient` 替代，不再单开协议层迁移轮次。
+4. **Telegram 专属商业化与非核心外围特性（Stars / Ton / Passport / Gifts / Stories / Sticker 集市等）**：
+   - 与核心 IM 通信底座解耦记账；未进入当前 Fabushi 产品路线图的模块统一在账本中显式声明平台适用边界，不得混入核心 IM 底座阻塞。
+
+### FMEP-SLICE-01 — 存量 2.7 万行 `fabushi_messaging_core` 五步纵向切片接线（5-Slice Vertical Wiring）
+
+仓库 [`native/mahayana-messaging`](../../native/mahayana-messaging/src/lib.rs)（crate 名 `fabushi_messaging_core`）已具备 **27,106 行** 经过合同测试验证的 Rust 领域代码与测试（涵盖 `conversation.rs` 1,158 行、`search.rs` 1,129 行、`message.rs` 769 行、`access.rs` 472 行、`community.rs` 371 行、`media.rs`/`blob_store.rs`/`media_cache.rs` 824 行、`realtime.rs`/`notification.rs` 360 行，以及 `m5_contacts_groups_contract.rs`、`m6_channels_topics_contract.rs`、`delta_sync_contract.rs` 等 7,978 行契约测试）。
+
+依据 [FBCP-ADR-004](../adr/FBCP-ADR-004-single-message-owner.md)（桌面 `ProductionSessionWorkers` 为唯一有状态消息 owner，`fabushi_messaging_core` 为共享无状态纯策略库）：
+- **禁止重写**：严禁在 `source/host/src/extensions/session/` 中把 `native/mahayana-messaging` 已有的领域算法重写第二遍；
+- **禁止悬空**：严禁继续只在桌面不调用的 `MessagingService`/`MessagingEngine` 中扩展功能；
+- **标准接线动作**：每个切片从 `native/mahayana-messaging` 导出无状态纯函数/数据结构 → 在 `ProductionSessionWorkers`（[`source/host/src/extensions/session/production.rs`](../../source/host/src/extensions/session/production.rs)）完成 SQLite/HTTP 持久化与 RPC 暴露 → 在 [`frontend/src/production/ProductionRenderer.tsx`](../../frontend/src/production/ProductionRenderer.tsx) 及会话工作区完成 UI 绑定 → 通过 GitHub Actions 验证并将账本状态从 `mapped` 推进为 `implemented`。
+
+#### 五步纵向切片路线图与工期基线（预估总计 6～8.5 个工作日，多代理并行）
+
+| 切片 | 范围与复用模块 | 目标生产入口与交付标准 | 预估工期 |
+| --- | --- | --- | --- |
+| **切片 S1：ShareBox 与富文本/子话题目标收尾** | 复用 `native/mahayana-messaging/src/{message.rs,conversation.rs}`，打通账本剩余 3 个 `mapped` Share 职责：`TDRP-R9-SHARE-LINK-ENTITY-OFFSET-001`（链接实体偏移重算）、`TDRP-R9-SHARE-THREAD-DESTINATION-001`（Thread 目标路由与删除清理）、`TDRP-R9-SHARE-TOPIC-ELIGIBILITY-001`（群组 Topic 转发资格与关闭状态校验） | 接入 `ProductionSessionWorkers` 转发/发送路径与 `ForwardMessageDialog.tsx`；账本 Share 家族 100% 达到 `implemented` | **1～1.5 天** |
+| **切片 S2：群组权限、角色与慢速模式（M5）** | 复用 `native/mahayana-messaging/src/{community.rs,access.rs}` 及 `m5_contacts_groups_contract.rs` 中的 `ConversationPermissions`、`MemberRestrictions`、管理员角色与慢速模式冷却判定 | 接入 `ProductionSessionWorkers` 消息发送/管理命令前置校验与前端会话权限提示 | **1～1.5 天** |
+| **切片 S3：频道、Forum Topic、Saved 子列表与未读/置顶投影（M6）** | 复用 `native/mahayana-messaging/src/conversation.rs` 及 `m6_channels_topics_contract.rs` 中的 `ConversationChildIdentity`、Topic 分页状态、置顶消息列表与未读数投影 | 扩展桌面 Session SQLite 表结构与 `agent_db_transcript_pages.rs`，接入前端会话列表与子话题视图 | **1.5～2 天** |
+| **切片 S4：媒体分片缓存（M4）、Typing 实时状态与通知策略** | 复用 `native/mahayana-messaging/src/{media.rs,blob_store.rs,media_cache.rs,realtime.rs,notification.rs}` 及 `typing_contract.rs`、`unread_projection_contract.rs` | 接入 `native_messaging.rs` 媒体上传/下载缓存管理、会话 Typing 状态广播与桌面通知静音/折叠策略 | **1.5～2 天** |
+| **切片 S5：16,381 账本子树分类闭合、后端 PR #137 生产部署与三端安装包验收** | 1) 按 `FMEP-BULK-01` 脚本化生成非产品子树精确 `source_reviews`；2) 经显式批准对生产 D1 执行 `20261031_human_message_mutations.sql` 并部署 `bhrumom/fabushi-backend@4e0878d1`；3) 执行打包级 E2E 验收 | 全量来源分类闭合；真实线上服务 `afterId=0` 分页/变更验收通过；核心产品职责从 `implemented` 推进至 `verified` | **1.5～2 天** |
+
+### FMEP-HYGIENE-01 — 账本单行体量上限、字面量符号强门禁与 CI 工作流卫生（2026-11-04 已生效）
+
+1. **禁止超级行（Super-Row Decomposition）**：单一 `responsibility_id` 必须对应内聚的单一产品模块职责，不得将跨子系统的十余个源文件堆叠在同一行（原 252 KB 的 `FBCP-NMR-001` 已拆解为 `FBCP-NMR-001`、`FBCP-NMR-FORWARD-PANEL-001`、`FBCP-NMR-SPARSE-HISTORY-001`、`FBCP-NMR-HISTORY-SEARCH-001` 四行）；历史轮次流水统一归档至 `projects/telegram-desktop-rust/evidence/`，账本 `notes` 仅保留当前架构结论与证据指针。
+2. **逐行本地路径与字面量符号 CI 强校验**：`.github/workflows/tdrp-source-review-contract.yml` 在每次 push 时强制执行逐行校验——所有行的 `source_analysis_path` 与 `fabushi_target_paths` 必须为存在的本仓路径（禁止 `bhrumom/...:` 跨仓前缀），`fabushi_target_symbols` 中的每个符号必须作为字面量出现在目标文件中（禁止 `File::Heading` 或 `Struct::method` 伪限定符），且 `(fabushi_target_paths, symbol)` 组合必须满足单一责任人唯一性。
+3. **禁止一次性 `round*` 工作流与脆弱计数断言**：禁止在 `.github/workflows/` 中提交 `round*`、`checkpoint-ledger-object-*` 等一次性账本修改工作流；`native-service-contracts.yml` 中的测试汇总断言统一使用 `[1-9][0-9]* passed; 0 failed;` 配合具名用例 `grep -F 'test ... ok'`，避免新增单测引发脆弱计数误报。
+

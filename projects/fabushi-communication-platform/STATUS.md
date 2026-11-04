@@ -1,7 +1,7 @@
 # FBCP Native Communication Absorption — Status
 
 Date: 2026-11-04
-Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 3
+Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 4
 Complete: false
 
 > 按 FMEP-REPORT-01，本文件不复制 TDRP 轮次正文。逐批细节见
