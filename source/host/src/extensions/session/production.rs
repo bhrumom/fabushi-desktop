@@ -3702,10 +3702,12 @@ impl ProductionSessionWorkers {
                             sender_is_participant,
                         )
                     });
-                if !fabushi_messaging_core::recipient_search_authorized(
+                if fabushi_messaging_core::authorize_destination(
                     auth_input,
                     requirements,
-                ) {
+                )
+                .is_err()
+                {
                     return false;
                 }
                 if normalized_query.is_empty() {
@@ -3944,12 +3946,13 @@ impl ProductionSessionWorkers {
                 let mut requirements = Self::human_recipient_requirements_from_entry(&source_entry);
                 requirements.require_media |= !batch.attachments.is_empty();
                 let auth_input = Self::human_recipient_authorization_from_metadata(&metadata, true);
-                let permitted = fabushi_messaging_core::recipient_search_authorized(
+                if let Err(denial) = fabushi_messaging_core::authorize_destination(
                     auth_input,
                     requirements,
-                );
-                if !permitted {
-                    return Err("forward destination rejected the source message policy".into());
+                ) {
+                    return Err(format!(
+                        "forward destination rejected the source message policy ({denial:?})"
+                    ));
                 }
                 self.append_human_message_from_intent(
                     &destination_id, &batch.text, &nonce, None, None,
@@ -6126,9 +6129,13 @@ mod sharebox_shipping_tests {
         };
         assert_eq!(status_for(&beta).get("status").and_then(serde_json::Value::as_str), Some("sent"));
         assert_eq!(status_for(&gamma).get("status").and_then(serde_json::Value::as_str), Some("failed"));
-        assert!(status_for(&gamma).get("error").and_then(serde_json::Value::as_str).unwrap_or_default().contains("rejected the source message policy"));
+        let gamma_err = status_for(&gamma).get("error").and_then(serde_json::Value::as_str).unwrap_or_default();
+        assert!(gamma_err.contains("rejected the source message policy"));
+        assert!(gamma_err.contains("MessageSendPermissionDenied"));
         assert_eq!(status_for(&delta).get("status").and_then(serde_json::Value::as_str), Some("failed"));
-        assert!(status_for(&delta).get("error").and_then(serde_json::Value::as_str).unwrap_or_default().contains("rejected the source message policy"));
+        let delta_err = status_for(&delta).get("error").and_then(serde_json::Value::as_str).unwrap_or_default();
+        assert!(delta_err.contains("rejected the source message policy"));
+        assert!(delta_err.contains("OtherSendPermissionDenied"));
         assert_eq!(restarted.read_human_conversation_transcript(&beta).unwrap().len(), 1);
         assert_eq!(restarted.read_human_conversation_transcript(&gamma).unwrap().len(), 0);
         assert_eq!(restarted.read_human_conversation_transcript(&delta).unwrap().len(), 0);

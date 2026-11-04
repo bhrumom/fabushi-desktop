@@ -366,3 +366,111 @@ impl PaidSendApprovalConsumer {
         Ok(required_minor)
     }
 }
+
+/// Pure paid-send restriction resolver over candidate peer capability sets (`FBCP-ADR-004`).
+pub fn resolve_paid_restriction_from_capabilities<'a, I>(
+    conversation_exists: bool,
+    candidate_capability_sets: I,
+    ignore_paid_restrictions: bool,
+    child_exempts_paid: bool,
+) -> PaidSendRestrictionState
+where
+    I: IntoIterator<Item = Option<&'a [String]>>,
+{
+    if !conversation_exists {
+        return PaidSendRestrictionState::Unresolved;
+    }
+    let mut per_message_minor = 0i64;
+    for maybe_caps in candidate_capability_sets {
+        let Some(capabilities) = maybe_caps else {
+            return PaidSendRestrictionState::Unresolved;
+        };
+        let mut actor_cost = 0i64;
+        for cap in capabilities {
+            if cap == "paid_restriction_unresolved" {
+                return PaidSendRestrictionState::Unresolved;
+            }
+            if let Some(raw) = cap
+                .strip_prefix("paid_messages_minor:")
+                .or_else(|| cap.strip_prefix("stars_per_message:"))
+            {
+                match raw.trim().parse::<i64>() {
+                    Ok(amount) if amount > 0 => {
+                        actor_cost = actor_cost.max(amount);
+                    }
+                    _ => return PaidSendRestrictionState::Unresolved,
+                }
+            } else if matches!(
+                cap.as_str(),
+                "paid_messages_required" | "stars_per_message_required"
+            ) {
+                actor_cost = actor_cost.max(1);
+            }
+        }
+        per_message_minor = per_message_minor.saturating_add(actor_cost);
+    }
+    if ignore_paid_restrictions || child_exempts_paid || per_message_minor <= 0 {
+        PaidSendRestrictionState::Free
+    } else {
+        PaidSendRestrictionState::Paid {
+            amount_per_message_minor: per_message_minor,
+        }
+    }
+}
+
+#[cfg(test)]
+mod paid_restriction_policy_tests {
+    use super::*;
+
+    #[test]
+    fn resolve_paid_restriction_from_capabilities_covers_free_paid_exempt_and_unresolved() {
+        assert_eq!(
+            resolve_paid_restriction_from_capabilities(false, std::iter::empty(), false, false),
+            PaidSendRestrictionState::Unresolved
+        );
+        assert_eq!(
+            resolve_paid_restriction_from_capabilities(true, [None], false, false),
+            PaidSendRestrictionState::Unresolved
+        );
+        let unresolved_caps = vec!["paid_restriction_unresolved".to_string()];
+        assert_eq!(
+            resolve_paid_restriction_from_capabilities(
+                true,
+                [Some(unresolved_caps.as_slice())],
+                false,
+                false
+            ),
+            PaidSendRestrictionState::Unresolved
+        );
+        let paid_caps = vec!["stars_per_message:25".to_string()];
+        assert_eq!(
+            resolve_paid_restriction_from_capabilities(
+                true,
+                [Some(paid_caps.as_slice())],
+                false,
+                false
+            ),
+            PaidSendRestrictionState::Paid {
+                amount_per_message_minor: 25
+            }
+        );
+        assert_eq!(
+            resolve_paid_restriction_from_capabilities(
+                true,
+                [Some(paid_caps.as_slice())],
+                true,
+                false
+            ),
+            PaidSendRestrictionState::Free
+        );
+        assert_eq!(
+            resolve_paid_restriction_from_capabilities(
+                true,
+                [Some(paid_caps.as_slice())],
+                false,
+                true
+            ),
+            PaidSendRestrictionState::Free
+        );
+    }
+}

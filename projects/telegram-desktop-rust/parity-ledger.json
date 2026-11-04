@@ -583,7 +583,8 @@
         "SendMenuDetails",
         "resolve_send_menu_details",
         "resolve_destination_send_menu_details",
-        "settleForwardProjection"
+        "settleForwardProjection",
+        "resolve_send_menu_details_from_inputs"
       ],
       "target_language": "Rust",
       "language_rationale": "This is non-UI message state and delivery semantics already owned by the canonical Rust messaging domain.",
@@ -626,7 +627,8 @@
       "test_evidence": [
         "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content",
         "native/mahayana-messaging/tests/messaging_contract.rs#send_menu_mode_and_applicability_enforces_paid_silent_only_reminder_and_scheduled_to_user",
-        "frontend/src/production/forward-settlement.contract.test.ts#single self/Saved Messages destination uses Saved Messages default, custom self label, or optional notice suppression"
+        "frontend/src/production/forward-settlement.contract.test.ts#single self/Saved Messages destination uses Saved Messages default, custom self label, or optional notice suppression",
+        "native/mahayana-messaging/src/message.rs#send_menu_policy_tests::resolve_send_menu_details_from_inputs_covers_disabled_paid_reminder_online_and_scheduled"
       ],
       "target_commit": "824daf3aefe47c747d8abe648108265b17d8255f",
       "workflow_run": null,
@@ -842,14 +844,19 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "native/mahayana-messaging/src/engine.rs"
+        "native/mahayana-messaging/src/search.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
+        "DestinationAuthorizationDenial",
+        "authorize_destination",
         "MessageSendPermissionDenied",
         "CommunitySendRestricted",
         "OtherSendPermissionDenied",
         "CommunityOtherRestricted",
-        "message_content_uses_other"
+        "message_content_uses_other",
+        "deliver_forward_batch_while_locked"
       ],
       "target_language": "Rust",
       "language_rationale": "Destination authorization is non-UI domain policy and belongs at the existing Rust messaging state-transition boundary.",
@@ -867,20 +874,24 @@
       ],
       "service_owner": "Existing Fabushi messaging service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
         "Current-head Rust GitHub Actions evidence is pending",
         "Recipient-search pre-exposure eligibility for all ShareBox-specific rights remains a separate open mapping"
       ],
       "production_entrypoints": [
-        "Fabushi messaging client -> MessagingService::project_command -> MessagingEngine::ForwardMessage -> canonical destination authorization -> MessageQueued"
+        "ProductionRenderer -> Session gateway -> ProductionSessionWorkers::forward_human_message -> deliver_forward_batch_while_locked -> fabushi_messaging_core::authorize_destination",
+        "ProductionRenderer -> Session gateway -> ProductionSessionWorkers::search_human_recipients -> fabushi_messaging_core::authorize_destination",
+        "Fabushi messaging client -> MessagingService::project_command -> MessagingEngine::ForwardMessage -> authorize_destination -> MessageQueued"
       ],
       "production_evidence": [
         "commit:470171e326134da2d3ab5753de331aa85552744d",
         "path:native/mahayana-messaging/src/engine.rs#Command::ForwardMessage"
       ],
       "test_evidence": [
+        "native/mahayana-messaging/src/search.rs#recipient_policy_tests::authorize_destination_covers_allow_and_each_typed_denial_path",
+        "source/host/src/extensions/session/production.rs#sharebox_shipping_tests::shipping_human_forward_reuses_session_owner_across_retry_and_restart",
         "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content"
       ],
       "target_commit": "470171e326134da2d3ab5753de331aa85552744d",
@@ -1019,7 +1030,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from the accepted ShareBox authorization semantics inside the existing Fabushi Conversation/Community policy owner. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
       "reviewer": null,
-      "notes": "[FMEP-STATE-02 domain-only wiring gap] FMEP-001 r3 §14: previously recorded as implemented, but the only production path is ClientCommand -> MessagingService, which desktop production rejects (ensure_desktop_messaging_owner). Domain implementation retained; mapped until ProductionSessionWorkers/Transcript consumes it or an ADR selects MessagingService as the desktop owner. This row closes the send-time destination authorization slice only. Recipient pre-exposure eligibility for inline/game/send-other rights remains open and therefore ShareBox source unknown does not decrement."
+      "notes": "[FMEP-STATE-02 wired via Session] FBCP-ADR-004 (2026-11-04): extracted pure fabushi_messaging_core::authorize_destination + DestinationAuthorizationDenial in native/mahayana-messaging/src/search.rs and wired ProductionSessionWorkers::deliver_forward_batch_while_locked and search_human_recipients in source/host/src/extensions/session/production.rs to enforce identical destination authorization across desktop Session and MessagingEngine. This row closes the send-time destination authorization slice only. Recipient pre-exposure eligibility for inline/game/send-other rights remains open and therefore ShareBox source unknown does not decrement."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -1084,7 +1095,8 @@
         "PaidSendPlan",
         "PaidSendApprovalConsumer",
         "compute_paid_send_plan",
-        "revalidate_and_consume_paid_send"
+        "revalidate_and_consume_paid_send",
+        "resolve_paid_restriction_from_capabilities"
       ],
       "target_language": "Rust",
       "language_rationale": "Formatted message content and entity coordinate semantics are canonical non-UI message-domain responsibilities already owned by Rust.",
@@ -1123,7 +1135,8 @@
       ],
       "test_evidence": [
         "native/mahayana-messaging/tests/messaging_contract.rs#formatted_text_prefix_shifts_entities_by_utf16_units_atomically",
-        "native/mahayana-messaging/tests/messaging_contract.rs#paid_send_plan_approval_consumption_and_story_share_at_time_revalidation"
+        "native/mahayana-messaging/tests/messaging_contract.rs#paid_send_plan_approval_consumption_and_story_share_at_time_revalidation",
+        "native/mahayana-messaging/src/payment.rs#paid_restriction_policy_tests::resolve_paid_restriction_from_capabilities_covers_free_paid_exempt_and_unresolved"
       ],
       "target_commit": "cf60178cab2142e75e9b0f5b7d24145b0b997b15",
       "workflow_run": null,
@@ -1252,7 +1265,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox formatted-comment semantics using the existing Fabushi formatted-message owner. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
       "reviewer": null,
-      "notes": "[FMEP-STATE-02 domain-only wiring gap] FMEP-001 r3 §14: previously recorded as implemented, but the only production path is ClientCommand -> MessagingService, which desktop production rejects (ensure_desktop_messaging_owner). Domain implementation retained; mapped until ProductionSessionWorkers/Transcript consumes it or an ADR selects MessagingService as the desktop owner. This row closes only UTF-16-safe link-prefix entity shifting. It does not close the rest of FastShareLink or ShareBox, so global unknown does not decrement."
+      "notes": "[FMEP-STATE-02 domain-only wiring gap] FMEP-001 r3 §14: previously recorded as implemented, but the only production path is ClientCommand -> MessagingService, which desktop production rejects (ensure_desktop_messaging_owner). Domain implementation retained; mapped until ProductionSessionWorkers/Transcript consumes it or an ADR selects MessagingService as the desktop owner. This row closes only UTF-16-safe link-prefix entity shifting. It does not close the rest of FastShareLink or ShareBox, so global unknown does not decrement. FBCP-ADR-004 (2026-11-04): extracted pure resolve_paid_restriction_from_capabilities in fabushi_messaging_core and kept FormattedText::prepend_plain_text public; stays mapped because desktop Human Session currently forwards settled messages by ID without share-link comment prepending or Stars paid-send UI."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -1525,7 +1538,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox typed-thread selection semantics using canonical Fabushi Conversation/Topic/Message owners. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
       "reviewer": null,
-      "notes": "[FMEP-STATE-02 domain-only wiring gap] FMEP-001 r3 §14: previously recorded as implemented, but the only production path is ClientCommand -> MessagingService, which desktop production rejects (ensure_desktop_messaging_owner). Domain implementation retained; mapped until ProductionSessionWorkers/Transcript consumes it or an ADR selects MessagingService as the desktop owner. First SB-02 source-neutral identity slice implemented in the existing Conversation owner: Topic=root Message identity, SavedSublist=participant identity, nested/community child=Conversation identity; exact destroyed-child selection fencing and upstream-derived unread-toggle distinctions are covered by focused Rust unit tests. This does not close SavedSublist lifecycle/state: pagination/read/draft/pin/active-child/payment-exception and shipping picker composition remain open, so the row stays implemented/pending and global unknown does not decrement.",
+      "notes": "[FMEP-STATE-02 domain-only wiring gap] FMEP-001 r3 §14: previously recorded as implemented, but the only production path is ClientCommand -> MessagingService, which desktop production rejects (ensure_desktop_messaging_owner). Domain implementation retained; mapped until ProductionSessionWorkers/Transcript consumes it or an ADR selects MessagingService as the desktop owner. First SB-02 source-neutral identity slice implemented in the existing Conversation owner: Topic=root Message identity, SavedSublist=participant identity, nested/community child=Conversation identity; exact destroyed-child selection fencing and upstream-derived unread-toggle distinctions are covered by focused Rust unit tests. This does not close SavedSublist lifecycle/state: pagination/read/draft/pin/active-child/payment-exception and shipping picker composition remain open, so the row stays implemented/pending and global unknown does not decrement. FBCP-ADR-004 (2026-11-04): stays mapped because desktop ProductionSessionWorkers currently owns 1:1 Human direct conversations only and has no Group/Topic/Channel child destination surface.",
       "additional_source_identities": [
         {
           "repository": "telegramdesktop/tdesktop",
@@ -1789,7 +1802,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox typed-topic destination semantics using canonical Fabushi Conversation/Community/Topic owners. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
       "reviewer": null,
-      "notes": "[FMEP-STATE-02 domain-only wiring gap] FMEP-001 r3 §14: previously recorded as implemented, but the only production path is ClientCommand -> MessagingService, which desktop production rejects (ensure_desktop_messaging_owner). Domain implementation retained; mapped until ProductionSessionWorkers/Transcript consumes it or an ADR selects MessagingService as the desktop owner. This row closes only native topic existence/closed/hidden eligibility at the forward boundary. Nested picker lifecycle/destruction, saved-message sublists/community-child selection, UI evidence, and exact-head runtime evidence remain open, so global unknown does not decrement.",
+      "notes": "[FMEP-STATE-02 domain-only wiring gap] FMEP-001 r3 §14: previously recorded as implemented, but the only production path is ClientCommand -> MessagingService, which desktop production rejects (ensure_desktop_messaging_owner). Domain implementation retained; mapped until ProductionSessionWorkers/Transcript consumes it or an ADR selects MessagingService as the desktop owner. This row closes only native topic existence/closed/hidden eligibility at the forward boundary. Nested picker lifecycle/destruction, saved-message sublists/community-child selection, UI evidence, and exact-head runtime evidence remain open, so global unknown does not decrement. FBCP-ADR-004 (2026-11-04): stays mapped because desktop ProductionSessionWorkers currently owns 1:1 Human direct conversations only and has no Group/Topic/Channel child destination surface.",
       "additional_source_identities": [
         {
           "repository": "telegramdesktop/tdesktop",

@@ -49,7 +49,7 @@ def category(row) -> str:
         return "replaced"
     if "[FMEP-EXIT-01" in notes:
         return "legacy"
-    if "[FMEP-STATE-02" in notes:
+    if "[FMEP-STATE-02 domain-only" in notes:
         return "domain-only"
     paths = [strip_repo(p) for p in row.get("fabushi_target_paths") or []]
     product = [p for p in paths if not is_gov(p)]

@@ -45,7 +45,10 @@ pub use bot::*;
 pub use community::*;
 pub use conversation::*;
 pub use device::*;
-pub use engine::{Command, EngineError, Event, MessagingEngine, MessagingState};
+pub use engine::{
+    message_content_uses_media, message_content_uses_other, Command, EngineError, Event,
+    MessagingEngine, MessagingState,
+};
 pub use gateway::*;
 pub use media::*;
 pub use media_cache::*;

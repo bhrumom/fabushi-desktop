@@ -606,6 +606,130 @@ impl SendMenuDetails {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct DestinationSendMenuInput {
+    pub conversation_exists: bool,
+    pub is_secret: bool,
+    pub can_send_messages: bool,
+    pub sender_is_participant: bool,
+    pub requires_paid_messages: bool,
+    pub is_self_saved_messages: bool,
+    pub can_schedule_when_online: bool,
+}
+
+/// Pure send-menu applicability resolver (`FBCP-ADR-004`).
+pub fn resolve_send_menu_details_from_inputs(
+    sender_valid: bool,
+    destinations: &[DestinationSendMenuInput],
+) -> SendMenuDetails {
+    if !sender_valid || destinations.is_empty() {
+        return SendMenuDetails::from_mode(SendMenuMode::Disabled);
+    }
+    let mut any_paid = false;
+    for destination in destinations {
+        if !destination.conversation_exists
+            || destination.is_secret
+            || !destination.can_send_messages
+            || !destination.sender_is_participant
+        {
+            return SendMenuDetails::from_mode(SendMenuMode::Disabled);
+        }
+        if destination.requires_paid_messages {
+            any_paid = true;
+        }
+    }
+    if any_paid {
+        return SendMenuDetails::from_mode(SendMenuMode::SilentOnly);
+    }
+    if destinations.len() == 1 {
+        let single = &destinations[0];
+        if single.is_self_saved_messages {
+            return SendMenuDetails::from_mode(SendMenuMode::Reminder);
+        }
+        if single.can_schedule_when_online {
+            return SendMenuDetails::from_mode(SendMenuMode::ScheduledToUser);
+        }
+    }
+    SendMenuDetails::from_mode(SendMenuMode::Scheduled)
+}
+
+#[cfg(test)]
+mod send_menu_policy_tests {
+    use super::*;
+
+    #[test]
+    fn resolve_send_menu_details_from_inputs_covers_disabled_paid_reminder_online_and_scheduled() {
+        let valid_dest = DestinationSendMenuInput {
+            conversation_exists: true,
+            is_secret: false,
+            can_send_messages: true,
+            sender_is_participant: true,
+            requires_paid_messages: false,
+            is_self_saved_messages: false,
+            can_schedule_when_online: false,
+        };
+        assert_eq!(
+            resolve_send_menu_details_from_inputs(false, &[valid_dest]).mode,
+            SendMenuMode::Disabled
+        );
+        assert_eq!(
+            resolve_send_menu_details_from_inputs(true, &[]).mode,
+            SendMenuMode::Disabled
+        );
+        assert_eq!(
+            resolve_send_menu_details_from_inputs(
+                true,
+                &[DestinationSendMenuInput {
+                    is_secret: true,
+                    ..valid_dest
+                }]
+            )
+            .mode,
+            SendMenuMode::Disabled
+        );
+        assert_eq!(
+            resolve_send_menu_details_from_inputs(
+                true,
+                &[
+                    valid_dest,
+                    DestinationSendMenuInput {
+                        requires_paid_messages: true,
+                        ..valid_dest
+                    }
+                ]
+            )
+            .mode,
+            SendMenuMode::SilentOnly
+        );
+        assert_eq!(
+            resolve_send_menu_details_from_inputs(
+                true,
+                &[DestinationSendMenuInput {
+                    is_self_saved_messages: true,
+                    ..valid_dest
+                }]
+            )
+            .mode,
+            SendMenuMode::Reminder
+        );
+        assert_eq!(
+            resolve_send_menu_details_from_inputs(
+                true,
+                &[DestinationSendMenuInput {
+                    can_schedule_when_online: true,
+                    ..valid_dest
+                }]
+            )
+            .mode,
+            SendMenuMode::ScheduledToUser
+        );
+        assert_eq!(
+            resolve_send_menu_details_from_inputs(true, &[valid_dest, valid_dest]).mode,
+            SendMenuMode::Scheduled
+        );
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PendingPresenceSend {

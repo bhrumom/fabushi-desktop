@@ -10,18 +10,24 @@ use crate::conversation::{
     ConversationKind, ConversationMessagePosition, NotificationSettings, TopicDraft,
 };
 use crate::message::{
-    ClientMessageId, DeliveryState, ForwardPrivacy, Message, MessageContent, MessageId,
-    PendingPresenceSend, PresenceSendTrigger, ReactionSummary, SendMenuDetails, SendMenuMode,
+    resolve_send_menu_details_from_inputs, ClientMessageId, DeliveryState,
+    DestinationSendMenuInput, ForwardPrivacy, Message, MessageContent, MessageId,
+    PendingPresenceSend, PresenceSendTrigger, ReactionSummary, SendMenuDetails,
 };
 use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppPermission, MiniAppRequest, MiniAppResponse,
     MiniAppSession,
 };
 use crate::payment::{
-    CustomerInfo, Invoice, Money, PaidSendApprovalConsumer, PaidSendPlan,
-    PaidSendRestrictionState, PaidSendValidationError, PaymentOrder, PaymentStatus,
+    resolve_paid_restriction_from_capabilities, CustomerInfo, Invoice, Money,
+    PaidSendApprovalConsumer, PaidSendPlan, PaidSendRestrictionState, PaidSendValidationError,
+    PaymentOrder, PaymentStatus,
 };
 use crate::privacy::{PrivacyKey, PrivacySettings};
+use crate::search::{
+    authorize_destination, DestinationAuthorizationDenial, RecipientAuthorizationInput,
+    RecipientContentKind, RecipientSearchRequirements,
+};
 use crate::story::{Story, StoryError, StoryId};
 use crate::wallet::{LedgerEntry, WalletAccountId, WalletError, WalletLedger};
 use serde::{Deserialize, Serialize};
@@ -914,7 +920,7 @@ fn append_community_audit(
     });
 }
 
-fn message_content_uses_media(content: &MessageContent) -> bool {
+pub fn message_content_uses_media(content: &MessageContent) -> bool {
     matches!(
         content,
         MessageContent::Photo { .. }
@@ -928,7 +934,7 @@ fn message_content_uses_media(content: &MessageContent) -> bool {
     )
 }
 
-fn message_content_uses_other(content: &MessageContent) -> bool {
+pub fn message_content_uses_other(content: &MessageContent) -> bool {
     matches!(
         content,
         MessageContent::Sticker { .. }
@@ -1146,93 +1152,78 @@ impl MessagingEngine {
         sender_id: &ActorId,
         destinations: &[ConversationDestination],
     ) -> SendMenuDetails {
-        if destinations.is_empty() || !self.state.actors.contains_key(sender_id) {
-            return SendMenuDetails::from_mode(SendMenuMode::Disabled);
-        }
-        let mut any_paid = false;
-        for destination in destinations {
-            let effective_conversation_id = destination_message_conversation_id(destination);
-            let Some(conversation) = self.state.conversations.get(effective_conversation_id)
-            else {
-                return SendMenuDetails::from_mode(SendMenuMode::Disabled);
-            };
-            if matches!(conversation.kind, ConversationKind::Secret)
-                || !conversation.permissions.can_send_messages
-            {
-                return SendMenuDetails::from_mode(SendMenuMode::Disabled);
-            }
-            let sender_is_participant = conversation
-                .participants
-                .iter()
-                .any(|participant| &participant.actor_id == sender_id)
-                || conversation.owner_id.as_ref() == Some(sender_id);
-            if !sender_is_participant {
-                return SendMenuDetails::from_mode(SendMenuMode::Disabled);
-            }
-            let child_exempts_paid = self
-                .state
-                .conversation_child_states
-                .iter()
-                .find(|child| &child.destination == destination && &child.actor_id == sender_id)
-                .is_some_and(|child| child.no_paid_messages);
-            if !child_exempts_paid {
-                let saved_sublist_requires_paid = match &destination.child {
-                    Some(ConversationChildIdentity::SavedSublist { participant_id }) => self
-                        .state
-                        .actors
-                        .get(participant_id)
-                        .is_some_and(|actor| {
-                            actor.capabilities.iter().any(|cap| {
-                                matches!(
-                                    cap.as_str(),
-                                    "paid_messages_required" | "stars_per_message_required"
-                                )
-                            })
-                        }),
-                    _ => false,
+        let sender_valid = self.state.actors.contains_key(sender_id);
+        let inputs = destinations
+            .iter()
+            .map(|destination| {
+                let effective_conversation_id = destination_message_conversation_id(destination);
+                let Some(conversation) = self.state.conversations.get(effective_conversation_id)
+                else {
+                    return DestinationSendMenuInput::default();
                 };
-                let peer_requires_paid = conversation
+                let sender_is_participant = conversation
                     .participants
                     .iter()
-                    .map(|participant| &participant.actor_id)
-                    .chain(conversation.owner_id.iter())
-                    .filter(|actor_id| *actor_id != sender_id)
-                    .any(|actor_id| {
-                        self.state.actors.get(actor_id).is_some_and(|actor| {
-                            actor.capabilities.iter().any(|cap| {
-                                matches!(
-                                    cap.as_str(),
-                                    "paid_messages_required" | "stars_per_message_required"
-                                )
+                    .any(|participant| &participant.actor_id == sender_id)
+                    || conversation.owner_id.as_ref() == Some(sender_id);
+                let child_exempts_paid = self
+                    .state
+                    .conversation_child_states
+                    .iter()
+                    .find(|child| &child.destination == destination && &child.actor_id == sender_id)
+                    .is_some_and(|child| child.no_paid_messages);
+                let requires_paid_messages = if child_exempts_paid {
+                    false
+                } else {
+                    let saved_sublist_requires_paid = match &destination.child {
+                        Some(ConversationChildIdentity::SavedSublist { participant_id }) => self
+                            .state
+                            .actors
+                            .get(participant_id)
+                            .is_some_and(|actor| {
+                                actor.capabilities.iter().any(|cap| {
+                                    matches!(
+                                        cap.as_str(),
+                                        "paid_messages_required" | "stars_per_message_required"
+                                    )
+                                })
+                            }),
+                        _ => false,
+                    };
+                    let peer_requires_paid = conversation
+                        .participants
+                        .iter()
+                        .map(|participant| &participant.actor_id)
+                        .chain(conversation.owner_id.iter())
+                        .filter(|actor_id| *actor_id != sender_id)
+                        .any(|actor_id| {
+                            self.state.actors.get(actor_id).is_some_and(|actor| {
+                                actor.capabilities.iter().any(|cap| {
+                                    matches!(
+                                        cap.as_str(),
+                                        "paid_messages_required" | "stars_per_message_required"
+                                    )
+                                })
                             })
-                        })
-                    });
-                if saved_sublist_requires_paid || peer_requires_paid {
-                    any_paid = true;
+                        });
+                    saved_sublist_requires_paid || peer_requires_paid
+                };
+                DestinationSendMenuInput {
+                    conversation_exists: true,
+                    is_secret: matches!(conversation.kind, ConversationKind::Secret),
+                    can_send_messages: conversation.permissions.can_send_messages,
+                    sender_is_participant,
+                    requires_paid_messages,
+                    is_self_saved_messages: destination.child.is_none()
+                        && is_self_saved_messages(conversation, sender_id),
+                    can_schedule_when_online: destination.child.is_none()
+                        && self
+                            .can_schedule_when_online(sender_id, effective_conversation_id)
+                            .is_some(),
                 }
-            }
-        }
-        if any_paid {
-            return SendMenuDetails::from_mode(SendMenuMode::SilentOnly);
-        }
-        if destinations.len() == 1 {
-            let destination = &destinations[0];
-            let effective_conversation_id = destination_message_conversation_id(destination);
-            let conversation = &self.state.conversations[effective_conversation_id];
-            let is_self_destination =
-                destination.child.is_none() && is_self_saved_messages(conversation, sender_id);
-            if is_self_destination {
-                return SendMenuDetails::from_mode(SendMenuMode::Reminder);
-            }
-            if destination.child.is_none()
-                && self
-                    .can_schedule_when_online(sender_id, effective_conversation_id)
-                    .is_some()
-            {
-                return SendMenuDetails::from_mode(SendMenuMode::ScheduledToUser);
-            }
-        }
-        SendMenuDetails::from_mode(SendMenuMode::Scheduled)
+            })
+            .collect::<Vec<_>>();
+        resolve_send_menu_details_from_inputs(sender_valid, &inputs)
     }
 
     pub fn resolve_destination_paid_restriction(
@@ -1243,7 +1234,12 @@ impl MessagingEngine {
     ) -> PaidSendRestrictionState {
         let effective_conversation_id = destination_message_conversation_id(destination);
         let Some(conversation) = self.state.conversations.get(effective_conversation_id) else {
-            return PaidSendRestrictionState::Unresolved;
+            return resolve_paid_restriction_from_capabilities(
+                false,
+                std::iter::empty(),
+                ignore_paid_restrictions,
+                false,
+            );
         };
         let mut candidate_actors: BTreeSet<&ActorId> = conversation
             .participants
@@ -1259,51 +1255,24 @@ impl MessagingEngine {
                 candidate_actors.insert(participant_id);
             }
         }
-        let mut per_message_minor = 0i64;
-        for actor_id in candidate_actors {
-            let Some(actor) = self.state.actors.get(actor_id) else {
-                return PaidSendRestrictionState::Unresolved;
-            };
-            let mut actor_cost = 0i64;
-            for cap in &actor.capabilities {
-                if cap == "paid_restriction_unresolved" {
-                    return PaidSendRestrictionState::Unresolved;
-                }
-                if let Some(raw) = cap
-                    .strip_prefix("paid_messages_minor:")
-                    .or_else(|| cap.strip_prefix("stars_per_message:"))
-                {
-                    match raw.trim().parse::<i64>() {
-                        Ok(amount) if amount > 0 => {
-                            actor_cost = actor_cost.max(amount);
-                        }
-                        _ => return PaidSendRestrictionState::Unresolved,
-                    }
-                } else if matches!(
-                    cap.as_str(),
-                    "paid_messages_required" | "stars_per_message_required"
-                ) {
-                    actor_cost = actor_cost.max(1);
-                }
-            }
-            per_message_minor = per_message_minor.saturating_add(actor_cost);
-        }
-        if ignore_paid_restrictions {
-            return PaidSendRestrictionState::Free;
-        }
         let child_exempts_paid = self
             .state
             .conversation_child_states
             .iter()
             .find(|child| &child.destination == destination && &child.actor_id == sender_id)
             .is_some_and(|child| child.no_paid_messages);
-        if child_exempts_paid || per_message_minor <= 0 {
-            PaidSendRestrictionState::Free
-        } else {
-            PaidSendRestrictionState::Paid {
-                amount_per_message_minor: per_message_minor,
-            }
-        }
+        let capability_sets = candidate_actors.into_iter().map(|actor_id| {
+            self.state
+                .actors
+                .get(actor_id)
+                .map(|actor| actor.capabilities.as_slice())
+        });
+        resolve_paid_restriction_from_capabilities(
+            true,
+            capability_sets,
+            ignore_paid_restrictions,
+            child_exempts_paid,
+        )
     }
 
     pub fn compute_paid_send_plan(
@@ -1966,10 +1935,6 @@ impl MessagingEngine {
                         message_id,
                     });
                 }
-                if original.protected_content {
-                    return Err(EngineError::ProtectedContent);
-                }
-
                 // Forwarding is still a send into the destination conversation. Reuse the
                 // canonical destination policy instead of letting the forward path bypass
                 // membership, media/poll, community, channel, slow-mode, or secret-chat gates.
@@ -1978,102 +1943,125 @@ impl MessagingEngine {
                     .iter()
                     .any(|participant| participant.actor_id == sender_id)
                     || conversation.owner_id.as_ref() == Some(&sender_id);
-                if !sender_is_participant {
-                    return Err(EngineError::SenderNotParticipant {
-                        conversation_id: destination_conversation_id.clone(),
-                        actor_id: sender_id.clone(),
-                    });
-                }
-                if !conversation.permissions.can_send_messages {
-                    return Err(EngineError::MessageSendPermissionDenied(
-                        destination_conversation_id.clone(),
-                    ));
-                }
-                if message_content_uses_media(&original.content)
-                    && !conversation.permissions.can_send_media
-                {
-                    return Err(EngineError::MediaSendPermissionDenied(
-                        destination_conversation_id.clone(),
-                    ));
-                }
-                if matches!(&original.content, MessageContent::Poll { .. })
-                    && !conversation.permissions.can_send_polls
-                {
-                    return Err(EngineError::PollSendPermissionDenied(
-                        destination_conversation_id.clone(),
-                    ));
-                }
-                if message_content_uses_other(&original.content)
-                    && !conversation.permissions.can_send_other
-                {
-                    return Err(EngineError::OtherSendPermissionDenied(
-                        destination_conversation_id.clone(),
-                    ));
-                }
-                if let Some(member) = self
+                let member = self
                     .state
                     .communities
                     .get(&destination_conversation_id)
-                    .and_then(|community| community.members.get(&sender_id))
-                {
-                    if matches!(member.status, MemberStatus::Left | MemberStatus::Banned)
-                        || (matches!(member.status, MemberStatus::Restricted)
-                            && member.restrictions.send_messages)
-                    {
-                        return Err(EngineError::CommunitySendRestricted(
-                            destination_conversation_id.clone(),
-                        ));
-                    }
-                    if message_content_uses_media(&original.content)
-                        && matches!(member.status, MemberStatus::Restricted)
-                        && member.restrictions.send_media
-                    {
-                        return Err(EngineError::CommunityMediaRestricted(
-                            destination_conversation_id.clone(),
-                        ));
-                    }
-                    if matches!(&original.content, MessageContent::Poll { .. })
-                        && matches!(member.status, MemberStatus::Restricted)
-                        && member.restrictions.send_polls
-                    {
-                        return Err(EngineError::CommunityPollRestricted(
-                            destination_conversation_id.clone(),
-                        ));
-                    }
-                    if message_content_uses_other(&original.content)
-                        && matches!(member.status, MemberStatus::Restricted)
-                        && member.restrictions.send_other
-                    {
-                        return Err(EngineError::CommunityOtherRestricted(
-                            destination_conversation_id.clone(),
-                        ));
-                    }
-                }
-                if matches!(conversation.kind, ConversationKind::Channel) {
-                    let can_post =
-                        conversation.owner_id.as_ref() == Some(&sender_id)
-                            || conversation.participants.iter().any(|participant| {
-                                participant.actor_id == sender_id
-                                    && matches!(
-                                        participant.role,
-                                        ParticipantRole::Owner | ParticipantRole::Admin
-                                    )
-                            })
-                            || self
-                                .state
-                                .communities
-                                .get(&destination_conversation_id)
-                                .is_some_and(|community| {
-                                    community.members.get(&sender_id).is_some_and(|member| {
-                                        matches!(member.status, MemberStatus::Administrator)
-                                            && member.admin_rights.post_messages
-                                    })
-                                });
-                    if !can_post {
-                        return Err(EngineError::CommunitySendRestricted(
-                            destination_conversation_id.clone(),
-                        ));
-                    }
+                    .and_then(|community| community.members.get(&sender_id));
+                let community_forbidden = member.is_some_and(|m| {
+                    matches!(m.status, MemberStatus::Left | MemberStatus::Banned)
+                });
+                let is_restricted =
+                    member.is_some_and(|m| matches!(m.status, MemberStatus::Restricted));
+                let channel_posting_allowed = !matches!(conversation.kind, ConversationKind::Channel)
+                    || conversation.owner_id.as_ref() == Some(&sender_id)
+                    || conversation.participants.iter().any(|participant| {
+                        participant.actor_id == sender_id
+                            && matches!(
+                                participant.role,
+                                ParticipantRole::Owner | ParticipantRole::Admin
+                            )
+                    })
+                    || member.is_some_and(|m| {
+                        matches!(m.status, MemberStatus::Administrator)
+                            && m.admin_rights.post_messages
+                    });
+                let auth_input = RecipientAuthorizationInput {
+                    conversation_kind: conversation.kind,
+                    sender_is_participant,
+                    can_send_messages: conversation.permissions.can_send_messages,
+                    can_send_media: conversation.permissions.can_send_media,
+                    can_send_polls: conversation.permissions.can_send_polls,
+                    can_send_other: conversation.permissions.can_send_other,
+                    can_send_inline: conversation.permissions.can_send_inline,
+                    can_send_games: conversation.permissions.can_send_games,
+                    community_forbidden,
+                    community_restrict_messages: is_restricted
+                        && member.is_some_and(|m| m.restrictions.send_messages),
+                    community_restrict_media: is_restricted
+                        && member.is_some_and(|m| m.restrictions.send_media),
+                    community_restrict_polls: is_restricted
+                        && member.is_some_and(|m| m.restrictions.send_polls),
+                    community_restrict_other: is_restricted
+                        && member.is_some_and(|m| m.restrictions.send_other),
+                    community_restrict_inline: is_restricted
+                        && member.is_some_and(|m| m.restrictions.send_inline),
+                    community_restrict_games: is_restricted
+                        && member.is_some_and(|m| m.restrictions.send_games),
+                    channel_posting_allowed,
+                };
+                let requirements = RecipientSearchRequirements {
+                    require_media: message_content_uses_media(&original.content),
+                    require_polls: matches!(&original.content, MessageContent::Poll { .. }),
+                    require_send_other: message_content_uses_other(&original.content),
+                    require_inline: false,
+                    require_game: false,
+                    source_protected_content: original.protected_content,
+                    content_kind: RecipientContentKind::Service,
+                };
+                if let Err(denial) = authorize_destination(auth_input, requirements) {
+                    return Err(match denial {
+                        DestinationAuthorizationDenial::SourceProtectedContent => {
+                            EngineError::ProtectedContent
+                        }
+                        DestinationAuthorizationDenial::SenderNotParticipant => {
+                            EngineError::SenderNotParticipant {
+                                conversation_id: destination_conversation_id.clone(),
+                                actor_id: sender_id.clone(),
+                            }
+                        }
+                        DestinationAuthorizationDenial::MessageSendPermissionDenied => {
+                            EngineError::MessageSendPermissionDenied(
+                                destination_conversation_id.clone(),
+                            )
+                        }
+                        DestinationAuthorizationDenial::MediaSendPermissionDenied => {
+                            EngineError::MediaSendPermissionDenied(
+                                destination_conversation_id.clone(),
+                            )
+                        }
+                        DestinationAuthorizationDenial::PollSendPermissionDenied => {
+                            EngineError::PollSendPermissionDenied(
+                                destination_conversation_id.clone(),
+                            )
+                        }
+                        DestinationAuthorizationDenial::OtherSendPermissionDenied
+                        | DestinationAuthorizationDenial::InlineSendPermissionDenied
+                        | DestinationAuthorizationDenial::GameSendPermissionDenied => {
+                            EngineError::OtherSendPermissionDenied(
+                                destination_conversation_id.clone(),
+                            )
+                        }
+                        DestinationAuthorizationDenial::CommunitySendRestricted
+                        | DestinationAuthorizationDenial::ChannelPostingRestricted => {
+                            EngineError::CommunitySendRestricted(
+                                destination_conversation_id.clone(),
+                            )
+                        }
+                        DestinationAuthorizationDenial::CommunityMediaRestricted => {
+                            EngineError::CommunityMediaRestricted(
+                                destination_conversation_id.clone(),
+                            )
+                        }
+                        DestinationAuthorizationDenial::CommunityPollRestricted => {
+                            EngineError::CommunityPollRestricted(
+                                destination_conversation_id.clone(),
+                            )
+                        }
+                        DestinationAuthorizationDenial::CommunityOtherRestricted
+                        | DestinationAuthorizationDenial::CommunityInlineRestricted
+                        | DestinationAuthorizationDenial::CommunityGameRestricted => {
+                            EngineError::CommunityOtherRestricted(
+                                destination_conversation_id.clone(),
+                            )
+                        }
+                        DestinationAuthorizationDenial::SecretPlaintextRejected => {
+                            EngineError::SecretPlaintextRejected
+                        }
+                        DestinationAuthorizationDenial::SecretContentOutsideSecretConversation => {
+                            EngineError::SecretContentOutsideSecretConversation
+                        }
+                    });
                 }
                 if let Some(community) = self.state.communities.get(&destination_conversation_id) {
                     if let Some(thread_root) = &thread_root_message_id {
@@ -2123,14 +2111,29 @@ impl MessagingEngine {
                         }
                     }
                 }
-                let is_secret_conversation = matches!(conversation.kind, ConversationKind::Secret);
-                let is_secret_content = matches!(&original.content, MessageContent::Secret { .. });
-                let is_service_content = matches!(&original.content, MessageContent::Service { .. });
-                if is_secret_conversation && !is_secret_content && !is_service_content {
-                    return Err(EngineError::SecretPlaintextRejected);
-                }
-                if !is_secret_conversation && is_secret_content {
-                    return Err(EngineError::SecretContentOutsideSecretConversation);
+                let secret_content_kind = match &original.content {
+                    MessageContent::Secret { .. } => RecipientContentKind::Secret,
+                    MessageContent::Service { .. } => RecipientContentKind::Service,
+                    _ => RecipientContentKind::Standard,
+                };
+                if let Err(denial) = authorize_destination(
+                    auth_input,
+                    RecipientSearchRequirements {
+                        content_kind: secret_content_kind,
+                        ..requirements
+                    },
+                ) {
+                    return Err(match denial {
+                        DestinationAuthorizationDenial::SecretPlaintextRejected => {
+                            EngineError::SecretPlaintextRejected
+                        }
+                        DestinationAuthorizationDenial::SecretContentOutsideSecretConversation => {
+                            EngineError::SecretContentOutsideSecretConversation
+                        }
+                        _ => EngineError::CommunitySendRestricted(
+                            destination_conversation_id.clone(),
+                        ),
+                    });
                 }
                 if client_message_id.0.trim().is_empty() || client_message_id.0.len() > 200 {
                     return Err(EngineError::InvalidClientMessageId);

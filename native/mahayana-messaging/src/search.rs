@@ -99,6 +99,98 @@ impl RecipientAuthorizationInput {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum DestinationAuthorizationDenial {
+    SourceProtectedContent,
+    SenderNotParticipant,
+    MessageSendPermissionDenied,
+    MediaSendPermissionDenied,
+    PollSendPermissionDenied,
+    OtherSendPermissionDenied,
+    InlineSendPermissionDenied,
+    GameSendPermissionDenied,
+    CommunitySendRestricted,
+    CommunityMediaRestricted,
+    CommunityPollRestricted,
+    CommunityOtherRestricted,
+    CommunityInlineRestricted,
+    CommunityGameRestricted,
+    ChannelPostingRestricted,
+    SecretPlaintextRejected,
+    SecretContentOutsideSecretConversation,
+}
+
+/// Pure destination authorization policy shared by `ProductionSessionWorkers` and
+/// `MessagingEngine` (`FBCP-ADR-004`).
+pub fn authorize_destination(
+    input: RecipientAuthorizationInput,
+    requirements: RecipientSearchRequirements,
+) -> Result<(), DestinationAuthorizationDenial> {
+    if requirements.source_protected_content {
+        return Err(DestinationAuthorizationDenial::SourceProtectedContent);
+    }
+    if !input.sender_is_participant {
+        return Err(DestinationAuthorizationDenial::SenderNotParticipant);
+    }
+    if !input.can_send_messages {
+        return Err(DestinationAuthorizationDenial::MessageSendPermissionDenied);
+    }
+    if requirements.require_media && !input.can_send_media {
+        return Err(DestinationAuthorizationDenial::MediaSendPermissionDenied);
+    }
+    if requirements.require_polls && !input.can_send_polls {
+        return Err(DestinationAuthorizationDenial::PollSendPermissionDenied);
+    }
+    if requirements.require_send_other && !input.can_send_other {
+        return Err(DestinationAuthorizationDenial::OtherSendPermissionDenied);
+    }
+    if requirements.require_inline && !input.can_send_inline {
+        return Err(DestinationAuthorizationDenial::InlineSendPermissionDenied);
+    }
+    if requirements.require_game && !input.can_send_games {
+        return Err(DestinationAuthorizationDenial::GameSendPermissionDenied);
+    }
+    if input.community_forbidden || input.community_restrict_messages {
+        return Err(DestinationAuthorizationDenial::CommunitySendRestricted);
+    }
+    if requirements.require_media && input.community_restrict_media {
+        return Err(DestinationAuthorizationDenial::CommunityMediaRestricted);
+    }
+    if requirements.require_polls && input.community_restrict_polls {
+        return Err(DestinationAuthorizationDenial::CommunityPollRestricted);
+    }
+    if requirements.require_send_other && input.community_restrict_other {
+        return Err(DestinationAuthorizationDenial::CommunityOtherRestricted);
+    }
+    if requirements.require_inline && input.community_restrict_inline {
+        return Err(DestinationAuthorizationDenial::CommunityInlineRestricted);
+    }
+    if requirements.require_game && input.community_restrict_games {
+        return Err(DestinationAuthorizationDenial::CommunityGameRestricted);
+    }
+
+    if matches!(input.conversation_kind, ConversationKind::Channel) {
+        if !input.channel_posting_allowed {
+            return Err(DestinationAuthorizationDenial::ChannelPostingRestricted);
+        }
+        if requirements.require_game {
+            return Err(DestinationAuthorizationDenial::GameSendPermissionDenied);
+        }
+    }
+
+    match (requirements.content_kind, input.conversation_kind) {
+        (RecipientContentKind::Standard, ConversationKind::Secret) => {
+            Err(DestinationAuthorizationDenial::SecretPlaintextRejected)
+        }
+        (RecipientContentKind::Secret, ConversationKind::Secret) => Ok(()),
+        (RecipientContentKind::Secret, _) => {
+            Err(DestinationAuthorizationDenial::SecretContentOutsideSecretConversation)
+        }
+        (RecipientContentKind::Service, _) | (RecipientContentKind::Standard, _) => Ok(()),
+    }
+}
+
 /// Canonical SearchRecipients authorization boundary.
 ///
 /// Callers must apply this before indexing or exposing a destination. Search/UI
@@ -107,37 +199,7 @@ pub fn recipient_search_authorized(
     input: RecipientAuthorizationInput,
     requirements: RecipientSearchRequirements,
 ) -> bool {
-    if requirements.source_protected_content
-        || !input.sender_is_participant
-        || !input.can_send_messages
-        || input.community_forbidden
-        || input.community_restrict_messages
-        || (requirements.require_media
-            && (!input.can_send_media || input.community_restrict_media))
-        || (requirements.require_polls
-            && (!input.can_send_polls || input.community_restrict_polls))
-        || (requirements.require_send_other
-            && (!input.can_send_other || input.community_restrict_other))
-        || (requirements.require_inline
-            && (!input.can_send_inline || input.community_restrict_inline))
-        || (requirements.require_game
-            && (!input.can_send_games || input.community_restrict_games))
-    {
-        return false;
-    }
-
-    if matches!(input.conversation_kind, ConversationKind::Channel)
-        && (!input.channel_posting_allowed || requirements.require_game)
-    {
-        return false;
-    }
-
-    match (requirements.content_kind, input.conversation_kind) {
-        (RecipientContentKind::Standard, ConversationKind::Secret) => false,
-        (RecipientContentKind::Secret, ConversationKind::Secret) => true,
-        (RecipientContentKind::Secret, _) => false,
-        (RecipientContentKind::Service, _) | (RecipientContentKind::Standard, _) => true,
-    }
+    authorize_destination(input, requirements).is_ok()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -854,5 +916,214 @@ mod recipient_policy_tests {
         });
         assert_eq!(filename_search.len(), 1);
         assert_eq!(filename_search[0].id, "msg-doc");
+    }
+
+    #[test]
+    fn authorize_destination_covers_allow_and_each_typed_denial_path() {
+        let base_in = RecipientAuthorizationInput::direct_default(true);
+        let base_req = RecipientSearchRequirements::default();
+        assert_eq!(authorize_destination(base_in, base_req), Ok(()));
+
+        assert_eq!(
+            authorize_destination(
+                base_in,
+                RecipientSearchRequirements {
+                    source_protected_content: true,
+                    ..base_req
+                }
+            ),
+            Err(DestinationAuthorizationDenial::SourceProtectedContent)
+        );
+        assert_eq!(
+            authorize_destination(
+                RecipientAuthorizationInput {
+                    sender_is_participant: false,
+                    ..base_in
+                },
+                base_req
+            ),
+            Err(DestinationAuthorizationDenial::SenderNotParticipant)
+        );
+        assert_eq!(
+            authorize_destination(
+                RecipientAuthorizationInput {
+                    can_send_messages: false,
+                    ..base_in
+                },
+                base_req
+            ),
+            Err(DestinationAuthorizationDenial::MessageSendPermissionDenied)
+        );
+        assert_eq!(
+            authorize_destination(
+                RecipientAuthorizationInput {
+                    can_send_media: false,
+                    ..base_in
+                },
+                RecipientSearchRequirements {
+                    require_media: true,
+                    ..base_req
+                }
+            ),
+            Err(DestinationAuthorizationDenial::MediaSendPermissionDenied)
+        );
+        assert_eq!(
+            authorize_destination(
+                RecipientAuthorizationInput {
+                    can_send_polls: false,
+                    ..base_in
+                },
+                RecipientSearchRequirements {
+                    require_polls: true,
+                    ..base_req
+                }
+            ),
+            Err(DestinationAuthorizationDenial::PollSendPermissionDenied)
+        );
+        assert_eq!(
+            authorize_destination(
+                RecipientAuthorizationInput {
+                    can_send_other: false,
+                    ..base_in
+                },
+                RecipientSearchRequirements {
+                    require_send_other: true,
+                    ..base_req
+                }
+            ),
+            Err(DestinationAuthorizationDenial::OtherSendPermissionDenied)
+        );
+        assert_eq!(
+            authorize_destination(
+                RecipientAuthorizationInput {
+                    can_send_inline: false,
+                    ..base_in
+                },
+                RecipientSearchRequirements {
+                    require_inline: true,
+                    ..base_req
+                }
+            ),
+            Err(DestinationAuthorizationDenial::InlineSendPermissionDenied)
+        );
+        assert_eq!(
+            authorize_destination(
+                RecipientAuthorizationInput {
+                    can_send_games: false,
+                    ..base_in
+                },
+                RecipientSearchRequirements {
+                    require_game: true,
+                    ..base_req
+                }
+            ),
+            Err(DestinationAuthorizationDenial::GameSendPermissionDenied)
+        );
+        assert_eq!(
+            authorize_destination(
+                RecipientAuthorizationInput {
+                    community_forbidden: true,
+                    ..base_in
+                },
+                base_req
+            ),
+            Err(DestinationAuthorizationDenial::CommunitySendRestricted)
+        );
+        assert_eq!(
+            authorize_destination(
+                RecipientAuthorizationInput {
+                    community_restrict_media: true,
+                    ..base_in
+                },
+                RecipientSearchRequirements {
+                    require_media: true,
+                    ..base_req
+                }
+            ),
+            Err(DestinationAuthorizationDenial::CommunityMediaRestricted)
+        );
+        assert_eq!(
+            authorize_destination(
+                RecipientAuthorizationInput {
+                    community_restrict_polls: true,
+                    ..base_in
+                },
+                RecipientSearchRequirements {
+                    require_polls: true,
+                    ..base_req
+                }
+            ),
+            Err(DestinationAuthorizationDenial::CommunityPollRestricted)
+        );
+        assert_eq!(
+            authorize_destination(
+                RecipientAuthorizationInput {
+                    community_restrict_other: true,
+                    ..base_in
+                },
+                RecipientSearchRequirements {
+                    require_send_other: true,
+                    ..base_req
+                }
+            ),
+            Err(DestinationAuthorizationDenial::CommunityOtherRestricted)
+        );
+        assert_eq!(
+            authorize_destination(
+                RecipientAuthorizationInput {
+                    community_restrict_inline: true,
+                    ..base_in
+                },
+                RecipientSearchRequirements {
+                    require_inline: true,
+                    ..base_req
+                }
+            ),
+            Err(DestinationAuthorizationDenial::CommunityInlineRestricted)
+        );
+        assert_eq!(
+            authorize_destination(
+                RecipientAuthorizationInput {
+                    community_restrict_games: true,
+                    ..base_in
+                },
+                RecipientSearchRequirements {
+                    require_game: true,
+                    ..base_req
+                }
+            ),
+            Err(DestinationAuthorizationDenial::CommunityGameRestricted)
+        );
+        assert_eq!(
+            authorize_destination(
+                RecipientAuthorizationInput {
+                    conversation_kind: ConversationKind::Channel,
+                    channel_posting_allowed: false,
+                    ..base_in
+                },
+                base_req
+            ),
+            Err(DestinationAuthorizationDenial::ChannelPostingRestricted)
+        );
+        assert_eq!(
+            authorize_destination(
+                RecipientAuthorizationInput {
+                    conversation_kind: ConversationKind::Secret,
+                    ..base_in
+                },
+                base_req
+            ),
+            Err(DestinationAuthorizationDenial::SecretPlaintextRejected)
+        );
+        assert_eq!(
+            authorize_destination(
+                base_in,
+                RecipientSearchRequirements {
+                    content_kind: RecipientContentKind::Secret,
+                    ..base_req
+                }
+            ),
+            Err(DestinationAuthorizationDenial::SecretContentOutsideSecretConversation)
+        );
     }
 }
