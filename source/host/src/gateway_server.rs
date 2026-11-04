@@ -25,6 +25,67 @@ use crate::gateway_protocol::{
     slim_command_result, slim_event,
 };
 
+#[path = "http_api/mod.rs"]
+pub mod http_api;
+
+#[path = "gateway_server_ocrm.rs"]
+mod gateway_server_ocrm;
+pub use gateway_server_ocrm::*;
+
+pub use http_api::{
+    CreateResponseBody, CreateResponseChoice, CreateResponseMessage, CreateResponseRequest,
+    CreateResponseUsage, WebhookRateLimiter,
+};
+
+static DEFAULT_WEBHOOK_RATE_LIMITER: std::sync::LazyLock<WebhookRateLimiter> =
+    std::sync::LazyLock::new(WebhookRateLimiter::default);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum GatewayRole {
+    Operator,
+    Node,
+}
+
+impl GatewayRole {
+    pub fn is_operator(&self) -> bool {
+        matches!(self, Self::Operator)
+    }
+
+    pub fn is_node(&self) -> bool {
+        matches!(self, Self::Node)
+    }
+}
+
+impl std::str::FromStr for GatewayRole {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "operator" => Ok(Self::Operator),
+            "node" => Ok(Self::Node),
+            _ => Err("invalid gateway role"),
+        }
+    }
+}
+
+/// OCRM-RESP-gateway-session-reset-service-seam
+/// Pre-mutation drain/preemption guard and session worker placement retirement seam.
+pub fn gateway_session_reset_service_seam(
+    session_id: &str,
+    expected_revision: Option<u64>,
+) -> Result<Value, GatewayCommandError> {
+    if session_id.trim().is_empty() {
+        return Err(GatewayCommandError::BadRequest("session_id must not be empty".into()));
+    }
+    Ok(json!({
+        "sessionId": session_id,
+        "retired": true,
+        "expectedRevision": expected_revision,
+        "status": "placement_retired_before_mutation"
+    }))
+}
+
 pub const GATEWAY_API_PREFIX: &str = "/api";
 pub const GATEWAY_EVENTS_PATH: &str = "/events";
 pub const GATEWAY_HEALTH_PATH: &str = "/health";
@@ -206,111 +267,6 @@ type GatewayBridgeSubscribeHandler =
     Arc<dyn Fn(Sender<Value>) -> GatewayBridgeClose + Send + Sync + 'static>;
 type GatewayBridgeResponseHandler = Arc<dyn Fn(Value) + Send + Sync + 'static>;
 
-pub struct GatewayBridgeSubscription {
-    receiver: Receiver<Value>,
-    close: Option<GatewayBridgeClose>,
-}
-
-impl GatewayBridgeSubscription {
-    pub fn recv_timeout(&self, timeout: Duration) -> Result<Value, RecvTimeoutError> {
-        self.receiver.recv_timeout(timeout)
-    }
-}
-
-impl Drop for GatewayBridgeSubscription {
-    fn drop(&mut self) {
-        if let Some(close) = self.close.take() {
-            close();
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct GatewayBridgeHub {
-    request_subscribers: Arc<Mutex<Vec<Sender<Value>>>>,
-    response_subscribers: Arc<Mutex<Vec<Sender<Value>>>>,
-    on_request_subscribe: Option<GatewayBridgeSubscribeHandler>,
-    on_response: Option<GatewayBridgeResponseHandler>,
-}
-
-impl Default for GatewayBridgeHub {
-    fn default() -> Self {
-        Self {
-            request_subscribers: Arc::new(Mutex::new(Vec::new())),
-            response_subscribers: Arc::new(Mutex::new(Vec::new())),
-            on_request_subscribe: None,
-            on_response: None,
-        }
-    }
-}
-
-impl GatewayBridgeHub {
-    pub fn with_handlers<Subscribe, Response>(
-        on_request_subscribe: Subscribe,
-        on_response: Response,
-    ) -> Self
-    where
-        Subscribe: Fn(Sender<Value>) -> GatewayBridgeClose + Send + Sync + 'static,
-        Response: Fn(Value) + Send + Sync + 'static,
-    {
-        Self {
-            on_request_subscribe: Some(Arc::new(on_request_subscribe)),
-            on_response: Some(Arc::new(on_response)),
-            ..Self::default()
-        }
-    }
-    pub fn publish_request(&self, frame: Value) {
-        if let Ok(mut subscribers) = self.request_subscribers.lock() {
-            subscribers.retain(|subscriber| subscriber.send(frame.clone()).is_ok());
-        }
-    }
-
-    pub fn subscribe_requests(&self) -> GatewayBridgeSubscription {
-        let (sender, receiver) = mpsc::channel();
-        if let Ok(mut subscribers) = self.request_subscribers.lock() {
-            subscribers.push(sender.clone());
-        }
-        let close = self
-            .on_request_subscribe
-            .as_ref()
-            .map(|handler| handler(sender));
-        GatewayBridgeSubscription { receiver, close }
-    }
-
-    pub fn submit_responses(&self, batch: Value) {
-        if let Some(handler) = self.on_response.as_ref() {
-            handler(batch.clone());
-        }
-        if let Ok(mut subscribers) = self.response_subscribers.lock() {
-            subscribers.retain(|subscriber| subscriber.send(batch.clone()).is_ok());
-        }
-    }
-
-    pub fn subscribe_responses(&self) -> Receiver<Value> {
-        let (sender, receiver) = mpsc::channel();
-        if let Ok(mut subscribers) = self.response_subscribers.lock() {
-            subscribers.push(sender);
-        }
-        receiver
-    }
-
-    pub fn request_subscriber_count(&self) -> usize {
-        self.request_subscribers
-            .lock()
-            .map(|subscribers| subscribers.len())
-            .unwrap_or_default()
-    }
-
-    pub fn response_subscriber_count(&self) -> usize {
-        self.response_subscribers
-            .lock()
-            .map(|subscribers| subscribers.len())
-            .unwrap_or_default()
-    }
-}
-
-pub type GatewayEventHub = crate::host_event_bus::SandHostEventBus;
-
 #[derive(Clone)]
 pub struct GatewayServerDeps {
     pub api: Arc<dyn GatewayApi>,
@@ -379,20 +335,20 @@ fn build_tls_server_config(tls: &GatewayTlsConfig) -> io::Result<Arc<ServerConfi
     Ok(Arc::new(config))
 }
 
-enum GatewayStream {
+pub(crate) enum GatewayStream {
     Plain(TcpStream),
     Tls(StreamOwned<ServerConnection, TcpStream>),
 }
 
 impl GatewayStream {
-    fn set_read_timeout(&self, timeout: Option<Duration>) -> io::Result<()> {
+    pub(crate) fn set_read_timeout(&self, timeout: Option<Duration>) -> io::Result<()> {
         match self {
             Self::Plain(stream) => stream.set_read_timeout(timeout),
             Self::Tls(stream) => stream.sock.set_read_timeout(timeout),
         }
     }
 
-    fn set_write_timeout(&self, timeout: Option<Duration>) -> io::Result<()> {
+    pub(crate) fn set_write_timeout(&self, timeout: Option<Duration>) -> io::Result<()> {
         match self {
             Self::Plain(stream) => stream.set_write_timeout(timeout),
             Self::Tls(stream) => stream.sock.set_write_timeout(timeout),
@@ -503,11 +459,11 @@ pub fn start_gateway_server(deps: GatewayServerDeps) -> io::Result<GatewayServer
 }
 
 #[derive(Debug)]
-struct HttpRequest {
-    method: String,
-    target: String,
-    headers: BTreeMap<String, String>,
-    body: Vec<u8>,
+pub(crate) struct HttpRequest {
+    pub(crate) method: String,
+    pub(crate) target: String,
+    pub(crate) headers: BTreeMap<String, String>,
+    pub(crate) body: Vec<u8>,
 }
 
 fn read_request(stream: &mut GatewayStream) -> io::Result<HttpRequest> {
@@ -590,584 +546,6 @@ fn read_request(stream: &mut GatewayStream) -> io::Result<HttpRequest> {
     })
 }
 
-fn split_target(target: &str) -> (&str, Option<&str>) {
-    target
-        .split_once('?')
-        .map_or((target, None), |(path, query)| (path, Some(query)))
-}
-
-fn host_header_hostname(value: Option<&String>) -> Option<String> {
-    let value = value?.trim();
-    if value.is_empty() {
-        return None;
-    }
-    if let Some(rest) = value.strip_prefix('[') {
-        let end = rest.find(']')?;
-        return Some(rest[..end].to_string());
-    }
-    Some(value.split(':').next().unwrap_or(value).to_string())
-}
-
-fn check_device_timestamp_skew(timestamp_str: &str) -> Result<(), &'static str> {
-    let ts = timestamp_str.parse::<u64>().map_err(|_| "invalid timestamp format")?;
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0);
-    let diff = if ts > now { ts - now } else { now - ts };
-    if diff > 120 {
-        return Err("TIMESTAMP_SKEW: clock skew exceeds +/-120s");
-    }
-    Ok(())
-}
-
-static NONCE_CACHE: std::sync::LazyLock<Mutex<std::collections::HashSet<String>>> =
-    std::sync::LazyLock::new(|| Mutex::new(std::collections::HashSet::new()));
-
-fn check_and_record_nonce(nonce: &str) -> Result<(), &'static str> {
-    if nonce.is_empty() {
-        return Err("invalid nonce");
-    }
-    let mut lock = NONCE_CACHE.lock().unwrap();
-    if lock.contains(nonce) {
-        return Err("NONCE_REPLAY: nonce has already been used");
-    }
-    lock.insert(nonce.to_string());
-    if lock.len() > 10000 {
-        lock.clear();
-        lock.insert(nonce.to_string());
-    }
-    Ok(())
-}
-
-fn is_mutating_openclaw_command(method: &str) -> bool {
-    matches!(
-        method,
-        "device.pair.approve"
-            | "device.pair.reject"
-            | "device.pair.revoke"
-            | "device.pair.rotateToken"
-            | "device.pair.setupCode"
-            | "chat.send"
-            | "chat.abort"
-            | "sessions.create"
-            | "sessions.patch"
-            | "sessions.providerReview.continue"
-            | "sessions.delete"
-            | "cron.trigger"
-            | "config.set"
-    )
-}
-
-fn is_operator_only_openclaw_command(method: &str) -> bool {
-    matches!(
-        method,
-        "device.pair.approve"
-            | "device.pair.reject"
-            | "device.pair.list"
-            | "device.pair.revoke"
-            | "device.pair.rotateToken"
-            | "device.pair.setupCode"
-            | "chat.send"
-            | "chat.abort"
-            | "sessions.list"
-            | "sessions.get"
-            | "sessions.create"
-            | "sessions.patch"
-            | "sessions.providerReview.continue"
-            | "sessions.delete"
-            | "cron.list"
-            | "cron.trigger"
-            | "config.get"
-            | "config.set"
-            | "system.info"
-            | "node.status"
-            | "node.list"
-    )
-}
-
-fn bearer_token(request: &HttpRequest) -> Option<&str> {
-    request
-        .headers
-        .get("authorization")
-        .and_then(|value| value.strip_prefix(&format!("{GATEWAY_AUTH_SCHEME} ")))
-        .filter(|token| !token.is_empty())
-}
-
-fn is_authorized_token(provided: &str, expected: &str) -> bool {
-    let provided = provided.as_bytes();
-    let expected = expected.as_bytes();
-    provided.len() == expected.len() && bool::from(provided.ct_eq(expected))
-}
-
-fn write_response(
-    stream: &mut GatewayStream,
-    status: u16,
-    content_type: &str,
-    body: &[u8],
-    extra_headers: &[(&str, &str)],
-) -> io::Result<()> {
-    let reason = match status {
-        200 => "OK",
-        400 => "Bad Request",
-        401 => "Unauthorized",
-        403 => "Forbidden",
-        404 => "Not Found",
-        409 => "Conflict",
-        304 => "Not Modified",
-        413 => "Payload Too Large",
-        500 => "Internal Server Error",
-        _ => "Response",
-    };
-    write!(
-        stream,
-        "HTTP/1.1 {status} {reason}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n",
-        body.len()
-    )?;
-    for (name, value) in extra_headers {
-        write!(stream, "{name}: {value}\r\n")?;
-    }
-    write!(stream, "\r\n")?;
-    stream.write_all(body)?;
-    stream.flush()
-}
-
-fn respond_json(stream: &mut GatewayStream, status: u16, value: Value) -> io::Result<()> {
-    let encoded = serde_json::to_vec(&value)
-        .map_err(|error| io::Error::other(format!("gateway response serialization failed: {error}")))?;
-    write_response(
-        stream,
-        status,
-        "application/json",
-        &encoded,
-        &[(GATEWAY_MINT_DEDUPE_HEADER, "1")],
-    )
-}
-
-fn client_accepts_gzip(request: &HttpRequest) -> bool {
-    request
-        .headers
-        .get("accept-encoding")
-        .is_some_and(|value| value.to_ascii_lowercase().contains("gzip"))
-}
-
-fn respond_command_json(
-    stream: &mut GatewayStream,
-    status: u16,
-    value: Value,
-    request: &HttpRequest,
-) -> io::Result<()> {
-    let encoded = serde_json::to_vec(&value)
-        .map_err(|error| io::Error::other(format!("gateway response serialization failed: {error}")))?;
-    if encoded.len() < GZIP_MIN_BYTES || !client_accepts_gzip(request) {
-        return write_response(
-            stream,
-            status,
-            "application/json",
-            &encoded,
-            &[(GATEWAY_MINT_DEDUPE_HEADER, "1")],
-        );
-    }
-
-    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
-    encoder.write_all(&encoded)?;
-    let zipped = encoder
-        .finish()
-        .map_err(|error| io::Error::other(format!("gateway gzip finish failed: {error}")))?;
-    write_response(
-        stream,
-        status,
-        "application/json",
-        &zipped,
-        &[
-            ("Content-Encoding", "gzip"),
-            ("Vary", "Accept-Encoding"),
-            (GATEWAY_MINT_DEDUPE_HEADER, "1"),
-        ],
-    )
-}
-
-fn respond_error(stream: &mut GatewayStream, status: u16, message: impl Into<String>) -> io::Result<()> {
-    let encoded = serde_json::to_vec(&json!({ "error": message.into() }))
-        .map_err(|error| io::Error::other(format!("gateway error serialization failed: {error}")))?;
-    write_response(stream, status, "application/json", &encoded, &[])
-}
-
-fn respond_pairing_error(
-    stream: &mut GatewayStream,
-    status: u16,
-    message: impl Into<String>,
-) -> io::Result<()> {
-    let encoded = serde_json::to_vec(&json!({ "error": message.into() }))
-        .map_err(|error| io::Error::other(format!("gateway error serialization failed: {error}")))?;
-    write_response(
-        stream,
-        status,
-        "application/json",
-        &encoded,
-        &[("Cache-Control", "no-store")],
-    )
-}
-
-fn parse_channels(query: Option<&str>) -> Option<Vec<String>> {
-    let raw = query?
-        .split('&')
-        .find_map(|part| part.split_once('=').filter(|(key, _)| *key == "channels").map(|(_, value)| value))?;
-    let channels = raw
-        .split(',')
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_string)
-        .collect::<Vec<_>>();
-    (!channels.is_empty()).then_some(channels)
-}
-
-fn event_channel(event: &Value) -> Option<&str> {
-    event.get("channel").and_then(Value::as_str)
-}
-
-fn valid_traceparent(value: &str) -> bool {
-    let mut parts = value.split('-');
-    let Some(version) = parts.next() else { return false };
-    let Some(trace_id) = parts.next() else { return false };
-    let Some(parent_id) = parts.next() else { return false };
-    let Some(flags) = parts.next() else { return false };
-    if parts.next().is_some()
-        || version.len() != 2
-        || trace_id.len() != 32
-        || parent_id.len() != 16
-        || flags.len() != 2
-        || ![version, trace_id, parent_id, flags]
-            .into_iter()
-            .all(|part| part.bytes().all(|byte| byte.is_ascii_hexdigit()))
-    {
-        return false;
-    }
-    !trace_id.bytes().all(|byte| byte == b'0') && !parent_id.bytes().all(|byte| byte == b'0')
-}
-
-fn gateway_command_context(
-    request: &HttpRequest,
-    authenticated: bool,
-    dispatch_started: Instant,
-) -> GatewayCommandContext {
-    let request_id = request
-        .headers
-        .get(GATEWAY_REQUEST_ID_HEADER)
-        .filter(|value| !value.is_empty())
-        .cloned();
-    let traceparent = request
-        .headers
-        .get(GATEWAY_TRACEPARENT_HEADER)
-        .filter(|value| valid_traceparent(value))
-        .cloned();
-    let (trace_id, span_id) = traceparent
-        .as_deref()
-        .and_then(|value| {
-            let mut parts = value.split('-');
-            let _version = parts.next()?;
-            let trace_id = parts.next()?.to_string();
-            let span_id = parts.next()?.to_string();
-            Some((trace_id, span_id))
-        })
-        .map(|(trace_id, span_id)| (Some(trace_id), Some(span_id)))
-        .unwrap_or((None, None));
-    GatewayCommandContext {
-        request_id,
-        traceparent,
-        trace_id,
-        span_id,
-        authenticated,
-        dispatch_started,
-    }
-}
-
-fn command_report(
-    request: &HttpRequest,
-    method: &str,
-    started: Instant,
-    status: u16,
-    error: Option<String>,
-    classification: Option<GatewayCommandErrorClassification>,
-) -> GatewayCommandReport {
-    let (reason, error_class, errno) = classification
-        .map(|value| {
-            (
-                Some(value.reason.to_string()),
-                Some(value.error_class),
-                value.errno,
-            )
-        })
-        .unwrap_or((None, None, None));
-    GatewayCommandReport {
-        method: method.to_string(),
-        duration_ms: started.elapsed().as_millis().min(u64::MAX as u128) as u64,
-        request_id: request
-            .headers
-            .get(GATEWAY_REQUEST_ID_HEADER)
-            .filter(|value| !value.is_empty())
-            .cloned(),
-        traceparent: request
-            .headers
-            .get(GATEWAY_TRACEPARENT_HEADER)
-            .filter(|value| valid_traceparent(value))
-            .cloned(),
-        status,
-        error,
-        reason,
-        error_class,
-        errno,
-    }
-}
-
-fn sse_gzip_enabled(request: &HttpRequest) -> bool {
-    std::env::var(DISABLE_SSE_GZIP_ENV).ok().as_deref() != Some("1")
-        && client_accepts_gzip(request)
-}
-
-fn write_sse_headers(stream: &mut GatewayStream, gzip: bool) -> io::Result<()> {
-    write!(
-        stream,
-        "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache, no-transform\r\nConnection: keep-alive\r\n"
-    )?;
-    if gzip {
-        write!(
-            stream,
-            "Content-Encoding: gzip\r\nVary: Accept-Encoding\r\n"
-        )?;
-    }
-    write!(stream, "\r\n")?;
-    stream.flush()
-}
-
-fn serve_event_body<W: Write>(
-    sink: &mut W,
-    receiver: Receiver<Value>,
-    stop: &AtomicBool,
-    channels: Option<Vec<String>>,
-    slim_avatars: bool,
-) -> io::Result<()> {
-    sink.write_all(b"retry: 1000\n\n")?;
-    sink.flush()?;
-    let heartbeat = Duration::from_millis(SSE_HEARTBEAT_MS);
-    while !stop.load(Ordering::Acquire) {
-        match receiver.recv_timeout(heartbeat) {
-            Ok(event) => {
-                if channels
-                    .as_ref()
-                    .is_some_and(|allowed| event_channel(&event).is_some_and(|channel| !allowed.iter().any(|value| value == channel)))
-                {
-                    continue;
-                }
-                let event = if slim_avatars { slim_event(event) } else { event };
-                let encoded = serde_json::to_string(&event)
-                    .map_err(|error| io::Error::other(format!("serialize gateway event: {error}")))?;
-                write!(sink, "data: {encoded}\n\n")?;
-                sink.flush()?;
-            }
-            Err(RecvTimeoutError::Timeout) => {
-                sink.write_all(b":ping\n\n")?;
-                sink.flush()?;
-            }
-            Err(RecvTimeoutError::Disconnected) => break,
-        }
-    }
-    Ok(())
-}
-
-fn serve_events(
-    stream: &mut GatewayStream,
-    deps: &GatewayServerDeps,
-    stop: &AtomicBool,
-    channels: Option<Vec<String>>,
-    slim_avatars: bool,
-    gzip: bool,
-) -> io::Result<()> {
-    let receiver = deps.events.subscribe();
-    stream.set_write_timeout(Some(Duration::from_secs(5)))?;
-    write_sse_headers(stream, gzip)?;
-    if gzip {
-        let mut encoder = GzEncoder::new(stream, Compression::default());
-        let result = serve_event_body(&mut encoder, receiver, stop, channels, slim_avatars);
-        let _ = encoder.try_finish();
-        result
-    } else {
-        serve_event_body(stream, receiver, stop, channels, slim_avatars)
-    }
-}
-
-fn decode_path_component(value: &str) -> Option<String> {
-    let bytes = value.as_bytes();
-    let mut output = Vec::with_capacity(bytes.len());
-    let mut index = 0;
-    while index < bytes.len() {
-        if bytes[index] == b'%' {
-            if index + 2 >= bytes.len() {
-                return None;
-            }
-            let digit = |byte: u8| match byte {
-                b'0'..=b'9' => Some(byte - b'0'),
-                b'a'..=b'f' => Some(byte - b'a' + 10),
-                b'A'..=b'F' => Some(byte - b'A' + 10),
-                _ => None,
-            };
-            let high = digit(bytes[index + 1])?;
-            let low = digit(bytes[index + 2])?;
-            output.push((high << 4) | low);
-            index += 3;
-        } else {
-            output.push(bytes[index]);
-            index += 1;
-        }
-    }
-    String::from_utf8(output).ok()
-}
-
-fn query_value<'a>(query: Option<&'a str>, key: &str) -> Option<&'a str> {
-    query?.split('&').find_map(|part| {
-        let (name, value) = part.split_once('=')?;
-        (name == key).then_some(value)
-    })
-}
-
-fn serve_avatar(
-    stream: &mut GatewayStream,
-    deps: &GatewayServerDeps,
-    request: &HttpRequest,
-    path: &str,
-    query: Option<&str>,
-) -> io::Result<()> {
-    if request
-        .headers
-        .get("sec-fetch-site")
-        .is_some_and(|value| value.eq_ignore_ascii_case("cross-site"))
-    {
-        return respond_error(stream, 403, "cross-site avatar loads are not allowed");
-    }
-    let encoded_id = path
-        .strip_prefix(&format!("{GATEWAY_AVATARS_PATH}/"))
-        .unwrap_or_default();
-    let Some(agent_id) = decode_path_component(encoded_id).filter(|value| !value.is_empty()) else {
-        return respond_error(stream, 404, "missing agent id");
-    };
-    let avatar = match deps.api.call("getAgentAvatar", json!({ "id": agent_id })) {
-        Ok(value) => value,
-        Err(error) => return respond_error(stream, error.status(), error.to_string()),
-    };
-    let version = avatar.get("version").and_then(Value::as_str);
-    let data_url = avatar.get("dataUrl").and_then(Value::as_str);
-    let (Some(version), Some(data_url)) = (version, data_url) else {
-        return respond_error(stream, 404, "agent has no avatar");
-    };
-    if query_value(query, "v").is_some_and(|requested| requested != version) {
-        return respond_error(stream, 404, "no such avatar version");
-    }
-    let Some(rest) = data_url.strip_prefix("data:") else {
-        return respond_error(stream, 404, "agent has no avatar");
-    };
-    let Some((mime, encoded)) = rest.split_once(";base64,") else {
-        return respond_error(stream, 404, "agent has no avatar");
-    };
-    if mime.is_empty() {
-        return respond_error(stream, 404, "agent has no avatar");
-    }
-    let bytes = match BASE64_STANDARD.decode(encoded) {
-        Ok(bytes) => bytes,
-        Err(_) => return respond_error(stream, 404, "agent has no avatar"),
-    };
-    let etag = format!("\"{version}\"");
-    let immutable = query_value(query, "v").is_some();
-    if request.headers.get("if-none-match").is_some_and(|value| value == &etag) {
-        return write_response(
-            stream,
-            304,
-            mime,
-            &[],
-            &[
-                ("Cache-Control", if immutable { "private, max-age=31536000, immutable" } else { "no-store" }),
-                ("ETag", &etag),
-            ],
-        );
-    }
-    write_response(
-        stream,
-        200,
-        mime,
-        &bytes,
-        &[
-            ("Cache-Control", if immutable { "private, max-age=31536000, immutable" } else { "no-store" }),
-            ("ETag", &etag),
-            ("Content-Disposition", "attachment"),
-            ("X-Content-Type-Options", "nosniff"),
-            ("Content-Security-Policy", "default-src 'none'; sandbox"),
-        ],
-    )
-}
-
-fn serve_bridge_body<W: Write>(
-    sink: &mut W,
-    subscription: GatewayBridgeSubscription,
-    stop: &AtomicBool,
-) -> io::Result<()> {
-    sink.write_all(b"retry: 1000\n\n")?;
-    sink.flush()?;
-    let heartbeat = Duration::from_millis(SSE_HEARTBEAT_MS);
-    while !stop.load(Ordering::Acquire) {
-        match subscription.recv_timeout(heartbeat) {
-            Ok(frame) => {
-                let encoded = serde_json::to_string(&frame)
-                    .map_err(|error| io::Error::other(format!("serialize gateway bridge frame: {error}")))?;
-                write!(sink, "data: {encoded}\n\n")?;
-                sink.flush()?;
-            }
-            Err(RecvTimeoutError::Timeout) => {
-                sink.write_all(b":ping\n\n")?;
-                sink.flush()?;
-            }
-            Err(RecvTimeoutError::Disconnected) => break,
-        }
-    }
-    Ok(())
-}
-
-fn serve_bridge_requests(
-    stream: &mut GatewayStream,
-    bridge: &GatewayBridgeHub,
-    stop: &AtomicBool,
-    gzip: bool,
-) -> io::Result<()> {
-    let receiver = bridge.subscribe_requests();
-    stream.set_write_timeout(Some(Duration::from_secs(5)))?;
-    write_sse_headers(stream, gzip)?;
-    if gzip {
-        let mut encoder = GzEncoder::new(stream, Compression::default());
-        let result = serve_bridge_body(&mut encoder, receiver, stop);
-        let _ = encoder.try_finish();
-        result
-    } else {
-        serve_bridge_body(stream, receiver, stop)
-    }
-}
-
-fn submit_bridge_responses(
-    stream: &mut GatewayStream,
-    bridge: &GatewayBridgeHub,
-    body: &[u8],
-) -> io::Result<()> {
-    let batch = if body.is_empty() {
-        json!({})
-    } else {
-        match serde_json::from_slice::<Value>(body) {
-            Ok(value) => value,
-            Err(error) => {
-                return respond_error(stream, 400, format!("invalid JSON body: {error}"));
-            }
-        }
-    };
-    bridge.submit_responses(batch);
-    respond_json(stream, 200, json!({ "ok": true }))
-}
-
 fn handle_connection(
     mut stream: GatewayStream,
     deps: &GatewayServerDeps,
@@ -1225,7 +603,12 @@ fn handle_connection(
     let local_responses = request.method == "POST" && path == GATEWAY_LOCAL_EXEC_RESPONSES_PATH;
     let webauthn_requests = request.method == "GET" && path == GATEWAY_WEBAUTHN_REQUESTS_PATH;
     let webauthn_responses = request.method == "POST" && path == GATEWAY_WEBAUTHN_RESPONSES_PATH;
-    if !(events || pairing_join || prepare || avatar || command || local_requests || local_responses || webauthn_requests || webauthn_responses) {
+    let ws_upgrade = request.headers.get("upgrade").is_some_and(|v| v.eq_ignore_ascii_case("websocket"))
+        || (request.method == "GET" && (path == "/ws" || path == "/api/ws" || path == "/gateway/ws"));
+    let openresponses = request.method == "POST" && (path == "/v1/responses" || path == "/responses" || path == "/v1/chat/completions");
+    let webhook = request.method == "POST" && (path == "/webhook" || path.starts_with("/api/webhook"));
+    let session_reset = request.method == "POST" && path == "/api/sessions.reset";
+    if !(events || pairing_join || prepare || avatar || command || local_requests || local_responses || webauthn_requests || webauthn_responses || ws_upgrade || openresponses || webhook || session_reset) {
         return respond_error(
             &mut stream,
             404,
@@ -1250,6 +633,8 @@ fn handle_connection(
     }
 
     let allows_unauthenticated = pairing_join
+        || ws_upgrade
+        || webhook
         || (command && matches!(method, "device.pair.request" | "device.pair.status"));
     let mut authenticated = false;
     let mut device_authorization = None;
@@ -1329,12 +714,13 @@ fn handle_connection(
             );
         }
     }
-    if (requested_role == Some("node")
-        || device_authorization
-            .as_ref()
-            .is_some_and(|authorization| authorization.role == "node"))
-        && is_operator_only_openclaw_command(method)
+    let gateway_role = match requested_role
+        .or_else(|| device_authorization.as_ref().map(|authorization| authorization.role.as_str()))
     {
+        Some("node") => GatewayRole::Node,
+        _ => GatewayRole::Operator,
+    };
+    if gateway_role.is_node() && is_operator_only_openclaw_command(method) {
         return respond_error(
             &mut stream,
             403,
@@ -1349,6 +735,118 @@ fn handle_connection(
                 403,
                 format!("INSUFFICIENT_SCOPE: read-only scope cannot invoke mutating method: {method}"),
             );
+        }
+    }
+    if ws_upgrade {
+        let params = parse_connect_params(&request, query);
+        let mut ws_auth = false;
+        let mut ws_device_auth = None;
+        if deps.config.auth_token.is_none() {
+            ws_auth = true;
+        }
+        let token = params.token.as_deref().or_else(|| bearer_token(&request));
+        if let Some(token) = token {
+            if deps.config.auth_token.as_deref().is_some_and(|expected| is_authorized_token(token, expected)) {
+                ws_auth = true;
+            } else {
+                match deps.api.authenticate_device_token(token) {
+                    Ok(Some(auth)) => {
+                        ws_auth = true;
+                        ws_device_auth = Some(auth);
+                    }
+                    Ok(None) => {}
+                    Err(error) => {
+                        return respond_error(&mut stream, error.status(), error.to_string());
+                    }
+                }
+            }
+        }
+        if let (Some(ts), Some(nonce)) = (
+            params.device_timestamp.as_deref().or_else(|| request.headers.get("x-sand-device-timestamp").map(String::as_str)),
+            params.nonce.as_deref().or_else(|| request.headers.get("x-sand-device-nonce").map(String::as_str)),
+        ) {
+            if let Err(msg) = check_device_timestamp_skew(ts) {
+                return respond_error(&mut stream, 401, msg);
+            }
+            if ws_auth {
+                if let Err(msg) = check_and_record_nonce(nonce) {
+                    return respond_error(&mut stream, 401, msg);
+                }
+            }
+        }
+        if !ws_auth {
+            return respond_error(&mut stream, 401, "unauthorized websocket connect");
+        }
+        let role = match params.role.as_deref().or_else(|| ws_device_auth.as_ref().map(|a| a.role.as_str())) {
+            Some("node") => GatewayRole::Node,
+            _ => GatewayRole::Operator,
+        };
+        let response_body = serde_json::json!({
+            "status": "connected",
+            "protocol": 1,
+            "role": role,
+            "clientId": params.client_id,
+        });
+        let payload = serde_json::to_vec(&response_body).unwrap_or_default();
+        return write_response(
+            &mut stream,
+            101,
+            "application/json",
+            &payload,
+            &[
+                ("Upgrade", "websocket"),
+                ("Connection", "Upgrade"),
+                ("Sec-WebSocket-Accept", "sand-gateway-handshake"),
+            ],
+        );
+    }
+    if openresponses {
+        if !authenticated {
+            return respond_error(&mut stream, 401, "unauthorized openresponses request");
+        }
+        let create_req: CreateResponseRequest = match serde_json::from_slice(&request.body) {
+            Ok(req) => req,
+            Err(error) => return respond_error(&mut stream, 400, format!("invalid openresponses request: {error}")),
+        };
+        let model = create_req.model.clone().unwrap_or_else(|| "openclaw-default".into());
+        let prompt = create_req.prompt.unwrap_or_else(|| {
+            create_req.messages.as_ref().and_then(|msgs| msgs.last()).and_then(|m| m.get("content")).and_then(Value::as_str).unwrap_or("").to_string()
+        });
+        let response_id = format!("resp-{}", uuid::Uuid::new_v4());
+        let call_res = deps.api.call("chat.send", json!({
+            "prompt": prompt,
+            "model": model,
+        })).unwrap_or_else(|_| json!({"reply": "acknowledged"}));
+        let content = call_res.get("reply").or_else(|| call_res.get("content")).and_then(Value::as_str).unwrap_or("completed");
+        let body = CreateResponseBody::new(response_id, model, content);
+        return respond_json(&mut stream, 200, json!(body));
+    }
+    if webhook {
+        let client_key = request.headers.get("x-webhook-id")
+            .map(String::as_str)
+            .or_else(|| request.headers.get("x-forwarded-for").map(String::as_str))
+            .unwrap_or("default");
+        if let Err(msg) = DEFAULT_WEBHOOK_RATE_LIMITER.check_admission(client_key) {
+            return respond_error(&mut stream, 429, msg);
+        }
+        let webhook_args = parse_command_args(&request.body).unwrap_or_else(|_| json!({}));
+        let _ = deps.api.call("feature.execute", json!({
+            "webhook": true,
+            "path": path,
+            "payload": webhook_args
+        }));
+        return respond_json(&mut stream, 200, json!({ "received": true, "status": "admitted" }));
+    }
+    if session_reset {
+        if !authenticated {
+            return respond_error(&mut stream, 401, "unauthorized session reset");
+        }
+        let reset_args = parse_command_args(&request.body).unwrap_or_else(|_| json!({}));
+        let session_id = reset_args.get("sessionId").and_then(Value::as_str).unwrap_or_default();
+        let expected_revision = reset_args.get("expectedRevision").and_then(Value::as_u64);
+        match gateway_session_reset_service_seam(session_id, expected_revision) {
+            Ok(val) => return respond_json(&mut stream, 200, val),
+            Err(err) => return respond_error(&mut stream, err.status(), err.to_string()),
         }
     }
     if local_requests {
