@@ -194,7 +194,7 @@ test("partial retry only sends failed destination with stable identity", async (
   assert.equal(await f.page.getByText("1 selected", { exact: true }).count(), 1);
   await f.page.screenshot({ path: resolve(artifacts, "forward-immutable-retry-wide.png"), fullPage: true });
   await f.page.setViewportSize({ width: 390, height: 844 });
-  const retryButton = await f.page.getByRole("button", { name: "Forward", exact: true }).boundingBox();
+  const retryButton = await f.page.getByRole("button", { name: "Retry", exact: true }).boundingBox();
   assert.ok(retryButton != null && retryButton.x >= 0 && retryButton.y >= 0
     && retryButton.x + retryButton.width <= 391 && retryButton.y + retryButton.height <= 845);
   await f.page.screenshot({ path: resolve(artifacts, "forward-immutable-retry-narrow.png"), fullPage: true });
