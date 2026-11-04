@@ -18,6 +18,7 @@ import {
   applyTranscriptReadUpdates,
   createHumanReactionSettlement,
   currentTranscriptReadBuffers,
+  filterTranscriptEntriesByTopic,
   isForwardableTranscriptMessage,
   isSettledTranscriptMessage,
   localTranscriptClientNonce,
@@ -1392,5 +1393,85 @@ test("NMR-UI-ENTRY-REFRESH-01 live forward target reconciliation preserves eligi
       null,
     );
   }
+});
+
+test("TDRP-R9-TOPIC-PROJECTION-001 mergeAuthoritativeTranscriptMessage preserves topicId across optimistic and canonical reconciliation without injecting undefined keys", () => {
+  const pendingWithTopic: TranscriptMessage = {
+    ...humanMessage("pending-client-1", "user-1", "client-1", "Hello from topic"),
+    topicId: "topic-42",
+  };
+  const canonicalWithoutTopic: TranscriptMessage = {
+    ...humanMessage("human-server-message:msg-1", "user-1", "client-1", "Hello from topic"),
+    remoteMessageId: "msg-1",
+  };
+
+  // 1. Pending with topicId merged with canonical without topicId retains topicId
+  const merged1 = mergeAuthoritativeTranscriptMessage(pendingWithTopic, canonicalWithoutTopic);
+  assert.equal(merged1.topicId, "topic-42");
+  assert.equal(merged1.id, "human-server-message:msg-1");
+
+  // 2. Canonical with topicId merged with pending retains topicId
+  const canonicalWithTopic: TranscriptMessage = {
+    ...canonicalWithoutTopic,
+    topicId: "topic-99",
+  };
+  const pendingWithoutTopic: TranscriptMessage = humanMessage("pending-client-2", "user-1", "client-2", "No topic pending");
+  const merged2 = mergeAuthoritativeTranscriptMessage(pendingWithoutTopic, canonicalWithTopic);
+  assert.equal(merged2.topicId, "topic-99");
+
+  // 3. Reverse canonical current with late local placeholder retains topicId
+  const reversePreserved = mergeAuthoritativeTranscriptMessage(canonicalWithTopic, pendingWithTopic);
+  assert.equal(reversePreserved.topicId, "topic-99");
+
+  // 4. When neither current nor incoming has topicId, topicId is undefined and no 'topicId' key is injected
+  const mergedNoTopic = mergeAuthoritativeTranscriptMessage(pendingWithoutTopic, canonicalWithoutTopic);
+  assert.equal(mergedNoTopic.topicId, undefined);
+  assert.equal("topicId" in mergedNoTopic, false);
+
+  const reverseNoTopic = mergeAuthoritativeTranscriptMessage(canonicalWithoutTopic, pendingWithoutTopic);
+  assert.equal(reverseNoTopic.topicId, undefined);
+  assert.equal("topicId" in reverseNoTopic, false);
+});
+
+test("TDRP-R9-TOPIC-PROJECTION-002 filterTranscriptEntriesByTopic isolates main view entries from topic-specific messages", () => {
+  const mainMessage1: TranscriptMessage = { ...message("msg-main-1", "Main 1") };
+  const mainMessage2: TranscriptMessage = { ...message("msg-main-2", "Main 2") };
+  const topicMessage1: TranscriptMessage = { ...message("msg-topic-1", "Topic 1"), topicId: "topic-alpha" };
+  const topicMessage2: TranscriptMessage = { ...message("msg-topic-2", "Topic 2"), topicId: "topic-beta" };
+  const nonMessageEntry: ConversationTranscriptEntry = {
+    kind: "notice",
+    id: "notice-1",
+    label: "Notice text",
+    style: "info",
+    timestampMs: 150,
+  };
+
+  const allEntries: ConversationTranscriptEntry[] = [
+    mainMessage1,
+    topicMessage1,
+    nonMessageEntry,
+    mainMessage2,
+    topicMessage2,
+  ];
+
+  // When topicId is null or undefined or empty, returns all main view entries (entries without topicId)
+  const mainViewNull = filterTranscriptEntriesByTopic(allEntries, null);
+  assert.deepEqual(ids(mainViewNull), ["msg-main-1", "notice-1", "msg-main-2"]);
+
+  const mainViewUndefined = filterTranscriptEntriesByTopic(allEntries, undefined);
+  assert.deepEqual(ids(mainViewUndefined), ["msg-main-1", "notice-1", "msg-main-2"]);
+
+  const mainViewEmpty = filterTranscriptEntriesByTopic(allEntries, "");
+  assert.deepEqual(ids(mainViewEmpty), ["msg-main-1", "notice-1", "msg-main-2"]);
+
+  // When topicId is a non-empty string, returns only message entries matching that topicId
+  const topicAlpha = filterTranscriptEntriesByTopic(allEntries, "topic-alpha");
+  assert.deepEqual(ids(topicAlpha), ["msg-topic-1"]);
+
+  const topicBeta = filterTranscriptEntriesByTopic(allEntries, "topic-beta");
+  assert.deepEqual(ids(topicBeta), ["msg-topic-2"]);
+
+  const topicUnknown = filterTranscriptEntriesByTopic(allEntries, "topic-nonexistent");
+  assert.deepEqual(ids(topicUnknown), []);
 });
 

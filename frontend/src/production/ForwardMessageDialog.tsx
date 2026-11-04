@@ -13,6 +13,10 @@ import {
 export interface ForwardRecipient {
   readonly id: string;
   readonly name: string;
+  readonly topicId?: string;
+  readonly topicTitle?: string;
+  readonly topicClosed?: boolean;
+  readonly topicDeleted?: boolean;
 }
 
 export interface ForwardSettlement {
@@ -42,6 +46,7 @@ export interface ForwardMessageDialogProps {
     dropSenderNames: boolean;
     dropCaptions: boolean;
     comment?: { text: string; entities?: readonly unknown[] };
+    destinationTopics?: Readonly<Record<string, string>>;
   }, admission?: CoordinatorCallAdmission) => Promise<readonly ForwardSettlement[]>;
   readonly onSettled?: (
     settlement: readonly ForwardSettlement[],
@@ -56,6 +61,7 @@ interface ForwardDialogLifetime {
   readonly sourceEntryId: string;
   readonly requestId: string;
   readonly recipientNames: Map<string, string>;
+  readonly recipientTopics: Map<string, string>;
 }
 
 type ForwardRequest = Parameters<ForwardMessageDialogProps["forwardMessage"]>[0];
@@ -153,10 +159,12 @@ export function ForwardMessageDialog({
       sourceEntryId,
       requestId: createForwardRequestId(sourceConversationId, sourceEntryId),
       recipientNames: new Map(),
+      recipientTopics: new Map(),
     };
     lifetimeRef.current = lifetime;
     return () => {
       lifetime.recipientNames.clear();
+      lifetime.recipientTopics.clear();
       if (lifetimeRef.current === lifetime) {
         lifetimeRef.current = null;
         snapshotRef.current = null;
@@ -186,13 +194,44 @@ export function ForwardMessageDialog({
         query,
         limit: 50,
       })
-        .then((next) => {
+        .then((rawNext) => {
           if (!isSearchCurrent()) return;
+          // Destroyed / Closed Child Fencing (TDRP-R9-SHARE-THREAD-DESTINATION-001 & TDRP-R9-SHARE-TOPIC-ELIGIBILITY-001)
+          if (snapshotRef.current == null) {
+            const unreachableIds = new Set<string>();
+            for (const r of rawNext) {
+              if (r.topicDeleted === true || r.topicClosed === true) {
+                unreachableIds.add(r.id);
+              }
+            }
+            if (unreachableIds.size > 0) {
+              const hasUnreachable = [...unreachableIds].some((id) => selectedRef.current.has(id));
+              if (hasUnreachable) {
+                const nextSelected = new Set(selectedRef.current);
+                for (const id of unreachableIds) {
+                  nextSelected.delete(id);
+                }
+                updateSelected(nextSelected);
+              }
+            }
+          }
+          const next = rawNext.filter((r) => r.topicDeleted !== true && r.topicClosed !== true);
           // Search visibility may change without removing a selected recipient.
           for (const id of lifetime.recipientNames.keys()) {
             if (!selectedRef.current.has(id)) lifetime.recipientNames.delete(id);
           }
-          for (const recipient of next) lifetime.recipientNames.set(recipient.id, recipient.name);
+          for (const id of lifetime.recipientTopics.keys()) {
+            if (!selectedRef.current.has(id)) lifetime.recipientTopics.delete(id);
+          }
+          for (const recipient of next) {
+            lifetime.recipientNames.set(recipient.id, recipient.name);
+            const trimmedTopicId = recipient.topicId?.trim();
+            if (trimmedTopicId != null && trimmedTopicId.length > 0) {
+              lifetime.recipientTopics.set(recipient.id, trimmedTopicId);
+            } else {
+              lifetime.recipientTopics.delete(recipient.id);
+            }
+          }
           setRecipients(next);
           setActiveRecipientIndex((current) => next.length === 0 ? 0 : Math.min(current, next.length - 1));
           setSearchFailure(null);
@@ -307,6 +346,14 @@ export function ForwardMessageDialog({
       const comment = commentText.trim().length > 0
         ? { text: commentText, entities: [] }
         : undefined;
+      const destinationTopics: Record<string, string> = {};
+      for (const id of selectedRef.current) {
+        const topicId = lifetime.recipientTopics.get(id);
+        if (topicId != null && topicId.trim().length > 0) {
+          destinationTopics[id] = topicId.trim();
+        }
+      }
+      const hasDestinationTopics = Object.keys(destinationTopics).length > 0;
       const request: ForwardRequest = {
         sourceConversationId: lifetime.sourceConversationId,
         sourceEntryId: lifetime.sourceEntryId,
@@ -315,6 +362,7 @@ export function ForwardMessageDialog({
         dropSenderNames: effectiveDropSenderNames,
         dropCaptions: effectiveDropCaptions,
         ...(comment ? { comment } : {}),
+        ...(hasDestinationTopics ? { destinationTopics } : {}),
       };
       const recipientNames = new Map<string, string>();
       for (const id of request.destinationConversationIds) {
@@ -326,6 +374,16 @@ export function ForwardMessageDialog({
     }
     const destinationConversationIds = snapshot.request.destinationConversationIds
       .filter((id) => selectedRef.current.has(id));
+    let retryDestinationTopics: Record<string, string> | undefined;
+    if (snapshot.request.destinationTopics != null) {
+      const filtered: Record<string, string> = {};
+      for (const [id, topicId] of Object.entries(snapshot.request.destinationTopics)) {
+        if (destinationConversationIds.includes(id)) {
+          filtered[id] = topicId;
+        }
+      }
+      retryDestinationTopics = filtered;
+    }
     // React may batch two submit events before repainting `submitting`.
     submittingLifetimeRef.current = lifetime;
     setSnapshotLocked(true);
@@ -335,6 +393,7 @@ export function ForwardMessageDialog({
       const settlement = await forwardMessage({
         ...snapshot.request,
         destinationConversationIds,
+        ...(retryDestinationTopics != null ? { destinationTopics: retryDestinationTopics } : {}),
       }, {
         // Readiness can outlive this dialog. Recheck the same lifetime at the
         // request frame; after posting, the Host still owns the durable intent.
@@ -381,6 +440,7 @@ export function ForwardMessageDialog({
   const closeLifetime = (lifetime: ForwardDialogLifetime) => {
     if (!isCurrent(lifetime)) return;
     lifetime.recipientNames.clear();
+    lifetime.recipientTopics.clear();
     lifetimeRef.current = null;
     submittingLifetimeRef.current = null;
     snapshotRef.current = null;
@@ -457,7 +517,7 @@ export function ForwardMessageDialog({
                 tabIndex={-1}
                 type="checkbox"
               />
-              <span>{recipient.name}</span>
+              <span>{recipient.topicTitle != null && recipient.topicTitle.trim().length > 0 ? `${recipient.name} › ${recipient.topicTitle.trim()}` : recipient.name}</span>
             </label>)}
         </div>
         <fieldset className="fabushi-forward-dialog__privacy">

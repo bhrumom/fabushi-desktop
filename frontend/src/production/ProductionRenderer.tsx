@@ -1308,10 +1308,21 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }): Promise<readonly ForwardRecipient[]> => {
     if (client == null) throw new Error("coordinator is unavailable for recipient search");
     const raw = await client.call("searchHumanRecipients", input);
-    return projectHumanConversations(raw).map((conversation) => ({
-      id: conversation.id,
-      name: conversation.name,
-    }));
+    return projectHumanConversations(raw).map((conversation) => {
+      const rawItem = conversation.raw as Record<string, unknown>;
+      const topicId = typeof rawItem.topicId === "string" ? rawItem.topicId : undefined;
+      const topicTitle = typeof rawItem.topicTitle === "string" ? rawItem.topicTitle : undefined;
+      const topicClosed = typeof rawItem.topicClosed === "boolean" ? rawItem.topicClosed : undefined;
+      const topicDeleted = typeof rawItem.topicDeleted === "boolean" ? rawItem.topicDeleted : undefined;
+      return {
+        id: conversation.id,
+        name: conversation.name,
+        ...(topicId !== undefined ? { topicId } : {}),
+        ...(topicTitle !== undefined ? { topicTitle } : {}),
+        ...(topicClosed !== undefined ? { topicClosed } : {}),
+        ...(topicDeleted !== undefined ? { topicDeleted } : {}),
+      };
+    });
   }, [client]);
 
   const forwardHumanMessage = useCallback(async (input: {
@@ -1322,6 +1333,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     dropSenderNames: boolean;
     dropCaptions: boolean;
     comment?: { text: string; entities?: readonly unknown[] };
+    destinationTopics?: Readonly<Record<string, string>>;
   }, admission?: Parameters<ProductionCoordinatorClient["call"]>[2]): Promise<readonly ForwardSettlement[]> => {
     if (client == null) throw new Error("coordinator is unavailable for forwarding");
     const result = await client.call("forwardHumanMessage", input, admission);

@@ -80,14 +80,17 @@ export function mergeAuthoritativeTranscriptMessage(
   if (isCanonicalHumanSend(current) && isLocalSendPlaceholder(incoming)
     && transcriptEntriesCorrelate(current, incoming)) {
     const readAt = monotonicHumanReadAt(current, current, current.delivery);
+    const topicId = current.topicId ?? incoming.topicId;
     const preserved: TranscriptMessage = {
       ...incoming,
       ...current,
       // A late local snapshot cannot restore obsolete committed paths.
       attachments: [...(current.attachments ?? [])],
       ...(readAt === undefined ? {} : { readAt }),
+      ...(topicId === undefined ? {} : { topicId }),
     };
     if (readAt === undefined) delete preserved.readAt;
+    if (topicId === undefined) delete preserved.topicId;
     if (current.forwardedFromAuthorName === undefined) delete preserved.forwardedFromAuthorName;
     if (current.forcedForwardInfo === undefined) delete preserved.forcedForwardInfo;
     return preserved;
@@ -104,6 +107,7 @@ export function mergeAuthoritativeTranscriptMessage(
   const clientNonce = human && "clientNonce" in incoming ? incoming.clientNonce : incoming.clientNonce ?? current.clientNonce;
   const delivery = options.preserveCurrentId ? current.delivery : incoming.delivery ?? current.delivery;
   const readAt = monotonicHumanReadAt(current, incoming, delivery);
+  const topicId = incoming.topicId ?? current.topicId;
   const merged: TranscriptMessage = {
     ...current,
     ...incoming,
@@ -113,12 +117,24 @@ export function mergeAuthoritativeTranscriptMessage(
     ...(clientNonce === undefined && !(human && "clientNonce" in incoming) ? {} : { clientNonce }),
     ...(delivery === undefined && incoming.delivery === undefined ? {} : { delivery }),
     ...(readAt === undefined ? {} : { readAt }),
+    ...(topicId === undefined ? {} : { topicId }),
   };
   if (readAt === undefined) delete merged.readAt;
+  if (topicId === undefined) delete merged.topicId;
   if (human && incoming.forwardedFromAuthorName === undefined) delete merged.forwardedFromAuthorName;
   if (human && incoming.forcedForwardInfo === undefined) delete merged.forcedForwardInfo;
   if (options.preserveCurrentId && !("delivery" in current)) delete merged.delivery;
   return merged;
+}
+
+export function filterTranscriptEntriesByTopic(
+  entries: readonly ConversationTranscriptEntry[],
+  topicId: string | null | undefined,
+): ConversationTranscriptEntry[] {
+  if (topicId == null || topicId === "") {
+    return entries.filter((entry) => !("topicId" in entry && entry.topicId != null && entry.topicId.length > 0));
+  }
+  return entries.filter((entry) => entry.kind === "message" && entry.topicId === topicId);
 }
 
 export function transcriptEntriesCorrelate(left: ConversationTranscriptEntry, right: ConversationTranscriptEntry): boolean {

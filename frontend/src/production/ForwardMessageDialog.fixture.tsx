@@ -73,6 +73,7 @@ const forwardMessage = async (input: {
   dropSenderNames: boolean;
   dropCaptions: boolean;
   comment?: { text: string; entities?: readonly unknown[] };
+  destinationTopics?: Readonly<Record<string, string>>;
 }, admission?: CoordinatorCallAdmission): Promise<readonly ForwardSettlement[]> => {
   const result = await coordinator.call("forwardHumanMessage", input, admission) as { destinations: readonly ForwardSettlement[] };
   return result.destinations;
