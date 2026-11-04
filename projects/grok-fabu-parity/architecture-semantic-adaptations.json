@@ -1780,7 +1780,9 @@
         "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.contract.test.ts",
         "desktop/e2e/native-message-projection.spec.ts"
       ],
-      "rationale": "The existing reply-thread controller now rehydrates ComposerDraft.replyToId only after the current account/conversation scope is active. It preserves missing-target identity, resolves the preview when transcript entries arrive, refuses to overwrite a live selection, and lets the existing Host submission path carry the same replyToId."
+      "rationale": "The existing reply-thread controller now rehydrates ComposerDraft.replyToId only after the current account/conversation scope is active. It preserves missing-target identity, resolves the preview when transcript entries arrive, refuses to overwrite a live selection, and lets the existing Host submission path carry the same replyToId.",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port"
     }
   ]
 }
