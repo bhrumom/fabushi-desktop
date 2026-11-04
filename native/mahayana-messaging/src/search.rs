@@ -119,6 +119,8 @@ pub enum DestinationAuthorizationDenial {
     ChannelPostingRestricted,
     SecretPlaintextRejected,
     SecretContentOutsideSecretConversation,
+    TopicNotFound,
+    TopicClosed,
 }
 
 /// Pure destination authorization policy shared by `ProductionSessionWorkers` and
@@ -200,6 +202,32 @@ pub fn recipient_search_authorized(
     requirements: RecipientSearchRequirements,
 ) -> bool {
     authorize_destination(input, requirements).is_ok()
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopicDestinationEligibilityInput {
+    pub topic_requested: bool,
+    pub topic_exists: bool,
+    pub topic_closed: bool,
+    pub can_manage_topics: bool,
+}
+
+pub fn authorize_topic_destination(
+    input: RecipientAuthorizationInput,
+    requirements: RecipientSearchRequirements,
+    topic: TopicDestinationEligibilityInput,
+) -> Result<(), DestinationAuthorizationDenial> {
+    authorize_destination(input, requirements)?;
+    if topic.topic_requested {
+        if !topic.topic_exists {
+            return Err(DestinationAuthorizationDenial::TopicNotFound);
+        }
+        if topic.topic_closed && !topic.can_manage_topics {
+            return Err(DestinationAuthorizationDenial::TopicClosed);
+        }
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1125,5 +1153,123 @@ mod recipient_policy_tests {
             ),
             Err(DestinationAuthorizationDenial::SecretContentOutsideSecretConversation)
         );
+    }
+
+    #[test]
+    fn authorize_topic_destination_enforces_presence_and_closed_topic_rights() {
+        let base_in = RecipientAuthorizationInput::direct_default(true);
+        let base_req = RecipientSearchRequirements::default();
+
+        // 1. Underlying failure takes precedence before topic check
+        let unauth_in = RecipientAuthorizationInput {
+            sender_is_participant: false,
+            ..base_in
+        };
+        let bad_topic = TopicDestinationEligibilityInput {
+            topic_requested: true,
+            topic_exists: false,
+            topic_closed: false,
+            can_manage_topics: false,
+        };
+        assert_eq!(
+            authorize_topic_destination(unauth_in, base_req, bad_topic),
+            Err(DestinationAuthorizationDenial::SenderNotParticipant)
+        );
+
+        // 2. Topic not requested ignores topic flags
+        let not_requested = TopicDestinationEligibilityInput {
+            topic_requested: false,
+            topic_exists: false,
+            topic_closed: true,
+            can_manage_topics: false,
+        };
+        assert_eq!(
+            authorize_topic_destination(base_in, base_req, not_requested),
+            Ok(())
+        );
+
+        // 3. Topic requested but does not exist -> TopicNotFound
+        let missing_topic = TopicDestinationEligibilityInput {
+            topic_requested: true,
+            topic_exists: false,
+            topic_closed: false,
+            can_manage_topics: true,
+        };
+        assert_eq!(
+            authorize_topic_destination(base_in, base_req, missing_topic),
+            Err(DestinationAuthorizationDenial::TopicNotFound)
+        );
+
+        // 4. Topic closed and caller cannot manage topics -> TopicClosed
+        let closed_topic_no_manage = TopicDestinationEligibilityInput {
+            topic_requested: true,
+            topic_exists: true,
+            topic_closed: true,
+            can_manage_topics: false,
+        };
+        assert_eq!(
+            authorize_topic_destination(base_in, base_req, closed_topic_no_manage),
+            Err(DestinationAuthorizationDenial::TopicClosed)
+        );
+
+        // 5. Topic closed and caller can manage topics -> Ok
+        let closed_topic_with_manage = TopicDestinationEligibilityInput {
+            topic_requested: true,
+            topic_exists: true,
+            topic_closed: true,
+            can_manage_topics: true,
+        };
+        assert_eq!(
+            authorize_topic_destination(base_in, base_req, closed_topic_with_manage),
+            Ok(())
+        );
+
+        // 6. Topic open -> Ok regardless of manage_topics flag
+        let open_topic_no_manage = TopicDestinationEligibilityInput {
+            topic_requested: true,
+            topic_exists: true,
+            topic_closed: false,
+            can_manage_topics: false,
+        };
+        assert_eq!(
+            authorize_topic_destination(base_in, base_req, open_topic_no_manage),
+            Ok(())
+        );
+
+        let open_topic_with_manage = TopicDestinationEligibilityInput {
+            topic_requested: true,
+            topic_exists: true,
+            topic_closed: false,
+            can_manage_topics: true,
+        };
+        assert_eq!(
+            authorize_topic_destination(base_in, base_req, open_topic_with_manage),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn topic_destination_denial_and_eligibility_input_serde_roundtrip() {
+        let denials = vec![
+            DestinationAuthorizationDenial::TopicNotFound,
+            DestinationAuthorizationDenial::TopicClosed,
+        ];
+        for denial in denials {
+            let json = serde_json::to_string(&denial).expect("serialize");
+            let roundtrip: DestinationAuthorizationDenial =
+                serde_json::from_str(&json).expect("deserialize");
+            assert_eq!(denial, roundtrip);
+        }
+
+        let input = TopicDestinationEligibilityInput {
+            topic_requested: true,
+            topic_exists: true,
+            topic_closed: true,
+            can_manage_topics: false,
+        };
+        let json = serde_json::to_string(&input).expect("serialize");
+        let roundtrip: TopicDestinationEligibilityInput =
+            serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(input, roundtrip);
     }
 }
