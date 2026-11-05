@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getSharedCoordinatorClient, type ProductionCoordinatorClient } from "../coordinator-client";
+import type { ProductionCoordinatorClient } from "../coordinator-client";
 import { SandIcon, SandButton } from "../../recovered/ui/sand-kit-primitives";
 
 export type PrivacyOptionKey = "AllowAll" | "ContactsOnly" | "DisallowAll";
@@ -51,7 +51,7 @@ export function TdrpCloudSecurityPanel({
   userId = "me",
   onNotice,
 }: TdrpCloudSecurityPanelProps): React.JSX.Element {
-  const activeClient = client ?? getSharedCoordinatorClient();
+  const activeClient = client ?? null;
 
   // Privacy state (upstream settings_privacy_controllers.h 10 keys)
   const [privacy, setPrivacy] = useState<TdrpPrivacyRuleSelection>({
@@ -85,7 +85,7 @@ export function TdrpCloudSecurityPanel({
 
   useEffect(() => {
     if (!activeClient) return;
-    void activeClient.call("settings.getPrivacy", { userId }).then((res) => {
+    void activeClient.call("settings.getPrivacy", { userId }).then((res: unknown) => {
       const payload = res as { privacy?: Record<string, { type?: PrivacyOptionKey } | PrivacyOptionKey> };
       if (payload?.privacy) {
         setPrivacy((prev) => {
@@ -99,7 +99,7 @@ export function TdrpCloudSecurityPanel({
       }
     }).catch(() => {});
 
-    void activeClient.call("auth.getCloudPasswordState", { userId }).then((res) => {
+    void activeClient.call("auth.getCloudPasswordState", { userId }).then((res: unknown) => {
       const payload = res as { state?: { has_password?: boolean; hint?: string; unconfirmed_pattern?: string; pending_reset_date?: number } };
       if (payload?.state) {
         setHasPassword(Boolean(payload.state.has_password));

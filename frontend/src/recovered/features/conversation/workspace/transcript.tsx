@@ -23,9 +23,9 @@ import type { TranscriptReplyPreview } from "./model";
 import type { UrlCardProvider } from "../cards/transcript-card/url-card";
 import { LinkCardView } from "../cards/transcript-card/views";
 import { projectTranscriptMessageCard } from "../message-card-seam";
-import { TdrpInteractiveMediaCard, parseTdrpInteractivePayload } from "../../../../production/tdrp/TdrpInteractiveMediaCards";
 import PermissionRequestLeaf from "../cards/permission-request/view";
 import { ToolResultCard } from "../tool-results/view";
+import { TdrpInteractiveMediaCard, parseTdrpInteractivePayload } from "../../../../production/tdrp/TdrpInteractiveMediaCards";
 import type { FindInChatTranscriptHandle } from "./find-in-chat-controller";
 import type { SendMessageTextImage } from "../cards/transcript-card/send-message-text";
 import { ThreadAffordance } from "../cards/transcript-card/thread-affordance";
@@ -601,7 +601,7 @@ function readRichTextDocument(document: ProseMirrorNode): ReactNode {
 }
 
 function UserMessageContent({ text, richText }: { text: string; richText?: string }) {
-  if (parseTdrpInteractivePayload(text) != null) {
+  if (parseTdrpInteractivePayload(text)) {
     return <div className="sand-message-prose"><TdrpInteractiveMediaCard text={text} /></div>;
   }
   const content = richText == null || richText.length === 0 ? null : readOnlyRichTextContent(richText);
@@ -610,7 +610,7 @@ function UserMessageContent({ text, richText }: { text: string; richText?: strin
 }
 
 export function AssistantMessageContent({ text, images, channel, isSourceTrusted, isStreaming = false }: { text: string; images?: readonly SendMessageTextImage[]; channel?: string | null; isSourceTrusted?: boolean; isStreaming?: boolean }) {
-  if (parseTdrpInteractivePayload(text) != null) {
+  if (parseTdrpInteractivePayload(text)) {
     return <div className="sand-message-prose" data-source-trusted={isSourceTrusted || undefined}><TdrpInteractiveMediaCard text={text} /></div>;
   }
   return <div className="sand-message-prose" data-source-trusted={isSourceTrusted || undefined}>{isStreaming && text.length === 0 ? <StreamingMessage /> : assistantContentBlocks(text).flatMap((block, index) => block.kind === "code"

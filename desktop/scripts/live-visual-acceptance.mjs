@@ -5,6 +5,7 @@ import { existsSync } from "node:fs";
 
 const appPath = "/Applications/Fabushi.app/Contents/MacOS/Fabushi";
 const screenshotPath = "/Users/bhrum/.gemini/antigravity/brain/1e5f0704-2329-4a7e-82df-96c3c8162362/fabushi-3segment-v3-live.png";
+const fusedScreenshotPath = "/Users/bhrum/.gemini/antigravity/brain/1e5f0704-2329-4a7e-82df-96c3c8162362/fabushi-openclaw-telegram-fused-live.png";
 const computerScreenshotPath = "/Users/bhrum/.gemini/antigravity/brain/1e5f0704-2329-4a7e-82df-96c3c8162362/fabushi-computer-workbench-live.png";
 const port = 14333;
 
@@ -101,7 +102,9 @@ async function main() {
   // Take main screenshot
   console.log("Capturing live screenshot to:", screenshotPath);
   await page.screenshot({ path: screenshotPath, fullPage: false });
-  console.log("Screenshot saved successfully!");
+  console.log("Capturing fused live screenshot to:", fusedScreenshotPath);
+  await page.screenshot({ path: fusedScreenshotPath, fullPage: false });
+  console.log("Screenshots saved successfully!");
 
   // Disconnect CDP leaving app open and running
   await browser.close();

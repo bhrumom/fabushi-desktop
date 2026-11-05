@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { getSharedCoordinatorClient, type ProductionCoordinatorClient } from "../coordinator-client";
+import type { ProductionCoordinatorClient } from "../coordinator-client";
 import { SandIcon, SandButton } from "../../recovered/ui/sand-kit-primitives";
 import {
   formatTdrpInvoiceMessage,
@@ -29,7 +29,7 @@ export function TdrpInteractiveMediaCard({
   const payload = parseTdrpInteractivePayload(text);
   if (!payload) return null;
 
-  const activeClient = client ?? getSharedCoordinatorClient();
+  const activeClient = client ?? null;
 
   if (payload.type === "tdrp-poll") {
     return <TdrpPollCard client={activeClient} data={payload} onUpdateText={onUpdateText} userId={userId} />;
@@ -183,7 +183,7 @@ function TdrpPollCard({
 
       {quizKind?.explanation && hasVoted && (
         <div style={{ fontSize: 12, padding: "6px 8px", borderRadius: 6, background: "rgba(234, 179, 8, 0.1)", border: "1px solid rgba(234, 179, 8, 0.25)", marginBottom: 8, opacity: 0.9 }}>
-          💡 解析：{quizKind.explanation}
+          解析：{quizKind.explanation}
         </div>
       )}
 

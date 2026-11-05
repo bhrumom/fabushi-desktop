@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Phone, Video, Mic, MicOff, VideoOff, PhoneOff, Shield, Download } from "lucide-react";
+import { Phone, Video, Mic, MicOff, VideoOff, PhoneOff, Shield, Download, Info } from "lucide-react";
 import type { ProductionCoordinatorClient } from "../coordinator-client";
 import { TdrpAdminModal } from "./TdrpAdminModal";
 import { TdrpExportModal } from "./TdrpExportModal";
@@ -14,6 +14,7 @@ export interface TdrpCallAndAdminDrawerProps {
   readonly client?: ProductionCoordinatorClient | null;
   readonly inlineActionsOnly?: boolean;
   readonly bannerOnly?: boolean;
+  readonly onToggleDetails?: () => void;
 }
 
 export const TdrpCallAndAdminDrawer: React.FC<TdrpCallAndAdminDrawerProps> = ({
@@ -21,6 +22,7 @@ export const TdrpCallAndAdminDrawer: React.FC<TdrpCallAndAdminDrawerProps> = ({
   client,
   inlineActionsOnly = false,
   bannerOnly = false,
+  onToggleDetails,
 }) => {
   // Call state
   const [callState, setCallState] = useState<"idle" | "calling" | "active" | "groupCall">("idle");
@@ -374,6 +376,31 @@ export const TdrpCallAndAdminDrawer: React.FC<TdrpCallAndAdminDrawerProps> = ({
         <Download size={13} />
         <span>导出</span>
       </button>
+
+      {onToggleDetails && (
+        <button
+          type="button"
+          data-testid="tdrp-toggle-details-button"
+          title="会话详情与扩展设置"
+          aria-label="会话详情与扩展设置"
+          onClick={onToggleDetails}
+          style={{
+            padding: "4px 7px",
+            borderRadius: "6px",
+            border: "1px solid var(--sand-border-weak, rgba(128,128,128,0.25))",
+            background: "transparent",
+            color: "inherit",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+            fontSize: "11px",
+          }}
+        >
+          <Info size={13} />
+          <span>详情</span>
+        </button>
+      )}
 
       <TdrpAdminModal
         isOpen={showAdminModal}

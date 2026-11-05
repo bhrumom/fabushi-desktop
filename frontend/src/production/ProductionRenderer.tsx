@@ -14,7 +14,6 @@ import { ConversationSidebar } from "../recovered/features/conversation/workspac
 import { AgentAvatar } from "../recovered/features/conversation/workspace/agent-avatar";
 import { createSidebarProfileAction } from "../recovered/features/conversation/workspace/sidebar-profile-action";
 import { createSidebarSearchTrigger } from "../recovered/features/conversation/workspace/sidebar-search-trigger";
-import { ConversationAgentHeader } from "../recovered/features/conversation/workspace/chat-header";
 import { createUiLayoutStateStore, SIDEBAR_LAYOUT_BOUNDS, type SidebarLayoutState } from "../recovered/features/conversation/workspace/sidebar-layout-state";
 import { createSidebarCollapsePersistence, createSidebarCollapseStateStore } from "../recovered/features/conversation/workspace/sidebar-collapse-state";
 import { createEmojiCatalogStore } from "../recovered/features/conversation/cards/transcript-card/emoji-catalog";
@@ -51,15 +50,16 @@ import { ConversationPinnedBanner } from "./tdrp/ConversationPinnedBanner";
 import { ForumTopicSwitcher } from "./tdrp/ForumTopicSwitcher";
 import { CommunityComposerGuardBanner } from "./tdrp/CommunityComposerGuardBanner";
 import { TdrpForwardMessageModal } from "./tdrp/TdrpForwardMessageModal";
-import { TdrpComposerToolbar, TdrpPollAndTodoModal } from "./tdrp/TdrpPollAndTodoModal";
+import { TdrpComposerToolbar } from "./tdrp/TdrpComposerToolbar";
+import { TdrpConversationOverlay } from "./tdrp/TdrpConversationOverlay";
 import { FabushiPrimaryNavRail, type FabushiPrimaryNavDomain } from "./tdrp/FabushiPrimaryNavRail";
 import { FabushiCollectionFilterBar } from "./tdrp/FabushiCollectionFilterBar";
 import { FabushiConversationCreationModal, type CreateConversationData } from "./tdrp/FabushiConversationCreationModal";
 import { FabushiContactsSurface, type ContactItem } from "./tdrp/FabushiContactsSurface";
 import { filterAgentsByFolder } from "./tdrp/TdrpFolderFilterBar";
-import { TdrpStoriesAndStarsBar } from "./tdrp/TdrpStoriesAndStarsBar";
 import { TdrpCallAndAdminDrawer } from "./tdrp/TdrpCallAndAdminDrawer";
 import { CreateAgentDialog } from "./tdrp/CreateAgentDialog";
+import { OpenClawTopHeader, OpenClawWelcomeHero, OpenClawCleanComposer, OpenClawAskCopilotPanel } from "./openclaw";
 import {
   type TranscriptLoadErrorState,
   type TranscriptOperationScope,
@@ -157,7 +157,6 @@ import { CoordinatorCallError, createCoordinatorClient, setSharedCoordinatorClie
 import { HumanCallControls } from "./human-call-media";
 import { UI_TEXT } from "./evidence";
 import { movePinnedAgent, partitionSidebarAgents } from "./sidebar-model";
-import { FabushiAgentSessionToolbar } from "./FabushiAgentSessionToolbar";
 import { FabushiAgentRuntimeDetailSections, type RuntimeDetailSectionId } from "./FabushiAgentRuntimeDetailSections";
 import { SignOutDialog } from "../recovered/features/account/session/sign-out";
 import { FeedbackDialog, type FeedbackCode } from "../recovered/features/feedback/overlay/view";
@@ -904,6 +903,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [notice, setNotice] = useState<string | null>(null);
   const [composerClearGeneration, setComposerClearGeneration] = useState(0);
   const [tdrpModalMode, setTdrpModalMode] = useState<"poll" | "todo" | "invoice" | "bot" | null>(null);
+  const [copilotPanelOpen, setCopilotPanelOpen] = useState(false);
+  const [tdrpDetailsOpen, setTdrpDetailsOpen] = useState(false);
   const [overlay, setOverlay] = useState<AuxiliaryOverlay>(null);
   const [workspaceRoute, setWorkspaceRoute] = useState<WorkspaceRoute>(null);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -4173,7 +4174,6 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                   unreadCount={unreadFolderCount} directCount={humanFolderCount} groupCount={groupFolderCount} agentCount={agentFolderCount} client={client}
                   style={bridge != null && !windowFullscreen ? { paddingTop: "38px" } : undefined}
                 />
-                <TdrpStoriesAndStarsBar client={client} />
                 <ConversationSidebar activeAgentId={activeAgentId} agents={folderFilteredAgents} isHostReachable={transport === "connected"} sections={projectedSidebarSections} sidebarLayout={renderedSidebarLayout} onResize={resizeSidebar} onResizeEnd={finishSidebarResize} onToggleSectionCollapsed={(sectionId, collapsed) => sidebarCollapseStore.setSectionCollapsed(sectionId, collapsed)} listStatus={rosterListStatus} pinnedAgentIds={pinnedAgentIds} selectedAgentIds={selectedSidebarAgentIds} onToggleAgentSelection={toggleSidebarAgentSelection} onRangeSelectAgent={rangeSelectSidebarAgent} onClearAgentSelection={clearSidebarAgentSelection} onMoveSelectedAgentsToSection={moveSelectedSidebarAgentsToSection} onMoveSelectedAgentsToNewSection={moveSelectedSidebarAgentsToNewSection} onCopyAgentId={copyAgentId} onDuplicateAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void duplicateAgent(agentId); }} onHideAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void hideAgent(agentId); }} onNewChat={() => setIsCreateConvModalOpen(true)} onOpenAgent={(agentId) => void openAgent(agentId)} onOpenNetwork={agentNetworkTrigger} onOpenProfile={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) sidebarProfileAction.onSelect(agentId); }} onShowAsyncTasks={account?.kind === "logged-in" && account.isAnysphereUser === true ? (agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openAsyncTasks(agentId); } : undefined} onShowFullConversation={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openConversationOutline(agentId); }} onOpenSearch={sidebarSearchTrigger} onRenameAgent={(agentId, name) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void renameAgent(agentId, name); }} onReorderPinnedAgents={reorderPinnedAgents} onRequestDeleteAgent={(agent) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agent.id)) setDeleteAgent({ id: agent.id, name: agent.name, isGroup: agent.isGroup }); }} onRenameSection={renameSection} onRequestDeleteSection={requestDeleteSection} onMoveSection={moveSection} onMoveAgentToSection={moveAgentsToSection} onMoveAgentToNewSection={moveAgentsToNewSection} onSetAgentUnread={(agentId, isUnread) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void setAgentUnread(agentId, isUnread); }} onTogglePin={(agentId, isPinned) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) toggleAgentPin(agentId, isPinned); }} />
               </div>
           {hiddenAgents.length > 0 && visibleAgents.length > 0 ? <SandButton aria-haspopup="dialog" onClick={() => setOverlay("hidden-chats")} size="sm" variant="secondary"><span>{UI_TEXT.hiddenBots}</span><SandBadge aria-label={`${hiddenAgents.length} hidden bots`}>{hiddenAgents.length}</SandBadge></SandButton> : null}
@@ -4205,7 +4205,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           onClose={() => setWorkspaceRoute(null)}
           onOpenAgent={(agentId) => void openAgent(agentId)}
           params={{}}
-        /></Suspense></main> : showRootEmptyWorkspace ? <RootShellEmptyWorkspace isVisible /> : activeAgent == null ? null : <div style={{ display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, width: "100%" }}>
+        /></Suspense></main> : showRootEmptyWorkspace ? <RootShellEmptyWorkspace isVisible /> : activeAgent == null ? null : <div style={{ display: "flex", flexDirection: "row", flex: 1, minHeight: 0, minWidth: 0, width: "100%", overflow: "hidden" }}>
+          <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, minWidth: 0 }}>
           <main className="sand-chat-stage">
           {activeIsHuman ? <div aria-labelledby="sand-conversation-heading" className="sand-chat-header" role="group">
             <div className="sand-chat-header__identity">
@@ -4220,34 +4221,19 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               </select>
               <SandButton disabled={busy || humanHandoffAgentId.length === 0} onClick={() => void handoffHumanConversationToAgent()} size="sm" variant="secondary">Ask Agent</SandButton>
             </div>
-          </div> : <ConversationAgentHeader
+          </div> : <OpenClawTopHeader
+            title={activeAgent.name}
             agent={activeAgent}
-            isComputerActive={computer.isComputerUseActive}
-            isInfoOpen={activeAgent.isGroup ? groupInfoPaneOpen : computerInfoOpen}
-            onToggleInfo={() => { setGroupInfoPaneOpen(false); setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setManageSharedRoomId(null); setComputerInfoOpen((open) => !open); }}
-            sharedRoomTrigger={sharedRoomTrigger}
-            onToggleSettings={activeAgent.isGroup
-              ? groupInfoPaneRoute == null ? undefined : () => { setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setGroupInfoPaneOpen((open) => !open); }
-              : bridge == null ? undefined : () => { setGroupInfoPaneOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setAgentSettingsOpen(true); }}
-            trailing={<>
-              <TdrpCallAndAdminDrawer activeAgent={activeAgent} client={client} inlineActionsOnly />
-              {activeAgent.isRunning && client != null ? <SandButton aria-label="Stop response" onClick={() => {
-                void client.call("interruptAgent", { id: activeAgent.id }).then((result) => {
-                  const interrupted = typeof result === "object"
-                    && result !== null
-                    && "interrupted" in result
-                    && result.interrupted === true;
-                  if (!interrupted) return;
-                  setAgents((current) => current.map((agent) => agent.id === activeAgent.id
-                    ? { ...agent, isRunning: false }
-                    : agent));
-                }).catch((error: unknown) => {
-                  setNotice(error instanceof Error ? error.message : String(error));
-                });
-              }} size="sm" variant="secondary">Stop</SandButton> : null}
-              {activeAgent.isGroup || bridge == null || agentChannelsController == null ? null : <SandButton aria-controls="sand-conversation-details" aria-expanded={channelsInfoPaneOpen} aria-label="Channels" data-info-row="channels" onClick={() => { setGroupInfoPaneOpen(false); setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setRuntimeDetailPaneOpen(false); setChannelsInfoPaneOpen((open) => !open); }} size="sm" variant="secondary"><SandIcon name="chat-bubbles" size="sm" />Channels</SandButton>}
-              {activeAgent.isGroup || bridge == null ? null : <SandButton aria-controls="sand-agent-runtime-details" aria-expanded={runtimeDetailPaneOpen} aria-label="Runtime details" data-testid="fabushi-runtime-details-trigger" onClick={() => { setGroupInfoPaneOpen(false); setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setChannelsInfoPaneOpen(false); setRuntimeDetailPaneOpen((open) => !open); }} size="sm" variant="secondary"><SandIcon name="sliders" size="sm" />运行时</SandButton>}
-            </>}
+            isDetailsOpen={tdrpDetailsOpen || runtimeDetailPaneOpen}
+            isLayoutSplit={copilotPanelOpen}
+            onToggleDetails={() => setTdrpDetailsOpen((open) => !open)}
+            onToggleLayout={() => setCopilotPanelOpen((open) => !open)}
+            onShare={() => {
+              const generation = renderedAccountScopeGeneration;
+              const last = displayedEntries.slice().reverse().find((e): e is TranscriptMessage => (e as { kind?: string }).kind !== "card");
+              if (last && isForwardAccountScopeCurrent(generation)) setForwardTarget({ sourceConversationId: activeAgent.id, message: last, accountScopeGeneration: generation });
+            }}
+            onOpenSettings={bridge == null ? undefined : () => { setGroupInfoPaneOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setAgentSettingsOpen(true); }}
           />}
           <TdrpCallAndAdminDrawer activeAgent={activeAgent} client={client} bannerOnly />
           {findInChatOpen ? <FindInChatBar controller={findInChatController} focusNonce={findInChatFocusNonce} onClose={closeFindInChat} transcriptContainer={findTranscriptContainer} transcriptHandleRef={transcriptHandleRef} /> : null}
@@ -4260,25 +4246,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             pinnedBanner={pinnedBanner}
             onClickPin={(pinId) => transcriptHandleRef.current?.scrollToEntryWithoutHighlight(pinId)}
           />
-          {!activeIsHuman ? (
-            <FabushiAgentSessionToolbar
-              agentId={activeAgent.id}
-              agentName={activeAgent.name}
-              client={client}
-              onOpenRuntimeDetails={(section) => {
-                setGroupInfoPaneOpen(false);
-                setAgentSettingsOpen(false);
-                setRoutinesInfoPaneOpen(false);
-                setComputerInfoOpen(false);
-                setChannelsInfoPaneOpen(false);
-                setActiveRuntimeSection(section);
-                setRuntimeDetailPaneOpen(true);
-              }}
-            />
-          ) : null}
           {showTranscriptLoadError
             ? <TranscriptLoadErrorSurface onRetry={() => void openAgent(activeAgent.id)} />
-            : <ConversationTranscript
+            : displayedEntries.length === 0 && !activeIsHuman
+              ? <OpenClawWelcomeHero assistantName={activeAgent.name} agent={activeAgent} onSelectPrompt={(text) => { composerDraftStore.setDraft(activeAgent.id, { prompt: text, attachments: [] }); setTimeout(() => { void submit(); }, 50); }} />
+              : <ConversationTranscript
                 key={JSON.stringify([renderedAccountScopeGeneration, transcriptAccountSlot, activeAgentId, ...(activeTopicId != null ? [activeTopicId] : [])])}
                 entries={displayedEntries}
                 hasOlder={transcriptPaginationSnapshot.cursor.kind === "more"}
@@ -4320,30 +4292,42 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
             <CommunityComposerGuardBanner composerGuard={composerGuard} />
-            <TdrpComposerToolbar
-              disabled={busy || isActiveSendPending || client == null || !composerGuard.canSend}
-              onOpenModal={(m) => setTdrpModalMode(m)}
-            />
-            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || isActiveSendPending || client == null || !composerGuard.canSend} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
+            {activeIsHuman ? (
+              <>
+                <TdrpComposerToolbar
+                  disabled={busy || isActiveSendPending || client == null || !composerGuard.canSend}
+                  onOpenModal={(m: "poll" | "todo" | "invoice" | "bot") => setTdrpModalMode(m)}
+                />
+                <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || isActiveSendPending || client == null || !composerGuard.canSend} draft={draft} editorProviders={undefined} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
+              </>
+            ) : (
+              <OpenClawCleanComposer
+                draft={draft}
+                onChange={(val) => composerDraftStore.setDraft(activeAgent.id, typeof val === "string" ? { prompt: val, attachments: [] } : val)}
+                onSubmit={submit} disabled={busy || isActiveSendPending || client == null || !composerGuard.canSend}
+                placeholder={`给 ${activeAgent.name} 发消息`} onStageFiles={stageFiles}
+                onCreatePoll={() => setTdrpModalMode("poll")} onCreateTodoList={() => setTdrpModalMode("todo")} onCreateInvoice={() => setTdrpModalMode("invoice")}
+                onTranscribeAudio={transcribeAudio}
+              />
+            )}
           </div>
-        </div>}
+        </div>
+        {copilotPanelOpen && !activeIsHuman ? <OpenClawAskCopilotPanel onClose={() => setCopilotPanelOpen(false)} /> : null}
+      </div>}
           </>
         )}
       </div>
 
-      <TdrpPollAndTodoModal
-        isOpen={tdrpModalMode != null}
-        initialMode={tdrpModalMode ?? "poll"}
-        conversationId={activeAgent?.id ?? ""}
-        client={client}
-        onClose={() => setTdrpModalMode(null)}
+      <TdrpConversationOverlay
+        activeAgent={activeAgent ?? null} client={client} modalMode={tdrpModalMode}
+        onCloseModal={() => setTdrpModalMode(null)}
         onInsertMessage={(formattedPayload) => {
+          setTdrpModalMode(null);
           if (activeAgent == null) return;
           composerDraftStore.setDraft(activeAgent.id, { prompt: formattedPayload, attachments: [] });
-          setTimeout(() => {
-            submit();
-          }, 50);
+          setTimeout(() => { void submit(); }, 50);
         }}
+        isDetailsOpen={tdrpDetailsOpen} onCloseDetails={() => setTdrpDetailsOpen(false)} onOpenSearch={openSidebarSearch}
       />
 
       <TdrpForwardMessageModal

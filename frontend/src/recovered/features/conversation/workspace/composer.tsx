@@ -5,6 +5,7 @@ import { ComposerReplyPill, replyComposerPlaceholder, type ComposerReplyTarget }
 import { PromptRichTextEditor, type PromptEditorControls, type PromptEditorProviders } from "./rich-text-editor";
 import { SandIcon, SandIconButton } from "../../../ui/sand-kit-primitives";
 import { SandSpinner } from "../../../ui/sand-status-primitives";
+import { TdrpAttachMenuPopover } from "../../../../production/tdrp/TdrpAttachMenuPopover";
 
 // Immutable Mac voice carriers: index-UbX-y3il.js#byteOffset=4538599 (recording
 // chip/waveform), 4539081 (Stop dictation), and 4543238 (mic action).
@@ -44,6 +45,7 @@ export interface ConversationComposerProps {
   editorProviders?: PromptEditorProviders;
   scopeKey?: string;
   acceptedSendGeneration?: number;
+  onOpenModal?: (mode: "poll" | "todo" | "invoice" | "bot") => void;
 }
 
 export function extractClipboardFiles(items: DataTransferItemList | null | undefined): File[] {
@@ -68,11 +70,12 @@ export function selectComposerFiles(files: readonly File[], existingCount: numbe
   return files.slice(0, remaining);
 }
 
-export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabled = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onRemoveAttachment, onStageFiles, onSubmit, replyTarget, editorProviders, scopeKey }: ConversationComposerProps) {
+export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabled = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onRemoveAttachment, onStageFiles, onSubmit, replyTarget, editorProviders, scopeKey, onOpenModal }: ConversationComposerProps) {
   const fileInput = useRef<HTMLInputElement>(null);
   const editorControls = useRef<PromptEditorControls | null>(null);
   const dragDepth = useRef(0);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
   const draftRef = useRef(draft);
   const hasPayload = !isComposerDraftEmpty(draft);
   draftRef.current = draft;
@@ -197,7 +200,34 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
         />
         {voice.isRecording || voice.isActivating ? <span aria-live="polite" className="sand-prompt-voice-status" role="status">Listening…</span> : null}
         <div className="sand-prompt-actions-row">
-          <SandIconButton aria-label="Attach file" className={PROMPT_ATTACH_CLASS} disabled={disabled || atLimit || voiceBusy} icon="plus" onClick={() => fileInput.current?.click()} shape="circle" size="lg" type="button" variant="default" />
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <SandIconButton
+              aria-label="Attach file"
+              className={PROMPT_ATTACH_CLASS}
+              disabled={disabled || atLimit || voiceBusy}
+              icon="plus"
+              onClick={() => {
+                if (onOpenModal != null) {
+                  setIsAttachMenuOpen((open) => !open);
+                } else {
+                  fileInput.current?.click();
+                }
+              }}
+              shape="circle"
+              size="lg"
+              type="button"
+              variant="default"
+            />
+            <TdrpAttachMenuPopover
+              isOpen={isAttachMenuOpen}
+              onClose={() => setIsAttachMenuOpen(false)}
+              onSelectPhotoOrFile={() => fileInput.current?.click()}
+              onOpenModal={(mode) => {
+                setIsAttachMenuOpen(false);
+                onOpenModal?.(mode);
+              }}
+            />
+          </div>
           <span className="sand-prompt-actions-trailing sand-prompt-cta-cluster sand-78zum5 sand-6s0dn4 sand-2lah0s">
             {voice.isRecording ? <button aria-label="Stop dictation" className={RECORDING_CHIP_CLASS} onClick={() => voice.handleStopClick()} onKeyDown={(event) => {
               if (event.key === "Escape") {

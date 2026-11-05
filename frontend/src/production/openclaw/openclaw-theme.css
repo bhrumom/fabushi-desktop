@@ -1,0 +1,613 @@
+/* OpenClaw Desktop UI Theme and Layout Styles */
+
+:root {
+  --oc-bg-canvas: var(--cursor-bg-editor, #ffffff);
+  --oc-bg-surface: var(--cursor-bg-chrome, #f7f7f8);
+  --oc-bg-sidebar: var(--cursor-bg-chrome, #f0f0f2);
+  --oc-border: var(--sand-border-weak, rgba(0, 0, 0, 0.08));
+  --oc-border-strong: var(--sand-border-focus, rgba(0, 0, 0, 0.16));
+  --oc-text-primary: var(--cursor-text-primary, #1d1d1f);
+  --oc-text-secondary: var(--cursor-text-secondary, #6e6e73);
+  --oc-text-muted: var(--cursor-text-secondary, #8e887e);
+  --oc-accent-coral: var(--sand-fill-accent, #d9534f);
+  --oc-accent-blue: #0071e3;
+  --oc-gold: #f5b041;
+  --oc-card-bg: var(--cursor-bg-elevated, #ffffff);
+  --oc-card-border: var(--sand-border-weak, rgba(0, 0, 0, 0.08));
+  --oc-card-hover: var(--cursor-bg-secondary, rgba(0, 0, 0, 0.03));
+  --oc-composer-bg: var(--cursor-bg-elevated, #ffffff);
+  --oc-composer-border: var(--sand-border-weak, rgba(0, 0, 0, 0.12));
+  --oc-shadow-sm: var(--cursor-box-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04));
+  --oc-shadow-md: var(--cursor-box-shadow-md, 0 4px 14px rgba(0, 0, 0, 0.06));
+}
+
+[data-theme="dark"] {
+  --oc-bg-canvas: var(--cursor-bg-editor, #1c1c1e);
+  --oc-bg-surface: var(--cursor-bg-chrome, #252528);
+  --oc-bg-sidebar: var(--cursor-bg-chrome, #18181a);
+  --oc-border: var(--sand-border-weak, rgba(255, 255, 255, 0.09));
+  --oc-border-strong: var(--sand-border-focus, rgba(255, 255, 255, 0.16));
+  --oc-text-primary: var(--cursor-text-primary, #f5f5f7);
+  --oc-text-secondary: var(--cursor-text-secondary, #a1a1a6);
+  --oc-text-muted: var(--cursor-text-secondary, #86868b);
+  --oc-card-bg: var(--cursor-bg-elevated, #222225);
+  --oc-card-border: var(--sand-border-weak, rgba(255, 255, 255, 0.08));
+  --oc-card-hover: var(--cursor-bg-secondary, rgba(255, 255, 255, 0.04));
+  --oc-composer-bg: var(--cursor-bg-elevated, #222225);
+  --oc-composer-border: var(--sand-border-weak, rgba(255, 255, 255, 0.14));
+  --oc-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --oc-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* 1. Left Navigation Rail */
+.oc-nav-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 58px;
+  height: 100%;
+  background: var(--oc-bg-sidebar);
+  border-right: 1px solid var(--oc-border);
+  padding: 12px 0;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.oc-nav-rail__top,
+.oc-nav-rail__bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.oc-nav-rail__top {
+  flex: 1;
+}
+
+.oc-nav-rail__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--oc-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.oc-nav-rail__btn:hover {
+  background: var(--oc-card-hover);
+  color: var(--oc-text-primary);
+}
+
+.oc-nav-rail__btn--active {
+  background: var(--oc-card-bg);
+  color: var(--oc-text-primary);
+  box-shadow: var(--oc-shadow-sm);
+}
+
+.oc-nav-rail__btn--active::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  width: 3px;
+  height: 18px;
+  background: var(--oc-accent-coral);
+  border-radius: 0 3px 3px 0;
+}
+
+.oc-nav-rail__avatar-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.oc-nav-rail__status-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background: #27ae60;
+  border: 1.5px solid var(--oc-bg-sidebar);
+  border-radius: 50%;
+}
+
+/* 2. Top Header & Breadcrumbs */
+.oc-top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--oc-border);
+  background: var(--oc-bg-canvas);
+  user-select: none;
+}
+
+.oc-top-header__leading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.oc-top-header__nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--oc-text-secondary);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.oc-top-header__nav-btn:hover:not(:disabled) {
+  background: var(--oc-card-hover);
+  color: var(--oc-text-primary);
+}
+
+.oc-top-header__nav-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.oc-top-header__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--oc-text-secondary);
+  margin-left: 4px;
+}
+
+.oc-top-header__breadcrumb-title {
+  color: var(--oc-text-primary);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.oc-top-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.oc-top-header__action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--oc-border);
+  background: transparent;
+  color: var(--oc-text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.oc-top-header__action-btn:hover {
+  background: var(--oc-card-hover);
+  border-color: var(--oc-border-strong);
+}
+
+.oc-top-header__action-btn--active {
+  background: var(--oc-card-hover);
+  border-color: var(--oc-accent-coral);
+  color: var(--oc-accent-coral);
+}
+
+/* 3. Welcome Hero State */
+.oc-welcome-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+  max-width: 620px;
+  width: 100%;
+  padding: 40px 20px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.oc-welcome-hero__avatar {
+  margin-bottom: 16px;
+  filter: drop-shadow(0 4px 12px rgba(212, 160, 23, 0.25));
+}
+
+.oc-welcome-hero__title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--oc-text-primary);
+  letter-spacing: -0.015em;
+}
+
+.oc-welcome-hero__subtitle {
+  margin: 6px 0 28px 0;
+  font-size: 13.5px;
+  color: var(--oc-text-muted);
+}
+
+.oc-welcome-hero__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.oc-prompt-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--oc-card-border);
+  background: var(--oc-card-bg);
+  box-shadow: var(--oc-shadow-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.oc-prompt-card:hover {
+  border-color: var(--oc-border-strong);
+  background: var(--oc-card-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--oc-shadow-md);
+}
+
+.oc-prompt-card__title {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--oc-text-primary);
+  margin-bottom: 4px;
+}
+
+.oc-prompt-card__desc {
+  font-size: 12px;
+  color: var(--oc-text-muted);
+  line-height: 1.4;
+}
+
+/* 4. OpenClaw Clean Composer */
+.oc-clean-composer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto 16px auto;
+  border-radius: 20px;
+  border: 1px solid var(--oc-composer-border);
+  background: var(--oc-composer-bg);
+  box-shadow: var(--oc-shadow-md);
+  padding: 10px 14px 10px 14px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.oc-clean-composer:focus-within {
+  border-color: rgba(0, 113, 227, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 113, 227, 0.08);
+}
+
+.oc-clean-composer__textarea {
+  width: 100%;
+  min-height: 38px;
+  max-height: 180px;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--oc-text-primary);
+  box-sizing: border-box;
+  padding: 4px 2px;
+}
+
+.oc-clean-composer__textarea::placeholder {
+  color: var(--oc-text-muted);
+}
+
+.oc-clean-composer__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding-top: 4px;
+}
+
+.oc-clean-composer__left-tools,
+.oc-clean-composer__right-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.oc-clean-composer__tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--oc-text-secondary);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.oc-clean-composer__tool-btn:hover {
+  background: var(--oc-card-hover);
+  color: var(--oc-text-primary);
+}
+
+.oc-pill-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  height: 28px;
+  border-radius: 14px;
+  border: 1px solid var(--oc-border);
+  background: var(--oc-bg-surface);
+  color: var(--oc-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.12s ease;
+}
+
+.oc-pill-select:hover {
+  border-color: var(--oc-border-strong);
+  color: var(--oc-text-primary);
+}
+
+.oc-clean-composer__send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--oc-text-primary);
+  color: var(--oc-bg-canvas);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.oc-clean-composer__send-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.oc-clean-composer__send-btn:not(:disabled):hover {
+  transform: scale(1.05);
+  background: #000000;
+}
+
+/* 5. Right Split Panel: Ask OpenClaw / Copilot Drawer */
+.oc-copilot-drawer {
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  min-width: 340px;
+  height: 100%;
+  border-left: 1px solid var(--oc-border);
+  background: var(--oc-bg-canvas);
+  box-sizing: border-box;
+}
+
+.oc-copilot-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--oc-border);
+  background: var(--oc-bg-surface);
+}
+
+.oc-copilot-drawer__tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.oc-copilot-drawer__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--oc-text-secondary);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.oc-copilot-drawer__tab--active {
+  background: var(--oc-card-bg);
+  color: var(--oc-text-primary);
+  box-shadow: var(--oc-shadow-sm);
+}
+
+.oc-copilot-drawer__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--oc-text-muted);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.oc-copilot-drawer__close:hover {
+  background: var(--oc-card-hover);
+  color: var(--oc-text-primary);
+}
+
+.oc-copilot-drawer__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  gap: 14px;
+}
+
+.oc-copilot-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.oc-copilot-msg--user {
+  align-self: flex-end;
+  background: var(--oc-bg-surface);
+  border: 1px solid var(--oc-border);
+  padding: 8px 12px;
+  border-radius: 14px 14px 2px 14px;
+  max-width: 85%;
+  color: var(--oc-text-primary);
+}
+
+.oc-copilot-msg--assistant {
+  align-self: flex-start;
+  color: var(--oc-text-secondary);
+  max-width: 95%;
+}
+
+.oc-copilot-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--oc-text-muted);
+  font-size: 11px;
+  margin: 6px 0;
+}
+
+.oc-copilot-divider::before,
+.oc-copilot-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--oc-border);
+}
+
+.oc-copilot-status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--oc-card-border);
+  background: var(--oc-bg-surface);
+}
+
+.oc-copilot-status-card__headline {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--oc-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.oc-copilot-status-card__sub {
+  font-size: 11.5px;
+  color: var(--oc-text-muted);
+}
+
+.oc-copilot-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.oc-action-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--oc-border);
+  background: var(--oc-card-bg);
+  color: var(--oc-accent-coral);
+  font-size: 11.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.oc-action-pill:hover {
+  background: rgba(217, 83, 79, 0.08);
+  border-color: var(--oc-accent-coral);
+}
+
+.oc-copilot-drawer__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--oc-border);
+  background: var(--oc-bg-surface);
+}
+
+.oc-copilot-drawer__input {
+  flex: 1;
+  height: 32px;
+  border-radius: 16px;
+  border: 1px solid var(--oc-border);
+  background: var(--oc-bg-canvas);
+  padding: 0 12px;
+  font-size: 12.5px;
+  color: var(--oc-text-primary);
+  outline: none;
+}
+
+.oc-copilot-drawer__input:focus {
+  border-color: var(--oc-accent-coral);
+}
+
+.oc-copilot-drawer__send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--oc-accent-coral);
+  color: #ffffff;
+  cursor: pointer;
+}

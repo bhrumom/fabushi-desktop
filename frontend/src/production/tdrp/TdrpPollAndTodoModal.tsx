@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { getSharedCoordinatorClient, type ProductionCoordinatorClient } from "../coordinator-client";
+import type { ProductionCoordinatorClient } from "../coordinator-client";
 import { SandIconButton, SandButton } from "../../recovered/ui/sand-kit-primitives";
 import {
   formatTdrpInvoiceMessage,
@@ -8,8 +8,6 @@ import {
   type TdrpLabeledPrice,
   type TdrpPollKind,
 } from "./tdrp-interactive-models";
-
-export { TdrpComposerToolbar, type TdrpComposerToolbarProps } from "./TdrpComposerToolbar";
 
 export interface TdrpPollAndTodoModalProps {
   readonly isOpen: boolean;
@@ -29,7 +27,7 @@ export function TdrpPollAndTodoModal({
   onInsertMessage,
 }: TdrpPollAndTodoModalProps): React.JSX.Element | null {
   const [mode, setMode] = useState<"poll" | "todo" | "invoice" | "bot">(initialMode);
-  const activeClient = client ?? getSharedCoordinatorClient();
+  const activeClient = client ?? null;
 
   // Poll state (upstream data_poll.h & create_poll_box.cpp)
   const [pollQuestion, setPollQuestion] = useState("");
