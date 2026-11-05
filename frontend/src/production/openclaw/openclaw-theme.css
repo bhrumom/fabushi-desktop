@@ -1,42 +1,128 @@
 /* OpenClaw Desktop UI Theme and Layout Styles */
 
 :root {
-  --oc-bg-canvas: var(--cursor-bg-editor, #ffffff);
-  --oc-bg-surface: var(--cursor-bg-chrome, #f7f7f8);
-  --oc-bg-sidebar: var(--cursor-bg-chrome, #f0f0f2);
-  --oc-border: var(--sand-border-weak, rgba(0, 0, 0, 0.08));
-  --oc-border-strong: var(--sand-border-focus, rgba(0, 0, 0, 0.16));
-  --oc-text-primary: var(--cursor-text-primary, #1d1d1f);
-  --oc-text-secondary: var(--cursor-text-secondary, #6e6e73);
-  --oc-text-muted: var(--cursor-text-secondary, #8e887e);
-  --oc-accent-coral: var(--sand-fill-accent, #d9534f);
-  --oc-accent-blue: #0071e3;
-  --oc-gold: #f5b041;
-  --oc-card-bg: var(--cursor-bg-elevated, #ffffff);
-  --oc-card-border: var(--sand-border-weak, rgba(0, 0, 0, 0.08));
-  --oc-card-hover: var(--cursor-bg-secondary, rgba(0, 0, 0, 0.03));
-  --oc-composer-bg: var(--cursor-bg-elevated, #ffffff);
-  --oc-composer-border: var(--sand-border-weak, rgba(0, 0, 0, 0.12));
-  --oc-shadow-sm: var(--cursor-box-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04));
-  --oc-shadow-md: var(--cursor-box-shadow-md, 0 4px 14px rgba(0, 0, 0, 0.06));
+  /* Canonical Fabushi Design Tokens (FDS) */
+  --fabushi-bg-canvas: var(--cursor-bg-editor, #ffffff);
+  --fabushi-bg-surface: var(--cursor-bg-chrome, #f7f7f8);
+  --fabushi-bg-sidebar: var(--cursor-bg-chrome, #f0f0f2);
+  --fabushi-border: var(--sand-border-weak, rgba(0, 0, 0, 0.08));
+  --fabushi-border-strong: var(--sand-border-focus, rgba(0, 0, 0, 0.16));
+  --fabushi-text-primary: var(--cursor-text-primary, #1d1d1f);
+  --fabushi-text-secondary: var(--cursor-text-secondary, #555558);
+  --fabushi-text-muted: #8e887e;
+  --fabushi-accent-primary: #1084fe;
+  --fabushi-accent-coral: var(--sand-fill-accent, #d9534f);
+  --fabushi-accent-blue: #0071e3;
+  --fabushi-accent-gold: #f5b041;
+  --fabushi-card-bg: var(--cursor-bg-elevated, #ffffff);
+  --fabushi-card-border: var(--sand-border-weak, rgba(0, 0, 0, 0.08));
+  --fabushi-card-hover: var(--cursor-bg-secondary, rgba(0, 0, 0, 0.03));
+  --fabushi-composer-bg: var(--cursor-bg-elevated, #ffffff);
+  --fabushi-composer-border: var(--sand-border-weak, rgba(0, 0, 0, 0.12));
+  --fabushi-shadow-sm: var(--cursor-box-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04));
+  --fabushi-shadow-md: var(--cursor-box-shadow-md, 0 4px 14px rgba(0, 0, 0, 0.06));
+
+  /* Status Colors (Light) */
+  --fabushi-status-pending: #8e887e;
+  --fabushi-status-pending-bg: rgba(142, 136, 126, 0.14);
+  --fabushi-status-running: #0071e3;
+  --fabushi-status-running-bg: rgba(0, 113, 227, 0.12);
+  --fabushi-status-waiting-auth: #d97706;
+  --fabushi-status-waiting-auth-bg: rgba(217, 119, 6, 0.14);
+  --fabushi-status-waiting-connection: #d97706;
+  --fabushi-status-waiting-connection-bg: rgba(217, 119, 6, 0.14);
+  --fabushi-status-completed: #16a34a;
+  --fabushi-status-completed-bg: rgba(22, 163, 74, 0.12);
+  --fabushi-status-failed: #dc2626;
+  --fabushi-status-failed-bg: rgba(220, 38, 38, 0.12);
+  --fabushi-status-cancelled: #6b7280;
+  --fabushi-status-cancelled-bg: rgba(107, 114, 128, 0.14);
+
+  /* A11y & Focus */
+  --fabushi-focus-ring: #0071e3;
+  --fabushi-touch-target-min: 44px;
+
+  /* Aliased OpenClaw Variables (Zero uncontained parallel design system) */
+  --oc-bg-canvas: var(--fabushi-bg-canvas);
+  --oc-bg-surface: var(--fabushi-bg-surface);
+  --oc-bg-sidebar: var(--fabushi-bg-sidebar);
+  --oc-border: var(--fabushi-border);
+  --oc-border-strong: var(--fabushi-border-strong);
+  --oc-text-primary: var(--fabushi-text-primary);
+  --oc-text-secondary: var(--fabushi-text-secondary);
+  --oc-text-muted: var(--fabushi-text-muted);
+  --oc-accent-coral: var(--fabushi-accent-coral);
+  --oc-accent-blue: var(--fabushi-accent-blue);
+  --oc-gold: var(--fabushi-accent-gold);
+  --oc-card-bg: var(--fabushi-card-bg);
+  --oc-card-border: var(--fabushi-card-border);
+  --oc-card-hover: var(--fabushi-card-hover);
+  --oc-composer-bg: var(--fabushi-composer-bg);
+  --oc-composer-border: var(--fabushi-composer-border);
+  --oc-shadow-sm: var(--fabushi-shadow-sm);
+  --oc-shadow-md: var(--fabushi-shadow-md);
 }
 
 [data-theme="dark"] {
-  --oc-bg-canvas: var(--cursor-bg-editor, #1c1c1e);
-  --oc-bg-surface: var(--cursor-bg-chrome, #252528);
-  --oc-bg-sidebar: var(--cursor-bg-chrome, #18181a);
-  --oc-border: var(--sand-border-weak, rgba(255, 255, 255, 0.09));
-  --oc-border-strong: var(--sand-border-focus, rgba(255, 255, 255, 0.16));
-  --oc-text-primary: var(--cursor-text-primary, #f5f5f7);
-  --oc-text-secondary: var(--cursor-text-secondary, #a1a1a6);
-  --oc-text-muted: var(--cursor-text-secondary, #86868b);
-  --oc-card-bg: var(--cursor-bg-elevated, #222225);
-  --oc-card-border: var(--sand-border-weak, rgba(255, 255, 255, 0.08));
-  --oc-card-hover: var(--cursor-bg-secondary, rgba(255, 255, 255, 0.04));
-  --oc-composer-bg: var(--cursor-bg-elevated, #222225);
-  --oc-composer-border: var(--sand-border-weak, rgba(255, 255, 255, 0.14));
-  --oc-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --oc-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  /* Canonical Fabushi Design Tokens — Dark Theme */
+  --fabushi-bg-canvas: var(--cursor-bg-editor, #1c1c1e);
+  --fabushi-bg-surface: var(--cursor-bg-chrome, #252528);
+  --fabushi-bg-sidebar: var(--cursor-bg-chrome, #18181a);
+  --fabushi-border: var(--sand-border-weak, rgba(255, 255, 255, 0.09));
+  --fabushi-border-strong: var(--sand-border-focus, rgba(255, 255, 255, 0.16));
+  --fabushi-text-primary: var(--cursor-text-primary, #f5f5f7);
+  --fabushi-text-secondary: var(--cursor-text-secondary, #a1a1a6);
+  --fabushi-text-muted: #86868b;
+  --fabushi-accent-primary: #388bfd;
+  --fabushi-accent-coral: var(--sand-fill-accent, #e56a66);
+  --fabushi-accent-blue: #2997ff;
+  --fabushi-accent-gold: #f5b041;
+  --fabushi-card-bg: var(--cursor-bg-elevated, #222225);
+  --fabushi-card-border: var(--sand-border-weak, rgba(255, 255, 255, 0.08));
+  --fabushi-card-hover: var(--cursor-bg-secondary, rgba(255, 255, 255, 0.04));
+  --fabushi-composer-bg: var(--cursor-bg-elevated, #222225);
+  --fabushi-composer-border: var(--sand-border-weak, rgba(255, 255, 255, 0.14));
+  --fabushi-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --fabushi-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+
+  /* Status Colors — Dark */
+  --fabushi-status-pending: #a1a1a6;
+  --fabushi-status-pending-bg: rgba(161, 161, 166, 0.16);
+  --fabushi-status-running: #2997ff;
+  --fabushi-status-running-bg: rgba(41, 151, 255, 0.16);
+  --fabushi-status-waiting-auth: #fbbf24;
+  --fabushi-status-waiting-auth-bg: rgba(251, 191, 36, 0.16);
+  --fabushi-status-waiting-connection: #fbbf24;
+  --fabushi-status-waiting-connection-bg: rgba(251, 191, 36, 0.16);
+  --fabushi-status-completed: #22c55e;
+  --fabushi-status-completed-bg: rgba(34, 197, 94, 0.16);
+  --fabushi-status-failed: #f87171;
+  --fabushi-status-failed-bg: rgba(248, 113, 113, 0.16);
+  --fabushi-status-cancelled: #9ca3af;
+  --fabushi-status-cancelled-bg: rgba(156, 163, 175, 0.16);
+
+  /* A11y & Focus — Dark */
+  --fabushi-focus-ring: #2997ff;
+
+  /* Aliased OpenClaw Variables (Zero uncontained parallel design system) */
+  --oc-bg-canvas: var(--fabushi-bg-canvas);
+  --oc-bg-surface: var(--fabushi-bg-surface);
+  --oc-bg-sidebar: var(--fabushi-bg-sidebar);
+  --oc-border: var(--fabushi-border);
+  --oc-border-strong: var(--fabushi-border-strong);
+  --oc-text-primary: var(--fabushi-text-primary);
+  --oc-text-secondary: var(--fabushi-text-secondary);
+  --oc-text-muted: var(--fabushi-text-muted);
+  --oc-accent-coral: var(--fabushi-accent-coral);
+  --oc-accent-blue: var(--fabushi-accent-blue);
+  --oc-gold: var(--fabushi-accent-gold);
+  --oc-card-bg: var(--fabushi-card-bg);
+  --oc-card-border: var(--fabushi-card-border);
+  --oc-card-hover: var(--fabushi-card-hover);
+  --oc-composer-bg: var(--fabushi-composer-bg);
+  --oc-composer-border: var(--fabushi-composer-border);
+  --oc-shadow-sm: var(--fabushi-shadow-sm);
+  --oc-shadow-md: var(--fabushi-shadow-md);
 }
 
 /* 1. Left Navigation Rail */
@@ -610,4 +696,221 @@
   background: var(--oc-accent-coral);
   color: #ffffff;
   cursor: pointer;
+}
+
+/* ==========================================================================
+   6. Accessibility & Focus Outlines (WCAG AA Compliance)
+   ========================================================================== */
+:focus-visible {
+  outline: 2px solid var(--fabushi-focus-ring);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--fabushi-focus-ring);
+  outline-offset: 1px;
+}
+
+/* Touch targets for WCAG AA compliance (min 44x44px for primary interactive targets) */
+.oc-nav-rail__btn,
+.oc-top-header__nav-btn,
+.oc-clean-composer__tool-btn {
+  min-width: 32px;
+  min-height: 32px;
+}
+
+/* ==========================================================================
+   7. Responsive Multi-Tier Layout Breakpoints (UFX-R10)
+   - Tier 1: ≥1200px — 3-Column Layout (Rail + Sidebar + Main Workspace + Docked Drawer)
+   - Tier 2: 900–1199px — 2-Column Layout (Rail + Sidebar + Main Workspace, Mutually Exclusive Overlay Drawers)
+   - Tier 3: <900px — Single-Column Mobile/Compact Layout (Stacked Navigation, Full-Width Drawers)
+   ========================================================================== */
+
+/* Tier 1: ≥1200px: 3-column layout */
+@media (min-width: 1200px) {
+  .oc-copilot-drawer {
+    position: relative;
+    width: 360px;
+    min-width: 340px;
+    max-width: 420px;
+    flex-shrink: 0;
+    box-shadow: none;
+    z-index: 1;
+  }
+
+  .sand-async-tasks-panel {
+    max-width: 420px;
+  }
+}
+
+/* Tier 2: 900–1199px: 2-column layout with mutually exclusive drawer overlays */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .oc-copilot-drawer {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 360px;
+    max-width: 90vw;
+    box-shadow: var(--fabushi-shadow-md);
+    z-index: 25;
+    background: var(--fabushi-bg-canvas);
+  }
+
+  .sand-async-tasks-panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 360px;
+    max-width: 90vw;
+    box-shadow: var(--fabushi-shadow-md);
+    z-index: 30;
+  }
+
+  .oc-clean-composer {
+    max-width: 100%;
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+}
+
+/* Tier 3: <900px: single-column compact layout */
+@media (max-width: 899px) {
+  .oc-copilot-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    z-index: 100;
+    background: var(--fabushi-bg-canvas);
+    box-shadow: none;
+  }
+
+  .sand-async-tasks-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    z-index: 105;
+  }
+
+  .oc-welcome-hero {
+    padding: 24px 12px;
+  }
+
+  .oc-welcome-hero__grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .oc-clean-composer {
+    max-width: 100%;
+    border-radius: 12px;
+    margin: 0 8px 8px 8px;
+    padding: 8px 10px;
+  }
+
+  .oc-nav-rail {
+    width: 48px;
+    min-width: 48px;
+  }
+
+  .oc-top-header {
+    padding: 0 8px;
+    height: 48px;
+  }
+
+  .oc-top-header__action-btn {
+    min-height: 44px; /* WCAG touch target */
+  }
+}
+
+/* ==========================================================================
+   8. Authentic Task Status Projection Styles (UFX-R06)
+   ========================================================================== */
+.sand-async-task {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.12s ease;
+}
+
+.sand-async-task:hover {
+  background: var(--fabushi-card-hover);
+}
+
+.sand-async-task__status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.sand-async-task[data-status="pending"] .sand-async-task__status,
+.sand-async-task__status[data-status="pending"] {
+  background: var(--fabushi-status-pending-bg);
+  color: var(--fabushi-status-pending);
+}
+
+.sand-async-task[data-status="running"] .sand-async-task__status,
+.sand-async-task__status[data-status="running"] {
+  background: var(--fabushi-status-running-bg);
+  color: var(--fabushi-status-running);
+}
+
+.sand-async-task[data-status="waiting_auth"] .sand-async-task__status,
+.sand-async-task__status[data-status="waiting_auth"] {
+  background: var(--fabushi-status-waiting-auth-bg);
+  color: var(--fabushi-status-waiting-auth);
+}
+
+.sand-async-task[data-status="waiting_connection"] .sand-async-task__status,
+.sand-async-task__status[data-status="waiting_connection"] {
+  background: var(--fabushi-status-waiting-connection-bg);
+  color: var(--fabushi-status-waiting-connection);
+}
+
+.sand-async-task[data-status="completed"] .sand-async-task__status,
+.sand-async-task__status[data-status="completed"] {
+  background: var(--fabushi-status-completed-bg);
+  color: var(--fabushi-status-completed);
+}
+
+.sand-async-task[data-status="failed"] .sand-async-task__status,
+.sand-async-task__status[data-status="failed"] {
+  background: var(--fabushi-status-failed-bg);
+  color: var(--fabushi-status-failed);
+}
+
+.sand-async-task[data-status="cancelled"] .sand-async-task__status,
+.sand-async-task__status[data-status="cancelled"] {
+  background: var(--fabushi-status-cancelled-bg);
+  color: var(--fabushi-status-cancelled);
+}
+
+.sand-async-task__error {
+  display: block;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--fabushi-status-failed);
+  word-break: break-word;
 }

@@ -19,20 +19,12 @@ export interface OpenClawCleanComposerProps {
   onChangeSecurityGate?: (next: "deny" | "allowlist" | "full") => void;
   model?: string;
   onChangeModel?: (model: string) => void;
+  availableModels?: readonly { id: string; label: string }[];
   thinkingLevel?: string;
   onChangeThinkingLevel?: (level: string) => void;
   onTranscribeAudio?: (audio?: any, mimeType?: any, language?: any) => any;
   isTranscribing?: boolean;
 }
-
-const AVAILABLE_MODELS = [
-  { id: "gpt-6-astra", label: "GPT-6 Astra" },
-  { id: "gemini-1.5-pro", label: "Gemini 1.5 Pro" },
-  { id: "claude-3.5-sonnet", label: "Claude 3.5 Sonnet" },
-  { id: "sand-local", label: "Local Sand" },
-];
-
-const THINKING_LEVELS = ["Low", "Medium", "High", "Default"];
 
 export function OpenClawCleanComposer({
   draft,
@@ -46,9 +38,10 @@ export function OpenClawCleanComposer({
   onCreateInvoice,
   securityGate = "allowlist",
   onChangeSecurityGate,
-  model = "GPT-6 Astra",
+  model,
   onChangeModel,
-  thinkingLevel = "Medium",
+  availableModels = [],
+  thinkingLevel,
   onChangeThinkingLevel,
   onTranscribeAudio,
   isTranscribing = false,
@@ -271,129 +264,133 @@ export function OpenClawCleanComposer({
 
         {/* Trailing tools: Model pill, Thinking pill, Mic, Send */}
         <div className="oc-clean-composer__right-tools">
-          {/* Model selector pill */}
-          <div style={{ position: "relative" }}>
-            <button
-              type="button"
-              className="oc-pill-select"
-              onClick={() => {
-                setModelMenuOpen(!modelMenuOpen);
-                setThinkingMenuOpen(false);
-                setAttachMenuOpen(false);
-              }}
-              title="选择推理模型"
-              aria-haspopup="true"
-              aria-expanded={modelMenuOpen}
-            >
-              <span>{model}</span>
-              <span style={{ fontSize: 9, opacity: 0.6 }}>▼</span>
-            </button>
-
-            {modelMenuOpen && (
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: 34,
-                  right: 0,
-                  background: "var(--oc-card-bg)",
-                  border: "1px solid var(--oc-border-strong)",
-                  borderRadius: 8,
-                  boxShadow: "var(--oc-shadow-md)",
-                  padding: "4px 0",
-                  zIndex: 100,
-                  minWidth: 150,
+          {/* Model selector pill (only rendered when models are configured via owner) */}
+          {availableModels.length > 0 && onChangeModel && model && (
+            <div style={{ position: "relative" }}>
+              <button
+                type="button"
+                className="oc-pill-select"
+                onClick={() => {
+                  setModelMenuOpen(!modelMenuOpen);
+                  setThinkingMenuOpen(false);
+                  setAttachMenuOpen(false);
                 }}
-                onMouseLeave={() => setModelMenuOpen(false)}
+                title="选择推理模型"
+                aria-haspopup="true"
+                aria-expanded={modelMenuOpen}
               >
-                {AVAILABLE_MODELS.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "6px 12px",
-                      background: model === item.label ? "var(--oc-card-hover)" : "none",
-                      border: "none",
-                      fontSize: 12.5,
-                      fontWeight: model === item.label ? 600 : 400,
-                      color: "var(--oc-text-primary)",
-                      cursor: "pointer",
-                    }}
-                    onClick={() => {
-                      onChangeModel?.(item.label);
-                      setModelMenuOpen(false);
-                    }}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+                <span>{model}</span>
+                <span style={{ fontSize: 9, opacity: 0.6 }}>▼</span>
+              </button>
 
-          {/* Thinking effort pill */}
-          <div style={{ position: "relative" }}>
-            <button
-              type="button"
-              className="oc-pill-select"
-              onClick={() => {
-                setThinkingMenuOpen(!thinkingMenuOpen);
-                setModelMenuOpen(false);
-                setAttachMenuOpen(false);
-              }}
-              title="设置思考推理深度 (Thinking Effort)"
-              aria-haspopup="true"
-              aria-expanded={thinkingMenuOpen}
-            >
-              <span>{thinkingLevel}</span>
-              <span style={{ fontSize: 9, opacity: 0.6 }}>▼</span>
-            </button>
+              {modelMenuOpen && (
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 34,
+                    right: 0,
+                    background: "var(--oc-card-bg)",
+                    border: "1px solid var(--oc-border-strong)",
+                    borderRadius: 8,
+                    boxShadow: "var(--oc-shadow-md)",
+                    padding: "4px 0",
+                    zIndex: 100,
+                    minWidth: 150,
+                  }}
+                  onMouseLeave={() => setModelMenuOpen(false)}
+                >
+                  {availableModels.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "6px 12px",
+                        background: model === item.label ? "var(--oc-card-hover)" : "none",
+                        border: "none",
+                        fontSize: 12.5,
+                        fontWeight: model === item.label ? 600 : 400,
+                        color: "var(--oc-text-primary)",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => {
+                        onChangeModel?.(item.label);
+                        setModelMenuOpen(false);
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-            {thinkingMenuOpen && (
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: 34,
-                  right: 0,
-                  background: "var(--oc-card-bg)",
-                  border: "1px solid var(--oc-border-strong)",
-                  borderRadius: 8,
-                  boxShadow: "var(--oc-shadow-md)",
-                  padding: "4px 0",
-                  zIndex: 100,
-                  minWidth: 120,
+          {/* Thinking effort pill (only rendered when thinking level is configured via owner) */}
+          {onChangeThinkingLevel && thinkingLevel && (
+            <div style={{ position: "relative" }}>
+              <button
+                type="button"
+                className="oc-pill-select"
+                onClick={() => {
+                  setThinkingMenuOpen(!thinkingMenuOpen);
+                  setModelMenuOpen(false);
+                  setAttachMenuOpen(false);
                 }}
-                onMouseLeave={() => setThinkingMenuOpen(false)}
+                title="设置思考推理深度 (Thinking Effort)"
+                aria-haspopup="true"
+                aria-expanded={thinkingMenuOpen}
               >
-                {THINKING_LEVELS.map((level) => (
-                  <button
-                    key={level}
-                    type="button"
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "6px 12px",
-                      background: thinkingLevel === level ? "var(--oc-card-hover)" : "none",
-                      border: "none",
-                      fontSize: 12.5,
-                      fontWeight: thinkingLevel === level ? 600 : 400,
-                      color: "var(--oc-text-primary)",
-                      cursor: "pointer",
-                    }}
-                    onClick={() => {
-                      onChangeThinkingLevel?.(level);
-                      setThinkingMenuOpen(false);
-                    }}
-                  >
-                    {level}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+                <span>{thinkingLevel}</span>
+                <span style={{ fontSize: 9, opacity: 0.6 }}>▼</span>
+              </button>
+
+              {thinkingMenuOpen && (
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 34,
+                    right: 0,
+                    background: "var(--oc-card-bg)",
+                    border: "1px solid var(--oc-border-strong)",
+                    borderRadius: 8,
+                    boxShadow: "var(--oc-shadow-md)",
+                    padding: "4px 0",
+                    zIndex: 100,
+                    minWidth: 120,
+                  }}
+                  onMouseLeave={() => setThinkingMenuOpen(false)}
+                >
+                  {["Low", "Medium", "High", "Default"].map((level) => (
+                    <button
+                      key={level}
+                      type="button"
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "6px 12px",
+                        background: thinkingLevel === level ? "var(--oc-card-hover)" : "none",
+                        border: "none",
+                        fontSize: 12.5,
+                        fontWeight: thinkingLevel === level ? 600 : 400,
+                        color: "var(--oc-text-primary)",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => {
+                        onChangeThinkingLevel?.(level);
+                        setThinkingMenuOpen(false);
+                      }}
+                    >
+                      {level}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Microphone button */}
           <button

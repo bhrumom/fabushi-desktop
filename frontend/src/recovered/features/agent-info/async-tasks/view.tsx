@@ -2,6 +2,7 @@ import { useMemo, useSyncExternalStore } from "react";
 import {
   formatAsyncTaskTime,
   type AsyncTask,
+  type AsyncTaskStatus,
   type AsyncTasksProvider,
   type AsyncTasksSnapshot,
 } from "./provider";
@@ -41,10 +42,29 @@ function taskKindLabel(kind: AsyncTask["kind"]): string {
   }
 }
 
+export function taskStatusLabel(status: AsyncTaskStatus): string {
+  switch (status) {
+    case "pending": return "待开始";
+    case "running": return "执行中";
+    case "waiting_auth": return "等待授权";
+    case "waiting_connection": return "等待连接";
+    case "completed": return "已完成";
+    case "failed": return "失败";
+    case "cancelled": return "已取消";
+    default: return status;
+  }
+}
+
 function taskMeta(task: AsyncTask): string {
-  const kind = taskKindLabel(task.kind);
+  const parts: string[] = [taskKindLabel(task.kind)];
+  const status = taskStatusLabel(task.status);
+  if (status) parts.push(status);
+  if (typeof task.attempt === "number" && task.attempt > 1) {
+    parts.push(`第 ${task.attempt} 次尝试`);
+  }
   const detail = task.detail?.trim() ?? "";
-  return detail.length > 0 ? `${kind} · ${detail}` : kind;
+  if (detail.length > 0) parts.push(detail);
+  return parts.join(" · ");
 }
 
 function useClockNow(clock: AsyncTasksClockInput): number {
@@ -54,12 +74,38 @@ function useClockNow(clock: AsyncTasksClockInput): number {
 
 function AsyncTaskRow({ task, nowMs }: { readonly task: AsyncTask; readonly nowMs: number }) {
   const started = new Date(task.startedAtMs).toLocaleString();
-  return <div className="sand-async-task sand-78zum5 sand-6s0dn4 sand-167g77z sand-m7lytj sand-y13l1i sand-1ykpatu sand-163pfp sand-ur7f20" data-kind={task.kind} role="listitem" title={`${task.id} — started ${started}`}>
-    <span aria-label="Running" className="sand-async-task__status sand-2lah0s sand-1v4s8kt sand-ols6we sand-149ho13 sand-zqwn8b" role="status" />
+  const statusText = taskStatusLabel(task.status);
+  const attemptText = typeof task.attempt === "number" && task.attempt > 1 ? ` (第 ${task.attempt} 次尝试)` : "";
+  const errorText = task.error ? ` — 错误: ${task.error}` : "";
+  const title = `${task.id} [${statusText}] — started ${started}${attemptText}${errorText}`;
+
+  return <div
+    className="sand-async-task sand-78zum5 sand-6s0dn4 sand-167g77z sand-m7lytj sand-y13l1i sand-1ykpatu sand-163pfp sand-ur7f20"
+    data-kind={task.kind}
+    data-status={task.status}
+    role="listitem"
+    title={title}
+  >
+    <span
+      aria-label={statusText}
+      className="sand-async-task__status sand-2lah0s sand-1v4s8kt sand-ols6we sand-149ho13 sand-zqwn8b"
+      data-status={task.status}
+      role="status"
+    >
+      {statusText}
+    </span>
     <span aria-hidden="true" className="sand-async-task__icon sand-2lah0s sand-4b2ntj" data-icon-name={taskKindIcon(task.kind)} />
     <span className="sand-async-task__body sand-78zum5 sand-dt5ytf sand-1iyjqo2 sand-s83m0k sand-dl72j9 sand-euugli sand-12mrbbr">
       <span className="sand-async-task__label sand-b3r6kr sand-lyipyv sand-uxw1ft sand-18hujpe sand-1wd3ewq">{task.label}</span>
       <span className="sand-async-task__meta sand-b3r6kr sand-lyipyv sand-uxw1ft sand-vzzrjs sand-4b2ntj">{taskMeta(task)}</span>
+      {(task.status === "failed" || Boolean(task.error)) && (
+        <span
+          className="sand-async-task__error sand-b3r6kr sand-lyipyv sand-uxw1ft sand-vzzrjs"
+          style={{ color: "var(--fabushi-status-failed, #ef4444)", fontSize: "11.5px", marginTop: "2px" }}
+        >
+          {task.error ? `错误: ${task.error}` : "任务执行失败"}
+        </span>
+      )}
     </span>
     <span className="sand-async-task__time sand-2lah0s sand-vzzrjs sand-4b2ntj sand-ss6m8b">{formatAsyncTaskTime(task.startedAtMs, nowMs)}</span>
   </div>;

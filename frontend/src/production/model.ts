@@ -50,6 +50,10 @@ export interface RendererAgent extends ConversationAgentSummary {
   conversationPartnerIds: string[];
   awaitingUserResponse: unknown | null;
   raw: RendererAgentRaw;
+  isSubagent?: boolean;
+  parentId?: string;
+  taskId?: string;
+  agentType?: string;
 }
 
 /** Mirrors the shipped cct gate: only local, non-shared groups expose members. */
@@ -137,6 +141,26 @@ export function projectRendererAgent(value: unknown, now = Date.now()): Renderer
   const lastEntry = parseRendererAgentLastEntry(value.lastEntry);
   const lastMessagePreview = typeof value.lastMessagePreview === "string" ? value.lastMessagePreview : null;
   const lastMessage = derivedLastMessage(lastEntry, lastMessagePreview);
+
+  const parentId = (typeof value.parentId === "string" && value.parentId.length > 0 ? value.parentId
+    : typeof value.parentAgentId === "string" && value.parentAgentId.length > 0 ? value.parentAgentId
+    : undefined);
+  const taskId = (typeof value.taskId === "string" && value.taskId.length > 0 ? value.taskId
+    : typeof value.task_id === "string" && value.task_id.length > 0 ? value.task_id
+    : undefined);
+  const agentType = (typeof value.type === "string" && value.type.length > 0 ? value.type
+    : typeof value.kind === "string" && value.kind.length > 0 ? value.kind
+    : typeof value.origin === "string" && value.origin.length > 0 ? value.origin
+    : undefined);
+  const isSubagent = Boolean(
+    parentId ||
+    taskId ||
+    value.origin === "subagent" ||
+    value.type === "subagent" ||
+    value.kind === "subagent" ||
+    value.isSubagent === true
+  );
+
   return {
     id,
     name,
@@ -170,7 +194,11 @@ export function projectRendererAgent(value: unknown, now = Date.now()): Renderer
     memberIds: stringArray(value.memberIds ?? value.members),
     conversationPartnerIds: stringArray(value.conversationPartnerIds),
     awaitingUserResponse,
-    raw: value as RendererAgentRaw
+    raw: value as RendererAgentRaw,
+    ...(isSubagent ? { isSubagent: true } : {}),
+    ...(parentId ? { parentId } : {}),
+    ...(taskId ? { taskId } : {}),
+    ...(agentType ? { agentType } : {}),
   };
 }
 

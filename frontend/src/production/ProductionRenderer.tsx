@@ -4137,6 +4137,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               computer.close();
               if (domain === "agents") setActiveFolderId("agents");
               else if (domain === "messages") setActiveFolderId("all");
+              else if (domain === "tasks" && activeAgent != null && !activeIsHuman) openAsyncTasks(activeAgent.id);
             }
           }}
           unreadMessagesCount={unreadFolderCount}
@@ -4229,9 +4230,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             onToggleDetails={() => setTdrpDetailsOpen((open) => !open)}
             onToggleLayout={() => setCopilotPanelOpen((open) => !open)}
             onShare={() => {
-              const generation = renderedAccountScopeGeneration;
-              const last = displayedEntries.slice().reverse().find((e): e is TranscriptMessage => (e as { kind?: string }).kind !== "card");
-              if (last && isForwardAccountScopeCurrent(generation)) setForwardTarget({ sourceConversationId: activeAgent.id, message: last, accountScopeGeneration: generation });
+              const shareLink = (activeAgent.raw as any)?.shareUrl ?? (activeAgent.raw as any)?.inviteLink ?? (typeof window !== "undefined" ? window.location.href : "");
+              if (shareLink && typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+                void navigator.clipboard.writeText(shareLink);
+              }
             }}
             onOpenSettings={bridge == null ? undefined : () => { setGroupInfoPaneOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setAgentSettingsOpen(true); }}
           />}
@@ -4263,12 +4265,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                 onCancelQueuedSend={cancelQueuedSend}
                 onDeleteFailedSend={removeTranscriptMessage}
                 onOpenReply={(targetId) => replyThreadController.navigate(targetId)}
-                onForward={activeIsHuman ? (entry) => {
+                onForward={(entry) => {
                   const accountScopeGeneration = renderedAccountScopeGeneration;
                   if (isForwardAccountScopeCurrent(accountScopeGeneration)) {
                     setForwardTarget({ sourceConversationId: activeAgent.id, message: entry, accountScopeGeneration });
                   }
-                } : undefined}
+                }}
                 onReply={(entry) => { selectComposerReply(entry.id); }}
                 onStartThread={activeIsHuman ? undefined : (entry) => { replyThreadController.navigate(entry.id); }}
                 onResendFailedSend={(entry) => void resendFailedSend(entry)}
@@ -4292,27 +4294,41 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
             <CommunityComposerGuardBanner composerGuard={composerGuard} />
-            {activeIsHuman ? (
-              <>
-                <TdrpComposerToolbar
-                  disabled={busy || isActiveSendPending || client == null || !composerGuard.canSend}
-                  onOpenModal={(m: "poll" | "todo" | "invoice" | "bot") => setTdrpModalMode(m)}
-                />
-                <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || isActiveSendPending || client == null || !composerGuard.canSend} draft={draft} editorProviders={undefined} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
-              </>
-            ) : (
-              <OpenClawCleanComposer
-                draft={draft}
-                onChange={(val) => composerDraftStore.setDraft(activeAgent.id, typeof val === "string" ? { prompt: val, attachments: [] } : val)}
-                onSubmit={submit} disabled={busy || isActiveSendPending || client == null || !composerGuard.canSend}
-                placeholder={`给 ${activeAgent.name} 发消息`} onStageFiles={stageFiles}
-                onCreatePoll={() => setTdrpModalMode("poll")} onCreateTodoList={() => setTdrpModalMode("todo")} onCreateInvoice={() => setTdrpModalMode("invoice")}
-                onTranscribeAudio={transcribeAudio}
-              />
-            )}
+            <TdrpComposerToolbar
+              disabled={busy || isActiveSendPending || client == null || !composerGuard.canSend}
+              onOpenModal={(m: "poll" | "todo" | "invoice" | "bot") => setTdrpModalMode(m)}
+            />
+            <ConversationComposer
+              acceptedSendGeneration={composerClearGeneration}
+              disabled={busy || isActiveSendPending || client == null || !composerGuard.canSend}
+              draft={draft}
+              editorProviders={activeIsHuman ? undefined : editorProviders}
+              notice={notice}
+              onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)}
+              onClearReplyTarget={clearReplyTarget}
+              onRemoveAttachment={removeAttachment}
+              onStageFiles={stageFiles}
+              onSubmit={submit}
+              placeholder={activeIsHuman ? `Message ${activeAgent.name}` : `给 ${activeAgent.name} 发消息`}
+              replyTarget={replyTarget}
+              scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`}
+              transcribeAudio={transcribeAudio}
+            />
           </div>
         </div>
-        {copilotPanelOpen && !activeIsHuman ? <OpenClawAskCopilotPanel onClose={() => setCopilotPanelOpen(false)} /> : null}
+        {copilotPanelOpen && !activeIsHuman ? (
+          <OpenClawAskCopilotPanel
+            onClose={() => setCopilotPanelOpen(false)}
+            gatewayAddress="ws://127.0.0.1:18789"
+            isGatewayOnline={false}
+            gatewayStatusText="未连接 (未知)"
+            agentName={activeAgent?.name}
+            onExecuteAction={(actionText) => {
+              if (activeAgent == null) return;
+              composerDraftStore.setDraft(activeAgent.id, { prompt: actionText, attachments: [] });
+            }}
+          />
+        ) : null}
       </div>}
           </>
         )}

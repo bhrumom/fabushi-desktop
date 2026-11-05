@@ -1,13 +1,27 @@
 export type AsyncTaskKind = "subagent" | "shell" | "cloud-agent";
 
+export type AsyncTaskStatus =
+  | "pending"
+  | "running"
+  | "waiting_auth"
+  | "waiting_connection"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
 export interface AsyncTask {
   readonly kind: AsyncTaskKind;
   readonly id: string;
   readonly label: string;
-  readonly status: "running";
+  readonly status: AsyncTaskStatus;
   readonly startedAtMs: number;
   readonly detail?: string;
   readonly subagentType?: string;
+  readonly attempt?: number;
+  readonly updatedAtMs?: number;
+  readonly error?: string;
+  readonly parentTaskId?: string;
+  readonly agentId?: string;
 }
 
 export type AsyncTasksSnapshot =
@@ -70,27 +84,87 @@ function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+export function normalizeAsyncTaskStatus(rawStatus: unknown): AsyncTaskStatus | null {
+  if (typeof rawStatus !== "string") return null;
+  const normalized = rawStatus.trim().toLowerCase();
+  switch (normalized) {
+    case "awaiting-auth":
+    case "waiting-auth":
+    case "waiting_auth":
+    case "awaiting_auth":
+      return "waiting_auth";
+    case "waiting-connection":
+    case "connecting":
+    case "waiting_connection":
+      return "waiting_connection";
+    case "pending":
+    case "queued":
+      return "pending";
+    case "running":
+    case "in_progress":
+    case "in-progress":
+      return "running";
+    case "completed":
+    case "success":
+    case "done":
+      return "completed";
+    case "failed":
+    case "error":
+      return "failed";
+    case "cancelled":
+    case "canceled":
+    case "aborted":
+      return "cancelled";
+    default:
+      return null;
+  }
+}
+
 function decodeTask(value: unknown): AsyncTask | null {
   if (!record(value)) return null;
   const kind = value.kind;
   if (kind !== "subagent" && kind !== "shell" && kind !== "cloud-agent") return null;
   if (typeof value.id !== "string" || value.id.length === 0) return null;
   if (typeof value.label !== "string" || value.label.length === 0) return null;
-  if (value.status !== "running") return null;
+  const status = normalizeAsyncTaskStatus(value.status);
+  if (status === null) return null;
   if (typeof value.startedAtMs !== "number" || !Number.isFinite(value.startedAtMs)) return null;
   if (value.detail !== undefined && typeof value.detail !== "string") return null;
   if (value.subagentType !== undefined && typeof value.subagentType !== "string") return null;
+  if (value.attempt !== undefined && (typeof value.attempt !== "number" || !Number.isFinite(value.attempt))) return null;
+  if (value.updatedAtMs !== undefined && (typeof value.updatedAtMs !== "number" || !Number.isFinite(value.updatedAtMs))) return null;
+  if (value.error !== undefined && typeof value.error !== "string") return null;
+  if (value.parentTaskId !== undefined && typeof value.parentTaskId !== "string") return null;
+  if (value.agentId !== undefined && typeof value.agentId !== "string") return null;
+
+  const attempt = typeof value.attempt === "number" && Number.isFinite(value.attempt) ? value.attempt
+    : typeof value.attempts === "number" && Number.isFinite(value.attempts) ? value.attempts : undefined;
+  const updatedAtMs = typeof value.updatedAtMs === "number" && Number.isFinite(value.updatedAtMs) ? value.updatedAtMs
+    : typeof value.updated_at_ms === "number" && Number.isFinite(value.updated_at_ms) ? value.updated_at_ms
+    : typeof value.updatedAt === "number" && Number.isFinite(value.updatedAt) ? value.updatedAt : undefined;
+  const error = typeof value.error === "string" ? value.error
+    : typeof value.errorMessage === "string" ? value.errorMessage : undefined;
+  const parentTaskId = typeof value.parentTaskId === "string" && value.parentTaskId.length > 0 ? value.parentTaskId
+    : typeof value.parent_task_id === "string" && value.parent_task_id.length > 0 ? value.parent_task_id : undefined;
+  const agentId = typeof value.agentId === "string" && value.agentId.length > 0 ? value.agentId
+    : typeof value.agent_id === "string" && value.agent_id.length > 0 ? value.agent_id : undefined;
+
   const task: AsyncTask = {
     kind,
     id: value.id,
     label: value.label,
-    status: "running",
+    status,
     startedAtMs: value.startedAtMs,
   };
   return {
     ...task,
     ...(typeof value.detail === "string" ? { detail: value.detail } : {}),
     ...(typeof value.subagentType === "string" ? { subagentType: value.subagentType } : {}),
+    ...(attempt !== undefined ? { attempt } : {}),
+    ...(updatedAtMs !== undefined ? { updatedAtMs } : {}),
+    ...(error !== undefined ? { error } : {}),
+    ...(parentTaskId !== undefined ? { parentTaskId } : {}),
+    ...(agentId !== undefined ? { agentId } : {}),
   };
 }
 

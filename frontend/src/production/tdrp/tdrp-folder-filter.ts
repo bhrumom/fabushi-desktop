@@ -4,6 +4,8 @@ export interface FilterableAgent {
   readonly isGroup?: boolean;
   readonly isUnread?: boolean;
   readonly unreadCount?: number;
+  readonly isSubagent?: boolean;
+  readonly isPinned?: boolean;
 }
 
 export function filterAgentsByFolder<T extends FilterableAgent>(
@@ -13,7 +15,7 @@ export function filterAgentsByFolder<T extends FilterableAgent>(
 ): T[] {
   switch (folderId) {
     case "all":
-      return [...agents];
+      return agents.filter((a) => !(a.isSubagent === true && !a.isPinned));
     case "unread":
       return agents.filter(
         (a) => (a.unreadCount != null && a.unreadCount > 0) || a.isUnread === true
@@ -25,7 +27,7 @@ export function filterAgentsByFolder<T extends FilterableAgent>(
     case "channels":
       return agents.filter((a) => (a as { isChannel?: boolean }).isChannel === true);
     case "agents":
-      return agents.filter((a) => !humanIdsSet.has(a.id) && !a.isGroup);
+      return agents.filter((a) => !humanIdsSet.has(a.id) && !a.isGroup && !(a.isSubagent === true && !a.isPinned));
     default:
       return [...agents];
   }
