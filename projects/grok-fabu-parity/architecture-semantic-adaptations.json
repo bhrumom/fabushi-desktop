@@ -66,7 +66,7 @@
       "referencePath": "frontend/src/production/model.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "2fc687c44c3d913f479540c88745520e6490d90f",
+      "targetBlobSha": "499ff59705eca7e165860eecb16dd7db3d1f80bf",
       "behavioralEvidence": [
         "frontend/src/production/model.ts",
         "frontend/src/production/coordinator-client.ts"
@@ -1791,6 +1791,36 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of source/shared/client-persistence-store.ts."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/protocol.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "f269579e4b0e6ec9cc5e0207a1989372c52c8be0",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/protocol.ts",
+        "frontend/src/production/model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok transcript-card protocol semantics while adding explicit .ts module specifiers required by Node --experimental-strip-types contract test execution."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/send-message-text.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "dbf363dd4011fcde50c7e491bcdcb3421a7ca8ae",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/send-message-text.ts",
+        "frontend/src/production/model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok send-message-text card semantics while adding explicit .ts module specifiers required by Node --experimental-strip-types contract test execution."
     }
   ]
 }

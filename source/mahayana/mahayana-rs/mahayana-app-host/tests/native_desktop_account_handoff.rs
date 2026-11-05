@@ -41,7 +41,8 @@ const SOCIAL_HTTP_OWNER_ERROR: &str = "host operation failed: product API config
 const SOCIAL_RESOURCE_OWNER_ERROR: &str = "host operation failed: product API configuration failed: Desktop Human messages are owned by Session/Transcript";
 const SOCIAL_HTTP_PATH_ERROR: &str = "host operation failed: request parameter path is invalid";
 const BOT_SOCIAL: &str = "Public retained social-owner Agent";
-const SOCIAL_TEXT: &str = "Public retained Human payload; never send or reinterpret as Agent input.\0Unicode: 人";
+const SOCIAL_TEXT: &str =
+    "Public retained Human payload; never send or reinterpret as Agent input.\0Unicode: 人";
 
 struct TestDirectory(PathBuf);
 
@@ -121,16 +122,23 @@ fn assert_legacy_unavailable(host: &AppHost) {
     });
     assert!(!response.ok);
     assert!(
-        response.error.as_deref().unwrap_or("").contains("provider is unavailable: telegram"),
-        "must preserve the public legacy refusal: {:?}", response.error
+        response
+            .error
+            .as_deref()
+            .unwrap_or("")
+            .contains("provider is unavailable: telegram"),
+        "must preserve the public legacy refusal: {:?}",
+        response.error
     );
     assert_legacy_auth_matrix(host);
-    assert!(host.take_startup_native_shell_event().expect("startup event").is_none());
+    assert!(
+        host.take_startup_native_shell_event()
+            .expect("startup event")
+            .is_none()
+    );
 }
 
-
-const LEGACY_UNAVAILABLE: &str =
-    "host operation failed: embedded Telegram client is unavailable for the current platform account";
+const LEGACY_UNAVAILABLE: &str = "host operation failed: embedded Telegram client is unavailable for the current platform account";
 
 fn identified_request(
     host: &AppHost,
@@ -144,7 +152,11 @@ fn identified_request(
         method: method.into(),
         params,
     });
-    assert_eq!(response.id, Some(id_value), "request identity must survive {method}");
+    assert_eq!(
+        response.id,
+        Some(id_value),
+        "request identity must survive {method}"
+    );
     response
 }
 
@@ -156,12 +168,21 @@ fn assert_legacy_auth_matrix(host: &AppHost) {
         ("telegramSendCode", json!({"phoneNumber": "+10000000000"})),
         ("telegramSignIn", json!({"code": "public-code"})),
         ("telegramPassword", json!({"password": "public-password"})),
-        ("telegramRegistration", json!({"firstName": "Public", "lastName": "Fixture"})),
+        (
+            "telegramRegistration",
+            json!({"firstName": "Public", "lastName": "Fixture"}),
+        ),
         ("telegramResendCode", json!({})),
         ("telegramCancelCode", json!({})),
         ("telegramRequestPasswordRecovery", json!({})),
-        ("telegramCheckRecoveryPassword", json!({"code": "public-recovery"})),
-        ("telegramSendVerifyEmailCode", json!({"email": "public@example.invalid"})),
+        (
+            "telegramCheckRecoveryPassword",
+            json!({"code": "public-recovery"}),
+        ),
+        (
+            "telegramSendVerifyEmailCode",
+            json!({"email": "public@example.invalid"}),
+        ),
         ("telegramVerifyEmail", json!({"code": "public-email-code"})),
         ("telegramRefreshPasswordChallenge", json!({})),
     ];
@@ -179,7 +200,8 @@ fn assert_legacy_auth_matrix(host: &AppHost) {
             json!({"firstName": "  ", "telegramApiHash": "must-not-activate"}),
         ];
         for (variant, params) in malformed.into_iter().enumerate() {
-            let registration_has_name = params.get("firstName")
+            let registration_has_name = params
+                .get("firstName")
                 .and_then(Value::as_str)
                 .map(|name| !name.trim().is_empty())
                 .unwrap_or(false);
@@ -189,14 +211,21 @@ fn assert_legacy_auth_matrix(host: &AppHost) {
                 &format!("feature.auth.{method}"),
                 params,
             );
-            assert!(!response.ok, "legacy method unexpectedly succeeded: {method}/{variant}");
+            assert!(
+                !response.ok,
+                "legacy method unexpectedly succeeded: {method}/{variant}"
+            );
             assert!(response.result.is_none(), "legacy method emitted a result");
             let expected = if method == "telegramRegistration" && !registration_has_name {
                 "invalid request: firstName is required"
             } else {
                 LEGACY_UNAVAILABLE
             };
-            assert_eq!(response.error.as_deref(), Some(expected), "legacy {method}/{variant}");
+            assert_eq!(
+                response.error.as_deref(),
+                Some(expected),
+                "legacy {method}/{variant}"
+            );
             checked += 1;
         }
     }
@@ -218,19 +247,24 @@ fn assert_legacy_auth_matrix(host: &AppHost) {
         json!({"firstName": "Public", "password": {"unexpected": true}}),
     ];
     for (variant, params) in extra_registration.into_iter().enumerate() {
-        let has_name = params.get("firstName")
+        let has_name = params
+            .get("firstName")
             .and_then(Value::as_str)
             .map(|name| !name.trim().is_empty())
             .unwrap_or(false);
         let response = identified_request(
-            host, &format!("registration-extra-{variant}"),
-            "feature.auth.telegramRegistration", params,
+            host,
+            &format!("registration-extra-{variant}"),
+            "feature.auth.telegramRegistration",
+            params,
         );
         assert!(!response.ok);
         assert!(response.result.is_none());
         assert_eq!(
             response.error.as_deref(),
-            Some(if has_name { LEGACY_UNAVAILABLE } else {
+            Some(if has_name {
+                LEGACY_UNAVAILABLE
+            } else {
                 "invalid request: firstName is required"
             }),
         );
@@ -243,8 +277,16 @@ fn assert_legacy_auth_matrix(host: &AppHost) {
         "feature.auth.telegramUnknown",
         "feature.auth.TELEGRAMSTATUS",
         "feature.auth.telegramVerifyEmailLegacy",
-    ].into_iter().enumerate() {
-        let response = identified_request(host, &format!("legacy-unknown-{variant}"), method, json!({}));
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let response = identified_request(
+            host,
+            &format!("legacy-unknown-{variant}"),
+            method,
+            json!({}),
+        );
         assert!(!response.ok);
         assert!(response.result.is_none());
         assert_eq!(
@@ -253,7 +295,10 @@ fn assert_legacy_auth_matrix(host: &AppHost) {
         );
         checked += 1;
     }
-    assert_eq!(checked, 125, "twelve historical methods, eleven registration variants and six unknown negatives");
+    assert_eq!(
+        checked, 125,
+        "twelve historical methods, eleven registration variants and six unknown negatives"
+    );
     assert_no_messaging_event(host);
 }
 
@@ -262,18 +307,28 @@ fn assert_no_messaging_event(host: &AppHost) {
     // Drain real account/Agent events as well; no inferred source-string oracle.
     let deadline = Instant::now() + Duration::from_secs(2);
     for _ in 0..256 {
-        assert!(Instant::now() < deadline, "FeatureHost event queue did not settle");
+        assert!(
+            Instant::now() < deadline,
+            "FeatureHost event queue did not settle"
+        );
         let response = host.dispatch(HostRequest {
             id: None,
             method: "feature.receive".into(),
             params: json!({"timeoutMs": 0}),
         });
-        assert!(response.ok, "production event receive failed: {:?}", response.error);
+        assert!(
+            response.ok,
+            "production event receive failed: {:?}",
+            response.error
+        );
         let event = response.result.expect("event receive result");
         if event.is_null() {
             return;
         }
-        assert_ne!(event["type"], "messaging.event", "refused command published a MessagingEvent");
+        assert_ne!(
+            event["type"], "messaging.event",
+            "refused command published a MessagingEvent"
+        );
     }
     panic!("FeatureHost event queue exceeded the bounded fixture event budget");
 }
@@ -309,15 +364,28 @@ fn assert_standalone_messaging_unavailable(host: &AppHost, account_id: &str) {
             "envelope": envelope
         });
         for (method, params) in [
-            ("feature.messaging.execute", json!({
-                "requestId": "public-boundary-dispatch", "envelope": envelope
-            })),
+            (
+                "feature.messaging.execute",
+                json!({
+                    "requestId": "public-boundary-dispatch", "envelope": envelope
+                }),
+            ),
             ("feature.execute", json!({"command": command})),
             ("feature.execute", command),
         ] {
-            let response = host.dispatch(HostRequest { id: None, method: method.into(), params });
-            assert!(!response.ok, "standalone command unexpectedly accepted: {method}");
-            assert!(response.result.is_none(), "refusal cannot return accepted or empty-success");
+            let response = host.dispatch(HostRequest {
+                id: None,
+                method: method.into(),
+                params,
+            });
+            assert!(
+                !response.ok,
+                "standalone command unexpectedly accepted: {method}"
+            );
+            assert!(
+                response.result.is_none(),
+                "refusal cannot return accepted or empty-success"
+            );
             assert_eq!(response.error.as_deref(), Some(STANDALONE_MESSAGING_ERROR));
             assert_no_messaging_event(host);
         }
@@ -327,7 +395,9 @@ fn assert_standalone_messaging_unavailable(host: &AppHost, account_id: &str) {
         json!({"blobId": "../public-retained-blob", "offset": u64::MAX, "length": 0}),
     ] {
         let response = host.dispatch(HostRequest {
-            id: None, method: "feature.messaging.blob.read".into(), params,
+            id: None,
+            method: "feature.messaging.blob.read".into(),
+            params,
         });
         assert!(!response.ok);
         assert!(response.result.is_none());
@@ -345,7 +415,9 @@ fn assert_standalone_messaging_unavailable(host: &AppHost, account_id: &str) {
         }),
     ] {
         let response = host.dispatch(HostRequest {
-            id: None, method: "feature.messaging.access.issue".into(), params,
+            id: None,
+            method: "feature.messaging.access.issue".into(),
+            params,
         });
         assert!(!response.ok);
         assert!(response.result.is_none());
@@ -357,14 +429,33 @@ fn assert_standalone_messaging_unavailable(host: &AppHost, account_id: &str) {
     for (method, params) in [
         ("feature.messaging.execute", json!({"requestId": 3})),
         ("feature.messaging.blob.read", json!({"blobId": false})),
-        ("feature.messaging.access.issue", json!({"deviceId": [], "sessionId": null})),
-        ("feature.execute", json!({"type": "messaging.execute", "requestId": false})),
-        ("feature.execute", json!({"command": {"type": "messaging.execute"}})),
+        (
+            "feature.messaging.access.issue",
+            json!({"deviceId": [], "sessionId": null}),
+        ),
+        (
+            "feature.execute",
+            json!({"type": "messaging.execute", "requestId": false}),
+        ),
+        (
+            "feature.execute",
+            json!({"command": {"type": "messaging.execute"}}),
+        ),
     ] {
-        let response = host.dispatch(HostRequest { id: None, method: method.into(), params });
+        let response = host.dispatch(HostRequest {
+            id: None,
+            method: method.into(),
+            params,
+        });
         assert!(!response.ok, "malformed request was accepted: {method}");
         assert!(response.result.is_none());
-        assert!(response.error.as_deref().unwrap_or("").starts_with("invalid request:"));
+        assert!(
+            response
+                .error
+                .as_deref()
+                .unwrap_or("")
+                .starts_with("invalid request:")
+        );
         assert_no_messaging_event(host);
     }
 }
@@ -383,45 +474,99 @@ fn assert_reserved_automations_absent(
             "type": "automation.list", "requestId": "public-retained-automation-list"
         }}),
     });
-    assert!(response.ok, "public automation list failed: {:?}", response.error);
-    assert_eq!(response.result.expect("automation command accepted")["requestId"], "public-retained-automation-list");
+    assert!(
+        response.ok,
+        "public automation list failed: {:?}",
+        response.error
+    );
+    assert_eq!(
+        response.result.expect("automation command accepted")["requestId"],
+        "public-retained-automation-list"
+    );
     let deadline = Instant::now() + Duration::from_secs(2);
     let mut saw_listed = false;
     for _ in 0..256 {
-        assert!(Instant::now() < deadline, "public automation list event did not arrive");
+        assert!(
+            Instant::now() < deadline,
+            "public automation list event did not arrive"
+        );
         let response = host.dispatch(HostRequest {
-            id: None, method: "feature.receive".into(), params: json!({"timeoutMs": 0}),
+            id: None,
+            method: "feature.receive".into(),
+            params: json!({"timeoutMs": 0}),
         });
-        assert!(response.ok, "automation event receive failed: {:?}", response.error);
+        assert!(
+            response.ok,
+            "automation event receive failed: {:?}",
+            response.error
+        );
         let event = response.result.expect("automation event result");
         if event.is_null() {
-            assert!(saw_listed, "accepted automation list must publish its actual state");
+            assert!(
+                saw_listed,
+                "accepted automation list must publish its actual state"
+            );
             return;
         }
-        assert_ne!(event["type"], "messaging.event", "automation listing cannot reopen messaging");
-        assert_ne!(event["type"], "automation.changed", "failed collision cannot publish an automation mutation");
+        assert_ne!(
+            event["type"], "messaging.event",
+            "automation listing cannot reopen messaging"
+        );
+        assert_ne!(
+            event["type"], "automation.changed",
+            "failed collision cannot publish an automation mutation"
+        );
         if event["type"] == "automation.listed" {
-            assert!(!saw_listed, "one public list command must yield one actual state");
+            assert!(
+                !saw_listed,
+                "one public list command must yield one actual state"
+            );
             saw_listed = true;
-            let automations = event["automations"].as_array().expect("actual automation list");
+            let automations = event["automations"]
+                .as_array()
+                .expect("actual automation list");
             if !authenticated {
-                assert!(automations.is_empty(), "logout must clear the active automation state");
+                assert!(
+                    automations.is_empty(),
+                    "logout must clear the active automation state"
+                );
             }
-            let normal = automations.iter().find(|item| item["id"] == LEGACY_AUTOMATION_ID);
-            assert_eq!(normal.is_some(), expect_legacy_record, "normal legacy import control differs from the current account fixture");
+            let normal = automations
+                .iter()
+                .find(|item| item["id"] == LEGACY_AUTOMATION_ID);
+            assert_eq!(
+                normal.is_some(),
+                expect_legacy_record,
+                "normal legacy import control differs from the current account fixture"
+            );
             if let Some(normal) = normal {
                 assert_eq!(normal["name"], LEGACY_AUTOMATION_NAME);
                 assert_eq!(normal["agentId"], "mahayana-assistant");
-                assert_eq!(normal["enabled"], false, "archive control must never execute");
+                assert_eq!(
+                    normal["enabled"], false,
+                    "archive control must never execute"
+                );
             }
             for automation in automations {
-                assert_ne!(automation["agentId"], "_messaging", "reserved owner was imported into active state");
-                let id = automation["id"].as_str().expect("listed automation identity");
-                assert!(![
-                    "retained-legacy-reserved", "retained-reserved-override",
-                    "retained-valid", "retained-corrupt", "retained-unrecognized",
-                    UPSERT_COLLISION_ID,
-                ].contains(&id), "retained automation marker became active: {id}");
+                assert_ne!(
+                    automation["agentId"], "_messaging",
+                    "reserved owner was imported into active state"
+                );
+                let id = automation["id"]
+                    .as_str()
+                    .expect("listed automation identity");
+                assert!(
+                    ![
+                        "retained-legacy-reserved",
+                        "retained-reserved-override",
+                        "retained-valid",
+                        "retained-corrupt",
+                        "retained-unrecognized",
+                        UPSERT_COLLISION_ID,
+                    ]
+                    .contains(&id),
+                    "retained automation marker became active: {id}"
+                );
             }
         }
     }
@@ -436,9 +581,15 @@ fn assert_retained_automation_boundary(
 ) {
     let fingerprint = messaging_account_fingerprint(account_id);
     let feature_root = root.join("app-host/feature-host");
-    let legacy_archive = feature_root.join("accounts").join(&fingerprint).join("automations.json");
-    let collision = feature_root.join("runtime/accounts").join(&fingerprint)
-        .join("agents/mahayana-assistant/automations").join(UPSERT_COLLISION_ID)
+    let legacy_archive = feature_root
+        .join("accounts")
+        .join(&fingerprint)
+        .join("automations.json");
+    let collision = feature_root
+        .join("runtime/accounts")
+        .join(&fingerprint)
+        .join("agents/mahayana-assistant/automations")
+        .join(UPSERT_COLLISION_ID)
         .join("automation.json");
     let before = messaging_entries(root);
     if authenticated && collision.exists() {
@@ -454,14 +605,31 @@ fn assert_retained_automation_boundary(
                 "enabled": false
             }}),
         });
-        assert!(!response.ok, "retained metadata collision must refuse the public upsert");
-        assert!(response.result.is_none(), "refused collision cannot return accepted");
-        assert_eq!(response.error.as_deref(), Some(
-            "host operation failed: Agent automation path contains retained standalone messaging metadata"
-        ));
+        assert!(
+            !response.ok,
+            "retained metadata collision must refuse the public upsert"
+        );
+        assert!(
+            response.result.is_none(),
+            "refused collision cannot return accepted"
+        );
+        assert_eq!(
+            response.error.as_deref(),
+            Some(
+                "host operation failed: Agent automation path contains retained standalone messaging metadata"
+            )
+        );
     }
-    assert_reserved_automations_absent(host, authenticated && legacy_archive.exists(), authenticated);
-    assert_eq!(messaging_entries(root), before, "public automation dispatch altered retained paths or bytes");
+    assert_reserved_automations_absent(
+        host,
+        authenticated && legacy_archive.exists(),
+        authenticated,
+    );
+    assert_eq!(
+        messaging_entries(root),
+        before,
+        "public automation dispatch altered retained paths or bytes"
+    );
 }
 
 fn gateway(host: &AppHost, method: &str, args: Value) -> Value {
@@ -643,7 +811,10 @@ fn child_case(root: &Path, mode: &str) {
         }
     }
     assert_standalone_messaging_unavailable(&host, &first.account_id);
-    assert!(messaging_entries(root).is_empty(), "issuer transitions cannot create a second message store");
+    assert!(
+        messaging_entries(root).is_empty(),
+        "issuer transitions cannot create a second message store"
+    );
     // Read-only restoration must not mutate the Native owner's file or import
     // the public fixture into the legacy Rust account-session persistence path.
     let current = fs::read(&credential).expect("Native fixture remains");
@@ -659,14 +830,17 @@ fn child_case(root: &Path, mode: &str) {
     );
 }
 
-
 fn settings_disk_path(root: &Path) -> PathBuf {
     root.join("app-host/feature-host/product-settings.json")
 }
 
 fn settings_snapshot(host: &AppHost) -> Value {
     let response = identified_request(host, "settings-snapshot", "settings.snapshot", json!({}));
-    assert!(response.ok, "Settings snapshot failed: {:?}", response.error);
+    assert!(
+        response.ok,
+        "Settings snapshot failed: {:?}",
+        response.error
+    );
     assert!(response.error.is_none());
     response.result.expect("canonical Settings snapshot")
 }
@@ -675,27 +849,48 @@ fn assert_settings_disk(host: &AppHost, root: &Path) -> Value {
     let snapshot = settings_snapshot(host);
     let bytes = fs::read(settings_disk_path(root)).expect("authoritative Settings file exists");
     let disk: Value = serde_json::from_slice(&bytes).expect("typed persisted Settings");
-    assert_eq!(snapshot, disk, "public Settings and the single durable owner diverged");
+    assert_eq!(
+        snapshot, disk,
+        "public Settings and the single durable owner diverged"
+    );
     snapshot
 }
 
 fn settings_mutation(
-    host: &AppHost, root: &Path, label: &str, mutation: Value, publication: bool,
+    host: &AppHost,
+    root: &Path,
+    label: &str,
+    mutation: Value,
+    publication: bool,
 ) -> Value {
     let response = identified_request(
-        host, label, "settings.mutateNetworkProxy", json!({"mutation": mutation}),
+        host,
+        label,
+        "settings.mutateNetworkProxy",
+        json!({"mutation": mutation}),
     );
-    assert!(response.ok, "Settings mutation {label} failed: {:?}", response.error);
+    assert!(
+        response.ok,
+        "Settings mutation {label} failed: {:?}",
+        response.error
+    );
     assert!(response.error.is_none());
     let result = response.result.expect("Settings mutation response");
     let snapshot = assert_settings_disk(host, root);
     assert_eq!(result["settings"], snapshot);
     if publication {
-        assert_eq!(result["publication"], json!({
-            "available": false, "reason": "telegramClientUnavailable"
-        }), "Settings cannot activate an absent legacy proxy carrier");
+        assert_eq!(
+            result["publication"],
+            json!({
+                "available": false, "reason": "telegramClientUnavailable"
+            }),
+            "Settings cannot activate an absent legacy proxy carrier"
+        );
     } else {
-        assert!(result["publication"].is_null(), "unrelated Settings changes cannot publish");
+        assert!(
+            result["publication"].is_null(),
+            "unrelated Settings changes cannot publish"
+        );
     }
     assert_no_messaging_event(host);
     snapshot
@@ -703,15 +898,26 @@ fn settings_mutation(
 
 fn settings_enabled(host: &AppHost, root: &Path, label: &str, enabled: bool) -> Value {
     let response = identified_request(
-        host, label, "settings.setNetworkProxyEnabled", json!({"proxyEnabled": enabled}),
+        host,
+        label,
+        "settings.setNetworkProxyEnabled",
+        json!({"proxyEnabled": enabled}),
     );
-    assert!(response.ok, "Settings compatibility toggle failed: {:?}", response.error);
+    assert!(
+        response.ok,
+        "Settings compatibility toggle failed: {:?}",
+        response.error
+    );
     let result = response.result.expect("Settings toggle result");
     let snapshot = assert_settings_disk(host, root);
     assert_eq!(result["settings"], snapshot);
-    assert_eq!(result["publication"], json!({
-        "available": false, "reason": "telegramClientUnavailable"
-    }), "same-value retries must republish the unavailability envelope");
+    assert_eq!(
+        result["publication"],
+        json!({
+            "available": false, "reason": "telegramClientUnavailable"
+        }),
+        "same-value retries must republish the unavailability envelope"
+    );
     assert_no_messaging_event(host);
     snapshot
 }
@@ -727,70 +933,199 @@ fn assert_settings_restart_matrix(host: &AppHost, root: &Path, restart: bool) {
         let initial = settings_snapshot(host);
         assert_eq!(initial["version"], 2);
         assert_eq!(initial["network"]["proxy"]["mode"], "system");
-        assert!(!path.exists(), "new owner must not create Settings until a real mutation");
+        assert!(
+            !path.exists(),
+            "new owner must not create Settings until a real mutation"
+        );
 
         // Every one of the existing fifteen mutation variants uses the
         // production AppHost dispatch and canonical product-settings.json.
         let cases = [
-            ("list", json!({"type":"setList","list":[a.clone(),b.clone(),c.clone()]}), false),
-            ("selected-and-mode", json!({"type":"setSelectedAndMode","proxy":b.clone(),"mode":"enabled"}), true),
-            ("preference", json!({"type":"setRotationPreferredIndices","indices":[0,1,2,1,-1,7]}), false),
-            ("remove-first", json!({"type":"remove","proxy":a.clone()}), false),
-            ("insert", json!({"type":"insert","index":1,"proxy":d.clone()}), false),
-            ("replace", json!({"type":"replace","was":d.clone(),"proxy":c.clone()}), false),
+            (
+                "list",
+                json!({"type":"setList","list":[a.clone(),b.clone(),c.clone()]}),
+                false,
+            ),
+            (
+                "selected-and-mode",
+                json!({"type":"setSelectedAndMode","proxy":b.clone(),"mode":"enabled"}),
+                true,
+            ),
+            (
+                "preference",
+                json!({"type":"setRotationPreferredIndices","indices":[0,1,2,1,-1,7]}),
+                false,
+            ),
+            (
+                "remove-first",
+                json!({"type":"remove","proxy":a.clone()}),
+                false,
+            ),
+            (
+                "insert",
+                json!({"type":"insert","index":1,"proxy":d.clone()}),
+                false,
+            ),
+            (
+                "replace",
+                json!({"type":"replace","was":d.clone(),"proxy":c.clone()}),
+                false,
+            ),
             ("add", json!({"type":"add","proxy":e.clone()}), false),
-            ("promote", json!({"type":"promoteRotationPreferredIndex","index":3}), false),
-            ("selected", json!({"type":"setSelected","proxy":e.clone()}), true),
+            (
+                "promote",
+                json!({"type":"promoteRotationPreferredIndex","index":3}),
+                false,
+            ),
+            (
+                "selected",
+                json!({"type":"setSelected","proxy":e.clone()}),
+                true,
+            ),
             ("ipv6", json!({"type":"setTryIpv6","enabled":false}), true),
-            ("calls", json!({"type":"setUseProxyForCalls","enabled":true}), false),
-            ("warning", json!({"type":"setCheckIpWarningShown","shown":true}), false),
-            ("rotate", json!({"type":"setRotationEnabled","enabled":true}), false),
-            ("timeout-default", json!({"type":"setRotationTimeout","seconds":-1}), false),
-            ("mode-disabled", json!({"type":"setMode","mode":"disabled"}), true),
-            ("timeout-42", json!({"type":"setRotationTimeout","seconds":42}), false),
-            ("mode-enabled", json!({"type":"setMode","mode":"enabled"}), true),
+            (
+                "calls",
+                json!({"type":"setUseProxyForCalls","enabled":true}),
+                false,
+            ),
+            (
+                "warning",
+                json!({"type":"setCheckIpWarningShown","shown":true}),
+                false,
+            ),
+            (
+                "rotate",
+                json!({"type":"setRotationEnabled","enabled":true}),
+                false,
+            ),
+            (
+                "timeout-default",
+                json!({"type":"setRotationTimeout","seconds":-1}),
+                false,
+            ),
+            (
+                "mode-disabled",
+                json!({"type":"setMode","mode":"disabled"}),
+                true,
+            ),
+            (
+                "timeout-42",
+                json!({"type":"setRotationTimeout","seconds":42}),
+                false,
+            ),
+            (
+                "mode-enabled",
+                json!({"type":"setMode","mode":"enabled"}),
+                true,
+            ),
         ];
         for (label, mutation, publication) in cases {
             let snapshot = settings_mutation(host, root, label, mutation, publication);
             if label == "remove-first" {
-                assert_eq!(snapshot["network"]["proxy"]["rotation"]["preferredIndices"], json!([0,1]),
-                    "removing A must retain B/C preference identity and relative priority");
-                assert_eq!(snapshot["network"]["proxy"]["list"], json!([b.clone(),c.clone()]));
+                assert_eq!(
+                    snapshot["network"]["proxy"]["rotation"]["preferredIndices"],
+                    json!([0, 1]),
+                    "removing A must retain B/C preference identity and relative priority"
+                );
+                assert_eq!(
+                    snapshot["network"]["proxy"]["list"],
+                    json!([b.clone(), c.clone()])
+                );
             }
         }
 
-        for (variant, enabled) in [true,true,false,false,true,true].into_iter().enumerate() {
+        for (variant, enabled) in [true, true, false, false, true, true]
+            .into_iter()
+            .enumerate()
+        {
             settings_enabled(host, root, &format!("compatibility-{variant}"), enabled);
         }
 
         // Invalid JSON/enum/typed values fail without persistence or mutation.
         let invalid = [
-            (json!({}), "invalid request: settings.mutateNetworkProxy requires mutation"),
-            (json!({"mutation": null}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
-            (json!({"mutation": {"type":"setMode","mode":"bogus"}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
-            (json!({"mutation": {"type":"setList","list":"not-an-array"}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
-            (json!({"mutation": {"type":"insert","index":"bad","proxy":b.clone()}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
-            (json!({"mutation": {"type":"setSelected","proxy":false}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
-            (json!({"mutation": {"type":"setRotationPreferredIndices","indices":[{}]}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
-            (json!({"mutation": {"type":"setRotationTimeout","seconds":4294967296_i64}}), "invalid request: settings.mutateNetworkProxy rotation timeout is out of range"),
+            (
+                json!({}),
+                "invalid request: settings.mutateNetworkProxy requires mutation",
+            ),
+            (
+                json!({"mutation": null}),
+                "invalid request: settings.mutateNetworkProxy mutation is invalid:",
+            ),
+            (
+                json!({"mutation": {"type":"setMode","mode":"bogus"}}),
+                "invalid request: settings.mutateNetworkProxy mutation is invalid:",
+            ),
+            (
+                json!({"mutation": {"type":"setList","list":"not-an-array"}}),
+                "invalid request: settings.mutateNetworkProxy mutation is invalid:",
+            ),
+            (
+                json!({"mutation": {"type":"insert","index":"bad","proxy":b.clone()}}),
+                "invalid request: settings.mutateNetworkProxy mutation is invalid:",
+            ),
+            (
+                json!({"mutation": {"type":"setSelected","proxy":false}}),
+                "invalid request: settings.mutateNetworkProxy mutation is invalid:",
+            ),
+            (
+                json!({"mutation": {"type":"setRotationPreferredIndices","indices":[{}]}}),
+                "invalid request: settings.mutateNetworkProxy mutation is invalid:",
+            ),
+            (
+                json!({"mutation": {"type":"setRotationTimeout","seconds":4294967296_i64}}),
+                "invalid request: settings.mutateNetworkProxy rotation timeout is out of range",
+            ),
         ];
         for (variant, (params, prefix)) in invalid.into_iter().enumerate() {
             let before = assert_settings_disk(host, root);
             let raw = fs::read(&path).expect("retained valid Settings document");
-            let response = identified_request(host, &format!("settings-invalid-{variant}"), "settings.mutateNetworkProxy", params);
+            let response = identified_request(
+                host,
+                &format!("settings-invalid-{variant}"),
+                "settings.mutateNetworkProxy",
+                params,
+            );
             assert!(!response.ok);
             assert!(response.result.is_none());
-            assert!(response.error.as_deref().unwrap_or("").starts_with(prefix), "unexpected invalid Settings envelope: {:?}", response.error);
+            assert!(
+                response.error.as_deref().unwrap_or("").starts_with(prefix),
+                "unexpected invalid Settings envelope: {:?}",
+                response.error
+            );
             assert_eq!(assert_settings_disk(host, root), before);
             assert_eq!(fs::read(&path).expect("unchanged Settings bytes"), raw);
         }
-        for (variant, value) in [Value::Null, json!("false"), json!(0), json!([]), json!({}), json!({"proxyEnabled":42})].into_iter().enumerate() {
-            let params = if value.is_object() { value } else { json!({"proxyEnabled": value}) };
+        for (variant, value) in [
+            Value::Null,
+            json!("false"),
+            json!(0),
+            json!([]),
+            json!({}),
+            json!({"proxyEnabled":42}),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let params = if value.is_object() {
+                value
+            } else {
+                json!({"proxyEnabled": value})
+            };
             let before = assert_settings_disk(host, root);
-            let response = identified_request(host, &format!("compatibility-invalid-{variant}"), "settings.setNetworkProxyEnabled", params);
+            let response = identified_request(
+                host,
+                &format!("compatibility-invalid-{variant}"),
+                "settings.setNetworkProxyEnabled",
+                params,
+            );
             assert!(!response.ok);
             assert!(response.result.is_none());
-            assert_eq!(response.error.as_deref(), Some("invalid request: settings.setNetworkProxyEnabled requires boolean proxyEnabled"));
+            assert_eq!(
+                response.error.as_deref(),
+                Some(
+                    "invalid request: settings.setNetworkProxyEnabled requires boolean proxyEnabled"
+                )
+            );
             assert_eq!(assert_settings_disk(host, root), before);
         }
 
@@ -801,21 +1136,42 @@ fn assert_settings_restart_matrix(host: &AppHost, root: &Path, restart: bool) {
         let before = assert_settings_disk(host, root);
         let raw = fs::read(&path).expect("original Settings bytes");
         for (label, method, params) in [
-            ("typed-write-fault", "settings.mutateNetworkProxy",
-                json!({"mutation":{"type":"setMode","mode":"disabled"}})),
-            ("compat-write-fault", "settings.setNetworkProxyEnabled",
-                json!({"proxyEnabled":false})),
+            (
+                "typed-write-fault",
+                "settings.mutateNetworkProxy",
+                json!({"mutation":{"type":"setMode","mode":"disabled"}}),
+            ),
+            (
+                "compat-write-fault",
+                "settings.setNetworkProxyEnabled",
+                json!({"proxyEnabled":false}),
+            ),
         ] {
             let response = identified_request(host, label, method, params);
             assert!(!response.ok);
             assert!(response.result.is_none());
-            assert!(response.error.as_deref().unwrap_or("").contains("write product Settings temporary file:"));
-            assert_eq!(settings_snapshot(host), before, "failed persistence cannot update memory");
+            assert!(
+                response
+                    .error
+                    .as_deref()
+                    .unwrap_or("")
+                    .contains("write product Settings temporary file:")
+            );
+            assert_eq!(
+                settings_snapshot(host),
+                before,
+                "failed persistence cannot update memory"
+            );
             assert_eq!(fs::read(&path).expect("read unmodified Settings"), raw);
         }
         fs::remove_dir(&temp).expect("clear only synthetic fault fixture");
-        settings_mutation(host, root, "typed-write-recovery",
-            json!({"type":"setMode","mode":"disabled"}), true);
+        settings_mutation(
+            host,
+            root,
+            "typed-write-recovery",
+            json!({"type":"setMode","mode":"disabled"}),
+            true,
+        );
         settings_enabled(host, root, "compat-write-recovery", true);
     }
 
@@ -831,9 +1187,15 @@ fn assert_settings_restart_matrix(host: &AppHost, root: &Path, restart: bool) {
         }}
     });
     let restored = assert_settings_disk(host, root);
-    assert_eq!(restored, expected, "all typed Settings and surviving preference order must survive restart");
+    assert_eq!(
+        restored, expected,
+        "all typed Settings and surviving preference order must survive restart"
+    );
     let repeated = settings_enabled(host, root, "restart-idempotent-publication", true);
-    assert_eq!(repeated, expected, "restart same-value publication cannot rewrite authoritative state");
+    assert_eq!(
+        repeated, expected,
+        "restart same-value publication cannot rewrite authoritative state"
+    );
     assert_no_messaging_event(host);
 }
 
@@ -842,23 +1204,41 @@ fn legacy_child_case(root: &Path, restart: bool) {
     let expected_credential = replace_native_credential(&credential, PRODUCTION, "123");
     let host = production_host(root);
     assert_eq!(auth(&host)["loggedIn"], true);
-    assert_eq!(host.mini_app_account_port().current_scope().expect("Native scope").account_id, "123");
+    assert_eq!(
+        host.mini_app_account_port()
+            .current_scope()
+            .expect("Native scope")
+            .account_id,
+        "123"
+    );
     assert_legacy_unavailable(&host);
     if restart {
-        assert!(contains_bot(&host, BOT_RETAINED), "Native Agent must survive process restart");
+        assert!(
+            contains_bot(&host, BOT_RETAINED),
+            "Native Agent must survive process restart"
+        );
     } else {
         assert!(!contains_bot(&host, BOT_RETAINED));
         create(&host, BOT_RETAINED);
     }
     assert_settings_restart_matrix(&host, root, restart);
-    assert_eq!(fs::read(credential).expect("retained Native credential"), expected_credential);
-    assert!(!root.join("app-host/feature-host/account-session.json").exists());
+    assert_eq!(
+        fs::read(credential).expect("retained Native credential"),
+        expected_credential
+    );
+    assert!(
+        !root
+            .join("app-host/feature-host/account-session.json")
+            .exists()
+    );
     drop(host);
 }
 
 fn run_child(root: &Path, mode: &str) {
-    let issuer = if mode == "production" || mode.starts_with("legacy-")
-        || mode.starts_with("social-") || mode.starts_with("telegram-")
+    let issuer = if mode == "production"
+        || mode.starts_with("legacy-")
+        || mode.starts_with("social-")
+        || mode.starts_with("telegram-")
         || (mode.starts_with("messaging-") && mode != "messaging-isolated")
     {
         PRODUCTION
@@ -866,7 +1246,8 @@ fn run_child(root: &Path, mode: &str) {
         ISOLATED
     };
     let mut command = Command::new(std::env::current_exe().expect("test executable"));
-    command.args([TEST_NAME, "--exact", "--nocapture"])
+    command
+        .args([TEST_NAME, "--exact", "--nocapture"])
         .env_clear()
         .env("PATH", std::env::var_os("PATH").unwrap_or_default())
         .env(CHILD_MODE, mode)
@@ -902,9 +1283,18 @@ fn run_child(root: &Path, mode: &str) {
     // proxy. No inherited proxy bypass or real service is needed by the test.
     let network_fence = if mode.starts_with("social-") || mode.starts_with("telegram-") {
         let listener = TcpListener::bind("127.0.0.1:0").expect("owned rejection proxy");
-        listener.set_nonblocking(true).expect("nonblocking proxy observation");
+        listener
+            .set_nonblocking(true)
+            .expect("nonblocking proxy observation");
         let proxy = format!("http://{}", listener.local_addr().expect("proxy address"));
-        for name in ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"] {
+        for name in [
+            "HTTPS_PROXY",
+            "https_proxy",
+            "HTTP_PROXY",
+            "http_proxy",
+            "ALL_PROXY",
+            "all_proxy",
+        ] {
             command.env(name, &proxy);
         }
         command.env("NO_PROXY", "").env("no_proxy", "");
@@ -912,7 +1302,8 @@ fn run_child(root: &Path, mode: &str) {
     } else {
         None
     };
-    let mut child = command.spawn()
+    let mut child = command
+        .spawn()
         .expect("spawn isolated integration-test process");
     let deadline = Instant::now() + Duration::from_secs(45);
     let mut unexpected_transports = 0;
@@ -920,7 +1311,9 @@ fn run_child(root: &Path, mode: &str) {
         if let Some(listener) = &network_fence {
             while let Ok((mut socket, _)) = listener.accept() {
                 unexpected_transports += 1;
-                socket.set_write_timeout(Some(Duration::from_secs(1))).expect("proxy write bound");
+                socket
+                    .set_write_timeout(Some(Duration::from_secs(1)))
+                    .expect("proxy write bound");
                 // Reject CONNECT and plain HTTP alike, without reading or
                 // returning the synthetic credential or request body.
                 let _ = socket.write_all(b"HTTP/1.1 502 Forbidden fixture transport\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
@@ -928,7 +1321,10 @@ fn run_child(root: &Path, mode: &str) {
         }
         if let Some(status) = child.try_wait().expect("poll test child") {
             assert!(status.success(), "Native AppHost child case failed: {mode}");
-            assert_eq!(unexpected_transports, 0, "retained desktop owner dispatched unexpected HTTP: {mode}");
+            assert_eq!(
+                unexpected_transports, 0,
+                "retained desktop owner dispatched unexpected HTTP: {mode}"
+            );
             return;
         }
         if Instant::now() >= deadline {
@@ -948,19 +1344,32 @@ fn native_desktop_account_handoff() {
             legacy_child_case(&root, mode == "legacy-restart");
             return;
         }
-        if matches!(mode.as_str(), "messaging-first" | "messaging-isolated" | "messaging-restart") {
+        if matches!(
+            mode.as_str(),
+            "messaging-first" | "messaging-isolated" | "messaging-restart"
+        ) {
             messaging_child_case(
                 &root,
                 mode == "messaging-restart",
-                if mode == "messaging-isolated" { ISOLATED } else { PRODUCTION },
+                if mode == "messaging-isolated" {
+                    ISOLATED
+                } else {
+                    PRODUCTION
+                },
             );
             return;
         }
-        if matches!(mode.as_str(), "social-first" | "social-restart" | "social-repeat") {
+        if matches!(
+            mode.as_str(),
+            "social-first" | "social-restart" | "social-repeat"
+        ) {
             social_child_case(&root, mode == "social-first");
             return;
         }
-        if matches!(mode.as_str(), "telegram-first" | "telegram-restart" | "telegram-repeat") {
+        if matches!(
+            mode.as_str(),
+            "telegram-first" | "telegram-restart" | "telegram-repeat"
+        ) {
             telegram_child_case(&root, mode == "telegram-first");
             return;
         }
@@ -1010,7 +1419,8 @@ fn test_directory(label: &str) -> TestDirectory {
 }
 
 fn retained_files(directory: &Path) -> BTreeMap<String, Vec<u8>> {
-    fs::read_dir(directory).expect("retained directory")
+    fs::read_dir(directory)
+        .expect("retained directory")
         .map(|entry| {
             let entry = entry.expect("retained file entry");
             let name = entry.file_name().into_string().expect("fixture filename");
@@ -1029,38 +1439,78 @@ fn retained_legacy_database_path(directory: &Path, account_id: &str) -> PathBuf 
 }
 
 fn retained_legacy_case(corrupt: bool) {
-    let root = test_directory(if corrupt { "legacy-corrupt" } else { "legacy-encrypted" });
+    let root = test_directory(if corrupt {
+        "legacy-corrupt"
+    } else {
+        "legacy-encrypted"
+    });
     let directory = root.0.join("app-host/feature-host/telegram");
     fs::create_dir_all(&directory).expect("create legacy fixture directory");
     let database = retained_legacy_database_path(&directory, "123");
     if corrupt {
-        fs::write(&database, b"public corrupt legacy SQLite fixture\0\xff").expect("corrupt fixture");
+        fs::write(&database, b"public corrupt legacy SQLite fixture\0\xff")
+            .expect("corrupt fixture");
         // Sidecars and unknown files are retained, never cleaned at startup.
-        fs::write(database.with_extension("sqlite3-wal"), b"public retained WAL").expect("WAL fixture");
-        fs::write(database.with_extension("sqlite3-shm"), b"public retained SHM").expect("SHM fixture");
+        fs::write(
+            database.with_extension("sqlite3-wal"),
+            b"public retained WAL",
+        )
+        .expect("WAL fixture");
+        fs::write(
+            database.with_extension("sqlite3-shm"),
+            b"public retained SHM",
+        )
+        .expect("SHM fixture");
     } else {
         let mut store = EncryptedSqliteStore::open(
-            &database, StorageKey::from_slice(&LEGACY_KEY).expect("fixture key"),
-        ).expect("create real legacy encrypted SQLite");
-        store.commit_transition(&Default::default(), &[], 0, 1000).expect("encrypted snapshot");
-        store.save_private_metadata("retirement.fixture.v1", LEGACY_METADATA, 1000).expect("encrypted metadata");
+            &database,
+            StorageKey::from_slice(&LEGACY_KEY).expect("fixture key"),
+        )
+        .expect("create real legacy encrypted SQLite");
+        store
+            .commit_transition(&Default::default(), &[], 0, 1000)
+            .expect("encrypted snapshot");
+        store
+            .save_private_metadata("retirement.fixture.v1", LEGACY_METADATA, 1000)
+            .expect("encrypted metadata");
         drop(store);
     }
-    fs::write(retained_legacy_database_path(&directory, "456"), b"public retained other-account database").expect("other account fixture");
-    fs::write(directory.join("preserved-user-data.bin"), b"public unclassified legacy data").expect("retained file");
+    fs::write(
+        retained_legacy_database_path(&directory, "456"),
+        b"public retained other-account database",
+    )
+    .expect("other account fixture");
+    fs::write(
+        directory.join("preserved-user-data.bin"),
+        b"public unclassified legacy data",
+    )
+    .expect("retained file");
     let before = retained_files(&directory);
     for mode in ["legacy-first", "legacy-restart"] {
         run_child(&root.0, mode);
-        assert!(retained_files(&directory) == before, "Native process must leave all legacy bytes unchanged");
+        assert!(
+            retained_files(&directory) == before,
+            "Native process must leave all legacy bytes unchanged"
+        );
     }
     if !corrupt {
         // Rollback compatibility is checked with the original storage reader,
         // only after both Native processes have terminated.
         let store = EncryptedSqliteStore::open(
-            &database, StorageKey::from_slice(&LEGACY_KEY).expect("original fixture key"),
-        ).expect("reopen with original reader");
-        assert_eq!(store.load_private_metadata("retirement.fixture.v1").expect("decrypt metadata"), Some(LEGACY_METADATA.to_vec()));
-        let snapshot = store.load_snapshot().expect("decrypt snapshot").expect("retained snapshot");
+            &database,
+            StorageKey::from_slice(&LEGACY_KEY).expect("original fixture key"),
+        )
+        .expect("reopen with original reader");
+        assert_eq!(
+            store
+                .load_private_metadata("retirement.fixture.v1")
+                .expect("decrypt metadata"),
+            Some(LEGACY_METADATA.to_vec())
+        );
+        let snapshot = store
+            .load_snapshot()
+            .expect("decrypt snapshot")
+            .expect("retained snapshot");
         assert_eq!(snapshot.revision, 1);
         assert_eq!(snapshot.updated_at_unix_ms, 1000);
     }
@@ -1086,20 +1536,38 @@ fn messaging_entries(root: &Path) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
         let metadata = fs::symlink_metadata(path).expect("inspect owned retention fixture");
         let filename = path.file_name().and_then(|name| name.to_str());
         let in_messaging = in_messaging
-            || matches!(filename, Some("_messaging" | "retained-reserved-override" | UPSERT_COLLISION_ID));
+            || matches!(
+                filename,
+                Some("_messaging" | "retained-reserved-override" | UPSERT_COLLISION_ID)
+            );
         let legacy_archive = filename == Some("automations.json")
             && path.parent().and_then(Path::parent) == Some(base.join("accounts").as_path());
         if metadata.is_dir() {
             if in_messaging {
-                entries.insert(path.strip_prefix(base).expect("relative messaging directory").into(), None);
+                entries.insert(
+                    path.strip_prefix(base)
+                        .expect("relative messaging directory")
+                        .into(),
+                    None,
+                );
             }
             for child in fs::read_dir(path).expect("read owned runtime directory") {
-                visit(base, &child.expect("runtime entry").path(), in_messaging, entries);
+                visit(
+                    base,
+                    &child.expect("runtime entry").path(),
+                    in_messaging,
+                    entries,
+                );
             }
         } else if in_messaging || legacy_archive {
-            assert!(metadata.is_file(), "messaging fixture unexpectedly changed file kind");
+            assert!(
+                metadata.is_file(),
+                "messaging fixture unexpectedly changed file kind"
+            );
             entries.insert(
-                path.strip_prefix(base).expect("relative messaging file").into(),
+                path.strip_prefix(base)
+                    .expect("relative messaging file")
+                    .into(),
                 Some(fs::read(path).expect("read retained messaging bytes")),
             );
         }
@@ -1119,42 +1587,72 @@ fn messaging_child_case(root: &Path, restart: bool, issuer: &str) {
     let host = production_host(root);
     let account = host.mini_app_account_port();
     assert_eq!(auth(&host)["loggedIn"], true);
-    let first = account.current_scope().expect("first real Production Native scope");
-    assert_eq!(first.account_id, if issuer == PRODUCTION {
-        "123".to_string()
-    } else {
-        expected_isolated_id("123")
-    });
+    let first = account
+        .current_scope()
+        .expect("first real Production Native scope");
+    assert_eq!(
+        first.account_id,
+        if issuer == PRODUCTION {
+            "123".to_string()
+        } else {
+            expected_isolated_id("123")
+        }
+    );
     assert_legacy_unavailable(&host);
     assert_standalone_messaging_unavailable(&host, &first.account_id);
     assert_retained_automation_boundary(&host, root, &first.account_id, true);
-    assert_eq!(messaging_entries(root), before, "startup or refused dispatch touched retained storage");
+    assert_eq!(
+        messaging_entries(root),
+        before,
+        "startup or refused dispatch touched retained storage"
+    );
     if restart {
-        assert!(contains_bot(&host, BOT_MESSAGING_A), "Agent A must survive process restart");
+        assert!(
+            contains_bot(&host, BOT_MESSAGING_A),
+            "Agent A must survive process restart"
+        );
     } else {
         assert!(!contains_bot(&host, BOT_MESSAGING_A));
         create(&host, BOT_MESSAGING_A);
     }
-    assert!(!contains_bot(&host, BOT_MESSAGING_B), "account A cannot see B's Agent");
+    assert!(
+        !contains_bot(&host, BOT_MESSAGING_B),
+        "account A cannot see B's Agent"
+    );
 
     replace_native_credential(&credential, issuer, "456");
     assert_eq!(auth(&host)["loggedIn"], true);
-    let second = account.current_scope().expect("second real Production Native scope");
-    assert_eq!(second.account_id, if issuer == PRODUCTION {
-        "456".to_string()
-    } else {
-        expected_isolated_id("456")
-    });
+    let second = account
+        .current_scope()
+        .expect("second real Production Native scope");
+    assert_eq!(
+        second.account_id,
+        if issuer == PRODUCTION {
+            "456".to_string()
+        } else {
+            expected_isolated_id("456")
+        }
+    );
     assert!(second.generation > first.generation);
-    assert!(!contains_bot(&host, BOT_MESSAGING_A), "account B cannot inherit A's Agent");
+    assert!(
+        !contains_bot(&host, BOT_MESSAGING_A),
+        "account B cannot inherit A's Agent"
+    );
     if restart {
-        assert!(contains_bot(&host, BOT_MESSAGING_B), "Agent B must survive process restart");
+        assert!(
+            contains_bot(&host, BOT_MESSAGING_B),
+            "Agent B must survive process restart"
+        );
     } else {
         create(&host, BOT_MESSAGING_B);
     }
     assert_standalone_messaging_unavailable(&host, &second.account_id);
     assert_retained_automation_boundary(&host, root, &second.account_id, true);
-    assert_eq!(messaging_entries(root), before, "account switch touched standalone messaging state");
+    assert_eq!(
+        messaging_entries(root),
+        before,
+        "account switch touched standalone messaging state"
+    );
 
     // The Native credential owner performs logout. Unauthenticated dispatch
     // must still refuse before access/session or retained-store I/O.
@@ -1165,7 +1663,11 @@ fn messaging_child_case(root: &Path, restart: bool, issuer: &str) {
     assert_retained_automation_boundary(&host, root, &second.account_id, false);
     assert!(!contains_bot(&host, BOT_MESSAGING_A));
     assert!(!contains_bot(&host, BOT_MESSAGING_B));
-    assert_eq!(messaging_entries(root), before, "logged-out dispatch touched retained storage");
+    assert_eq!(
+        messaging_entries(root),
+        before,
+        "logged-out dispatch touched retained storage"
+    );
 
     let expected = replace_native_credential(&credential, issuer, "123");
     assert_eq!(auth(&host)["loggedIn"], true);
@@ -1176,12 +1678,27 @@ fn messaging_child_case(root: &Path, restart: bool, issuer: &str) {
     assert!(!contains_bot(&host, BOT_MESSAGING_B));
     assert_standalone_messaging_unavailable(&host, &returned.account_id);
     assert_retained_automation_boundary(&host, root, &returned.account_id, true);
-    assert_eq!(fs::read(&credential).expect("Native credential remains"), expected);
-    assert!(!root.join("app-host/feature-host/account-session.json").exists());
-    assert_eq!(messaging_entries(root), before, "relogin altered retained messaging bytes");
+    assert_eq!(
+        fs::read(&credential).expect("Native credential remains"),
+        expected
+    );
+    assert!(
+        !root
+            .join("app-host/feature-host/account-session.json")
+            .exists()
+    );
+    assert_eq!(
+        messaging_entries(root),
+        before,
+        "relogin altered retained messaging bytes"
+    );
     drop(account);
     drop(host);
-    assert_eq!(messaging_entries(root), before, "shutdown altered retained messaging bytes");
+    assert_eq!(
+        messaging_entries(root),
+        before,
+        "shutdown altered retained messaging bytes"
+    );
 }
 
 fn seed_retained_messaging(root: &Path, corrupt: bool) {
@@ -1191,16 +1708,25 @@ fn seed_retained_messaging(root: &Path, corrupt: bool) {
     // the FeatureHost owner tests separately exercise original writer/readers.
     let mut stores = vec![runtime.join("agents/_messaging")];
     for id in [
-        "123".to_string(), "456".to_string(), "789".to_string(),
-        expected_isolated_id("123"), expected_isolated_id("456"),
+        "123".to_string(),
+        "456".to_string(),
+        "789".to_string(),
+        expected_isolated_id("123"),
+        expected_isolated_id("456"),
     ] {
         let fingerprint = messaging_account_fingerprint(&id);
-        stores.push(runtime.join("accounts")
-            .join(&fingerprint).join("agents/_messaging"));
+        stores.push(
+            runtime
+                .join("accounts")
+                .join(&fingerprint)
+                .join("agents/_messaging"),
+        );
         // The historical account-wide archive is beside runtime, not inside
         // it. Loading that original Vec<AutomationSummary> must not import a
         // reserved owner or overwrite an external reserved-owner marker.
-        let legacy_account = root.join("app-host/feature-host/accounts").join(&fingerprint);
+        let legacy_account = root
+            .join("app-host/feature-host/accounts")
+            .join(&fingerprint);
         fs::create_dir_all(&legacy_account).expect("retained legacy automation account directory");
         let legacy_records = json!([
             {
@@ -1225,10 +1751,14 @@ fn seed_retained_messaging(root: &Path, corrupt: bool) {
         fs::write(
             legacy_account.join("automations.json"),
             serde_json::to_vec_pretty(&legacy_records).expect("original automation archive array"),
-        ).expect("retained legacy automation archive");
-        let external_marker = runtime.join("accounts").join(&fingerprint)
+        )
+        .expect("retained legacy automation archive");
+        let external_marker = runtime
+            .join("accounts")
+            .join(&fingerprint)
             .join("agents/research/automations/retained-reserved-override");
-        fs::create_dir_all(external_marker.join("user-backup")).expect("retained external automation folder");
+        fs::create_dir_all(external_marker.join("user-backup"))
+            .expect("retained external automation folder");
         fs::write(
             external_marker.join("automation.json"),
             serde_json::to_vec_pretty(&json!({
@@ -1237,15 +1767,24 @@ fn seed_retained_messaging(root: &Path, corrupt: bool) {
                 "lastRunAt": null,
                 "_mahayana": {"id": "retained-reserved-override", "agentId": "_messaging"},
                 "publicUnknownProperty": "original external marker"
-            })).expect("external reserved-owner automation marker"),
-        ).expect("retained external automation marker");
-        fs::write(external_marker.join("preserved.bin"), b"public original external sibling bytes")
-            .expect("retained external sibling");
+            }))
+            .expect("external reserved-owner automation marker"),
+        )
+        .expect("retained external automation marker");
+        fs::write(
+            external_marker.join("preserved.bin"),
+            b"public original external sibling bytes",
+        )
+        .expect("retained external sibling");
         fs::write(external_marker.join("user-backup/keep.bin"), [0, 255, 9])
             .expect("retained external nested sibling");
-        let collision = runtime.join("accounts").join(&fingerprint)
-            .join("agents/mahayana-assistant/automations").join(UPSERT_COLLISION_ID);
-        fs::create_dir_all(collision.join("user-backup")).expect("retained default Agent collision folder");
+        let collision = runtime
+            .join("accounts")
+            .join(&fingerprint)
+            .join("agents/mahayana-assistant/automations")
+            .join(UPSERT_COLLISION_ID);
+        fs::create_dir_all(collision.join("user-backup"))
+            .expect("retained default Agent collision folder");
         fs::write(
             collision.join("automation.json"),
             serde_json::to_vec_pretty(&json!({
@@ -1256,8 +1795,11 @@ fn seed_retained_messaging(root: &Path, corrupt: bool) {
                 "publicUnknownProperty": "original default Agent collision marker"
             })).expect("default Agent reserved-owner marker"),
         ).expect("retained default Agent marker");
-        fs::write(collision.join("preserved.bin"), b"public default Agent original sibling bytes")
-            .expect("retained default Agent sibling");
+        fs::write(
+            collision.join("preserved.bin"),
+            b"public default Agent original sibling bytes",
+        )
+        .expect("retained default Agent sibling");
         fs::write(collision.join("user-backup/keep.bin"), [0, 255, 10])
             .expect("retained default Agent nested sibling");
     }
@@ -1269,64 +1811,121 @@ fn seed_retained_messaging(root: &Path, corrupt: bool) {
             serde_json::to_vec(&json!({
                 "schemaVersion": 1, "cursor": index + 7, "savedAtMs": 1000,
                 "state": {}, "retainedPublicFixture": index
-            })).expect("representative retained snapshot JSON")
+            }))
+            .expect("representative retained snapshot JSON")
         };
         fs::write(directory.join("snapshot.json"), snapshot).expect("retained snapshot bytes");
-        fs::write(directory.join("snapshot.json.tmp"), b"public unfinished snapshot replacement")
-            .expect("retained snapshot temporary");
-        fs::write(directory.join("access.json"), if corrupt {
-            b"public corrupt access registry\0\xff".as_slice()
-        } else {
-            b"{\"grants\":[],\"retainedPublicFixture\":true}".as_slice()
-        }).expect("retained access registry");
-        fs::write(directory.join("access.json.tmp"), b"public unfinished access replacement")
-            .expect("retained access temporary");
+        fs::write(
+            directory.join("snapshot.json.tmp"),
+            b"public unfinished snapshot replacement",
+        )
+        .expect("retained snapshot temporary");
+        fs::write(
+            directory.join("access.json"),
+            if corrupt {
+                b"public corrupt access registry\0\xff".as_slice()
+            } else {
+                b"{\"grants\":[],\"retainedPublicFixture\":true}".as_slice()
+            },
+        )
+        .expect("retained access registry");
+        fs::write(
+            directory.join("access.json.tmp"),
+            b"public unfinished access replacement",
+        )
+        .expect("retained access temporary");
         for (name, bytes) in [
-            ("public-retained-blob.blob", b"public original blob bytes".as_slice()),
-            ("public-retained-blob.json", b"{\"publicRetainedMetadata\":true}".as_slice()),
-            ("public-upload.part", b"public partial upload bytes".as_slice()),
-            ("public-upload.part.json", b"{\"publicUploadOffset\":7}".as_slice()),
-            ("public-upload.part.json.tmp", b"public interrupted metadata replacement".as_slice()),
+            (
+                "public-retained-blob.blob",
+                b"public original blob bytes".as_slice(),
+            ),
+            (
+                "public-retained-blob.json",
+                b"{\"publicRetainedMetadata\":true}".as_slice(),
+            ),
+            (
+                "public-upload.part",
+                b"public partial upload bytes".as_slice(),
+            ),
+            (
+                "public-upload.part.json",
+                b"{\"publicUploadOffset\":7}".as_slice(),
+            ),
+            (
+                "public-upload.part.json.tmp",
+                b"public interrupted metadata replacement".as_slice(),
+            ),
         ] {
-            fs::write(directory.join("blobs").join(name), bytes).expect("retained blob/upload fixture");
+            fs::write(directory.join("blobs").join(name), bytes)
+                .expect("retained blob/upload fixture");
         }
-        fs::create_dir(directory.join("unknown-empty-directory")).expect("retained empty directory");
-        fs::write(directory.join("unknown-user-data.bin"), [index as u8, 0, 255, 7])
-            .expect("retained unknown file");
+        fs::create_dir(directory.join("unknown-empty-directory"))
+            .expect("retained empty directory");
+        fs::write(
+            directory.join("unknown-user-data.bin"),
+            [index as u8, 0, 255, 7],
+        )
+        .expect("retained unknown file");
         // Login/account reconciliation scans the containing agents directory.
         // A reserved messaging subtree must never be treated as an Agent's
         // automation store, including malformed markers eligible for cleanup.
         let automation_markers = [
-            ("retained-valid", serde_json::to_vec(&json!({
-                "name": "Public retained marker", "prompt": "Keep these bytes",
-                "schedule": "0 9 * * *", "enabled": false, "createdAt": 1000,
-                "lastRunAt": null,
-                "_mahayana": {"id": "retained-valid", "agentId": "_messaging"},
-                "retainedUnknownField": index
-            })).expect("representative retained automation marker")),
-            ("retained-corrupt", b"{public corrupt automation marker\0\xff".to_vec()),
-            ("retained-unrecognized", b"{\"unknownUserFormat\":true}".to_vec()),
+            (
+                "retained-valid",
+                serde_json::to_vec(&json!({
+                    "name": "Public retained marker", "prompt": "Keep these bytes",
+                    "schedule": "0 9 * * *", "enabled": false, "createdAt": 1000,
+                    "lastRunAt": null,
+                    "_mahayana": {"id": "retained-valid", "agentId": "_messaging"},
+                    "retainedUnknownField": index
+                }))
+                .expect("representative retained automation marker"),
+            ),
+            (
+                "retained-corrupt",
+                b"{public corrupt automation marker\0\xff".to_vec(),
+            ),
+            (
+                "retained-unrecognized",
+                b"{\"unknownUserFormat\":true}".to_vec(),
+            ),
         ];
         for (name, marker) in automation_markers {
             let automation = directory.join("automations").join(name);
-            fs::create_dir_all(automation.join("user-backup")).expect("retained automation directory");
-            fs::write(automation.join("automation.json"), marker).expect("retained automation marker");
-            fs::write(automation.join("preserved.bin"), b"public original automation-adjacent bytes")
-                .expect("retained automation-adjacent file");
-            fs::write(automation.join("user-backup/item.bin"), [0, 255, index as u8])
-                .expect("retained nested automation backup");
+            fs::create_dir_all(automation.join("user-backup"))
+                .expect("retained automation directory");
+            fs::write(automation.join("automation.json"), marker)
+                .expect("retained automation marker");
+            fs::write(
+                automation.join("preserved.bin"),
+                b"public original automation-adjacent bytes",
+            )
+            .expect("retained automation-adjacent file");
+            fs::write(
+                automation.join("user-backup/item.bin"),
+                [0, 255, index as u8],
+            )
+            .expect("retained nested automation backup");
         }
     }
 }
 
 fn retained_messaging_case(corrupt: bool) {
-    let root = test_directory(if corrupt { "messaging-corrupt" } else { "messaging-retained" });
+    let root = test_directory(if corrupt {
+        "messaging-corrupt"
+    } else {
+        "messaging-retained"
+    });
     seed_retained_messaging(&root.0, corrupt);
     let before = messaging_entries(&root.0);
     assert!(!before.is_empty());
     for mode in ["messaging-first", "messaging-isolated", "messaging-restart"] {
         run_child(&root.0, mode);
-        assert_eq!(messaging_entries(&root.0), before, "production process changed retained messaging state");
+        assert_eq!(
+            messaging_entries(&root.0),
+            before,
+            "production process changed retained messaging state"
+        );
     }
 }
 
@@ -1336,7 +1935,10 @@ fn native_standalone_messaging_refuses_dispatch_without_creating_storage() {
     assert!(messaging_entries(&root.0).is_empty());
     for mode in ["messaging-first", "messaging-isolated", "messaging-restart"] {
         run_child(&root.0, mode);
-        assert!(messaging_entries(&root.0).is_empty(), "missing messaging stores must remain absent");
+        assert!(
+            messaging_entries(&root.0).is_empty(),
+            "missing messaging stores must remain absent"
+        );
     }
 }
 
@@ -1373,24 +1975,35 @@ fn assert_production_social_registry_selection(root: &Path) {
     let generic = MahayanaHost::create(config("ordinary-host-control"))
         .expect("ordinary Host retains its supported provider composition");
     let ordinary = generic.status().providers;
-    assert!(ordinary.iter().any(|provider| provider == "mahayana-social"));
+    assert!(
+        ordinary
+            .iter()
+            .any(|provider| provider == "mahayana-social")
+    );
     assert!(ordinary.iter().any(|provider| provider == "mahayana-ai"));
     assert!(ordinary.iter().any(|provider| provider == "miniapp"));
     drop(generic);
-    let owned = MahayanaHost::create_with_session_transcript_owner(config("session-owned-host-control"))
-        .expect("Session/Transcript-owned Host");
+    let owned =
+        MahayanaHost::create_with_session_transcript_owner(config("session-owned-host-control"))
+            .expect("Session/Transcript-owned Host");
     let providers = owned.status().providers;
-    let expected = ordinary.into_iter()
+    let expected = ordinary
+        .into_iter()
         .filter(|provider| provider != "mahayana-social")
         .collect::<Vec<_>>();
-    assert_eq!(providers, expected, "only the generic social writer is retired");
+    assert_eq!(
+        providers, expected,
+        "only the generic social writer is retired"
+    );
     // Public FeatureHost denial now runs before the registry. Inspect the real
     // Session/Transcript-owned Host and call its Runtime directly as well.
     assert!(!providers.iter().any(|provider| provider == "telegram"));
-    let error = owned.execute(mahayana_core::RuntimeCommand::ConversationHistory {
-        conversation_id: mahayana_core::ConversationId("telegram:chat:42".into()),
-        limit: Some(20),
-    }).expect_err("the actual desktop Runtime must not register Telegram");
+    let error = owned
+        .execute(mahayana_core::RuntimeCommand::ConversationHistory {
+            conversation_id: mahayana_core::ConversationId("telegram:chat:42".into()),
+            limit: Some(20),
+        })
+        .expect_err("the actual desktop Runtime must not register Telegram");
     assert_eq!(error.to_string(), "provider is unavailable: telegram");
     drop(owned);
 }
@@ -1475,21 +2088,51 @@ fn assert_social_entries_unavailable(host: &AppHost, lane: &PlatformRequestHost)
             ("GET", "/api/social/messages", SOCIAL_HTTP_OWNER_ERROR),
             ("PATCH", "/api/social/messages/1", SOCIAL_HTTP_OWNER_ERROR),
             ("DELETE", "/api/social/messages/1", SOCIAL_HTTP_OWNER_ERROR),
-            ("POST", "/api/social/messages/1/reactions", SOCIAL_HTTP_OWNER_ERROR),
-        ].into_iter().chain(["GET", "POST", "PUT", "PATCH", "DELETE"].into_iter().flat_map(|method| {
-            [
-                "/api/social/message-resources",
-                "/api/social/message-resources/12345678-1234-1234-1234-123456789abc",
-            ].into_iter().map(move |path| (method, path, SOCIAL_RESOURCE_OWNER_ERROR))
-        })).chain([
-            ("GET", "/api/other/%2e%2e/social/message-resources/12345678-1234-1234-1234-123456789abc", SOCIAL_RESOURCE_OWNER_ERROR),
-            ("GET", "/api/social/%6dessage-resources/12345678-1234-1234-1234-123456789abc", SOCIAL_HTTP_PATH_ERROR),
-            ("GET", "/api/social/Message-resources/12345678-1234-1234-1234-123456789abc", SOCIAL_HTTP_PATH_ERROR),
+            (
+                "POST",
+                "/api/social/messages/1/reactions",
+                SOCIAL_HTTP_OWNER_ERROR,
+            ),
+        ]
+        .into_iter()
+        .chain(
+            ["GET", "POST", "PUT", "PATCH", "DELETE"]
+                .into_iter()
+                .flat_map(|method| {
+                    [
+                        "/api/social/message-resources",
+                        "/api/social/message-resources/12345678-1234-1234-1234-123456789abc",
+                    ]
+                    .into_iter()
+                    .map(move |path| (method, path, SOCIAL_RESOURCE_OWNER_ERROR))
+                }),
+        )
+        .chain([
+            (
+                "GET",
+                "/api/other/%2e%2e/social/message-resources/12345678-1234-1234-1234-123456789abc",
+                SOCIAL_RESOURCE_OWNER_ERROR,
+            ),
+            (
+                "GET",
+                "/api/social/%6dessage-resources/12345678-1234-1234-1234-123456789abc",
+                SOCIAL_HTTP_PATH_ERROR,
+            ),
+            (
+                "GET",
+                "/api/social/Message-resources/12345678-1234-1234-1234-123456789abc",
+                SOCIAL_HTTP_PATH_ERROR,
+            ),
         ]) {
             let params = json!({"method": method, "path": path, "authenticated": authenticated,
                 "sessionOwned": false,
                 "body": {"text": SOCIAL_TEXT, "contact": "public-contact"}});
-            let response = identified_request(host, "social-http-owner", "platform.request", params.clone());
+            let response = identified_request(
+                host,
+                "social-http-owner",
+                "platform.request",
+                params.clone(),
+            );
             assert!(!response.ok);
             assert!(response.result.is_none());
             assert_eq!(response.error.as_deref(), Some(expected_error));
@@ -1500,13 +2143,22 @@ fn assert_social_entries_unavailable(host: &AppHost, lane: &PlatformRequestHost)
             assert_eq!(response["ok"], false);
             assert!(response["result"].is_null());
             assert_eq!(response["error"], expected_error);
-            assert!(!response.to_string().contains("Public retained Human payload"));
+            assert!(
+                !response
+                    .to_string()
+                    .contains("Public retained Human payload")
+            );
         }
     }
     // Rejected intents cannot publish chat/history results or copy their body
     // into the feature event stream. Ordinary account/Agent events are allowed.
     for _ in 0..256 {
-        let response = identified_request(host, "social-event-check", "feature.receive", json!({"timeoutMs": 0}));
+        let response = identified_request(
+            host,
+            "social-event-check",
+            "feature.receive",
+            json!({"timeoutMs": 0}),
+        );
         assert!(response.ok);
         let event = response.result.expect("feature event result");
         if event.is_null() {
@@ -1525,47 +2177,109 @@ fn social_child_case(root: &Path, first: bool) {
     assert_production_social_registry_selection(root);
     let host = production_host(root);
     assert_eq!(auth(&host)["loggedIn"], true);
-    assert_eq!(host.mini_app_account_port().current_scope().expect("production Native scope").account_id, "123");
+    assert_eq!(
+        host.mini_app_account_port()
+            .current_scope()
+            .expect("production Native scope")
+            .account_id,
+        "123"
+    );
     let baseline = root.join("public-social-retention-before.json");
     if first {
         create(&host, BOT_SOCIAL);
         seed_social_waiting_turn(&host);
-        fs::write(&baseline, serde_json::to_vec(&social_sqlite_image(&host)).expect("retained SQLite baseline"))
-            .expect("write owned test baseline");
+        fs::write(
+            &baseline,
+            serde_json::to_vec(&social_sqlite_image(&host)).expect("retained SQLite baseline"),
+        )
+        .expect("write owned test baseline");
     } else {
-        assert!(contains_bot(&host, BOT_SOCIAL), "normal Agent remains available after restart");
+        assert!(
+            contains_bot(&host, BOT_SOCIAL),
+            "normal Agent remains available after restart"
+        );
     }
-    let before: Value = serde_json::from_slice(&fs::read(&baseline).expect("original retained baseline"))
-        .expect("decode retained baseline");
-    assert_eq!(social_sqlite_image(&host), before, "restart changed historical social state or payload");
+    let before: Value =
+        serde_json::from_slice(&fs::read(&baseline).expect("original retained baseline"))
+            .expect("decode retained baseline");
+    assert_eq!(
+        social_sqlite_image(&host),
+        before,
+        "restart changed historical social state or payload"
+    );
     let lane = PlatformRequestHost::new(root.join("app-host"))
         .expect("production lightweight platform lane uses Native owner");
     assert_social_entries_unavailable(&host, &lane);
-    assert_eq!(fs::read(&credential).expect("Native credential after denied requests"), expected_credential);
+    assert_eq!(
+        fs::read(&credential).expect("Native credential after denied requests"),
+        expected_credential
+    );
     assert_eq!(social_sqlite_image(&host), before);
     let switched_credential = replace_native_credential(&credential, PRODUCTION, "456");
     assert_eq!(auth(&host)["loggedIn"], true);
-    assert_eq!(host.mini_app_account_port().current_scope().expect("switched Native scope").account_id, "456");
-    assert!(!contains_bot(&host, BOT_SOCIAL), "previous account Agent must remain isolated");
+    assert_eq!(
+        host.mini_app_account_port()
+            .current_scope()
+            .expect("switched Native scope")
+            .account_id,
+        "456"
+    );
+    assert!(
+        !contains_bot(&host, BOT_SOCIAL),
+        "previous account Agent must remain isolated"
+    );
     assert_social_entries_unavailable(&host, &lane);
-    assert_eq!(fs::read(&credential).expect("switched Native credential after refusal"), switched_credential);
-    assert_eq!(social_sqlite_image(&host), before, "account change altered retained social records");
+    assert_eq!(
+        fs::read(&credential).expect("switched Native credential after refusal"),
+        switched_credential
+    );
+    assert_eq!(
+        social_sqlite_image(&host),
+        before,
+        "account change altered retained social records"
+    );
     let returned_credential = replace_native_credential(&credential, PRODUCTION, "123");
     assert_eq!(auth(&host)["loggedIn"], true);
-    assert_eq!(host.mini_app_account_port().current_scope().expect("returned Native scope").account_id, "123");
-    assert!(contains_bot(&host, BOT_SOCIAL), "original account Agent remains durable");
+    assert_eq!(
+        host.mini_app_account_port()
+            .current_scope()
+            .expect("returned Native scope")
+            .account_id,
+        "123"
+    );
+    assert!(
+        contains_bot(&host, BOT_SOCIAL),
+        "original account Agent remains durable"
+    );
     assert_social_entries_unavailable(&host, &lane);
-    assert_eq!(fs::read(&credential).expect("returned Native credential after refusal"), returned_credential);
-    assert_eq!(social_sqlite_image(&host), before, "returning to original account altered retained social records");
+    assert_eq!(
+        fs::read(&credential).expect("returned Native credential after refusal"),
+        returned_credential
+    );
+    assert_eq!(
+        social_sqlite_image(&host),
+        before,
+        "returning to original account altered retained social records"
+    );
     fs::remove_file(&credential).expect("Native logout fixture");
     assert_eq!(auth(&host)["loggedIn"], false);
     assert_social_entries_unavailable(&host, &lane);
-    assert!(matches!(fs::symlink_metadata(&credential), Err(error)
+    assert!(
+        matches!(fs::symlink_metadata(&credential), Err(error)
         if error.kind() == std::io::ErrorKind::NotFound),
-        "rejected logged-out HTTP calls must not recreate the Native credential");
+        "rejected logged-out HTTP calls must not recreate the Native credential"
+    );
     assert_eq!(auth(&host)["loggedIn"], false);
-    assert_eq!(social_sqlite_image(&host), before, "unauthenticated denials changed retained data");
-    assert!(!root.join("app-host/feature-host/account-session.json").exists());
+    assert_eq!(
+        social_sqlite_image(&host),
+        before,
+        "unauthenticated denials changed retained data"
+    );
+    assert!(
+        !root
+            .join("app-host/feature-host/account-session.json")
+            .exists()
+    );
     drop(lane);
     drop(host);
 }
@@ -1577,8 +2291,6 @@ fn native_social_owner_preserves_sqlite_waiting_turn_and_refuses_bypass() {
         run_child(&root.0, mode);
     }
 }
-
-
 
 const TELEGRAM_OWNER_ERROR: &str = "host operation failed: provider is unavailable: telegram";
 const TELEGRAM_RETAINED_TEXT: &str =
@@ -1715,9 +2427,13 @@ fn assert_telegram_entries_unavailable(host: &AppHost) {
                 "text": TELEGRAM_RETAINED_TEXT, "mode": "agent"}),
         ] {
             for params in [command.clone(), json!({"command": command})] {
-                let response = identified_request(host, "telegram-owner", "feature.execute", params);
+                let response =
+                    identified_request(host, "telegram-owner", "feature.execute", params);
                 assert!(!response.ok);
-                assert!(response.result.is_none(), "denial cannot admit an operation");
+                assert!(
+                    response.result.is_none(),
+                    "denial cannot admit an operation"
+                );
                 assert_eq!(response.error.as_deref(), Some(TELEGRAM_OWNER_ERROR));
             }
         }
@@ -1726,20 +2442,46 @@ fn assert_telegram_entries_unavailable(host: &AppHost) {
     // conversation result, turn transition or operation can escape this owner.
     // The six-table equality below independently rejects newly persisted work.
     for _ in 0..256 {
-        let response = identified_request(host, "telegram-event-check", "feature.receive", json!({"timeoutMs": 0}));
+        let response = identified_request(
+            host,
+            "telegram-event-check",
+            "feature.receive",
+            json!({"timeoutMs": 0}),
+        );
         assert!(response.ok);
         let event = response.result.expect("feature event result");
         if event.is_null() {
             return;
         }
         let kind = event["type"].as_str().expect("typed Host event");
-        assert!(!matches!(kind, "chat.message" | "chat.delta" | "conversation.opened" | "turn.state" | "messaging.event"),
-            "retired Telegram intent published a message or turn event: {kind}");
-        assert!(!kind.starts_with("operation."), "unexpected operation event: {kind}");
-        assert!(event.get("operationId").is_none(), "unexpected admitted operation: {event}");
+        assert!(
+            !matches!(
+                kind,
+                "chat.message"
+                    | "chat.delta"
+                    | "conversation.opened"
+                    | "turn.state"
+                    | "messaging.event"
+            ),
+            "retired Telegram intent published a message or turn event: {kind}"
+        );
+        assert!(
+            !kind.starts_with("operation."),
+            "unexpected operation event: {kind}"
+        );
+        assert!(
+            event.get("operationId").is_none(),
+            "unexpected admitted operation: {event}"
+        );
         let encoded = event.to_string();
-        assert!(!encoded.contains("Public retained Telegram payload"), "retained body leaked into events");
-        assert!(!encoded.contains("public-telegram-"), "retained identity leaked into events");
+        assert!(
+            !encoded.contains("Public retained Telegram payload"),
+            "retained body leaked into events"
+        );
+        assert!(
+            !encoded.contains("public-telegram-"),
+            "retained identity leaked into events"
+        );
     }
     panic!("Telegram owner fixture event queue did not settle");
 }
@@ -1750,48 +2492,114 @@ fn telegram_child_case(root: &Path, first: bool) {
     assert_production_social_registry_selection(root);
     let host = production_host(root);
     assert_eq!(auth(&host)["loggedIn"], true);
-    assert_eq!(host.mini_app_account_port().current_scope().expect("production Native scope").account_id, "123");
+    assert_eq!(
+        host.mini_app_account_port()
+            .current_scope()
+            .expect("production Native scope")
+            .account_id,
+        "123"
+    );
     let baseline = root.join("public-telegram-retention-before.json");
     if first {
         create(&host, BOT_TELEGRAM);
         seed_telegram_retained_work(&host);
-        fs::write(&baseline, serde_json::to_vec(&social_sqlite_image(&host)).expect("retained SQLite baseline"))
-            .expect("write owned Telegram test baseline");
+        fs::write(
+            &baseline,
+            serde_json::to_vec(&social_sqlite_image(&host)).expect("retained SQLite baseline"),
+        )
+        .expect("write owned Telegram test baseline");
     } else {
-        assert!(contains_bot(&host, BOT_TELEGRAM), "normal Agent remains available after real process restart");
+        assert!(
+            contains_bot(&host, BOT_TELEGRAM),
+            "normal Agent remains available after real process restart"
+        );
     }
-    let before: Value = serde_json::from_slice(&fs::read(&baseline).expect("original retained Telegram baseline"))
-        .expect("decode retained Telegram baseline");
-    assert_eq!(social_sqlite_image(&host), before, "startup changed retained Telegram fields or payload bytes");
+    let before: Value =
+        serde_json::from_slice(&fs::read(&baseline).expect("original retained Telegram baseline"))
+            .expect("decode retained Telegram baseline");
+    assert_eq!(
+        social_sqlite_image(&host),
+        before,
+        "startup changed retained Telegram fields or payload bytes"
+    );
     assert_telegram_entries_unavailable(&host);
-    assert_eq!(fs::read(&credential).expect("Native credential after Telegram refusal"), expected_credential);
-    assert_eq!(social_sqlite_image(&host), before, "denied Telegram intent wrote RuntimeStore work");
+    assert_eq!(
+        fs::read(&credential).expect("Native credential after Telegram refusal"),
+        expected_credential
+    );
+    assert_eq!(
+        social_sqlite_image(&host),
+        before,
+        "denied Telegram intent wrote RuntimeStore work"
+    );
 
     let switched_credential = replace_native_credential(&credential, PRODUCTION, "456");
     assert_eq!(auth(&host)["loggedIn"], true);
-    assert_eq!(host.mini_app_account_port().current_scope().expect("switched Native scope").account_id, "456");
-    assert!(!contains_bot(&host, BOT_TELEGRAM), "previous account Agent must remain isolated");
+    assert_eq!(
+        host.mini_app_account_port()
+            .current_scope()
+            .expect("switched Native scope")
+            .account_id,
+        "456"
+    );
+    assert!(
+        !contains_bot(&host, BOT_TELEGRAM),
+        "previous account Agent must remain isolated"
+    );
     assert_telegram_entries_unavailable(&host);
-    assert_eq!(fs::read(&credential).expect("switched Native credential after Telegram refusal"), switched_credential);
-    assert_eq!(social_sqlite_image(&host), before, "account change altered retained Telegram work");
+    assert_eq!(
+        fs::read(&credential).expect("switched Native credential after Telegram refusal"),
+        switched_credential
+    );
+    assert_eq!(
+        social_sqlite_image(&host),
+        before,
+        "account change altered retained Telegram work"
+    );
 
     let returned_credential = replace_native_credential(&credential, PRODUCTION, "123");
     assert_eq!(auth(&host)["loggedIn"], true);
-    assert_eq!(host.mini_app_account_port().current_scope().expect("returned Native scope").account_id, "123");
-    assert!(contains_bot(&host, BOT_TELEGRAM), "original account Agent remains durable");
+    assert_eq!(
+        host.mini_app_account_port()
+            .current_scope()
+            .expect("returned Native scope")
+            .account_id,
+        "123"
+    );
+    assert!(
+        contains_bot(&host, BOT_TELEGRAM),
+        "original account Agent remains durable"
+    );
     assert_telegram_entries_unavailable(&host);
-    assert_eq!(fs::read(&credential).expect("returned Native credential after Telegram refusal"), returned_credential);
-    assert_eq!(social_sqlite_image(&host), before, "account return altered retained Telegram work");
+    assert_eq!(
+        fs::read(&credential).expect("returned Native credential after Telegram refusal"),
+        returned_credential
+    );
+    assert_eq!(
+        social_sqlite_image(&host),
+        before,
+        "account return altered retained Telegram work"
+    );
 
     fs::remove_file(&credential).expect("Native logout fixture");
     assert_eq!(auth(&host)["loggedIn"], false);
     assert_telegram_entries_unavailable(&host);
-    assert!(matches!(fs::symlink_metadata(&credential), Err(error)
+    assert!(
+        matches!(fs::symlink_metadata(&credential), Err(error)
         if error.kind() == std::io::ErrorKind::NotFound),
-        "logged-out Telegram refusal must not recreate a Native credential");
+        "logged-out Telegram refusal must not recreate a Native credential"
+    );
     assert_eq!(auth(&host)["loggedIn"], false);
-    assert_eq!(social_sqlite_image(&host), before, "logged-out refusal altered retained Telegram work");
-    assert!(!root.join("app-host/feature-host/account-session.json").exists());
+    assert_eq!(
+        social_sqlite_image(&host),
+        before,
+        "logged-out refusal altered retained Telegram work"
+    );
+    assert!(
+        !root
+            .join("app-host/feature-host/account-session.json")
+            .exists()
+    );
     drop(host);
 }
 

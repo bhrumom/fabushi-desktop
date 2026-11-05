@@ -9,17 +9,17 @@ import {
   type TranscriptPermissionRequest,
   type TranscriptThinking,
   type TranscriptToolCall
-} from "../recovered/features/conversation/workspace/model";
-import type { DeepLinkInfo } from "../recovered/features/deep-links/overlay/model";
-import { projectTranscriptCardEntry } from "../recovered/features/conversation/cards/transcript-card/protocol";
-import type { TranscriptCardEntry } from "../recovered/features/conversation/cards/transcript-card/protocol";
-import { projectUserAttachmentEvent, type UserAttachmentGalleryProjection } from "../recovered/features/conversation/cards/transcript-card/attachment-data";
-import { projectSendMessageText, type SendMessageTextAdjacency } from "../recovered/features/conversation/cards/transcript-card/send-message-text";
-import { projectTimelineEvent } from "../recovered/features/conversation/cards/timeline-event-registry";
-import { projectTranscriptReactions } from "../recovered/features/conversation/cards/transcript-card/reaction-actions";
-import type { TranscriptThreadSummary } from "../recovered/features/conversation/cards/transcript-card/thread-summary-controller";
+} from "../recovered/features/conversation/workspace/model.ts";
+import type { DeepLinkInfo } from "../recovered/features/deep-links/overlay/model.ts";
+import { projectTranscriptCardEntry } from "../recovered/features/conversation/cards/transcript-card/protocol.ts";
+import type { TranscriptCardEntry } from "../recovered/features/conversation/cards/transcript-card/protocol.ts";
+import { projectUserAttachmentEvent, type UserAttachmentGalleryProjection } from "../recovered/features/conversation/cards/transcript-card/attachment-data.ts";
+import { projectSendMessageText, type SendMessageTextAdjacency } from "../recovered/features/conversation/cards/transcript-card/send-message-text.ts";
+import { projectTimelineEvent } from "../recovered/features/conversation/cards/timeline-event-registry.ts";
+import { projectTranscriptReactions } from "../recovered/features/conversation/cards/transcript-card/reaction-actions.ts";
+import type { TranscriptThreadSummary } from "../recovered/features/conversation/cards/transcript-card/thread-summary-controller.ts";
 
-export type { DeepLinkInfo } from "../recovered/features/deep-links/overlay/model";
+export type { DeepLinkInfo } from "../recovered/features/deep-links/overlay/model.ts";
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L135135
 // @evidence src/app/dist/renderer/assets/view-DPSBrvyV.js#byteLength=1373 (user-attachment server-event card)

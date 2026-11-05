@@ -81,7 +81,9 @@
         "Provider readiness, physical worker availability and production composition remain separate unresolved claims"
       ],
       "migration_rollback": "Remove the adapter composition and retain existing Computer authorization/result ownership; do not retry an outcome-unknown mutation",
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-RESP-INFRA-WORKER-CRABBOX-COMPUTER-ADAPTER-001-ORACLE"
+      ],
       "owner_decision": "Record the Computer consumer adapter boundary separately; do not treat it as device enrollment or production provider wiring",
       "postconditions": [
         "A valid enrolled capability can reach one existing ComputerToolExecutor only after currentness and replay validation"
@@ -320,7 +322,9 @@
         "Settings status reachability and initial/read-refresh event publication remain separate from CLI, mutation and acceptance claims"
       ],
       "migration_rollback": "Remove the read-only projection registration on schema incompatibility while retaining canonical Host owner state; no mutation fallback is allowed",
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-RESP-INFRA-WORKER-CRABBOX-STATUS-PROJECTION-001-ORACLE"
+      ],
       "owner_decision": "Track the read-only status path separately from the broader Crabbox projection responsibility, which still includes absent mutation and UI paths",
       "postconditions": [
         "Owner status and bounded persistence counts reach the typed Coordinator status consumer without a second state store"
@@ -427,7 +431,9 @@
         "Provider readiness, physical worker availability and production mutation remain separate unresolved claims"
       ],
       "migration_rollback": "Remove the adapter composition and retain the canonical Cloud Worker lease state; do not retry or release an outcome-unknown mutation",
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-RESP-INFRA-WORKER-CRABBOX-EXTERNAL-MACHINE-ADAPTER-001-ORACLE"
+      ],
       "owner_decision": "Record only the existing external-machine adapter boundary as wired; keep provider, device, physical worker and packaged composition in their own pending responsibility rows",
       "postconditions": [
         "A valid enrolled capability can reach exactly one existing external-machine contract boundary without bypassing canonical authorization"
@@ -544,7 +550,9 @@
         "Pairing-backed remote rows remain explicitly disconnected until a legitimate transport owner supplies the missing caller"
       ],
       "migration_rollback": "Disable the local node projection only at its existing Gateway boundary and retain canonical runtime state; remote paths remain fail-closed",
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-RESP-NODE-HOST-LOCAL-RUNTIME-PROJECTION-001-ORACLE"
+      ],
       "owner_decision": "Record local producer/state/consumer wiring separately from the full NodeHost transport and worker responsibility",
       "postconditions": [
         "Local node status/list/register and system.run invoke use the same canonical runtime state and local execution owner"
@@ -4671,7 +4679,9 @@
         "Silent reply token suppresses user notifications cleanly"
       ],
       "migration_rollback": "Disable periodic heartbeat wakes",
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-RESP-AUTO-REPLY-HEARTBEAT-001-ORACLE"
+      ],
       "owner_decision": "Keep the heartbeat responsibility pending until a real producer, timer admission, runner consumer, response-notification consumer, and heartbeat-specific oracle are identified",
       "postconditions": [
         "Heartbeat wake settled with or without user notification"
@@ -5688,7 +5698,9 @@
         "Only paragraph, newline, or sentence break preferences are accepted"
       ],
       "migration_rollback": "Deliver single truncated message with warning",
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-RESP-CHANNEL-STREAMING-CHUNKING-001-ORACLE"
+      ],
       "owner_decision": "Keep draft-streaming configuration resolution in the Plugin SDK owner; do not treat the separate Host transport splitter as this upstream responsibility until its exact source mapping is re-established",
       "postconditions": [
         "Resolved draft-streaming configuration is available to a future production channel consumer"
@@ -6868,7 +6880,9 @@
         "Retention duration of 0 disables session deletion"
       ],
       "migration_rollback": "Retain all cron sessions indefinitely",
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-RESP-CRON-SESSION-REAPER-001-ORACLE"
+      ],
       "owner_decision": "The bounded D01–D03 registration/policy/projection and D04 fence-publication slices use ProductionSessionWorkers/SandAgentDb; do not claim a TranscriptCleanup owner or promote cleanup implementation until CRON-REAPER-D04–D05 archive, media/subagent custody, guarded deletion, and scheduler decisions are complete",
       "postconditions": [
         "Expired ephemeral cron sessions pruned from SQLite store"
@@ -14521,7 +14535,9 @@
         "Channel and group sessions suppress citations under auto mode"
       ],
       "migration_rollback": "Citations mode can be configured via host settings",
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-RESP-MEM-CITATIONS-FORMAT-001-ORACLE"
+      ],
       "owner_decision": "Keep citation formatting pending until search results carry verified source-line provenance and an independent citation-format oracle exists; do not infer line numbers from snippets or entry order",
       "postconditions": [
         "Results formatted with snippet and citation according to session mode"
@@ -16718,7 +16734,9 @@
         "Atomic close fence immediately rejects audio playback after revocation"
       ],
       "migration_rollback": "Controlled by audio port bridge implementation",
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-RESP-TALK-AUDIO-PORT-FENCE-001-ORACLE"
+      ],
       "owner_decision": "Keep audio-output fence pending until a real realtime audio producer, consumer, and Host port owner are identified; current tests are fixture-only",
       "postconditions": [
         "Audio frames dropped safely without memory leakage upon close"
@@ -16904,7 +16922,9 @@
         "Prevents infinite turn re-entry for audio playback"
       ],
       "migration_rollback": "Controlled by voice consult enablement flags",
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-RESP-TALK-EXACT-SPEECH-001-ORACLE"
+      ],
       "owner_decision": "Keep exact-speech responsibility pending until the real consult producer, retained session state owner, and Runner consumer are identified; the current test helper is fixture-only",
       "postconditions": [
         "Exact speech echo suppressed from recursive consult"
@@ -17077,7 +17097,9 @@
         "Silent closed turns pruned during audio context preparation"
       ],
       "migration_rollback": "Controlled by turn context tracker options",
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-RESP-TALK-TURN-CONTEXT-001-ORACLE"
+      ],
       "owner_decision": "Keep turn-context responsibility pending until a real VAD/playback producer, consumer, and turn owner are identified; current tests are fixture-only",
       "postconditions": [
         "Clean turn context correlated to active voice responses"
@@ -17180,7 +17202,9 @@
         "CJK density >30% dynamically selects zh-CN voice"
       ],
       "migration_rollback": "Controlled by transcription provider settings",
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-RESP-TALK-WS-TRANSCRIPTION-001-ORACLE"
+      ],
       "owner_decision": "Keep realtime transcription responsibility pending until a real audio/WebSocket producer, transcription consumer, and existing transport owner are identified; current tests are fixture-only",
       "postconditions": [
         "Validated audio streams delivered to transcription provider"

@@ -301,6 +301,7 @@ fn canonical_search_merges_authenticated_human_and_agent_conversations_and_enfor
             &conversation_id,
             &agent.id,
             "stream-search-1",
+            None,
             "needle from handoff agent",
             980.0,
         )
@@ -406,6 +407,7 @@ fn canonical_search_merges_authenticated_human_and_agent_conversations_and_enfor
             &conversation_id,
             "OriginArchitect",
             "stream-origin-1",
+            None,
             "quarterly architecture roadmap",
             990.0,
         )

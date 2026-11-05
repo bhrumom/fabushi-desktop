@@ -739,18 +739,5 @@
       ],
       "status": "immutable-snapshot-pending-recursive-scan"
     }
-  ],
-  "current_source_status": "historical-pending-fixed-u-revalidation",
-  "candidate_evidence": {
-    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-    "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
-    "json_pointer": "/rebaseline_candidate",
-    "evidence": {
-      "repository": "bhrumom/fabushi-desktop",
-      "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
-      "artifact_id": 13121721589,
-      "run_id": 41401970993,
-      "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
-    }
-  }
+  ]
 }

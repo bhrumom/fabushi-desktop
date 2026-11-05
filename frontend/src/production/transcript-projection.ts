@@ -3,7 +3,7 @@ import {
   type ConversationTranscriptEntry,
   type DraftAttachment,
   type TranscriptMessage,
-} from "../recovered/features/conversation/workspace/model";
+} from "../recovered/features/conversation/workspace/model.ts";
 
 export type TranscriptReadUpdateBuffer = {
   readonly accountSlot: string | null;

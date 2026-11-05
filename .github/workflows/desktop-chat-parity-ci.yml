@@ -112,6 +112,8 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
+      - name: Install locked Playwright video capture dependency
+        run: npx --no-install playwright install ffmpeg
       - name: Verify Electron runtime installation
         shell: bash
         run: |
@@ -200,6 +202,7 @@ jobs:
         env:
           FABUSHI_FEATURE_HOST_MODE: test
           MAHAYANA_APP_HOST_BIN: ${{ github.workspace }}/desktop/resources/bin/mahayana-app-host
+          NMR_ELECTRON_TARGET_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           DEBUG: pw:browser*
           ELECTRON_ENABLE_LOGGING: "1"
           ELECTRON_ENABLE_STACK_DUMPING: "1"

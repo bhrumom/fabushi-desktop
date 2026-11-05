@@ -13,8 +13,8 @@ const expectedSourceSha = process.env.OBF_EXPECTED_SOURCE_SHA?.trim() || sourceS
 const evidenceRoot = process.env.MINIAPP_EVIDENCE_DIR?.trim()
   || path.join(tmpdir(), `fabushi-miniapp-acceptance-${sourceSha.slice(0, 12) || 'unknown'}`);
 const appId = 'org.fabushi.global-dandelion';
-const packageVersion = process.env.MINIAPP_PACKAGE_VERSION || '0.3.3';
-const packageDigest = process.env.MINIAPP_PACKAGE_DIGEST || '4f53dd5df129adb41feadf86016a5923ba792a9a7636a37694965ea4ad28f4db';
+const packageVersion = process.env.MINIAPP_PACKAGE_VERSION || '0.4.5';
+const packageDigest = process.env.MINIAPP_PACKAGE_DIGEST || 'edee0a39535b86bbc7de564483ca238448f0549bf011f4e252cccd328bc9ac75';
 const preferenceKey = 'global-dandelion-display-v1';
 const maxInputBytes = 16 * 1024 * 1024;
 const harnessSource = process.env.FABUSHI_MINIAPP_HARNESS_SOURCE || process.env.GITHUB_SHA || sourceSha;
