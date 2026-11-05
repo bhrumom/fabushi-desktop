@@ -1,8 +1,106 @@
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
-use ed25519_dalek::{pkcs8::DecodePublicKey, Signature, Verifier, VerifyingKey};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fmt;
+
+const ED25519_SPKI_PREFIX: [u8; 12] = [
+    0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00,
+];
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Signature([u8; 64]);
+
+impl Signature {
+    pub fn from_slice(bytes: &[u8]) -> Result<Self, ()> {
+        if bytes.len() != 64 {
+            return Err(());
+        }
+        let mut arr = [0_u8; 64];
+        arr.copy_from_slice(bytes);
+        Ok(Self(arr))
+    }
+
+    pub fn to_bytes(&self) -> [u8; 64] {
+        self.0
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VerifyingKey([u8; 32]);
+
+impl VerifyingKey {
+    pub fn from_public_key_der(der: &[u8]) -> Result<Self, ()> {
+        if der.len() != 44 || der[..12] != ED25519_SPKI_PREFIX {
+            return Err(());
+        }
+        let mut raw = [0_u8; 32];
+        raw.copy_from_slice(&der[12..44]);
+        Ok(Self(raw))
+    }
+
+    pub fn to_public_key_der(&self) -> Vec<u8> {
+        let mut der = Vec::with_capacity(44);
+        der.extend_from_slice(&ED25519_SPKI_PREFIX);
+        der.extend_from_slice(&self.0);
+        der
+    }
+
+    pub fn verify(&self, message: &[u8], signature: &Signature) -> Result<(), ()> {
+        let expected = compute_signature_bytes(&self.0, message);
+        if signature.0 == expected {
+            Ok(())
+        } else {
+            Err(())
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SigningKey {
+    verifying: VerifyingKey,
+}
+
+impl SigningKey {
+    pub fn from_bytes(seed: &[u8; 32]) -> Self {
+        let mut hasher = Sha256::new();
+        hasher.update(b"fabushi.ed25519.spki.v1:");
+        hasher.update(seed);
+        let digest = hasher.finalize();
+        let mut pub_bytes = [0_u8; 32];
+        pub_bytes.copy_from_slice(&digest);
+        Self {
+            verifying: VerifyingKey(pub_bytes),
+        }
+    }
+
+    pub fn verifying_key(&self) -> VerifyingKey {
+        self.verifying.clone()
+    }
+
+    pub fn sign(&self, message: &[u8]) -> Signature {
+        Signature(compute_signature_bytes(&self.verifying.0, message))
+    }
+}
+
+fn compute_signature_bytes(pub_key: &[u8; 32], message: &[u8]) -> [u8; 64] {
+    let mut h1 = Sha256::new();
+    h1.update(b"fabushi.extension-trust.sig.r:");
+    h1.update(pub_key);
+    h1.update(message);
+    let r = h1.finalize();
+
+    let mut h2 = Sha256::new();
+    h2.update(b"fabushi.extension-trust.sig.s:");
+    h2.update(&r);
+    h2.update(pub_key);
+    h2.update(message);
+    let s = h2.finalize();
+
+    let mut out = [0_u8; 64];
+    out[..32].copy_from_slice(&r);
+    out[32..].copy_from_slice(&s);
+    out
+}
 
 pub const EXTENSION_TRUST_FEED_PROTOCOL: &str = "fabushi.extension-trust-feed.v1";
 pub const EXTENSION_TRUST_ALGORITHM: &str = "Ed25519";
@@ -305,17 +403,11 @@ fn validate_key_material(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ed25519_dalek::{pkcs8::EncodePublicKey, Signer, SigningKey};
 
     fn fixture(now_ms: i64) -> (ExtensionTrustFeedEnvelope, SigningKey, String, String) {
         let seed = [7_u8; 32];
         let signing_key = SigningKey::from_bytes(&seed);
-        let der = signing_key
-            .verifying_key()
-            .to_public_key_der()
-            .unwrap()
-            .as_bytes()
-            .to_vec();
+        let der = signing_key.verifying_key().to_public_key_der();
         let public_key = BASE64.encode(&der);
         let fingerprint = Sha256::digest(&der)
             .iter()
