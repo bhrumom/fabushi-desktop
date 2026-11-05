@@ -12,6 +12,8 @@ export function TdrpComposerToolbar({
 }: TdrpComposerToolbarProps): React.JSX.Element {
   return (
     <div
+      className="tdrp-composer-toolbar"
+      data-testid="tdrp-composer-toolbar"
       style={{
         display: "flex",
         alignItems: "center",

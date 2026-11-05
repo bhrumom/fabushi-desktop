@@ -47,6 +47,7 @@ const fixedReplies: Record<string, unknown> = {
   getTrays: [], getListenerIntegrations: { integrations: [] }, getAsyncTasks: [],
   isAgentNetworkEnabled: false, isGlobalSearchEnabled: globalSearch,
   getForeverBoxStatus: null, getSubagents: [], isEgressTunnelAvailable: false,
+  "folders.list": [], "stories.list": [], "stars.status": { stars: 0, balance: 0 },
 };
 class FixturePort implements TransferredCoordinatorPort {
   readonly id = ++portSequence;
