@@ -102,7 +102,7 @@ export interface CoordinatorCallAdmission {
 
 export interface ProductionCoordinatorClient {
   readonly ready: Promise<void>;
-  call(method: string, args?: unknown, admission?: CoordinatorCallAdmission): Promise<unknown>;
+  call<T = unknown>(method: string, args?: unknown, admission?: CoordinatorCallAdmission): Promise<T>;
   telegramAuthStatus(): Promise<TelegramAuthorizationProjection>;
   telegramSendCode(phoneNumber: string): Promise<TelegramAuthorizationProjection>;
   telegramSignIn(code: string): Promise<TelegramAuthorizationProjection>;
@@ -305,7 +305,7 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
   if (claim == null) return null;
   claim.request();
 
-  const call = async (method: string, args: unknown = {}, admission?: CoordinatorCallAdmission) => {
+  const call = async <T = unknown>(method: string, args: unknown = {}, admission?: CoordinatorCallAdmission): Promise<T> => {
     if (method === "getHumanConversationTranscriptTail" && parseCoordinatorHumanTranscriptPageRequest(args) == null) {
       throw new Error("getHumanConversationTranscriptTail requires a valid Human transcript cursor");
     }
@@ -332,7 +332,7 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
       disconnect(expectedPort, "coordinator request post failed");
       throw error;
     }
-    return await response;
+    return (await response) as T;
   };
 
   return {
