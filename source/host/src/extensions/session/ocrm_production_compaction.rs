@@ -161,7 +161,7 @@ impl ProductionSessionWorkers {
         next: &serde_json::Value,
     ) -> Result<Option<serde_json::Value>, String> {
         self.with_agent_filesystem_mutation(agent_id, || {
-            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.assert_agent_work_admission_locked(agent_id)?;
             self.open_agent_db_owner_locked(agent_id)?
                 .update_transcript_entry_if_session_admitted(session_key, entry_id, next)
                 .map_err(|error| error.to_string())

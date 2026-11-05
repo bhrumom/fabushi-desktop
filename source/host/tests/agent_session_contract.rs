@@ -164,12 +164,12 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
                 "id": "blocked-session-entry",
                 "kind": "message",
                 "role": "user",
-                "content": "durable deletion fence must be checked in owner transaction",
+                "content": "session-bound work must not be persisted during deletion",
                 "sessionKey": session_key.clone(),
             })],
         )
-        .expect_err("durable deletion-pending session append must be rejected");
-    assert!(session_admitted_error.contains("session is not admitted"));
+        .expect_err("deletion-pending session append must be rejected");
+    assert!(session_admitted_error.contains("new session work is not admitted"));
     let introduction_error = production
         .set_agent_introduction_pending(&record.id, false)
         .expect_err("deletion-pending introduction state must be rejected");
@@ -313,7 +313,9 @@ fn model_selection_does_not_report_applied_when_owner_rejects_persistence() {
         100,
     )
     .expect_err("rejected persistence must not report Applied");
-    assert_eq!(result, "SESSION_MODEL_SELECTION_NOT_COMMITTED");
+    // Deletion now rejects at owner admission, before the model policy or
+    // commit edge can report an outcome.
+    assert!(result.contains("new session work is not admitted"));
 
     production
         .end_agent_delete(&record.id)
@@ -395,15 +397,28 @@ fn session_delete_publishes_and_clears_owner_local_deletion_fence() {
     let record = store
         .create_session(None, "user", None)
         .expect("agent");
+    let owner = production
+        .open_agent_db_owner(&record.id)
+        .expect("owner before deletion");
+    let initial = owner
+        .read_session_work_admission()
+        .expect("initial admission")
+        .expect("admission");
 
     production
         .begin_agent_delete(&record.id)
         .expect("publish deletion fence");
-    assert!(production
+    let read_error = production
         .read_session_work_admission(&record.id)
-        .expect("read fenced admission")
-        .expect("admission")
-        .deletion_pending);
+        .expect_err("ordinary owner opens must remain fenced");
+    assert!(read_error.contains("owner open is not admitted"));
+    let fenced = owner
+        .read_session_work_admission()
+        .expect("observe durable admission through retained handle")
+        .expect("admission");
+    assert!(fenced.deletion_pending);
+    assert_eq!(fenced.session_key, initial.session_key);
+    assert_eq!(fenced.session_id, initial.session_id);
     production
         .end_agent_delete(&record.id)
         .expect("clear deletion fence");
@@ -413,6 +428,7 @@ fn session_delete_publishes_and_clears_owner_local_deletion_fence() {
         .expect("admission")
         .deletion_pending);
 
+    store.close_worker_pool();
     let _ = fs::remove_dir_all(root);
 }
 

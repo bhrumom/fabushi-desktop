@@ -1,10 +1,13 @@
 import { chromium, expect, test, type Browser, type Locator, type Page } from '@playwright/test';
 import assert from 'node:assert/strict';
-import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
+import { execFile, execFileSync, spawn, type ChildProcess } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { access, lstat, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
 
 const enabled = process.env.MINIAPP_REAL_ACCEPTANCE === '1';
 const executable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || '';
@@ -274,10 +277,18 @@ async function verifyWasmFileReport(
     const contents = await readFile(inputFile, 'utf8');
     await bounded(page.locator('#message').fill(contents, { timeout: 60_000 }), 75_000, 'COMPOSER_NATIVE_FILL');
     await phase?.('composer-native-click');
-    await bounded(page.locator('#launch').click({ timeout: 60_000 }), 75_000, 'COMPOSER_NATIVE_CLICK');
     if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE === '1') {
       if (process.platform !== 'darwin' || process.env.GITHUB_ACTIONS !== 'true' || !appPid) throw new Error('Actions-only native transfer permission gate');
-      execFileSync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-native-confirm.applescript'), String(appPid), '允许'], { timeout: 30_000, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+      await bounded(
+        Promise.all([
+          page.locator('#launch').click({ timeout: 60_000, noWaitAfter: true }),
+          execFileAsync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-native-confirm.applescript'), String(appPid), '允许'], { timeout: 45_000, encoding: 'utf8' }),
+        ]),
+        75_000,
+        'COMPOSER_NATIVE_CLICK',
+      );
+    } else {
+      await bounded(page.locator('#launch').click({ timeout: 60_000, noWaitAfter: true }), 75_000, 'COMPOSER_NATIVE_CLICK');
     }
     await phase?.('composer-native-complete');
     await expect(status).toContainText('引擎已完成', { timeout: 120_000 });
@@ -356,18 +367,25 @@ async function activeNativeDigests(appDataDir: string): Promise<string[]> {
 }
 
 async function openWithNativePermission(row: Locator, appPid: number, allow = true): Promise<void> {
-  await row.getByRole('button', { name: '打开', exact: true }).click();
-  if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE !== '1') return;
+  if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE !== '1') {
+    await row.getByRole('button', { name: '打开', exact: true }).click({ noWaitAfter: true });
+    return;
+  }
   if (process.platform !== 'darwin' || process.env.GITHUB_ACTIONS !== 'true') throw new Error('Actions-only native-code permission gate');
-  execFileSync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-native-confirm.applescript'), String(appPid), allow ? '允许' : '取消'], { timeout: 30000, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  await Promise.all([
+    row.getByRole('button', { name: '打开', exact: true }).click({ noWaitAfter: true }),
+    execFileAsync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-native-confirm.applescript'), String(appPid), allow ? '允许' : '取消'], { timeout: 30_000, encoding: 'utf8' }),
+  ]);
 }
 
 async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: string, inputFile: string, inputBytes: number): Promise<void> {
   const reportDir = await mkdtemp(path.join(downloadDir, 'report-'));
-    await page.getByRole('button', { name: /导出报告/u }).click();
-    execFileSync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-save-report.applescript'), String(appPid), reportDir], {
-      encoding: 'utf8', timeout: 45_000, stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    await Promise.all([
+      page.getByRole('button', { name: /导出报告/u }).click({ noWaitAfter: true }),
+      execFileAsync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-save-report.applescript'), String(appPid), reportDir], {
+        encoding: 'utf8', timeout: 45_000,
+      }),
+    ]);
     const reportFilename = 'global-dandelion-session.json';
     const reportPath = path.join(reportDir, reportFilename);
     await expect.poll(async () => {
