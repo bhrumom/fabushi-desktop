@@ -297,27 +297,36 @@ impl StoriesGiftsStarsState {
     pub fn handle_route(&mut self, method: &str, args: &Value) -> Result<Value, Failure> {
         if let Some(op) = method.strip_prefix("stories.") {
             match op {
-                "post" => {
+                "post" | "publish" => {
                     let owner_id = args
                         .get("ownerId")
+                        .or_else(|| args.get("userId"))
                         .and_then(Value::as_str)
-                        .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "ownerId required"))?
+                        .unwrap_or("self_user")
                         .to_string();
                     let media_url = args
                         .get("mediaUrl")
+                        .or_else(|| args.get("url"))
                         .and_then(Value::as_str)
-                        .unwrap_or_default()
+                        .unwrap_or("data:text/plain;charset=utf-8,story")
                         .to_string();
                     let caption = args
                         .get("caption")
+                        .or_else(|| args.get("text"))
                         .and_then(Value::as_str)
                         .map(ToString::to_string);
-                    let privacy: StoryPrivacy = args
-                        .get("privacy")
-                        .and_then(|v| serde_json::from_value(v.clone()).ok())
-                        .unwrap_or(StoryPrivacy::Public);
+                    let privacy: StoryPrivacy = match args.get("privacy") {
+                        Some(Value::String(s)) => match s.as_str() {
+                            "contacts" => StoryPrivacy::ContactsOnly,
+                            "close_friends" | "closeFriends" => StoryPrivacy::CloseFriends,
+                            _ => StoryPrivacy::Public,
+                        },
+                        Some(v) => serde_json::from_value(v.clone()).unwrap_or(StoryPrivacy::Public),
+                        None => StoryPrivacy::Public,
+                    };
                     let ttl_seconds = args
                         .get("ttlSeconds")
+                        .or_else(|| args.get("expirePeriod"))
                         .and_then(Value::as_u64)
                         .unwrap_or(86_400);
                     let now_ms = args
@@ -385,8 +394,11 @@ impl StoriesGiftsStarsState {
                     let deleted = self.delete_story(story_id, owner_id)?;
                     Ok(json!({ "deleted": deleted }))
                 }
-                "listActive" => {
-                    let owner_id = args.get("ownerId").and_then(Value::as_str);
+                "listActive" | "list" => {
+                    let owner_id = args
+                        .get("ownerId")
+                        .or_else(|| args.get("userId"))
+                        .and_then(Value::as_str);
                     let now_ms = args
                         .get("nowMs")
                         .and_then(Value::as_i64)
@@ -401,19 +413,21 @@ impl StoriesGiftsStarsState {
             }
         } else if let Some(op) = method.strip_prefix("stars.") {
             match op {
-                "getBalance" => {
+                "getBalance" | "status" | "balance" => {
                     let user_id = args
                         .get("userId")
+                        .or_else(|| args.get("ownerId"))
                         .and_then(Value::as_str)
-                        .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "userId required"))?;
+                        .unwrap_or("self_user");
                     let balance = self.get_star_balance(user_id);
                     Ok(json!({ "balance": balance }))
                 }
                 "purchase" => {
                     let user_id = args
                         .get("userId")
+                        .or_else(|| args.get("ownerId"))
                         .and_then(Value::as_str)
-                        .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "userId required"))?;
+                        .unwrap_or("self_user");
                     let amount = args
                         .get("amount")
                         .and_then(Value::as_u64)
@@ -434,14 +448,17 @@ impl StoriesGiftsStarsState {
                 "transfer" => {
                     let from_id = args
                         .get("fromId")
+                        .or_else(|| args.get("userId"))
                         .and_then(Value::as_str)
-                        .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "fromId required"))?;
+                        .unwrap_or("self_user");
                     let to_id = args
                         .get("toId")
+                        .or_else(|| args.get("recipientId"))
                         .and_then(Value::as_str)
                         .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "toId required"))?;
                     let amount = args
                         .get("amount")
+                        .or_else(|| args.get("starsPrice"))
                         .and_then(Value::as_u64)
                         .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "amount required"))?;
                     let reason = args

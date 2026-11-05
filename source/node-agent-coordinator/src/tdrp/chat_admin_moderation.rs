@@ -233,19 +233,21 @@ impl ChatAdminModerationState {
     pub fn handle_route(&mut self, method: &str, args: &Value) -> Result<Value, Failure> {
         let op = method.strip_prefix("admin.").unwrap_or(method);
         match op {
-            "setRights" => {
+            "setRights" | "setAdminRights" => {
                 let chat_id = args
                     .get("chatId")
                     .and_then(Value::as_str)
                     .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "chatId required"))?;
                 let actor_id = args
                     .get("actorId")
+                    .or_else(|| args.get("adminId"))
                     .and_then(Value::as_str)
-                    .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "actorId required"))?;
+                    .unwrap_or("self_admin");
                 let target_id = args
                     .get("targetId")
+                    .or_else(|| args.get("userId"))
                     .and_then(Value::as_str)
-                    .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "targetId required"))?;
+                    .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "targetId or userId required"))?;
                 let rights: ChatAdminRights = args
                     .get("rights")
                     .and_then(|v| serde_json::from_value(v.clone()).ok())
@@ -258,20 +260,25 @@ impl ChatAdminModerationState {
                 let res = self.set_admin_rights(chat_id, actor_id, target_id, rights, now_ms)?;
                 Ok(json!({ "rights": res }))
             }
-            "banMember" => {
+            "banMember" | "ban" => {
                 let chat_id = args
                     .get("chatId")
                     .and_then(Value::as_str)
                     .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "chatId required"))?;
                 let actor_id = args
                     .get("actorId")
+                    .or_else(|| args.get("adminId"))
                     .and_then(Value::as_str)
-                    .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "actorId required"))?;
+                    .unwrap_or("self_admin");
                 let target_id = args
                     .get("targetId")
+                    .or_else(|| args.get("userId"))
                     .and_then(Value::as_str)
-                    .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "targetId required"))?;
-                let duration_seconds = args.get("durationSeconds").and_then(Value::as_u64);
+                    .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "targetId or userId required"))?;
+                let duration_seconds = args
+                    .get("durationSeconds")
+                    .or_else(|| args.get("duration"))
+                    .and_then(Value::as_u64);
                 let reason = args
                     .get("reason")
                     .and_then(Value::as_str)
@@ -291,24 +298,30 @@ impl ChatAdminModerationState {
                 )?;
                 Ok(json!({ "banned": banned }))
             }
-            "restrictMember" => {
+            "restrictMember" | "restrict" => {
                 let chat_id = args
                     .get("chatId")
                     .and_then(Value::as_str)
                     .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "chatId required"))?;
                 let actor_id = args
                     .get("actorId")
+                    .or_else(|| args.get("adminId"))
                     .and_then(Value::as_str)
-                    .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "actorId required"))?;
+                    .unwrap_or("self_admin");
                 let target_id = args
                     .get("targetId")
+                    .or_else(|| args.get("userId"))
                     .and_then(Value::as_str)
-                    .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "targetId required"))?;
+                    .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "targetId or userId required"))?;
                 let permissions: RestrictedPermissions = args
                     .get("permissions")
+                    .or_else(|| args.get("restrictions"))
                     .and_then(|v| serde_json::from_value(v.clone()).ok())
                     .unwrap_or_default();
-                let duration_seconds = args.get("durationSeconds").and_then(Value::as_u64);
+                let duration_seconds = args
+                    .get("durationSeconds")
+                    .or_else(|| args.get("duration"))
+                    .and_then(Value::as_u64);
                 let now_ms = args
                     .get("nowMs")
                     .and_then(Value::as_i64)
@@ -324,19 +337,21 @@ impl ChatAdminModerationState {
                 )?;
                 Ok(json!({ "restricted": restricted }))
             }
-            "unbanMember" => {
+            "unbanMember" | "unban" => {
                 let chat_id = args
                     .get("chatId")
                     .and_then(Value::as_str)
                     .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "chatId required"))?;
                 let actor_id = args
                     .get("actorId")
+                    .or_else(|| args.get("adminId"))
                     .and_then(Value::as_str)
-                    .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "actorId required"))?;
+                    .unwrap_or("self_admin");
                 let target_id = args
                     .get("targetId")
+                    .or_else(|| args.get("userId"))
                     .and_then(Value::as_str)
-                    .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "targetId required"))?;
+                    .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "targetId or userId required"))?;
                 let now_ms = args
                     .get("nowMs")
                     .and_then(Value::as_i64)

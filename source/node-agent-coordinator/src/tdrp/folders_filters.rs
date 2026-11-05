@@ -29,10 +29,18 @@ pub struct ChatFolder {
     pub title: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub icon: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color_index: Option<u8>,
+    #[serde(default)]
+    pub flags: u32,
     pub filter_rule: FolderFilterRule,
     pub pinned_chat_ids: Vec<String>,
     pub included_chat_ids: Vec<String>,
     pub excluded_chat_ids: Vec<String>,
+    #[serde(default)]
+    pub always_peers: Vec<String>,
+    #[serde(default)]
+    pub never_peers: Vec<String>,
     pub order_index: u32,
 }
 
@@ -76,10 +84,14 @@ impl FolderFilterState {
             id: id.clone(),
             title,
             icon,
+            color_index: None,
+            flags: 0,
             filter_rule,
             pinned_chat_ids: Vec::new(),
             included_chat_ids,
             excluded_chat_ids,
+            always_peers: Vec::new(),
+            never_peers: Vec::new(),
             order_index,
         };
         self.folders.insert(id.clone(), folder.clone());
@@ -203,13 +215,44 @@ impl FolderFilterState {
             return false;
         };
 
-        if folder.excluded_chat_ids.iter().any(|c| c == chat_id) {
+        if folder.excluded_chat_ids.iter().any(|c| c == chat_id)
+            || folder.never_peers.iter().any(|c| c == chat_id)
+        {
             return false;
         }
         if folder.included_chat_ids.iter().any(|c| c == chat_id)
             || folder.pinned_chat_ids.iter().any(|c| c == chat_id)
+            || folder.always_peers.iter().any(|c| c == chat_id)
         {
             return true;
+        }
+
+        let f = folder.flags;
+        if f != 0 {
+            if (f & 0x20 != 0) && is_muted {
+                return false;
+            }
+            if (f & 0x40 != 0) && is_read {
+                return false;
+            }
+            if (f & 0x80 != 0) && is_archived {
+                return false;
+            }
+            if (f & 0x01 != 0) && is_contact {
+                return true;
+            }
+            if (f & 0x02 != 0) && !is_contact && !is_group && !is_channel && !is_bot {
+                return true;
+            }
+            if (f & 0x04 != 0) && is_group {
+                return true;
+            }
+            if (f & 0x08 != 0) && is_channel {
+                return true;
+            }
+            if (f & 0x10 != 0) && is_bot {
+                return true;
+            }
         }
 
         let rule = &folder.filter_rule;
@@ -250,21 +293,33 @@ impl FolderFilterState {
                 Ok(json!({ "folders": folders }))
             }
             "create" => {
-                let title = args
+                let payload = args.get("folder").unwrap_or(args);
+                let title = payload
                     .get("title")
                     .and_then(Value::as_str)
                     .unwrap_or_default()
                     .to_string();
-                let icon = args
+                let icon = payload
                     .get("icon")
                     .and_then(Value::as_str)
                     .map(ToString::to_string);
-                let filter_rule: FolderFilterRule = args
+                let color_index = payload
+                    .get("colorIndex")
+                    .or_else(|| payload.get("color_index"))
+                    .and_then(Value::as_u64)
+                    .map(|v| v as u8);
+                let flags = payload
+                    .get("flags")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(0) as u32;
+                let filter_rule: FolderFilterRule = payload
                     .get("filterRule")
+                    .or_else(|| payload.get("filter_rule"))
                     .and_then(|v| serde_json::from_value(v.clone()).ok())
                     .unwrap_or_default();
-                let included = args
+                let included = payload
                     .get("includedChatIds")
+                    .or_else(|| payload.get("included_chat_ids"))
                     .and_then(Value::as_array)
                     .map(|arr| {
                         arr.iter()
@@ -273,8 +328,31 @@ impl FolderFilterState {
                             .collect()
                     })
                     .unwrap_or_default();
-                let excluded = args
+                let excluded = payload
                     .get("excludedChatIds")
+                    .or_else(|| payload.get("excluded_chat_ids"))
+                    .and_then(Value::as_array)
+                    .map(|arr| {
+                        arr.iter()
+                            .filter_map(Value::as_str)
+                            .map(ToString::to_string)
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                let always = payload
+                    .get("alwaysPeers")
+                    .or_else(|| payload.get("always_peers"))
+                    .and_then(Value::as_array)
+                    .map(|arr| {
+                        arr.iter()
+                            .filter_map(Value::as_str)
+                            .map(ToString::to_string)
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                let never = payload
+                    .get("neverPeers")
+                    .or_else(|| payload.get("never_peers"))
                     .and_then(Value::as_array)
                     .map(|arr| {
                         arr.iter()
@@ -284,40 +362,85 @@ impl FolderFilterState {
                     })
                     .unwrap_or_default();
 
-                let folder = self.create_folder(title, icon, filter_rule, included, excluded)?;
+                let mut folder = self.create_folder(title, icon, filter_rule, included, excluded)?;
+                folder.color_index = color_index;
+                folder.flags = flags;
+                folder.always_peers = always;
+                folder.never_peers = never;
+                if let Some(f) = self.folders.get_mut(&folder.id) {
+                    *f = folder.clone();
+                }
                 Ok(json!({ "folder": folder }))
             }
             "update" => {
-                let folder_id = args
+                let payload = args.get("folder").unwrap_or(args);
+                let folder_id = payload
                     .get("folderId")
+                    .or_else(|| payload.get("id"))
                     .and_then(Value::as_str)
                     .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "folderId required"))?;
-                let title = args
+                let title = payload
                     .get("title")
                     .and_then(Value::as_str)
                     .map(ToString::to_string);
-                let icon = args
+                let icon = payload
                     .get("icon")
                     .and_then(Value::as_str)
                     .map(ToString::to_string);
-                let filter_rule: Option<FolderFilterRule> = args
+                let filter_rule: Option<FolderFilterRule> = payload
                     .get("filterRule")
+                    .or_else(|| payload.get("filter_rule"))
                     .and_then(|v| serde_json::from_value(v.clone()).ok());
-                let included = args.get("includedChatIds").and_then(Value::as_array).map(|arr| {
-                    arr.iter()
-                        .filter_map(Value::as_str)
-                        .map(ToString::to_string)
-                        .collect()
-                });
-                let excluded = args.get("excludedChatIds").and_then(Value::as_array).map(|arr| {
-                    arr.iter()
-                        .filter_map(Value::as_str)
-                        .map(ToString::to_string)
-                        .collect()
-                });
+                let included = payload
+                    .get("includedChatIds")
+                    .or_else(|| payload.get("included_chat_ids"))
+                    .and_then(Value::as_array)
+                    .map(|arr| {
+                        arr.iter()
+                            .filter_map(Value::as_str)
+                            .map(ToString::to_string)
+                            .collect()
+                    });
+                let excluded = payload
+                    .get("excludedChatIds")
+                    .or_else(|| payload.get("excluded_chat_ids"))
+                    .and_then(Value::as_array)
+                    .map(|arr| {
+                        arr.iter()
+                            .filter_map(Value::as_str)
+                            .map(ToString::to_string)
+                            .collect()
+                    });
 
-                let folder =
+                let mut folder =
                     self.update_folder(folder_id, title, icon, filter_rule, included, excluded)?;
+                if let Some(c) = payload
+                    .get("colorIndex")
+                    .or_else(|| payload.get("color_index"))
+                    .and_then(Value::as_u64)
+                {
+                    folder.color_index = Some(c as u8);
+                }
+                if let Some(fl) = payload.get("flags").and_then(Value::as_u64) {
+                    folder.flags = fl as u32;
+                }
+                if let Some(arr) = payload
+                    .get("alwaysPeers")
+                    .or_else(|| payload.get("always_peers"))
+                    .and_then(Value::as_array)
+                {
+                    folder.always_peers = arr.iter().filter_map(Value::as_str).map(ToString::to_string).collect();
+                }
+                if let Some(arr) = payload
+                    .get("neverPeers")
+                    .or_else(|| payload.get("never_peers"))
+                    .and_then(Value::as_array)
+                {
+                    folder.never_peers = arr.iter().filter_map(Value::as_str).map(ToString::to_string).collect();
+                }
+                if let Some(f) = self.folders.get_mut(folder_id) {
+                    *f = folder.clone();
+                }
                 Ok(json!({ "folder": folder }))
             }
             "delete" => {

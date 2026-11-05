@@ -77,31 +77,35 @@ export const FabushiPrimaryNavRail: React.FC<FabushiPrimaryNavRailProps> = ({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "12px 0 10px 0",
-        background: "var(--fabushi-surface-rail, var(--cursor-bg-chrome, #16161a))",
-        borderRight: "1px solid var(--fabushi-border-weak, var(--sand-border-weak, rgba(255, 255, 255, 0.08)))",
+        padding: "38px 0 12px 0",
+        background: "var(--sand-surface-backdrop, var(--cursor-bg-chrome, #16161a))",
+        borderRight: "1px solid var(--sand-border-weak, rgba(128, 128, 128, 0.15))",
         userSelect: "none",
         zIndex: 10,
+        boxSizing: "border-box",
       }}
     >
       {/* Top primary product domains */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", width: "100%" }}>
-        {/* Fabushi Brand Mark */}
+        {/* Fabushi Brand Mark: centered 32x32 monogram */}
         <div
           title="全球法布施 (Fabushi)"
+          aria-label="全球法布施 (Fabushi)"
           style={{
-            width: "34px",
-            height: "34px",
+            width: "32px",
+            height: "32px",
             borderRadius: "10px",
             background: "linear-gradient(135deg, #1084fe, #00c972)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             color: "#ffffff",
-            fontWeight: 700,
-            fontSize: "15px",
-            marginBottom: "10px",
+            fontWeight: 800,
+            fontSize: "14px",
+            marginBottom: "8px",
             cursor: "pointer",
+            flexShrink: 0,
+            boxShadow: "0 2px 8px rgba(16, 132, 254, 0.25)",
           }}
           onClick={() => handleItemClick("messages")}
         >
@@ -123,16 +127,16 @@ export const FabushiPrimaryNavRail: React.FC<FabushiPrimaryNavRailProps> = ({
               onClick={() => handleItemClick(item.id)}
               style={{
                 position: "relative",
-                width: "40px",
-                height: "40px",
+                width: "38px",
+                height: "38px",
                 borderRadius: "10px",
                 border: 0,
                 background: isActive
-                  ? "var(--fabushi-accent-subtle, rgba(16, 132, 254, 0.15))"
+                  ? "rgba(16, 132, 254, 0.12)"
                   : "transparent",
                 color: isActive
-                  ? "var(--fabushi-accent, #1084fe)"
-                  : "var(--fabushi-text-secondary, rgba(255, 255, 255, 0.6))",
+                  ? "#1084fe"
+                  : "var(--sand-text-secondary, #52525b)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -140,7 +144,7 @@ export const FabushiPrimaryNavRail: React.FC<FabushiPrimaryNavRailProps> = ({
                 transition: "all 0.15s ease",
               }}
             >
-              <IconComponent size={20} strokeWidth={isActive ? 2.2 : 1.8} />
+              <IconComponent size={19} strokeWidth={isActive ? 2.2 : 1.8} />
 
               {/* Unread badge */}
               {item.badge != null && item.badge > 0 && (
@@ -148,13 +152,13 @@ export const FabushiPrimaryNavRail: React.FC<FabushiPrimaryNavRailProps> = ({
                   data-badge="unread"
                   style={{
                     position: "absolute",
-                    top: "4px",
-                    right: "4px",
+                    top: "3px",
+                    right: "3px",
                     minWidth: "14px",
                     height: "14px",
                     padding: "0 3px",
                     borderRadius: "7px",
-                    background: "var(--fabushi-danger, #ff263c)",
+                    background: "#ff263c",
                     color: "#ffffff",
                     fontSize: "9px",
                     fontWeight: 700,
@@ -181,16 +185,16 @@ export const FabushiPrimaryNavRail: React.FC<FabushiPrimaryNavRailProps> = ({
           aria-current={activeDomain === "settings" ? "page" : undefined}
           onClick={() => handleItemClick("settings")}
           style={{
-            width: "40px",
-            height: "40px",
+            width: "38px",
+            height: "38px",
             borderRadius: "10px",
             border: 0,
             background: activeDomain === "settings"
-              ? "var(--fabushi-accent-subtle, rgba(16, 132, 254, 0.15))"
+              ? "rgba(16, 132, 254, 0.12)"
               : "transparent",
             color: activeDomain === "settings"
-              ? "var(--fabushi-accent, #1084fe)"
-              : "var(--fabushi-text-secondary, rgba(255, 255, 255, 0.6))",
+              ? "#1084fe"
+              : "var(--sand-text-secondary, #52525b)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -198,7 +202,7 @@ export const FabushiPrimaryNavRail: React.FC<FabushiPrimaryNavRailProps> = ({
             transition: "all 0.15s ease",
           }}
         >
-          <Settings size={20} strokeWidth={activeDomain === "settings" ? 2.2 : 1.8} />
+          <Settings size={19} strokeWidth={activeDomain === "settings" ? 2.2 : 1.8} />
         </button>
       </div>
     </nav>

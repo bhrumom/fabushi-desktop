@@ -4217,6 +4217,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               <small>Human</small>
             </div>
             <div style={{ alignItems: "center", display: "flex", gap: 8, marginLeft: "auto" }}>
+              <TdrpCallAndAdminDrawer activeAgent={activeAgent} client={client} inlineActionsOnly />
               {client == null ? null : <HumanCallControls bridge={bridge} client={client} conversation={activeAgent} />}
               <select aria-label="Agent for Human handoff" disabled={busy || availableHandoffAgents.length === 0} onChange={(event) => setHumanHandoffAgentId(event.currentTarget.value)} value={humanHandoffAgentId}>
                 {availableHandoffAgents.length === 0 ? <option value="">No Agent available</option> : availableHandoffAgents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
@@ -4233,6 +4234,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               ? groupInfoPaneRoute == null ? undefined : () => { setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setGroupInfoPaneOpen((open) => !open); }
               : bridge == null ? undefined : () => { setGroupInfoPaneOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setAgentSettingsOpen(true); }}
             trailing={<>
+              <TdrpCallAndAdminDrawer activeAgent={activeAgent} client={client} inlineActionsOnly />
               {activeAgent.isRunning && client != null ? <SandButton aria-label="Stop response" onClick={() => {
                 void client.call("interruptAgent", { id: activeAgent.id }).then((result) => {
                   const interrupted = typeof result === "object"
@@ -4251,7 +4253,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               {activeAgent.isGroup || bridge == null ? null : <SandButton aria-controls="sand-agent-runtime-details" aria-expanded={runtimeDetailPaneOpen} aria-label="Runtime details" data-testid="fabushi-runtime-details-trigger" onClick={() => { setGroupInfoPaneOpen(false); setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setChannelsInfoPaneOpen(false); setRuntimeDetailPaneOpen((open) => !open); }} size="sm" variant="secondary"><SandIcon name="sliders" size="sm" />运行时</SandButton>}
             </>}
           />}
-          <TdrpCallAndAdminDrawer activeAgent={activeAgent} client={client} />
+          <TdrpCallAndAdminDrawer activeAgent={activeAgent} client={client} bannerOnly />
           {findInChatOpen ? <FindInChatBar controller={findInChatController} focusNonce={findInChatFocusNonce} onClose={closeFindInChat} transcriptContainer={findTranscriptContainer} transcriptHandleRef={transcriptHandleRef} /> : null}
           <ForumTopicSwitcher
             visibleTopics={visibleTopics}

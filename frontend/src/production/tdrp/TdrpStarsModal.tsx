@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { Sparkles, Gift, X } from "lucide-react";
 
 export interface GiftItem {
   readonly name: string;
   readonly cost: number;
+  readonly limitedCount?: number;
+  readonly convertStars?: boolean;
 }
 
 export interface TdrpStarsModalProps {
@@ -13,7 +15,7 @@ export interface TdrpStarsModalProps {
   readonly selectedGift: GiftItem;
   readonly onSelectGift: (gift: GiftItem) => void;
   readonly onRechargeStars: (amount: number) => void;
-  readonly onSendGift: () => void;
+  readonly onSendGift: (options: { hideMyName: boolean; convertStars: boolean }) => void;
   readonly transferStatus: string | null;
 }
 
@@ -27,8 +29,8 @@ const RECHARGE_TIERS = [
 const GIFT_OPTIONS: readonly GiftItem[] = [
   { name: "咖啡", cost: 50 },
   { name: "赞赏", cost: 100 },
-  { name: "奖杯", cost: 500 },
-  { name: "火箭", cost: 1000 },
+  { name: "限量奖杯", cost: 500, limitedCount: 500, convertStars: true },
+  { name: "限量火箭", cost: 1000, limitedCount: 100, convertStars: true },
 ];
 
 export const TdrpStarsModal: React.FC<TdrpStarsModalProps> = ({
@@ -41,6 +43,9 @@ export const TdrpStarsModal: React.FC<TdrpStarsModalProps> = ({
   onSendGift,
   transferStatus,
 }) => {
+  const [hideMyName, setHideMyName] = useState(false);
+  const [convertStars, setConvertStars] = useState(true);
+
   if (!isOpen) return null;
 
   return (
@@ -65,16 +70,17 @@ export const TdrpStarsModal: React.FC<TdrpStarsModalProps> = ({
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "var(--cursor-bg-editor, #242429)",
+          background: "var(--sand-surface-backdrop, #242429)",
           padding: "20px 24px",
           borderRadius: "16px",
           width: "360px",
-          color: "#fff",
+          color: "var(--sand-text-primary, #ffffff)",
           boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+          border: "1px solid var(--sand-border-weak, rgba(128,128,128,0.2))",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-          <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+          <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px" }}>
             <Sparkles size={18} color="#ffc107" /> 法布施 Stars & 赠礼
           </h3>
           <button
@@ -89,65 +95,77 @@ export const TdrpStarsModal: React.FC<TdrpStarsModalProps> = ({
 
         <div
           style={{
-            background: "rgba(255, 193, 7, 0.1)",
+            background: "rgba(255, 193, 7, 0.12)",
             border: "1px solid rgba(255, 193, 7, 0.3)",
             borderRadius: "10px",
-            padding: "12px",
+            padding: "10px",
             textAlign: "center",
-            marginBottom: "16px",
+            marginBottom: "14px",
           }}
         >
-          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.7)" }}>当前余额</div>
+          <div style={{ fontSize: "11px", opacity: 0.8 }}>当前余额 (Balance)</div>
           <div style={{ fontSize: "22px", fontWeight: 700, color: "#ffc107", marginTop: "2px" }}>
             {starsBalance.toLocaleString()} Stars
           </div>
         </div>
 
-        <div style={{ fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>充值 Stars</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "16px" }}>
+        <div style={{ fontSize: "12px", fontWeight: 600, marginBottom: "6px" }}>充值 Stars</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "14px" }}>
           {RECHARGE_TIERS.map((tier) => (
             <button
               key={tier.amount}
               type="button"
               onClick={() => onRechargeStars(tier.amount)}
               style={{
-                padding: "8px",
+                padding: "6px 8px",
                 borderRadius: "8px",
-                border: "1px solid var(--sand-border-weak, #444)",
-                background: "var(--cursor-bg-chrome, #1c1c21)",
-                color: "#fff",
+                border: "1px solid var(--sand-border-weak, rgba(128,128,128,0.2))",
+                background: "var(--sand-surface-muted, rgba(128,128,128,0.1))",
+                color: "inherit",
                 cursor: "pointer",
-                fontSize: "12px",
+                fontSize: "11px",
                 display: "flex",
                 justifyContent: "space-between",
               }}
             >
               <span style={{ color: "#ffc107", fontWeight: 600 }}>{tier.amount} Stars</span>
-              <span style={{ color: "#aaa" }}>{tier.price}</span>
+              <span style={{ opacity: 0.7 }}>{tier.price}</span>
             </button>
           ))}
         </div>
 
-        <div style={{ fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>赠礼中心</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px", marginBottom: "16px" }}>
+        <div style={{ fontSize: "12px", fontWeight: 600, marginBottom: "6px" }}>赠礼中心 (Star Gifts)</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px", marginBottom: "12px" }}>
           {GIFT_OPTIONS.map((gift) => (
             <div
               key={gift.name}
               onClick={() => onSelectGift(gift)}
               style={{
-                padding: "8px 4px",
+                padding: "6px 4px",
                 borderRadius: "8px",
-                border: selectedGift.name === gift.name ? "1px solid #ffc107" : "1px solid #444",
+                border: selectedGift.name === gift.name ? "1px solid #ffc107" : "1px solid var(--sand-border-weak, rgba(128,128,128,0.2))",
                 background: selectedGift.name === gift.name ? "rgba(255, 193, 7, 0.15)" : "transparent",
                 textAlign: "center",
                 cursor: "pointer",
               }}
             >
-              <Gift size={18} style={{ margin: "0 auto", color: selectedGift.name === gift.name ? "#ffc107" : "#aaa" }} />
-              <div style={{ fontSize: "11px", marginTop: "4px" }}>{gift.name}</div>
+              <Gift size={16} style={{ margin: "0 auto", color: selectedGift.name === gift.name ? "#ffc107" : "inherit" }} />
+              <div style={{ fontSize: "11px", marginTop: "3px" }}>{gift.name}</div>
               <div style={{ fontSize: "9px", color: "#ffc107" }}>{gift.cost} Stars</div>
             </div>
           ))}
+        </div>
+
+        {/* Upstream star_gift_box.cpp options */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px", fontSize: "11px" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+            <input type="checkbox" checked={hideMyName} onChange={(e) => setHideMyName(e.target.checked)} />
+            <span>匿名赠送 (hideMyName)</span>
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+            <input type="checkbox" checked={convertStars} onChange={(e) => setConvertStars(e.target.checked)} />
+            <span>支持接收者折现为 Stars (convertStars)</span>
+          </label>
         </div>
 
         {transferStatus && (
@@ -159,15 +177,15 @@ export const TdrpStarsModal: React.FC<TdrpStarsModalProps> = ({
         <button
           type="button"
           data-testid="tdrp-send-gift-button"
-          onClick={onSendGift}
+          onClick={() => onSendGift({ hideMyName, convertStars })}
           style={{
             width: "100%",
             padding: "8px",
             borderRadius: "8px",
             border: 0,
-            background: "var(--sand-fill-accent, #1084fe)",
+            background: "#1084fe",
             color: "#fff",
-            fontWeight: 600,
+            fontWeight: 700,
             fontSize: "13px",
             cursor: "pointer",
           }}

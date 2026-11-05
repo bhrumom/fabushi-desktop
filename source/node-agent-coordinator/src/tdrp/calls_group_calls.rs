@@ -275,14 +275,18 @@ impl CallsGroupCallsState {
     pub fn handle_route(&mut self, method: &str, args: &Value) -> Result<Value, Failure> {
         if let Some(op) = method.strip_prefix("calls.") {
             match op {
-                "create" => {
+                "create" | "initiate" => {
                     let caller_id = args
                         .get("callerId")
+                        .or_else(|| args.get("userId"))
                         .and_then(Value::as_str)
-                        .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "callerId required"))?
+                        .unwrap_or("self_user")
                         .to_string();
                     let callee_id = args
                         .get("calleeId")
+                        .or_else(|| args.get("targetId"))
+                        .or_else(|| args.get("peerId"))
+                        .or_else(|| args.get("chatId"))
                         .and_then(Value::as_str)
                         .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "calleeId required"))?
                         .to_string();
@@ -312,9 +316,10 @@ impl CallsGroupCallsState {
                     let call = self.accept_call(call_id, callee_id, now_ms)?;
                     Ok(json!({ "call": call }))
                 }
-                "end" => {
+                "end" | "discard" => {
                     let call_id = args
                         .get("callId")
+                        .or_else(|| args.get("id"))
                         .and_then(Value::as_str)
                         .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "callId required"))?;
                     let reason = args
@@ -351,9 +356,10 @@ impl CallsGroupCallsState {
             }
         } else if let Some(op) = method.strip_prefix("groupCalls.") {
             match op {
-                "create" => {
+                "create" | "initiate" => {
                     let chat_id = args
                         .get("chatId")
+                        .or_else(|| args.get("id"))
                         .and_then(Value::as_str)
                         .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "chatId required"))?
                         .to_string();

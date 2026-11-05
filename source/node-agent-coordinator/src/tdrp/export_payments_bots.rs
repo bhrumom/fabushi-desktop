@@ -313,11 +313,27 @@ impl ExportPaymentsBotsState {
     pub fn handle_route(&mut self, method: &str, args: &Value) -> Result<Value, Failure> {
         if let Some(op) = method.strip_prefix("export.") {
             match op {
-                "startChatExport" => {
-                    let user_id = args.get("userId").and_then(Value::as_str).ok_or_else(|| Failure::new("MISSING_ARGUMENT", "userId required"))?.to_string();
-                    let chat_id = args.get("chatId").and_then(Value::as_str).ok_or_else(|| Failure::new("MISSING_ARGUMENT", "chatId required"))?.to_string();
-                    let format: ExportFormat = args.get("format").and_then(|v| serde_json::from_value(v.clone()).ok()).unwrap_or(ExportFormat::Html);
-                    let now_ms = args.get("nowMs").and_then(Value::as_i64).unwrap_or_else(|| chrono::Utc::now().timestamp_millis());
+                "startChatExport" | "chats" | "start" => {
+                    let user_id = args
+                        .get("userId")
+                        .and_then(Value::as_str)
+                        .unwrap_or("self_user")
+                        .to_string();
+                    let chat_id = args
+                        .get("chatId")
+                        .or_else(|| args.get("id"))
+                        .and_then(Value::as_str)
+                        .ok_or_else(|| Failure::new("MISSING_ARGUMENT", "chatId required"))?
+                        .to_string();
+                    let format: ExportFormat = args
+                        .get("format")
+                        .or_else(|| args.get("exportFormat"))
+                        .and_then(|v| serde_json::from_value(v.clone()).ok())
+                        .unwrap_or(ExportFormat::Html);
+                    let now_ms = args
+                        .get("nowMs")
+                        .and_then(Value::as_i64)
+                        .unwrap_or_else(|| chrono::Utc::now().timestamp_millis());
                     let job = self.start_chat_export(user_id, chat_id, format, now_ms)?;
                     Ok(json!({ "exportJob": job }))
                 }
