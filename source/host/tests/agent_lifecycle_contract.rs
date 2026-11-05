@@ -857,6 +857,9 @@ fn shipping_gateway_orders_lifecycle_owner_before_generic_session_gateway() {
 fn generated_subagent_cleanup_keeps_the_gateway_lifecycle_owner_and_captured_revision() {
     let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let main = fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
+    let openclaw_sessions =
+        fs::read_to_string(manifest_dir.join("app/src/ocrm_handlers/openclaw_sessions.rs"))
+            .unwrap_or_default();
     let launch = main
         .find("let child_lifecycle_revision = self")
         .expect("subagent launch must capture lifecycle revision");
@@ -872,6 +875,12 @@ fn generated_subagent_cleanup_keeps_the_gateway_lifecycle_owner_and_captured_rev
     let guarded_delete_offset = main
         .get(owner..)
         .and_then(|source| source.find("\"expectedLifecycleRevision\": lifecycle_revision"))
+        .or_else(|| {
+            openclaw_sessions
+                .find("fn delete_generated_subagent(")
+                .and_then(|offset| openclaw_sessions.get(offset..))
+                .and_then(|source| source.find("\"expectedLifecycleRevision\": lifecycle_revision"))
+        })
         .expect("cleanup must pass the captured revision to the lifecycle owner");
     assert!(launch < request);
     assert!(completion != launch && guarded_delete_offset > 0);
@@ -881,8 +890,15 @@ fn generated_subagent_cleanup_keeps_the_gateway_lifecycle_owner_and_captured_rev
 #[test]
 fn deletion_owner_publishes_and_clears_the_durable_session_admission_fence() {
     let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let production = fs::read_to_string(manifest_dir.join("src/extensions/session/production.rs"))
-        .expect("session production source");
+    let production = format!(
+        "{}\n{}",
+        fs::read_to_string(manifest_dir.join("src/extensions/session/production.rs"))
+            .expect("session production source"),
+        fs::read_to_string(
+            manifest_dir.join("src/extensions/session/ocrm_production_compaction.rs")
+        )
+        .unwrap_or_default()
+    );
     let agent_db = fs::read_to_string(manifest_dir.join("src/extensions/session/agent_db.rs"))
         .expect("session database source");
     let agent_session = fs::read_to_string(manifest_dir.join("src/extensions/session/agent_session.rs"))

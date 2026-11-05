@@ -72,7 +72,12 @@ fn group_member_registry_is_independent_and_preemption_state_is_consumable() {
 #[test]
 fn shipping_group_member_turn_preemption_and_deletion_use_the_independent_owner() {
     let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let main = fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
+    let main = format!(
+        "{}\n{}",
+        fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main"),
+        fs::read_to_string(manifest_dir.join("app/src/ocrm_handlers/group_turn.rs"))
+            .unwrap_or_default()
+    );
 
     assert!(main.contains(
         "runner_registry.register_group_member(&agent_id, &stream_id)"

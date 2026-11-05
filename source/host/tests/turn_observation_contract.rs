@@ -315,8 +315,8 @@ fn shipping_host_removes_aborting_subagents_from_async_task_projection_immediate
     for required in [
         ".set_abort_observer(Some(Arc::new(",
         "PendingWakeKind::Subagent",
-        "pending_store.clear_one(",
-        "publish_async_tasks_changed(",
+        "pending_store.clear_if_matches(",
+        "publish_async_tasks_changed",
     ] {
         assert!(
             main.contains(required),
@@ -566,9 +566,9 @@ fn shipping_host_routes_async_task_projection_through_turn_observation_owner() {
 fn shipping_background_task_settlement_clears_durable_projection_before_change_event() {
     let main = fs::read_to_string("app/src/main.rs").expect("shipping host main");
     for required in [
-        "cloud_watch_settle_pending_store",
+        "cloud_watch_settled",
         "PendingWakeKind::CloudAgent",
-        "shell_watch_settle_pending_store",
+        "shell_watch_settled",
         "PendingWakeKind::Shell",
         "PendingWakeKind::Subagent",
     ] {

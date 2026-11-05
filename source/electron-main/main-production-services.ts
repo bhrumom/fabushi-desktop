@@ -995,7 +995,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
     ...(resources.devAppIcon == null ? {} : { devAppIcon: resources.devAppIcon }),
     preloadPath: resources.preloadPath,
     rendererHtmlPath: resources.rendererHtmlPath,
-    createBrowserWindow: (options) => new bindings.native.BrowserWindow(options),
+    createBrowserWindow: (options) => new bindings.native.BrowserWindow({ ...options, enableLargerThanScreen: true }),
     getAllWindows: () => bindings.native.BrowserWindow.getAllWindows(),
     windowStatePersistence,
     deepLinks: { extractCandidatesFromArgv: extractDeepLinkCandidatesFromArgv, handleCandidate: (candidate, source) => { deepLinks.handleCandidate(candidate, source); }, handleArgv: (argv, source) => deepLinks.handleArgv(argv, source), hasPendingActivation: () => deepLinks.hasPendingActivation(), markNotReady: () => deepLinks.markNotReady() },
