@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use super::{
-    CloudWorkerLeaseScope, CloudWorkerPlatformBridge, CloudWorkerRuntimeIdentity,
-    CloudWorkerProcessReceipt, CloudWorkerVerifiedArtifact, LeaseGeneration, LeaseId, OwnerEpoch,
+    CloudWorkerLeaseScope, CloudWorkerPlatformBridge, CloudWorkerProcessReceipt,
+    CloudWorkerRuntimeIdentity, CloudWorkerVerifiedArtifact, LeaseGeneration, LeaseId, OwnerEpoch,
     ReplayKey,
 };
 
@@ -69,7 +69,11 @@ pub struct CloudWorkerBootstrapRequest {
 impl CloudWorkerBootstrapRequest {
     pub fn validate(&self) -> Result<(), CloudWorkerNodeBootstrapError> {
         if self.lease_id.0.trim().is_empty()
-            || self.lease_id.0.chars().any(|character| character.is_control())
+            || self
+                .lease_id
+                .0
+                .chars()
+                .any(|character| character.is_control())
         {
             return Err(CloudWorkerNodeBootstrapError::InvalidLeaseIdentity);
         }
@@ -104,7 +108,11 @@ impl CloudWorkerBootstrapRequest {
             return Err(CloudWorkerNodeBootstrapError::MissingReplayKey);
         }
         if self.replay_key.0.len() > MAX_REPLAY_KEY_CHARS
-            || self.replay_key.0.chars().any(|character| character.is_control())
+            || self
+                .replay_key
+                .0
+                .chars()
+                .any(|character| character.is_control())
         {
             return Err(CloudWorkerNodeBootstrapError::InvalidReplayKey);
         }
@@ -250,9 +258,7 @@ fn validate_retry_class(
     retry_class: CloudWorkerBootstrapRetryClass,
 ) -> Result<(), CloudWorkerNodeBootstrapError> {
     let valid = match phase {
-        CloudWorkerBootstrapPhase::Ready => {
-            retry_class == CloudWorkerBootstrapRetryClass::Never
-        }
+        CloudWorkerBootstrapPhase::Ready => retry_class == CloudWorkerBootstrapRetryClass::Never,
         CloudWorkerBootstrapPhase::OutcomeUnknown => {
             retry_class == CloudWorkerBootstrapRetryClass::ReconcileFirst
         }
@@ -261,30 +267,47 @@ fn validate_retry_class(
     if valid {
         Ok(())
     } else {
-        Err(CloudWorkerNodeBootstrapError::InvalidRetryClass {
-            phase,
-            retry_class,
-        })
+        Err(CloudWorkerNodeBootstrapError::InvalidRetryClass { phase, retry_class })
     }
 }
 
-fn is_allowed_transition(
-    from: CloudWorkerBootstrapPhase,
-    to: CloudWorkerBootstrapPhase,
-) -> bool {
+fn is_allowed_transition(from: CloudWorkerBootstrapPhase, to: CloudWorkerBootstrapPhase) -> bool {
     matches!(
         (from, to),
-        (CloudWorkerBootstrapPhase::Pending, CloudWorkerBootstrapPhase::Preparing)
-            | (CloudWorkerBootstrapPhase::Pending, CloudWorkerBootstrapPhase::OutcomeUnknown)
-            | (CloudWorkerBootstrapPhase::Preparing, CloudWorkerBootstrapPhase::Enrolling)
-            | (CloudWorkerBootstrapPhase::Preparing, CloudWorkerBootstrapPhase::Failed)
-            | (CloudWorkerBootstrapPhase::Preparing, CloudWorkerBootstrapPhase::Cancelled)
-            | (CloudWorkerBootstrapPhase::Preparing, CloudWorkerBootstrapPhase::OutcomeUnknown)
-            | (CloudWorkerBootstrapPhase::Enrolling, CloudWorkerBootstrapPhase::Ready)
-            | (CloudWorkerBootstrapPhase::Enrolling, CloudWorkerBootstrapPhase::Failed)
-            | (CloudWorkerBootstrapPhase::Enrolling, CloudWorkerBootstrapPhase::Cancelled)
-            | (CloudWorkerBootstrapPhase::Enrolling, CloudWorkerBootstrapPhase::OutcomeUnknown)
-            | (CloudWorkerBootstrapPhase::OutcomeUnknown, CloudWorkerBootstrapPhase::Preparing)
+        (
+            CloudWorkerBootstrapPhase::Pending,
+            CloudWorkerBootstrapPhase::Preparing
+        ) | (
+            CloudWorkerBootstrapPhase::Pending,
+            CloudWorkerBootstrapPhase::OutcomeUnknown
+        ) | (
+            CloudWorkerBootstrapPhase::Preparing,
+            CloudWorkerBootstrapPhase::Enrolling
+        ) | (
+            CloudWorkerBootstrapPhase::Preparing,
+            CloudWorkerBootstrapPhase::Failed
+        ) | (
+            CloudWorkerBootstrapPhase::Preparing,
+            CloudWorkerBootstrapPhase::Cancelled
+        ) | (
+            CloudWorkerBootstrapPhase::Preparing,
+            CloudWorkerBootstrapPhase::OutcomeUnknown
+        ) | (
+            CloudWorkerBootstrapPhase::Enrolling,
+            CloudWorkerBootstrapPhase::Ready
+        ) | (
+            CloudWorkerBootstrapPhase::Enrolling,
+            CloudWorkerBootstrapPhase::Failed
+        ) | (
+            CloudWorkerBootstrapPhase::Enrolling,
+            CloudWorkerBootstrapPhase::Cancelled
+        ) | (
+            CloudWorkerBootstrapPhase::Enrolling,
+            CloudWorkerBootstrapPhase::OutcomeUnknown
+        ) | (
+            CloudWorkerBootstrapPhase::OutcomeUnknown,
+            CloudWorkerBootstrapPhase::Preparing
+        )
     )
 }
 
@@ -343,8 +366,7 @@ mod tests {
             owner_epoch: OwnerEpoch(3),
             generation: LeaseGeneration(7),
             scope: CloudWorkerLeaseScope::new("account", "device").unwrap(),
-            runtime: CloudWorkerRuntimeIdentity::new("provider", "profile", "runtime")
-                .unwrap(),
+            runtime: CloudWorkerRuntimeIdentity::new("provider", "profile", "runtime").unwrap(),
             artifact: CloudWorkerVerifiedArtifact {
                 digest: super::super::CloudWorkerArtifactDigest::new("a".repeat(64)).unwrap(),
                 size_bytes: 1,
@@ -387,7 +409,10 @@ mod tests {
             .settle(
                 CloudWorkerBootstrapPhase::OutcomeUnknown,
                 CloudWorkerBootstrapRetryClass::ReconcileFirst,
-                Some(CloudWorkerDiagnostic::redacted("timeout", "provider response lost")),
+                Some(CloudWorkerDiagnostic::redacted(
+                    "timeout",
+                    "provider response lost",
+                )),
             )
             .unwrap();
         assert_eq!(
@@ -513,6 +538,7 @@ mod tests {
                 retry_class: CloudWorkerBootstrapRetryClass::ReconcileFirst,
             })
         );
+        record.attach_process_receipt(process_receipt()).unwrap();
         record
             .settle(
                 CloudWorkerBootstrapPhase::Ready,

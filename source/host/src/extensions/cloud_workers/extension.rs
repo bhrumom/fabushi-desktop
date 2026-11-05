@@ -7,37 +7,27 @@ use serde::Serialize;
 use crate::extensions::extension_ids_generated::HostExtensionId;
 
 use super::{
-    CloudWorkerArtifactAdmission, CloudWorkerArtifactAdmissionState,
-    CloudWorkerArtifactAdmissionError, CloudWorkerArtifactDigest,
-    CloudWorkerArtifactKind, CloudWorkerArtifactPolicy, CloudWorkerArtifactSource,
-    CloudWorkerArtifactPublisher, CloudWorkerArtifactStoreError,
-    CloudWorkerPublishedArtifact,
-    CloudWorkerProfileSuggestion,
-    CloudWorkerBinaryIdentity, CloudWorkerBootstrapRequest, CloudWorkerCatalog,
-    CloudWorkerCatalogError, CloudWorkerDoctorAction, CloudWorkerDoctorError,
-    CloudWorkerDoctorRequest, CloudWorkerDoctorResult,
-    CloudWorkerBootstrapPhase, CloudWorkerBootstrapRecord, CloudWorkerBootstrapRetryClass,
-    CloudWorkerDiagnostic,
-    CloudWorkerProcessReceipt,
-    CloudWorkerLease, CloudWorkerLeaseMutation, CloudWorkerLeaseScope,
-    CloudWorkerLeasedCapability, CloudWorkerLifecycle, CloudWorkerMutationOutcome,
-    CloudWorkerOwnerError, CloudWorkerOwnerStatus, CloudWorkerRuntimeIdentity, LeaseId,
-    CloudWorkerSandboxCapability, CloudWorkerSandboxError,
-    CloudWorkerSandboxRequest,
-    CloudWorkerProvisioningConfig,
-    CloudWorkerProvisioningOwner, CloudWorkerProvisioningStore, CloudWorkerStoreError,
-    CloudWorkerRuntimeControlAction,
-    CloudWorkerRuntimeControlRequest,
-    CloudWorkerRuntimeControlResult,
-    CloudWorkerWarmImage, CloudWorkerWarmImageGeneration, CloudWorkerWarmImageOperation,
-    verify_artifact_bytes,
+    CloudWorkerArtifactAdmission, CloudWorkerArtifactAdmissionError,
+    CloudWorkerArtifactAdmissionState, CloudWorkerArtifactDigest, CloudWorkerArtifactKind,
+    CloudWorkerArtifactPolicy, CloudWorkerArtifactPublisher, CloudWorkerArtifactSource,
+    CloudWorkerArtifactStoreError, CloudWorkerBinaryIdentity, CloudWorkerBootstrapPhase,
+    CloudWorkerBootstrapRecord, CloudWorkerBootstrapRequest, CloudWorkerBootstrapRetryClass,
+    CloudWorkerCatalog, CloudWorkerCatalogError, CloudWorkerDiagnostic, CloudWorkerDoctorAction,
+    CloudWorkerDoctorError, CloudWorkerDoctorRequest, CloudWorkerDoctorResult, CloudWorkerLease,
+    CloudWorkerLeaseMutation, CloudWorkerLeaseScope, CloudWorkerLeasedCapability,
+    CloudWorkerLifecycle, CloudWorkerMutationOutcome, CloudWorkerOwnerError,
+    CloudWorkerOwnerStatus, CloudWorkerProcessReceipt, CloudWorkerProfileSuggestion,
+    CloudWorkerProvisioningConfig, CloudWorkerProvisioningOwner, CloudWorkerProvisioningStore,
+    CloudWorkerPublishedArtifact, CloudWorkerRuntimeControlAction,
+    CloudWorkerRuntimeControlRequest, CloudWorkerRuntimeControlResult, CloudWorkerRuntimeIdentity,
+    CloudWorkerSandboxCapability, CloudWorkerSandboxError, CloudWorkerSandboxRequest,
+    CloudWorkerStoreError, CloudWorkerWarmImage, CloudWorkerWarmImageGeneration,
+    CloudWorkerWarmImageOperation, LeaseId, verify_artifact_bytes,
 };
 
 pub const CLOUD_WORKERS_EXTENSION_ID: HostExtensionId = HostExtensionId::CloudWorkers;
-pub const CLOUD_WORKERS_DEPENDENCIES: &[HostExtensionId] = &[
-    HostExtensionId::Auth,
-    HostExtensionId::Secrets,
-];
+pub const CLOUD_WORKERS_DEPENDENCIES: &[HostExtensionId] =
+    &[HostExtensionId::Auth, HostExtensionId::Secrets];
 
 #[derive(Clone)]
 pub struct CloudWorkerProvisioningExtension {
@@ -212,17 +202,14 @@ impl CloudWorkerProvisioningExtension {
                 } else {
                     CloudWorkerArtifactAdmissionState::Damaged
                 };
-                let settled = self.settle_artifact(
-                    &source_digest(source),
-                    state,
-                );
+                let settled = self.settle_artifact(&source_digest(source), state);
                 return match (state, settled) {
                     (CloudWorkerArtifactAdmissionState::Damaged, Ok(_)) => {
                         Err(CloudWorkerArtifactPublicationError::Publication(error))
                     }
-                    (CloudWorkerArtifactAdmissionState::OutcomeUnknown, Ok(_)) => Err(
-                        CloudWorkerArtifactPublicationError::PublicationOutcomeUnknown(error),
-                    ),
+                    (CloudWorkerArtifactAdmissionState::OutcomeUnknown, Ok(_)) => {
+                        Err(CloudWorkerArtifactPublicationError::PublicationOutcomeUnknown(error))
+                    }
                     (_, Err(settlement)) => Err(
                         CloudWorkerArtifactPublicationError::SettlementAfterFailure {
                             publication: error,
@@ -246,9 +233,11 @@ impl CloudWorkerProvisioningExtension {
             &published.proof.digest,
             CloudWorkerArtifactAdmissionState::Verified,
         )
-        .map_err(|settlement| CloudWorkerArtifactPublicationError::SettlementAfterPublication {
-            publication: published.clone(),
-            settlement,
+        .map_err(|settlement| {
+            CloudWorkerArtifactPublicationError::SettlementAfterPublication {
+                publication: published.clone(),
+                settlement,
+            }
         })?;
         Ok(published)
     }
@@ -304,7 +293,9 @@ impl CloudWorkerProvisioningExtension {
     /// Returns the deterministic, read-only set of warm-image rows requiring
     /// explicit recovery handling. It does not select or execute a provider
     /// mutation.
-    pub fn inspect_warm_image_recovery_candidates(&self) -> Result<Vec<CloudWorkerWarmImage>, CloudWorkerOwnerError> {
+    pub fn inspect_warm_image_recovery_candidates(
+        &self,
+    ) -> Result<Vec<CloudWorkerWarmImage>, CloudWorkerOwnerError> {
         let owner = self
             .owner
             .lock()
@@ -395,11 +386,9 @@ impl CloudWorkerProvisioningExtension {
         let lease = owner
             .lease(lease_id)
             .map_err(CloudWorkerMutationError::Owner)?;
-        request
-            .admit(lease)
-            .map_err(|error| CloudWorkerMutationError::Owner(
-                super::CloudWorkerOwnerError::RuntimeControl(error),
-            ))
+        request.admit(lease).map_err(|error| {
+            CloudWorkerMutationError::Owner(super::CloudWorkerOwnerError::RuntimeControl(error))
+        })
     }
 
     /// Settles one fenced lease mutation and persists its lifecycle outcome,
@@ -421,9 +410,7 @@ impl CloudWorkerProvisioningExtension {
         action: CloudWorkerRuntimeControlAction,
         outcome: CloudWorkerMutationOutcome,
     ) -> Result<CloudWorkerLease, CloudWorkerMutationError> {
-        self.mutate_and_persist(|owner| {
-            owner.settle_runtime_control(mutation, action, outcome)
-        })
+        self.mutate_and_persist(|owner| owner.settle_runtime_control(mutation, action, outcome))
     }
 
     /// Validates a bounded producer result and then settles the same
@@ -438,9 +425,9 @@ impl CloudWorkerProvisioningExtension {
     ) -> Result<CloudWorkerLease, CloudWorkerMutationError> {
         result
             .validate_against(request, mutation)
-            .map_err(|error| CloudWorkerMutationError::Owner(
-                super::CloudWorkerOwnerError::RuntimeControl(error),
-            ))?;
+            .map_err(|error| {
+                CloudWorkerMutationError::Owner(super::CloudWorkerOwnerError::RuntimeControl(error))
+            })?;
         self.settle_runtime_control(mutation, request.action, result.outcome)
     }
 
@@ -476,9 +463,7 @@ impl CloudWorkerProvisioningExtension {
         mutation: &CloudWorkerLeaseMutation,
         receipt: CloudWorkerProcessReceipt,
     ) -> Result<CloudWorkerBootstrapRecord, CloudWorkerMutationError> {
-        self.mutate_and_persist(|owner| {
-            owner.attach_bootstrap_process_receipt(mutation, receipt)
-        })
+        self.mutate_and_persist(|owner| owner.attach_bootstrap_process_receipt(mutation, receipt))
     }
 
     /// Provides the read-only doctor projection from the canonical owner.
@@ -720,7 +705,9 @@ pub enum CloudWorkerArtifactPublicationError {
     Publication(#[source] CloudWorkerArtifactStoreError),
     #[error("artifact publication outcome is unknown after settling admission: {0}")]
     PublicationOutcomeUnknown(#[source] CloudWorkerArtifactStoreError),
-    #[error("artifact publication failed and its recovery settlement failed: {publication}; settlement: {settlement}")]
+    #[error(
+        "artifact publication failed and its recovery settlement failed: {publication}; settlement: {settlement}"
+    )]
     SettlementAfterFailure {
         publication: CloudWorkerArtifactStoreError,
         settlement: CloudWorkerMutationError,
@@ -744,8 +731,7 @@ pub fn start_cloud_worker_provisioning_extension(
     let config = CloudWorkerProvisioningConfig::default();
     let store = CloudWorkerProvisioningStore;
     let owner = if state_path.exists() {
-        let metadata = fs::symlink_metadata(&state_path)
-            .map_err(CloudWorkerStoreError::Read)?;
+        let metadata = fs::symlink_metadata(&state_path).map_err(CloudWorkerStoreError::Read)?;
         if metadata.file_type().is_symlink() || !metadata.file_type().is_file() {
             return Err(CloudWorkerExtensionError::InvalidStatePath);
         }
@@ -781,18 +767,18 @@ mod tests {
 
     use super::{
         CloudWorkerArtifactPublicationError, CloudWorkerMutationError, CloudWorkerOwnerStatus,
-        CloudWorkerProvisioningExtension,
-        CloudWorkerProvisioningStore, start_cloud_worker_provisioning_extension,
+        CloudWorkerProvisioningExtension, CloudWorkerProvisioningStore,
+        start_cloud_worker_provisioning_extension,
     };
     use crate::extensions::cloud_workers::{
-        CloudWorkerArtifactAdmissionError, CloudWorkerArtifactKind, CloudWorkerArtifactPolicy,
-        CloudWorkerArtifactSource, CloudWorkerDoctorAction, CloudWorkerDoctorError,
-        CloudWorkerDoctorRequest, CloudWorkerDoctorStatus, CloudWorkerLeaseScope,
-        CloudWorkerArtifactDigest, CloudWorkerProvisioningConfig,
-        CloudWorkerProvisioningOwner, CloudWorkerMutationOutcome,
-        CloudWorkerRuntimeControlAction, CloudWorkerRuntimeControlBudget,
-        CloudWorkerRuntimeControlRequest, CloudWorkerRuntimeControlResult,
-        CloudWorkerRuntimeIdentity, CloudWorkerWarmImage, LeaseId, ReplayKey,
+        CloudWorkerArtifactAdmissionError, CloudWorkerArtifactDigest, CloudWorkerArtifactKind,
+        CloudWorkerArtifactPolicy, CloudWorkerArtifactSource, CloudWorkerDoctorAction,
+        CloudWorkerDoctorError, CloudWorkerDoctorRequest, CloudWorkerDoctorStatus,
+        CloudWorkerLeaseScope, CloudWorkerMutationOutcome, CloudWorkerProvisioningConfig,
+        CloudWorkerProvisioningOwner, CloudWorkerRuntimeControlAction,
+        CloudWorkerRuntimeControlBudget, CloudWorkerRuntimeControlRequest,
+        CloudWorkerRuntimeControlResult, CloudWorkerRuntimeIdentity, CloudWorkerWarmImage, LeaseId,
+        ReplayKey,
     };
 
     fn enabled_extension(state_path: PathBuf) -> CloudWorkerProvisioningExtension {
@@ -803,10 +789,10 @@ mod tests {
             max_artifacts: 1,
         })
         .unwrap();
-        let artifact_root = state_path
-            .parent()
-            .unwrap()
-            .join(format!("cloud-worker-test-artifacts-{}", std::process::id()));
+        let artifact_root = state_path.parent().unwrap().join(format!(
+            "cloud-worker-test-artifacts-{}",
+            std::process::id()
+        ));
         CloudWorkerProvisioningExtension {
             owner: Arc::new(Mutex::new(owner)),
             state_path,
@@ -955,12 +941,18 @@ mod tests {
             mutation: mutation.clone(),
             outcome: CloudWorkerMutationOutcome::Completed,
             elapsed_ms: 100,
-            diagnostic: None,
+            diagnostic: Some(super::super::CloudWorkerDiagnostic::redacted(
+                "inspect",
+                "worker inspected",
+            )),
         };
         let settled = extension
             .settle_bounded_runtime_control(&request, &mutation, &result)
             .unwrap();
-        assert_eq!(settled.lifecycle, super::super::CloudWorkerLifecycle::Enrolled);
+        assert_eq!(
+            settled.lifecycle,
+            super::super::CloudWorkerLifecycle::Enrolled
+        );
         assert!(state_path.is_file());
     }
 
@@ -973,7 +965,10 @@ mod tests {
             .unwrap();
         let image = extension.inspect_warm_image("image-inspect").unwrap();
         assert_eq!(image.image_id, "image-inspect");
-        assert_eq!(image.generation, super::super::CloudWorkerWarmImageGeneration(0));
+        assert_eq!(
+            image.generation,
+            super::super::CloudWorkerWarmImageGeneration(0)
+        );
         assert_eq!(
             extension.inspect_warm_image("missing-image"),
             Err(super::super::CloudWorkerOwnerError::UnknownWarmImage)

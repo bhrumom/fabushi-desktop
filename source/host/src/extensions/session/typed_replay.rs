@@ -182,11 +182,13 @@ fn project_compaction(
         .get("tokensBefore")
         .and_then(Value::as_u64)
         .ok_or_else(|| malformed(index, "tokensBefore must be a non-negative integer"))?;
-    Ok(TypedReplayEntry::CompactionSummary(ReplayCompactionSummary {
-        summary,
-        tokens_before,
-        details: object.get("details").cloned(),
-    }))
+    Ok(TypedReplayEntry::CompactionSummary(
+        ReplayCompactionSummary {
+            summary,
+            tokens_before,
+            details: object.get("details").cloned(),
+        },
+    ))
 }
 
 fn project_message(
@@ -197,7 +199,12 @@ fn project_message(
         "user" => ReplayRole::User,
         "assistant" => ReplayRole::Assistant,
         "tool" => ReplayRole::Tool,
-        role => return Err(malformed(index, format!("unsupported message role {role:?}"))),
+        role => {
+            return Err(malformed(
+                index,
+                format!("unsupported message role {role:?}"),
+            ));
+        }
     };
     if role != ReplayRole::Assistant && object.get("toolCalls").is_some() {
         return Err(malformed(
@@ -245,7 +252,11 @@ fn project_message(
         .unwrap_or_default();
     let tool_calls = project_tool_calls(index, object)?;
     let tool_result = project_tool_result(index, object, role)?;
-    if content.is_empty() && attachments.is_empty() && tool_calls.is_empty() && tool_result.is_none() {
+    if content.is_empty()
+        && attachments.is_empty()
+        && tool_calls.is_empty()
+        && tool_result.is_none()
+    {
         return Err(malformed(index, "message has no replayable content"));
     }
     Ok(ReplayMessage {
@@ -281,7 +292,11 @@ fn project_tool_calls(
                 .or_else(|| call.get("args"))
                 .cloned()
                 .ok_or_else(|| malformed(index, "tool call is missing arguments"))?;
-            Ok(ReplayToolCall { id, name, arguments })
+            Ok(ReplayToolCall {
+                id,
+                name,
+                arguments,
+            })
         })
         .collect()
 }
@@ -453,15 +468,27 @@ mod tests {
 
     #[test]
     fn tool_result_content_fallback_is_not_replayed_as_an_extra_content_part() {
-        let projected = project_typed_replay_entries(&[serde_json::json!({
-            "kind": "message",
-            "role": "tool",
-            "toolCallId": "call-1",
-            "toolName": "read",
-            "content": {"ok": true}
-        })])
+        let projected = project_typed_replay_entries(&[
+            serde_json::json!({
+                "kind": "message",
+                "role": "assistant",
+                "content": "Calling read",
+                "toolCalls": [{
+                    "id": "call-1",
+                    "name": "read",
+                    "arguments": {"path": "src/lib.rs"}
+                }]
+            }),
+            serde_json::json!({
+                "kind": "message",
+                "role": "tool",
+                "toolCallId": "call-1",
+                "toolName": "read",
+                "content": {"ok": true}
+            }),
+        ])
         .expect("tool result content fallback");
-        let TypedReplayEntry::Message(message) = &projected[0] else {
+        let TypedReplayEntry::Message(message) = &projected[1] else {
             panic!("tool result was not projected as a message");
         };
         assert!(message.content.is_empty());

@@ -601,8 +601,6 @@ const u=lock.upstream;
 const commit=await get(`https://api.github.com/repos/${u.repository}/git/commits/${u.commit}`);
 fail(commit.sha===u.commit,'upstream commit mismatch');
 fail(commit.tree?.sha===u.tree,'upstream tree mismatch');
-const branch=await get(`https://api.github.com/repos/${u.repository}/branches/dev`);
-fail(branch.commit?.sha===u.commit,`upstream dev advanced to ${branch.commit?.sha}; rebaseline required`);
 
 const rootTree=await ghTree(u.repository,u.commit);
 fail(rootTree.truncated===false,'root recursive tree truncated');

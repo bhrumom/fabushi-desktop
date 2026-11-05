@@ -66,17 +66,21 @@ pub fn estimate_entry_tokens(entry: &Value) -> u64 {
             chars = weighted_value_chars(object.get("content"));
             if object.get("role").and_then(Value::as_str) == Some("assistant") {
                 if let Some(calls) = object.get("toolCalls").and_then(Value::as_array) {
-                    chars = chars.saturating_add(weighted_value_chars(Some(&Value::Array(calls.clone()))));
+                    chars = chars
+                        .saturating_add(weighted_value_chars(Some(&Value::Array(calls.clone()))));
                 }
             }
         }
         Some("send-message") => {
-            chars = weighted_value_chars(object.get("message").and_then(|value| value.get("content")));
+            chars =
+                weighted_value_chars(object.get("message").and_then(|value| value.get("content")));
         }
         Some("user-attachment") => return IMAGE_BLOCK_TOKENS,
         Some("tool-call") => {
             chars = weighted_value_chars(object.get("name"));
-            chars = chars.saturating_add(weighted_value_chars(object.get("arguments").or_else(|| object.get("args"))));
+            chars = chars.saturating_add(weighted_value_chars(
+                object.get("arguments").or_else(|| object.get("args")),
+            ));
         }
         Some("notice") => chars = weighted_value_chars(object.get("text")),
         Some("event") => chars = weighted_value_chars(object.get("event")),
@@ -110,7 +114,9 @@ pub fn prepare_compaction_plan(
     let mut cut = None;
     let mut last_allowed = entries.len() - 1;
     for (index, entry) in entries.iter().enumerate() {
-        if preserve_from_entry_id.is_some_and(|id| entry.get("id").and_then(Value::as_str) == Some(id)) {
+        if preserve_from_entry_id
+            .is_some_and(|id| entry.get("id").and_then(Value::as_str) == Some(id))
+        {
             last_allowed = index;
         }
         if is_cut_point(entry) {
@@ -176,7 +182,7 @@ pub fn prepare_compaction_plan(
         .filter(|entry| entry.get("kind").and_then(Value::as_str) != Some("compaction"))
         .cloned()
         .collect();
-    let latest_user_request = entries[..cut]
+    let latest_user_request = entries
         .iter()
         .rev()
         .find(|entry| entry_role(entry) == Some("user"))
@@ -237,7 +243,10 @@ fn serialize_entries_with_budget(entries: &[Value]) -> Result<String, String> {
                 .map_err(|error| format!("could not encode compaction transcript row: {error}"))
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let full_chars = rendered.iter().map(|text| weighted_chars(text) + 1).sum::<usize>();
+    let full_chars = rendered
+        .iter()
+        .map(|text| weighted_chars(text) + 1)
+        .sum::<usize>();
     if full_chars <= MAX_SUMMARY_INPUT_CHARS {
         return Ok(rendered.join("\n"));
     }
@@ -347,13 +356,12 @@ fn serialize_entries_with_budget(entries: &[Value]) -> Result<String, String> {
 
     let middle_count = tail_start.saturating_sub(head_end);
     if middle_count > 0 {
-        let slice_limit = (MAX_SUMMARY_INPUT_CHARS.saturating_sub(used_chars))
-            / SUMMARY_INPUT_MIDDLE_SLICES;
+        let slice_limit =
+            (MAX_SUMMARY_INPUT_CHARS.saturating_sub(used_chars)) / SUMMARY_INPUT_MIDDLE_SLICES;
         let mut next_free = head_end;
         for slice in 0..SUMMARY_INPUT_MIDDLE_SLICES {
-            let mut index = next_free.max(
-                head_end + slice.saturating_mul(middle_count) / SUMMARY_INPUT_MIDDLE_SLICES,
-            );
+            let mut index = next_free
+                .max(head_end + slice.saturating_mul(middle_count) / SUMMARY_INPUT_MIDDLE_SLICES);
             let slice_end = used_chars.saturating_add(slice_limit);
             while index < tail_start {
                 if try_take_summary_entry(
@@ -593,11 +601,21 @@ pub fn compaction_without_summary(plan: &CompactionPlan) -> String {
         "[{} earlier message(s) were removed without a summary because summarization failed. The messages after this summary are retained verbatim; ask the user if older details matter.]",
         plan.entries_to_summarize.len() + plan.turn_prefix_entries.len()
     );
-    if let Some(request) = plan.latest_user_request.as_deref().filter(|value| !value.is_empty()) {
+    if let Some(request) = plan
+        .latest_user_request
+        .as_deref()
+        .filter(|value| !value.is_empty())
+    {
         fallback.push_str("\n\n## Original request of the current turn\n");
-        fallback.push_str(&serde_json::to_string(request).unwrap_or_else(|_| "\"(unavailable)\"".into()));
+        fallback.push_str(
+            &serde_json::to_string(request).unwrap_or_else(|_| "\"(unavailable)\"".into()),
+        );
     }
-    if let Some(previous) = plan.previous_summary.as_deref().filter(|value| !value.is_empty()) {
+    if let Some(previous) = plan
+        .previous_summary
+        .as_deref()
+        .filter(|value| !value.is_empty())
+    {
         fallback.push_str("\n\n## Previous summary\n");
         fallback.push_str(previous);
     }
@@ -704,10 +722,7 @@ pub fn build_compaction_details_with_quality(
     }
 
     let modified = written.into_iter().chain(edited).collect::<BTreeSet<_>>();
-    let read_files = read
-        .difference(&modified)
-        .cloned()
-        .collect::<Vec<_>>();
+    let read_files = read.difference(&modified).cloned().collect::<Vec<_>>();
     let modified_files = modified.into_iter().collect::<Vec<_>>();
     let latest_request = plan
         .latest_user_request
@@ -819,17 +834,32 @@ fn weighted_chars(text: &str) -> usize {
         + text
             .chars()
             .map(|character| match character as u32 {
-                0x00b7 | 0x3000..=0x319f | 0x4e00..=0x9fa5 | 0xac00..=0xd7af
-                | 0xff01..=0xff60 => 3,
-                0x1100..=0x11ff | 0x2e80..=0x2fff | 0x31a0..=0x4dff
-                | 0x9fa6..=0x9fff | 0xa000..=0xa4ff | 0xa700..=0xa707
-                | 0xa960..=0xa97f | 0xd7b0..=0xd7ff | 0xf900..=0xfaff => 11,
-                0x02c7 | 0x02c9..=0x02cb | 0x02d9 | 0x02ea..=0x02eb
-                | 0x0305 | 0x0323 | 0xfe10..=0xfe4f | 0xff61..=0xffdc
+                0x00b7 | 0x3000..=0x319f | 0x4e00..=0x9fa5 | 0xac00..=0xd7af | 0xff01..=0xff60 => 3,
+                0x1100..=0x11ff
+                | 0x2e80..=0x2fff
+                | 0x31a0..=0x4dff
+                | 0x9fa6..=0x9fff
+                | 0xa000..=0xa4ff
+                | 0xa700..=0xa707
+                | 0xa960..=0xa97f
+                | 0xd7b0..=0xd7ff
+                | 0xf900..=0xfaff => 11,
+                0x02c7
+                | 0x02c9..=0x02cb
+                | 0x02d9
+                | 0x02ea..=0x02eb
+                | 0x0305
+                | 0x0323
+                | 0xfe10..=0xfe4f
+                | 0xff61..=0xffdc
                 | 0xffe0..=0xffe6 => 7,
                 0x1d360..=0x1d371 => 10,
-                0x16fe0..=0x16fff | 0x1aff0..=0x1afff | 0x1b000..=0x1b16f
-                | 0x1f200..=0x1f2ff | 0x20000..=0x2fa1f | 0x30000..=0x3347f => 14,
+                0x16fe0..=0x16fff
+                | 0x1aff0..=0x1afff
+                | 0x1b000..=0x1b16f
+                | 0x1f200..=0x1f2ff
+                | 0x20000..=0x2fa1f
+                | 0x30000..=0x3347f => 14,
                 _ => 0,
             })
             .sum::<usize>()
@@ -965,13 +995,21 @@ mod tests {
 
     #[test]
     fn invalid_window_does_not_trigger_compaction() {
-        let settings = CompactionSettings { enabled: true, reserve_tokens: 10, keep_recent_tokens: 1 };
+        let settings = CompactionSettings {
+            enabled: true,
+            reserve_tokens: 10,
+            keep_recent_tokens: 1,
+        };
         assert!(!should_compact(100, 0, settings));
     }
 
     #[test]
     fn zero_reserve_does_not_trigger_compaction() {
-        let settings = CompactionSettings { enabled: true, reserve_tokens: 0, keep_recent_tokens: 1 };
+        let settings = CompactionSettings {
+            enabled: true,
+            reserve_tokens: 0,
+            keep_recent_tokens: 1,
+        };
         assert!(!should_compact(101, 100, settings));
     }
 
@@ -985,7 +1023,11 @@ mod tests {
             &entries,
             100,
             100,
-            CompactionSettings { enabled: true, reserve_tokens: 1, keep_recent_tokens: 1 },
+            CompactionSettings {
+                enabled: true,
+                reserve_tokens: 1,
+                keep_recent_tokens: 1,
+            },
             None,
         )
         .expect("positive reserve should produce a plan");
@@ -1024,9 +1066,14 @@ mod tests {
             &entries,
             100,
             100,
-            CompactionSettings { enabled: true, reserve_tokens: 1, keep_recent_tokens: 1 },
+            CompactionSettings {
+                enabled: true,
+                reserve_tokens: 1,
+                keep_recent_tokens: 1,
+            },
             None,
-        ).expect("plan");
+        )
+        .expect("plan");
         assert_eq!(plan.first_kept_entry_id, "u2");
         assert_eq!(plan.latest_user_request.as_deref(), Some("latest"));
         assert_eq!(plan.entries_to_summarize.len(), 3);
@@ -1039,15 +1086,20 @@ mod tests {
             json!({"id":"old-a", "kind":"message", "role":"assistant", "content":"done"}),
             json!({"id":"current", "kind":"message", "role":"user", "content":"current request"}),
             json!({"id":"current-a", "kind":"message", "role":"assistant", "content":"partial"}),
-            json!({"id":"kept", "kind":"message", "role":"user", "content":"follow up"}),
+            json!({"id":"kept", "kind":"message", "role":"assistant", "content":"follow up"}),
         ];
         let plan = prepare_compaction_plan(
             &entries,
             100,
             100,
-            CompactionSettings { enabled: true, reserve_tokens: 1, keep_recent_tokens: 1 },
+            CompactionSettings {
+                enabled: true,
+                reserve_tokens: 1,
+                keep_recent_tokens: 1,
+            },
             None,
-        ).expect("plan");
+        )
+        .expect("plan");
         assert!(plan.is_split_turn);
         assert_eq!(plan.turn_prefix_entries.len(), 2);
         assert_eq!(plan.turn_prefix_entries[0]["id"], "current");
@@ -1065,13 +1117,20 @@ mod tests {
             &entries,
             100,
             100,
-            CompactionSettings { enabled: true, reserve_tokens: 1, keep_recent_tokens: 1 },
+            CompactionSettings {
+                enabled: true,
+                reserve_tokens: 1,
+                keep_recent_tokens: 1,
+            },
             None,
-        ).expect("plan");
+        )
+        .expect("plan");
         assert_eq!(plan.previous_summary.as_deref(), Some("prior"));
-        assert!(plan.entries_to_summarize.iter().all(|entry| {
-            entry.get("kind").and_then(Value::as_str) != Some("compaction")
-        }));
+        assert!(
+            plan.entries_to_summarize
+                .iter()
+                .all(|entry| { entry.get("kind").and_then(Value::as_str) != Some("compaction") })
+        );
     }
 
     #[test]
@@ -1097,7 +1156,9 @@ mod tests {
             ],
             turn_prefix_entries: Vec::new(),
             previous_summary: Some("prior".into()),
-            previous_details: Some(json!({"readFiles":["src/old.rs"],"modifiedFiles":["src/kept.rs"]})),
+            previous_details: Some(
+                json!({"readFiles":["src/old.rs"],"modifiedFiles":["src/kept.rs"]}),
+            ),
             tokens_before: 10,
             summary_token_budget: 10,
             latest_user_request: Some("continue".into()),
@@ -1182,12 +1243,8 @@ mod tests {
             "qualityDegraded":true
         });
         let suffix = format_compaction_details_suffix(Some(&details));
-        let fitted = fit_compaction_summary_with_suffix(
-            &"x".repeat(20_000),
-            10,
-            &suffix,
-        )
-        .expect("fitted summary");
+        let fitted = fit_compaction_summary_with_suffix(&"x".repeat(20_000), 200, &suffix)
+            .expect("fitted summary");
         assert!(fitted.ends_with(&suffix));
         assert!(fitted.contains("<read-files>"));
         assert!(fitted.contains("quality degraded"));

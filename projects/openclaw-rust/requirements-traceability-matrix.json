@@ -44,11 +44,7 @@
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [
-        "OCRM-RESP-SECURITY-KEYRING-STORAGE-001",
-        "OCRM-RESP-SECURITY-CREDENTIAL-STORE-001",
-        "OCRM-RESP-CHANNEL-GATEWAY-ROUTING-001"
-      ],
+      "responsibility_ids": [],
       "reviewer": "xuyao@ombhrum.com"
     },
     {
@@ -65,9 +61,7 @@
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
-        "OCRM-RESP-AGENT-LOOP-RUNNER-001",
-        "OCRM-RESP-SESSION-CORE-001",
-        "OCRM-RESP-CHANNEL-GATEWAY-ROUTING-001"
+        "OCRM-RESP-AGENT-LOOP-RUNNER-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -744,12 +738,7 @@
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [
-        "OCRM-RESP-CHANNEL-GATEWAY-ROUTING-001",
-        "OCRM-RESP-CHANNEL-TELEGRAM-STREAMING-001",
-        "OCRM-RESP-CHANNEL-SLACK-STREAMING-001",
-        "OCRM-RESP-CHANNEL-DISCORD-STREAMING-001"
-      ],
+      "responsibility_ids": [],
       "reviewer": "xuyao@ombhrum.com"
     },
     {
@@ -765,11 +754,7 @@
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [
-        "OCRM-RESP-PLUGIN-SDK-EXTENSION-REGISTRY-001",
-        "OCRM-RESP-PLUGIN-SDK-SECURITY-CONTEXT-001",
-        "OCRM-RESP-PLUGIN-SDK-MANIFEST-PARSER-001"
-      ],
+      "responsibility_ids": [],
       "reviewer": "xuyao@ombhrum.com"
     },
     {
@@ -882,8 +867,6 @@
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
-        "OCRM-RESP-MEDIA-IMAGE-TRANSFORM-001",
-        "OCRM-RESP-MEDIA-AUDIO-PIPELINE-001",
         "OCRM-RESP-MEDIA-TEMP-CLEANUP-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
@@ -1205,7 +1188,6 @@
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
-        "OCRM-RESP-SESSION-CORE-001",
         "OCRM-RESP-AGENT-LOOP-RUNNER-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
@@ -1699,10 +1681,7 @@
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [
-        "OCRM-RESP-CHANNEL-GATEWAY-ROUTING-001",
-        "OCRM-RESP-CHANNEL-TELEGRAM-STREAMING-001"
-      ],
+      "responsibility_ids": [],
       "reviewer": "xuyao@ombhrum.com"
     },
     {
@@ -1840,8 +1819,7 @@
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
-        "OCRM-RESP-MEDIA-TEMP-CLEANUP-001",
-        "OCRM-RESP-MEDIA-IMAGE-TRANSFORM-001"
+        "OCRM-RESP-MEDIA-TEMP-CLEANUP-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },

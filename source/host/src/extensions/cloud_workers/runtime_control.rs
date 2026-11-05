@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use super::{
-    CloudWorkerDiagnostic, CloudWorkerLease, CloudWorkerLeaseError,
-    CloudWorkerLeaseMutation, CloudWorkerLifecycle, CloudWorkerMutationOutcome, ReplayKey,
+    CloudWorkerDiagnostic, CloudWorkerLease, CloudWorkerLeaseError, CloudWorkerLeaseMutation,
+    CloudWorkerLifecycle, CloudWorkerMutationOutcome, ReplayKey,
 };
 
 const MAX_CONTROL_TIMEOUT_MS: u64 = 15 * 60 * 1000;
@@ -115,11 +115,11 @@ impl CloudWorkerRuntimeControlAction {
             // stranded after one successful observation.
             (Self::Prepare, CloudWorkerLifecycle::Admitted) => CloudWorkerLifecycle::Preparing,
             (Self::Warmup, CloudWorkerLifecycle::Preparing) => CloudWorkerLifecycle::Warming,
-            (Self::Bootstrap, CloudWorkerLifecycle::Warming) => {
-                CloudWorkerLifecycle::Bootstrapping
+            (Self::Bootstrap, CloudWorkerLifecycle::Warming) => CloudWorkerLifecycle::Bootstrapping,
+            (Self::Inspect, CloudWorkerLifecycle::Admitted | CloudWorkerLifecycle::Enrolled)
+            | (Self::Heartbeat, CloudWorkerLifecycle::Admitted | CloudWorkerLifecycle::Enrolled) => {
+                CloudWorkerLifecycle::Enrolled
             }
-            (Self::Inspect, CloudWorkerLifecycle::Enrolled)
-            | (Self::Heartbeat, CloudWorkerLifecycle::Enrolled) => CloudWorkerLifecycle::Enrolled,
             (Self::Stop, CloudWorkerLifecycle::Enrolled)
             | (Self::Stop, CloudWorkerLifecycle::OutcomeUnknown) => CloudWorkerLifecycle::Stopping,
             (Self::Dispose, CloudWorkerLifecycle::Stopping)
@@ -206,15 +206,13 @@ mod tests {
     #[test]
     fn inspect_and_heartbeat_require_enrolled_lease() {
         assert_eq!(
-            CloudWorkerRuntimeControlAction::Inspect.completed_lifecycle(
-                CloudWorkerLifecycle::Enrolled
-            ),
+            CloudWorkerRuntimeControlAction::Inspect
+                .completed_lifecycle(CloudWorkerLifecycle::Enrolled),
             Ok(CloudWorkerLifecycle::Enrolled)
         );
         assert_eq!(
-            CloudWorkerRuntimeControlAction::Heartbeat.completed_lifecycle(
-                CloudWorkerLifecycle::Enrolled
-            ),
+            CloudWorkerRuntimeControlAction::Heartbeat
+                .completed_lifecycle(CloudWorkerLifecycle::Enrolled),
             Ok(CloudWorkerLifecycle::Enrolled)
         );
         assert!(matches!(
