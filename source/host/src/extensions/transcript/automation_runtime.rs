@@ -811,7 +811,10 @@ impl AutomationRuntime {
         if self.wakes_suspended() {
             return Ok(None);
         }
-        let Some((store, automation, reminder)) = self.with_admitted_agent_mutation(agent_id, || {
+        // Spend Guard owns the Session filesystem/admission boundary. Keep
+        // only this Runtime's mutation mutex here so the Session lock is not
+        // acquired recursively.
+        let Some((store, automation, reminder)) = self.with_agent_mutation_lock(agent_id, || {
             let store = self.automation_store(agent_id)?;
             let Some(automation) = store.get(automation_id) else {
                 return Ok(None);
@@ -972,7 +975,8 @@ impl AutomationRuntime {
         value: &str,
         now_ms: f64,
     ) -> Result<Option<String>, String> {
-        self.with_admitted_agent_mutation(agent_id, || {
+        // The guard answer acquires the Session admission boundary once.
+        self.with_agent_mutation_lock(agent_id, || {
             let store = self.automation_store(agent_id)?;
             let before = store.list_definitions();
             let _ = self.record_changes(agent_id, &before, &before, AutomationLifecycleSource::Agent);

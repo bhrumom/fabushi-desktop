@@ -1438,6 +1438,7 @@ impl SandAgentDb {
                         .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
                             row.get::<_, String>(0)
                         })?;
+                    drop(guard);
                     if let Some(entry) = parse_transcript_entry(&entry) {
                         publish_entries_upserted(&self.db_path, vec![entry]);
                     }
@@ -1705,13 +1706,13 @@ impl SandAgentDb {
                     return Ok(false);
                 }
                 Ok(db.execute(
-                    "INSERT INTO cron_session_runs (session_key, automation_id, run_id, session_id, lifecycle_revision, updated_at_ms, base_session, state)\
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, 'running')\
-                     ON CONFLICT(session_key) DO UPDATE SET updated_at_ms = excluded.updated_at_ms\
-                     WHERE cron_session_runs.automation_id = excluded.automation_id\
-                       AND cron_session_runs.run_id = excluded.run_id\
-                       AND cron_session_runs.session_id = excluded.session_id\
-                       AND cron_session_runs.lifecycle_revision = excluded.lifecycle_revision\
+                    "INSERT INTO cron_session_runs (session_key, automation_id, run_id, session_id, lifecycle_revision, updated_at_ms, base_session, state) \
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, 'running') \
+                     ON CONFLICT(session_key) DO UPDATE SET updated_at_ms = excluded.updated_at_ms \
+                     WHERE cron_session_runs.automation_id = excluded.automation_id \
+                       AND cron_session_runs.run_id = excluded.run_id \
+                       AND cron_session_runs.session_id = excluded.session_id \
+                       AND cron_session_runs.lifecycle_revision = excluded.lifecycle_revision \
                        AND cron_session_runs.state = 'running'",
                     params![
                         session_key,
@@ -1773,8 +1774,8 @@ impl SandAgentDb {
                     return Ok(false);
                 }
                 Ok(db.execute(
-                    "UPDATE cron_session_runs\
-                     SET updated_at_ms = ?1, state = 'terminal', terminal_outcome = ?2, terminal_detail = ?3\
+                    "UPDATE cron_session_runs \
+                     SET updated_at_ms = ?1, state = 'terminal', terminal_outcome = ?2, terminal_detail = ?3 \
                      WHERE session_key = ?4 AND session_id = ?5 AND lifecycle_revision = ?6 AND state = 'running'",
                     params![
                         finished_at_ms,
@@ -1839,12 +1840,12 @@ impl SandAgentDb {
                     return Ok(false);
                 }
                 Ok(db.execute(
-                    "UPDATE cron_session_runs\
-                     SET updated_at_ms = ?1, state = 'terminal', terminal_outcome = ?2,\
-                         terminal_detail = ?3, active_controller = ?4,\
-                         pending_outgoing_media = ?5, unsettled_subagent = ?6,\
-                         fence_state_known = 1\
-                     WHERE session_key = ?7 AND session_id = ?8\
+                    "UPDATE cron_session_runs \
+                     SET updated_at_ms = ?1, state = 'terminal', terminal_outcome = ?2, \
+                         terminal_detail = ?3, active_controller = ?4, \
+                         pending_outgoing_media = ?5, unsettled_subagent = ?6, \
+                         fence_state_known = 1 \
+                     WHERE session_key = ?7 AND session_id = ?8 \
                        AND lifecycle_revision = ?9 AND state = 'running'",
                     params![
                         finished_at_ms,
@@ -1902,10 +1903,10 @@ impl SandAgentDb {
                     return Ok(false);
                 }
                 Ok(db.execute(
-                    "UPDATE cron_session_runs\
-                     SET active_controller = ?1, pending_outgoing_media = ?2,\
-                         unsettled_subagent = ?3, fence_state_known = 1\
-                     WHERE session_key = ?4 AND session_id = ?5\
+                    "UPDATE cron_session_runs \
+                     SET active_controller = ?1, pending_outgoing_media = ?2, \
+                         unsettled_subagent = ?3, fence_state_known = 1 \
+                     WHERE session_key = ?4 AND session_id = ?5 \
                        AND lifecycle_revision = ?6 AND state = 'running'",
                     params![
                         active_controller,
@@ -1952,9 +1953,9 @@ impl SandAgentDb {
             return Ok(Vec::new());
         };
         let mut statement = db.prepare(
-            "SELECT session_key, automation_id, run_id, session_id, lifecycle_revision,\
-                    updated_at_ms, base_session, state, terminal_outcome, terminal_detail,\
-                    active_controller, pending_outgoing_media, unsettled_subagent, fence_state_known\
+            "SELECT session_key, automation_id, run_id, session_id, lifecycle_revision, \
+                    updated_at_ms, base_session, state, terminal_outcome, terminal_detail, \
+                    active_controller, pending_outgoing_media, unsettled_subagent, fence_state_known \
              FROM cron_session_runs ORDER BY updated_at_ms ASC, session_key ASC",
         )?;
         let rows = statement.query_map([], |row| {
@@ -3040,6 +3041,8 @@ impl SandAgentDb {
                     let _ = db.execute_batch("ROLLBACK");
                     return Err(error.into());
                 }
+                // Listeners may synchronously read this same owner.
+                drop(guard);
                 bump_db_write_generation(&self.db_path);
                 if let CompactionCommitOutcome::Committed(entry) = &outcome {
                     publish_entries_upserted(&self.db_path, vec![entry.clone()]);

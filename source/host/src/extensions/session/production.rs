@@ -745,6 +745,20 @@ impl ProductionSessionWorkers {
         Ok(entries)
     }
 
+    /// Preserve the public transcript projection inside an already-held
+    /// filesystem/admission boundary without recursively acquiring its mutex.
+    pub(crate) fn read_agent_transcript_entries_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        let mut entries = self
+            .open_agent_db_owner_locked(agent_id)?
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut entries);
+        Ok(entries)
+    }
+
     pub fn read_agent_transcript_page(
         &self,
         agent_id: &str,
@@ -1488,6 +1502,21 @@ impl ProductionSessionWorkers {
         self.with_agent_filesystem_mutation(agent_id, || {
             self.assert_agent_work_admission_locked(agent_id)?;
             operation()
+        })
+    }
+
+    /// Compose admitted filesystem and database mutations without reopening
+    /// the public Session facade while its non-reentrant mutex is held.
+    /// The callback must use this owner or existing locked helpers only.
+    pub(crate) fn with_agent_admitted_db_mutation<T>(
+        &self,
+        agent_id: &str,
+        operation: impl FnOnce(&SandAgentDb) -> Result<T, String>,
+    ) -> Result<T, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            operation(owner.as_ref())
         })
     }
 

@@ -311,9 +311,21 @@ fn shipping_runtime_owns_all_frozen_lifecycle_sources_and_stable_fields() {
     assert!(spend_guard.contains("disable_every_enabled_routine"));
     assert!(spend_guard.contains("re_enable_guard_paused_routines"));
     assert!(spend_guard
-        .matches("self.sessions.assert_agent_work_admission(agent_id)?;")
+        .matches("self.sessions.with_agent_admitted_db_mutation(agent_id, |owner|")
         .count()
         >= 2);
+    let sessions = include_str!("../src/extensions/session/production.rs");
+    let admitted_db = sessions
+        .split("pub(crate) fn with_agent_admitted_db_mutation<T>(")
+        .nth(1)
+        .expect("canonical admitted DB callback")
+        .split("pub fn begin_agent_delete(")
+        .next()
+        .expect("callback body");
+    assert!(admitted_db.contains("self.with_agent_filesystem_mutation(agent_id, ||"));
+    assert!(admitted_db.contains("self.assert_agent_work_admission_locked(agent_id)?;"));
+    assert!(admitted_db.contains("self.open_agent_db_owner_locked(agent_id)?;"));
+    assert!(admitted_db.contains("operation(owner.as_ref())"));
 }
 
 #[test]
