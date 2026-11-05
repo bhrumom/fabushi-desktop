@@ -34,12 +34,13 @@ fn startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals()
 #[test]
 fn shipping_generated_subagent_dispatch_persists_durable_pending_wake_before_provider_run() {
     let dispatch = SHIPPING_HOST
-        .find("if let Ok(Some(pending)) = runner.begin_generated_subagent(")
+        .find("if let Ok(Some(pending)) = runner.begin_generated_subagent_with_lifecycle(")
         .expect("shipping generated subagent dispatch must expose its pending wake");
     let provider_run = SHIPPING_HOST
-        .find("runner.run_routed_provider_with_projected_messages(")
+        .find("runner.run_routed_provider_with_projected_turn_input(")
         .expect("shipping generated subagent must execute through the Runner");
     assert!(dispatch < provider_run);
+    assert!(SHIPPING_HOST[dispatch..provider_run].contains("&generated_lifecycle_revision,"));
     assert!(SHIPPING_HOST.contains("kind: PendingWakeKind::Subagent"));
     assert!(SHIPPING_HOST.contains("work_id: pending.work_id.clone()"));
     assert!(SHIPPING_HOST.contains("marked_at_ms: pending.marked_at_ms"));

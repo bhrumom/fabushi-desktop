@@ -96,7 +96,11 @@ fn shipping_host_recreates_durable_upgrade_turns_before_ack_redrive() {
 
 #[test]
 fn shipping_recreate_gateway_carries_pending_wakes_and_resumes_durable_turns() {
-    const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+    const SHIPPING_HOST: &str = concat!(
+        include_str!("../app/src/main.rs"),
+        "\n",
+        include_str!("../app/src/ocrm_handlers/automation_turn.rs")
+    );
     const GATEWAY_PROTOCOL: &str = include_str!("../src/gateway_protocol.rs");
     const TRANSCRIPT_MANAGER: &str =
         include_str!("../src/extensions/transcript/transcript_manager.rs");

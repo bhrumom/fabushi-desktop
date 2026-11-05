@@ -1,4 +1,8 @@
-const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+const SHIPPING_HOST: &str = concat!(
+    include_str!("../app/src/main.rs"),
+    "\n",
+    include_str!("../app/src/ocrm_handlers/group_turn.rs")
+);
 
 use std::fs;
 use std::sync::{Arc, Mutex};
@@ -337,7 +341,7 @@ fn shipping_agent_posted_group_turn_routes_through_group_chat_glue_owner() {
         .find("fn run_agent_posted_group_turn(")
         .expect("agent-posted group turn");
     let end = SHIPPING_HOST[start..]
-        .find("\nfn run_local_group_member_turn(")
+        .find("fn run_local_group_member_turn(")
         .map(|offset| start + offset)
         .expect("group member turn boundary");
     let body = &SHIPPING_HOST[start..end];

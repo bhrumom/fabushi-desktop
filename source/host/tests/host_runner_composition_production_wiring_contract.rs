@@ -107,7 +107,7 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
         "state = state.with_agent_profile_writer(Arc::new(move |name, description|",
         "profile_sessions.update_agent_profile_fields(",
         "ProductionMultitaskTodoState::new(",
-        "Arc::clone(sessions),",
+        "Arc::clone(&sessions),",
     ] {
         assert!(
             OWNER.contains(needle),

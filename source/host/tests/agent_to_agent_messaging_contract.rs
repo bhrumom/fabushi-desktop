@@ -131,7 +131,10 @@ fn inbound_turn_claim_is_released_when_append_inserts_nothing() {
     let no_insert = inbound
         .split("if inserted == 0 {")
         .nth(1)
-        .expect("no-insert branch exists");
+        .expect("no-insert branch exists")
+        .split("return Ok(false);")
+        .next()
+        .expect("no-insert branch boundary exists");
     assert!(no_insert.contains("pending_conversation_turns().release"));
     assert!(!no_insert.contains("pending_conversation_turns().complete"));
 }
@@ -271,7 +274,7 @@ fn inbound_policy_recheck_is_target_admission_scoped() {
     assert!(source.contains("if source_admission.is_some() || target_admission.is_some()"));
     assert!(source.contains(".map(|admission| admission.session_key.clone())"));
     assert!(source.contains(".unwrap_or_default()"));
-    assert!(source.contains("sessions.assert_session_work_admission(\n            agent_id"));
+    assert!(source.contains("sessions.assert_session_work_admission(\n                agent_id"));
 }
 
 #[test]

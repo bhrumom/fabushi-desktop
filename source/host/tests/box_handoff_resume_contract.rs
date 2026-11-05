@@ -290,6 +290,6 @@ fn shipping_host_wires_box_listener_mcp_resume_and_error_projection() {
         .next()
         .expect("shipping request_box_help boundary exists");
     assert!(box_help.contains("append_agent_transcript_entries_if_session_admitted"));
-    assert!(box_help.contains("&self.session_key"));
+    assert!(box_help.contains("self.session_key.as_deref()"));
     assert!(!box_help.contains("append_agent_transcript_entries(\n                    &self.agent_id"));
 }
