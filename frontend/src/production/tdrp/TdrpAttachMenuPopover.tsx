@@ -1,11 +1,27 @@
+/**
+ * Composer "+" attach menu popover for files and non-destructive typed actions
+ * (Poll, Todo List, Invoice, Bot Inline, and Star Gift).
+ *
+ * Upstream & Open PR Alignment:
+ * - Telegram Desktop `Telegram/SourceFiles/api/api_sending.cpp` (`SendSimpleMedia`:
+ *   `action.clearDraft = false` ensuring typed actions open modals or dispatch
+ *   directly without overwriting the active composer text draft).
+ * - Blueprint 03 (`docs/specs/fusion-blueprints/03-unified-composer-and-typed-actions.md`) &
+ *   Blueprint 13 (`docs/specs/fusion-blueprints/13-checkout-stars-ledger-and-economy.md`).
+ */
+
 import React, { useEffect, useRef } from "react";
-import { Image, BarChart2, CheckSquare, CreditCard, Terminal } from "lucide-react";
+import { Image, BarChart2, CheckSquare, CreditCard, Terminal, Gift } from "lucide-react";
+import type { DirectTypedActionPayload } from "../../recovered/features/conversation/workspace/submission";
 
 export interface TdrpAttachMenuPopoverProps {
   readonly isOpen: boolean;
   readonly onClose: () => void;
   readonly onSelectPhotoOrFile: () => void;
-  readonly onOpenModal: (mode: "poll" | "todo" | "invoice" | "bot") => void;
+  readonly onOpenModal: (mode: "poll" | "todo" | "invoice" | "bot" | "gift") => void;
+  readonly onSelectGift?: () => void;
+  readonly onSubmitDirectMessage?: (payload: string) => Promise<void> | void;
+  readonly onDirectSendTypedAction?: (payload: DirectTypedActionPayload) => Promise<void> | void;
   readonly anchorPosition?: { top: number; left: number };
 }
 
@@ -14,6 +30,7 @@ export const TdrpAttachMenuPopover: React.FC<TdrpAttachMenuPopoverProps> = ({
   onClose,
   onSelectPhotoOrFile,
   onOpenModal,
+  onSelectGift,
   anchorPosition,
 }) => {
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -174,6 +191,27 @@ export const TdrpAttachMenuPopover: React.FC<TdrpAttachMenuPopoverProps> = ({
         <Terminal size={16} strokeWidth={2} style={{ color: "#6a1b9a" }} />
         <span>快捷指令</span>
       </button>
+
+      {onSelectGift != null && (
+        <button
+          type="button"
+          style={itemStyle}
+          data-testid="tdrp-attach-gift"
+          onClick={() => {
+            onClose();
+            onSelectGift();
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--bg-hover, #f4f1ec)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+          }}
+        >
+          <Gift size={16} strokeWidth={2} style={{ color: "#d97706" }} />
+          <span>赠送礼物</span>
+        </button>
+      )}
     </div>
   );
 };

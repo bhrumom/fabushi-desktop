@@ -1,5 +1,23 @@
+/**
+ * Modal for creating Polls, Todo Lists, Invoices, and Bot inline queries.
+ *
+ * Upstream & Open PR Alignment:
+ * - Telegram Desktop `Telegram/SourceFiles/data/data_poll.cpp` & `api/api_polls.cpp`
+ *   (Poll flags, Quiz vs Regular mode, 32-option bound).
+ * - Telegram Desktop `Telegram/SourceFiles/data/data_todo_list.h`
+ *   (`TodoListData::Flag::OthersCanAppend | OthersCanComplete`).
+ * - Telegram Desktop `Telegram/SourceFiles/payments/payments_form.cpp` & `api/api_credits.cpp`
+ *   (`LabeledPrice`, `InvoiceCredits` with idempotency key).
+ * - Telegram Desktop `Telegram/SourceFiles/api/api_sending.cpp` (`SendSimpleMedia`:
+ *   `action.clearDraft = false` — typed actions dispatch directly without overwriting
+ *   the user's active composer text draft).
+ * - Blueprint 03 (`docs/specs/fusion-blueprints/03-unified-composer-and-typed-actions.md`) &
+ *   Blueprint 13 (`docs/specs/fusion-blueprints/13-checkout-stars-ledger-and-economy.md`).
+ */
+
 import React, { useState } from "react";
 import type { ProductionCoordinatorClient } from "../coordinator-client";
+import type { DirectTypedActionPayload } from "../../recovered/features/conversation/workspace/submission";
 import { SandIconButton, SandButton } from "../../recovered/ui/sand-kit-primitives";
 import {
   formatTdrpInvoiceMessage,
@@ -9,13 +27,37 @@ import {
   type TdrpPollKind,
 } from "./tdrp-interactive-models";
 
+export function createTypedActionIdempotencyKey(prefix: string): string {
+  const suffix =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  return `${prefix}_${suffix}`;
+}
+
 export interface TdrpPollAndTodoModalProps {
   readonly isOpen: boolean;
   readonly initialMode?: "poll" | "todo" | "invoice" | "bot";
   readonly conversationId: string;
   readonly client?: ProductionCoordinatorClient | null;
   readonly onClose: () => void;
-  readonly onInsertMessage: (formattedPayload: string) => void;
+  readonly onInsertMessage?: (formattedPayload: string) => void;
+  /**
+   * Direct non-destructive message submission callback. Dispatches the formatted
+   * card payload directly through the conversation submission queue without
+   * mutating `composerDraftStore` or relying on `setTimeout(..., 50)`.
+   */
+  readonly onSubmitDirectMessage?: (
+    formattedPayload: string,
+    typedPayload?: DirectTypedActionPayload
+  ) => Promise<void> | void;
+  /**
+   * Structured typed-action direct submission callback (Blueprint 03 Section 2.4).
+   */
+  readonly onDirectSubmit?: (
+    payload: DirectTypedActionPayload,
+    formattedPayload: string
+  ) => Promise<void> | void;
 }
 
 export function TdrpPollAndTodoModal({
@@ -25,9 +67,24 @@ export function TdrpPollAndTodoModal({
   client,
   onClose,
   onInsertMessage,
+  onSubmitDirectMessage,
+  onDirectSubmit,
 }: TdrpPollAndTodoModalProps): React.JSX.Element | null {
   const [mode, setMode] = useState<"poll" | "todo" | "invoice" | "bot">(initialMode);
   const activeClient = client ?? null;
+
+  const dispatchNonDestructively = async (
+    formattedPayload: string,
+    typedPayload: DirectTypedActionPayload
+  ): Promise<void> => {
+    if (onDirectSubmit != null) {
+      await onDirectSubmit(typedPayload, formattedPayload);
+    } else if (onSubmitDirectMessage != null) {
+      await onSubmitDirectMessage(formattedPayload, typedPayload);
+    } else {
+      onInsertMessage?.(formattedPayload);
+    }
+  };
 
   // Poll state (upstream data_poll.h & create_poll_box.cpp)
   const [pollQuestion, setPollQuestion] = useState("");
@@ -72,19 +129,50 @@ export function TdrpPollAndTodoModal({
   const handleCreatePoll = async () => {
     const validOptions = pollOptions.map((o) => o.trim()).filter(Boolean);
     if (!pollQuestion.trim() || validOptions.length < 2) return;
+    const explanation = quizExplanation.trim().slice(0, 200) || undefined;
     const kind: TdrpPollKind = isQuiz
-      ? { type: "Quiz", correct_option_id: quizCorrectIndex, explanation: quizExplanation.trim().slice(0, 200) || undefined }
+      ? { type: "Quiz", correct_option_id: quizCorrectIndex, explanation }
       : { type: "Regular", multiple_answers: multipleAnswers };
 
     let pollId = `poll_${Date.now()}`;
     if (activeClient) {
       try {
-        const res = (await activeClient.call("polls.create", { question: pollQuestion.trim(), options: validOptions, kind, publicVotes, closePeriodSecs })) as { poll?: { poll_id?: string } };
+        const res = (await activeClient.call("polls.create", {
+          question: pollQuestion.trim(),
+          options: validOptions,
+          kind,
+          publicVotes,
+          closePeriodSecs,
+        })) as { poll?: { poll_id?: string } };
         if (res?.poll?.poll_id) pollId = res.poll.poll_id;
-      } catch { /* Fallback */ }
+      } catch {
+        /* Fallback to local pollId */
+      }
     }
 
-    onInsertMessage(formatTdrpPollMessage({ pollId, question: pollQuestion.trim(), options: validOptions.map((text, idx) => ({ id: idx, text, voterCount: 0 })), isClosed: false, totalVoters: 0, kind, publicVotes, closePeriodSecs, selectedOptionIds: [] }));
+    const formattedPayload = formatTdrpPollMessage({
+      pollId,
+      question: pollQuestion.trim(),
+      options: validOptions.map((text, idx) => ({ id: idx, text, voterCount: 0 })),
+      isClosed: false,
+      totalVoters: 0,
+      kind,
+      publicVotes,
+      closePeriodSecs,
+      selectedOptionIds: [],
+    });
+    const typedPayload: DirectTypedActionPayload = {
+      kind: "poll",
+      question: pollQuestion.trim(),
+      options: validOptions,
+      isAnonymous: !publicVotes,
+      allowsMultipleAnswers: !isQuiz && multipleAnswers,
+      isQuiz,
+      ...(isQuiz ? { correctOptionIndex: quizCorrectIndex } : {}),
+      ...(isQuiz && explanation ? { explanation } : {}),
+    };
+
+    await dispatchNonDestructively(formattedPayload, typedPayload);
     onClose();
   };
 
@@ -95,30 +183,91 @@ export function TdrpPollAndTodoModal({
     let listId = `todo_${Date.now()}`;
     if (activeClient) {
       try {
-        const res = (await activeClient.call("todo.createList", { conversationId, title: todoTitle.trim(), othersCanAppend, othersCanComplete })) as { todoList?: { list_id?: string } };
+        const res = (await activeClient.call("todo.createList", {
+          conversationId,
+          title: todoTitle.trim(),
+          othersCanAppend,
+          othersCanComplete,
+        })) as { todoList?: { list_id?: string } };
         if (res?.todoList?.list_id) listId = res.todoList.list_id;
-      } catch { /* Fallback */ }
+      } catch {
+        /* Fallback to local listId */
+      }
     }
 
-    onInsertMessage(formatTdrpTodoMessage({ listId, title: todoTitle.trim(), othersCanAppend, othersCanComplete, items: validItems.map((text, idx) => ({ itemId: `item_${idx + 1}`, text, completed: false })) }));
+    const items = validItems.map((text, idx) => ({
+      itemId: `item_${idx + 1}`,
+      text,
+      completed: false,
+    }));
+    const formattedPayload = formatTdrpTodoMessage({
+      listId,
+      title: todoTitle.trim(),
+      othersCanAppend,
+      othersCanComplete,
+      items,
+    });
+    const typedPayload: DirectTypedActionPayload = {
+      kind: "todo",
+      title: todoTitle.trim(),
+      items: items.map((item) => ({ id: item.itemId, text: item.text, completed: item.completed })),
+      othersCanAppend,
+      othersCanComplete,
+    };
+
+    await dispatchNonDestructively(formattedPayload, typedPayload);
     onClose();
   };
 
   const handleCreateInvoice = async () => {
     if (!invoiceTitle.trim()) return;
     const amountVal = parseFloat(invoiceAmount) || 0;
-    const totalAmountCents = invoiceCurrency === "STARS" ? Math.round(amountVal) : Math.round(amountVal * 100);
+    const totalAmountCents =
+      invoiceCurrency === "STARS" || invoiceCurrency === "XTR"
+        ? Math.round(amountVal)
+        : Math.round(amountVal * 100);
     const prices: TdrpLabeledPrice[] = [{ label: invoiceTitle.trim(), amountCents: totalAmountCents }];
+    const idempotencyKey = createTypedActionIdempotencyKey("inv");
 
     let invoiceId = `inv_${Date.now()}`;
     if (activeClient) {
       try {
-        const res = (await activeClient.call("payments.createInvoice", { title: invoiceTitle.trim(), description: invoiceDesc.trim(), currency: invoiceCurrency, totalAmountCents, prices, isRecurring })) as { invoice?: { invoice_id?: string } };
+        const res = (await activeClient.call("payments.createInvoice", {
+          title: invoiceTitle.trim(),
+          description: invoiceDesc.trim(),
+          currency: invoiceCurrency,
+          totalAmountCents,
+          prices,
+          isRecurring,
+          idempotencyKey,
+        })) as { invoice?: { invoice_id?: string } };
         if (res?.invoice?.invoice_id) invoiceId = res.invoice.invoice_id;
-      } catch { /* Fallback */ }
+      } catch {
+        /* Fallback to local invoiceId */
+      }
     }
 
-    onInsertMessage(formatTdrpInvoiceMessage({ invoiceId, title: invoiceTitle.trim(), description: invoiceDesc.trim(), currency: invoiceCurrency, totalAmountCents, isPaid: false, prices, isRecurring }));
+    const formattedPayload = formatTdrpInvoiceMessage({
+      invoiceId,
+      title: invoiceTitle.trim(),
+      description: invoiceDesc.trim(),
+      currency: invoiceCurrency,
+      totalAmountCents,
+      isPaid: false,
+      prices,
+      isRecurring,
+    });
+    const typedPayload: DirectTypedActionPayload = {
+      kind: "invoice",
+      title: invoiceTitle.trim(),
+      description: invoiceDesc.trim(),
+      currency: invoiceCurrency === "STARS" ? "XTR" : invoiceCurrency,
+      amount: totalAmountCents,
+      prices: prices.map((price) => ({ label: price.label, amount: price.amountCents })),
+      idempotencyKey,
+    };
+
+    await dispatchNonDestructively(formattedPayload, typedPayload);
     onClose();
   };
 
@@ -353,7 +502,14 @@ export function TdrpPollAndTodoModal({
                 {botResults.map((res) => (
                   <div
                     key={res.id}
-                    onClick={() => { onInsertMessage(res.text); onClose(); }}
+                    onClick={() => {
+                      void dispatchNonDestructively(res.text, {
+                        kind: "formatted_card",
+                        markdown: res.text,
+                      }).then(() => {
+                        onClose();
+                      });
+                    }}
                     style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid rgba(128, 128, 128, 0.18)", cursor: "pointer", background: "rgba(128, 128, 128, 0.05)" }}
                   >
                     <div style={{ fontWeight: 600 }}>{res.title}</div>

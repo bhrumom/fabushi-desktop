@@ -1,3 +1,15 @@
+/**
+ * OpenClaw Welcome Hero with 2x2 starter prompt cards.
+ *
+ * Upstream & Open PR Alignment:
+ * - Telegram Desktop `Telegram/SourceFiles/data/data_drafts.cpp` &
+ *   `Telegram/SourceFiles/api/api_sending.cpp`: Non-destructive draft handling
+ *   and direct dispatch without `setTimeout` draft-overwrite races.
+ * - Blueprint 03 (`docs/specs/fusion-blueprints/03-unified-composer-and-typed-actions.md`):
+ *   Section 2.4 (`OpenClawWelcomeHero.tsx` direct dispatch or `preserveExistingDraft`
+ *   insertion without `setTimeout(..., 50)` race conditions).
+ */
+
 import React from "react";
 import { AgentAvatar } from "../../recovered/features/conversation/workspace/agent-avatar";
 
@@ -6,6 +18,18 @@ export interface StarterPromptItem {
   title: string;
   description: string;
   prompt: string;
+}
+
+/**
+ * Merges a starter prompt into an existing composer draft without overwriting
+ * any unsent text the user has already typed.
+ */
+export function mergePromptPreservingDraft(existingPrompt: string, incomingPrompt: string): string {
+  const trimmedExisting = existingPrompt.trimEnd();
+  if (trimmedExisting.length === 0) {
+    return incomingPrompt;
+  }
+  return `${trimmedExisting}\n${incomingPrompt}`;
 }
 
 export const OPENCLAW_STARTER_PROMPTS: StarterPromptItem[] = [
@@ -53,7 +77,13 @@ export interface OpenClawWelcomeHeroProps {
   } | null;
   subtitle?: string;
   prompts?: StarterPromptItem[];
-  onSelectPrompt: (promptText: string) => void;
+  onSelectPrompt: (promptText: string, options?: { preserveExistingDraft?: boolean }) => void;
+  /** Direct non-destructive submission callback that bypasses draft mutation + setTimeout races. */
+  onDirectSubmitPrompt?: (promptText: string) => Promise<void> | void;
+  /** When true, preserves any existing draft text instead of overwriting it. */
+  preserveExistingDraft?: boolean;
+  /** Optional current draft prompt used when `preserveExistingDraft` is enabled. */
+  currentDraftPrompt?: string;
 }
 
 export function OpenClawWelcomeHero({
@@ -62,8 +92,23 @@ export function OpenClawWelcomeHero({
   subtitle = "在下方输入消息 · / 使用命令",
   prompts = OPENCLAW_STARTER_PROMPTS,
   onSelectPrompt,
+  onDirectSubmitPrompt,
+  preserveExistingDraft = true,
+  currentDraftPrompt,
 }: OpenClawWelcomeHeroProps) {
   const avatarKind = agent?.isSharedRoom ? "shared-room" : agent?.isGroup ? "group" : "agent";
+
+  const handleCardClick = (promptText: string) => {
+    if (onDirectSubmitPrompt != null) {
+      void onDirectSubmitPrompt(promptText);
+      return;
+    }
+    const nextPrompt =
+      preserveExistingDraft && typeof currentDraftPrompt === "string" && currentDraftPrompt.trim().length > 0
+        ? mergePromptPreservingDraft(currentDraftPrompt, promptText)
+        : promptText;
+    onSelectPrompt(nextPrompt, { preserveExistingDraft });
+  };
 
   return (
     <div className="oc-welcome-hero" role="region" aria-label="Welcome stage">
@@ -97,7 +142,7 @@ export function OpenClawWelcomeHero({
             key={card.id}
             type="button"
             className="oc-prompt-card"
-            onClick={() => onSelectPrompt(card.prompt)}
+            onClick={() => handleCardClick(card.prompt)}
           >
             <span className="oc-prompt-card__title">{card.title}</span>
             <span className="oc-prompt-card__desc">{card.description}</span>

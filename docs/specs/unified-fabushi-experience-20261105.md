@@ -44,17 +44,29 @@ UFX-R04：新建统一入口选择联系人/助手/群组/频道；搜索统一 
 
 ## 4. 核心交互与屏幕合同
 
-### 4.1 会话
+### 4.1 会话（彻底消除 `activeIsHuman` UI 割裂）
 
-顶部显示头像、名称、对象身份和必要状态；右侧搜索、通话（支持时）、详情、更多。移除常驻 workspace 面包屑与含义不清的“布局”按钮。分享等低频动作移至对象菜单，不改变权限语义。
+**单一顶栏（Single Canonical Header）**：禁止在 `ProductionRenderer.tsx` 中按 `activeIsHuman` 分叉渲染 `.sand-chat-header` 与 `OpenClawTopHeader` 两套割裂的 DOM 结构和视觉样式。Human、Agent、Group、Channel、Hybrid 必须共用同一个顶栏组件与布局骨架：左侧统一展示头像、名称、对象身份与真实状态（真人展示在线/最近活跃；助手展示真实 Host/Gateway 连接状态与当前模型；群组/频道展示成员数/在线数/置顶或通话状态）；右侧按当前对象实际支持的能力展示搜索、通话、人机协作交接（Ask Agent）、详情开关与更多菜单。移除常驻 workspace 面包屑与含义不清的“布局”按钮。
 
-消息列表：紧凑时间分组；普通消息短气泡；助手长回答/代码/表格按内容阅读宽度展现；工具噪音收进任务详情，不把已有历史文本按字符串匹配删除或折叠。
+**分享与转发严格解耦（Honest Share vs. Message Forward）**：“转发”是单条消息级动作，显式打开目标选择器转发所选消息；“分享会话/群组/助手”仅在对象具备真实可用的 `shareUrl` 或 `inviteLink`（或可由后端生成的真实分享链接）时显示或启用，复制后提供明确 Toast 反馈。**严禁**在缺少分享链接时回退复制 `window.location.href`（桌面端会复制本地 `file://` 或 `localhost` 渲染器 URL），更不允许静默抓取最后一条消息打开转发弹窗。
 
-一个输入器：附件、输入、语音、发送。仅助手/混合会话显示可选模型、推理强度；人类会话不展示模型。保留回复、编辑、计划发送、静默发送、媒体预览、上传状态、录音、命令/提及/贴纸等完整 typed actions；扩展附件菜单分组呈现。中文 IME Enter 不误发。
+**消息列表（Unified Transcript）**：紧凑时间分组；普通消息短气泡；助手长回答/代码/表格按内容阅读宽度展现；工具噪音收进任务详情，不把已有历史文本按字符串匹配删除或折叠。欢迎页快捷 Prompt（Starter Prompts）点击后直接走显式发送或填入草稿，禁止使用 `setTimeout(..., 50)` 触发异步竞态发送。
+
+**单一输入台与无损 Typed Actions（Single Canonical Composer）**：底部永远只有一个 `ConversationComposer`：附件、输入、语音、发送。仅助手/混合会话显示真实受控的可选模型、推理强度与工具权限开关；人类会话不展示模型。保留回复、编辑、计划发送、静默发送、媒体预览、上传状态、录音、命令/提及/贴纸等完整 typed actions；扩展附件菜单分组呈现。中文 IME Enter 不误发。
+- **严禁覆盖草稿与定时器竞态**：从附件栏或弹窗创建投票（Poll）、协作待办清单（Todo）、账单/发票（Invoice）等富交互卡片时，必须通过独立的 typed message 提交通道直接发送（或作为独立草稿附件挂载），**严禁**通过 `composerDraftStore.setDraft` 覆盖用户当前输入框内未发送的文本草稿，**严禁**依赖 `setTimeout(() => void submit(), 50)` 触发发送。
+
+**单一右侧上下文详情栏（Single Context Inspector Drawer）**：
+- **彻底移除 `OpenClawAskCopilotPanel`**：禁止保留第二个右侧 Copilot 面板，更禁止为了应付“无伪造在线状态”检查而将其硬编码为 `isGatewayOnline={false}` / `"未连接 (未知)"` 留在界面上充数。
+- **合并 7 个竞争抽屉**：将原本在 `ProductionRenderer.tsx` 中各自为政的 `TdrpProfileDetailsDrawer`、`TdrpCallAndAdminDrawer`、`ConversationOutlinePanel`、`AsyncTasksPanel`、`AgentSettingsPanel`、`GroupMembersPane`、`RoutinesInfoPane`、`ChannelsInfoPane` 统一收口为**唯一的右侧上下文详情栏（Context Inspector）**。点击顶栏“详情”按钮打开同一容器，内部按当前对象类型（Human / Group / Channel / Agent / Hybrid）动态装配 typed sections/tabs（资料与成员权限、共享媒体/文件/链接、会话大纲、助手模型/技能/工具权限、当前会话子任务、定时自动化、外部渠道绑定）。
 
 UFX-R05：内部子代理仅在已有 parent/task/type 元数据证明是内部执行对象时，默认归入父任务树；不得按显示名“executor”过滤，也不删存储。用户创建的同名助手正常显示；被明确固定/独立打开的执行对象可查看历史与返回父任务。未知来源保留可达并标明待归类。
 
-### 4.2 任务与真实状态
+### 4.2 任务中心（全局一级视图）与真实状态
+
+**一级全局任务视图（First-Class Global Tasks Surface）**：
+- 点击最左侧一级导航栏（`FabushiPrimaryNavRail`）的“任务（Tasks）”时，**必须无条件切换到全局任务与自动化工作区**，绝不能像 `if (domain === "tasks" && activeAgent != null && !activeIsHuman) openAsyncTasks(activeAgent.id)` 那样受限于当前是否选中了非真人会话（导致在真人聊天或空状态下点击“任务”毫无反应）。
+- 全局任务视图汇总展示所有助手的“需要我处理（等待授权 `waiting_auth` / 等待连接 `waiting_connection`）”、“进行中（`pending` / `running`）”、“已完成/失败/已取消（`completed` / `failed` / `cancelled`）”以及“定时与自动化（Routines/Automations）”，每项任务均可一键跳回原会话或展开查看子任务树、执行设备与产物。
+- **厘清一级导航与会话列表过滤栏边界**：左侧一级导航栏负责切换跨对象的核心产品领域（会话、任务、联系人、设备、扩展、设置）；当处于“会话（Messages）”领域时，中间列表顶部的 `FabushiCollectionFilterBar` 仅作为会话集合的视图筛选器（全部、未读、私聊、群组、助手等），不再与左轨产生职责打架。
 
 UFX-R06：接受请求后在原会话显示一张稳定 taskId 卡。卡片包含任务目标、真实状态、最近有效进展、必要阻塞原因、一个主要下一动作；详情展示步骤、子代理、工具、审批、设备与产物。
 
@@ -62,7 +74,7 @@ UFX-R06：接受请求后在原会话显示一张稳定 taskId 卡。卡片包�
 
 失败示例：“暂时无法访问网络 · 尚未获取新闻” + “重试 / 查看连接”。只有后台已确认注册的重试才显示“下次重试”；不能说“我会继续”而没有任务。重复中间状态更新同一卡，不生成一串道歉聊天消息。
 
-UFX-R07：移除所有模拟回复、硬编码已就绪、定时器成功状态；在线、能力可用、模型可用、已授权、执行中分别来自对应 owner。未知不是在线。右侧详情没有第二个聊天输入器。
+UFX-R07：移除所有模拟回复、硬编码已就绪、**硬编码未连接（假离线）**、定时器成功状态；在线、能力可用、模型可用、已授权、执行中分别来自对应 owner（如 `transport`、`coordinatorPort`、`runtimeDetail` 的真实实时状态）。未知不是在线，也不允许用静态写死的 `isGatewayOnline={false}` 冒充真实状态接线。右侧详情没有第二个聊天输入器。
 
 ### 4.3 人群与通信
 
@@ -109,13 +121,15 @@ Telegram Desktop 锁定 `f985723b552b30fe1c17d377d57f44e61a15a8c4`，本地 `/Us
 
 这些是设计抽样，不宣称已读完整上游。Teamwork 必须从现有 inventory/ledger 增量补齐 exact-source → responsibility → owner → UI route → production call chain → oracle/evidence，不新增平行权威 ledger。所有 source review / implementation / wiring / verification 状态分开。
 
-## 8. 实施顺序与团队分工
+## 8. 实施顺序与团队分工（严格遵循 `AGENTS.md` `UFX-FLOW-01` 四阶段流程）
 
-M0：核对实际生产基线、现有规范与来源；形成现有 ledger 的缺口分类；阅读本设计，冻结接口与截图判定标准。
+所有实施必须遵守根 `AGENTS.md` `UFX-FLOW-01` 与 `docs/specs/fusion-blueprints/README.md` 规定的 **“全源码精读（四步精读法与源码五问）$\rightarrow$ 全景能力索引与分模块蓝图落盘（`docs/specs/fusion-blueprints/00-master-capability-and-module-index.md` + `01..N-*.md`）$\rightarrow$ 子智能体按蓝图切片实施 $\rightarrow$ 独立取证审计”** 严格流程（标准启动提示词见 `projects/fabushi-communication-platform/management/prompts/full-unified-fabushi-fusion.md`）。严禁在未产出对应模块蓝图前直接盲改生产代码。
 
-M1（首批必须实际实现）：移除假的第二聊天；统一 header/composer/详情、收口主题；保留既有对象动作；没有事实依据的状态显示未知；构建可验证回归。
+M0：全量精读三方生产/上游源码（Telegram 50+ 能力域 + OpenClaw 32 责任域 + Fabushi 生产源码），核对实际生产基线、现有规范与来源；在 `docs/specs/fusion-blueprints/` 下产出 `00` 全景总索引与动态分模块的详尽融合设计蓝图（明确职责、架构位置、Canonical Owner、状态机、UI/UX 与接口契约），冻结接口与截图判定标准。
 
-M2：任务真实状态投影、子代理归属、重连/审批/失败闭环；统一任务入口与自动化。
+M1（首批必须实际实现）：彻底移除假的 `OpenClawAskCopilotPanel`（禁止将其硬编码为 `isGatewayOnline={false}` 充数）；消除 `ProductionRenderer.tsx` 中按 `activeIsHuman` 割裂的两套顶栏，统一为单一 canonical Header、单一 `ConversationComposer`、单一右侧上下文详情栏（Context Inspector，合并原有的 7 个竞争抽屉）；收口主题；保留既有对象动作；修复投票/待办等弹窗通过 `setTimeout(..., 50)` 覆盖用户草稿的缺陷；修复分享按钮回退复制 `window.location.href` 的缺陷；真实网关/连接状态直接读取 owner（无事实依据时显示未知，连上时显示真实在线状态）；构建可验证回归。
+
+M2：打通真正的一级全局“任务（Tasks）”与自动化视图（不受 `activeIsHuman` 门控限制，在任意状态下点击左轨 Tasks 均可进入全局任务中心）；完成任务真实 7 态状态投影、子代理基于元数据的归属、重连/审批/失败闭环。
 
 M3：Telegram 通信完整纵向闭环：native service → owner → shell，所有尚未 wired 的职责按依赖补齐。
 
@@ -131,9 +145,9 @@ Antigravity 团队：Orchestrator 管依赖/唯一写入权；UX worker 管壳�
 
 | ID | 场景/判定 | 最低证据 |
 |---|---|---|
-| UFX-AC01 | R01/R04/R07：任意对象只有一个 canonical workspace/composer；无假面板或伪在线 | 生产引用图、真实 packaged UI 操作与截图；断网负例 |
+| UFX-AC01 | R01/R04/R07：任意对象（Human/Agent/Group/Channel/Hybrid）共用同一个 canonical Header、Transcript、Composer 与唯一右侧 Context Inspector；彻底移除 `OpenClawAskCopilotPanel`，无硬编码在线或硬编码离线；Poll/Todo 提交不覆盖草稿、无 50ms 定时器竞态；分享不回退复制 `window.location.href` | 生产引用图、真实 packaged UI 操作与截图；联网正例与断网负例 |
 | UFX-AC02 | R05：内部子代理归父任务，用户同名助手保留、固定历史可达 | 元数据正反例、搜索/深链/删除回归 |
-| UFX-AC03 | R06/R11：一次新闻请求中断/重连/授权/取消/重试不刷屏；终态与产物一致 | 真实 Host 事件、重复/乱序/迟到事件 oracle、重启时序证据 |
+| UFX-AC03 | R06/R11：左轨“任务（Tasks）”在任意会话状态下均可无条件进入全局任务中心；一次新闻请求中断/重连/授权/取消/重试不刷屏；终态与产物一致 | 全局任务切换回归、真实 Host 事件、重复/乱序/迟到事件 oracle、重启时序证据 |
 | UFX-AC04 | R08：两个真实账号跨设备发消息→回复→转发→搜索；群角色/频道/话题/通话等全责任逐项对照 | 服务部署身份、真实账号脱敏、交互证据；mock 不算 |
 | UFX-AC05 | R09：真实 provider AI 回复和历史恢复；一个渠道真实收发与断线恢复；全部渠道/SDK 能力按 OCRM gates | 生产调用链、对应 oracle 与各责任证据 |
 | UFX-AC06 | R04/R10：宽窄屏、深浅色、IME、键盘/读屏、放大、切换草稿/阅读位置 | 目标窗口截图、a11y/交互结果，回归对照 |

@@ -11,6 +11,7 @@ export { mergeOlderTranscriptEntries } from "../../../../production/transcript-p
  * @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5692943 (cursor/page merge helpers)
  * @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5705748 (loadOlder request fencing and error state)
  * @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5312453 (root hasOlder/isLoadingOlder/loadOlder handoff)
+ * @evidence origin/codex/canonical-transcript-search (PR #176 commit dd700e394) & Telegram Desktop `Telegram/SourceFiles/data/data_history_messages.cpp`
  */
 
 export type TranscriptHistoryCursor =

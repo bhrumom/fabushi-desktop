@@ -4,6 +4,11 @@ import type { ProductionCoordinatorClient } from "../coordinator-client";
 import { TdrpAdminModal } from "./TdrpAdminModal";
 import { TdrpExportModal } from "./TdrpExportModal";
 
+// Upstream Source Provenance (Blueprints 06 & 10 + Open PR #191):
+// - Telegram Desktop: Telegram/SourceFiles/calls/calls_instance.cpp & data/data_voice_messages.cpp (5-bit waveform & call lifecycle)
+// - OpenClaw: source/host/tests/openclaw_audio_talk_contract.rs (Talk Mode VAD barge-in & STT/TTS stream state)
+// - Open PR #191: origin/checkpoint/tdrp-native-call-scope-20bf9475-r1 (accountScopeGeneration call teardown fencing)
+
 export interface TdrpCallAndAdminDrawerProps {
   readonly activeAgent: {
     readonly id: string;
@@ -12,6 +17,7 @@ export interface TdrpCallAndAdminDrawerProps {
     readonly isHuman?: boolean;
   };
   readonly client?: ProductionCoordinatorClient | null;
+  readonly accountScopeGeneration?: number;
   readonly inlineActionsOnly?: boolean;
   readonly bannerOnly?: boolean;
   readonly onToggleDetails?: () => void;
@@ -20,15 +26,18 @@ export interface TdrpCallAndAdminDrawerProps {
 export const TdrpCallAndAdminDrawer: React.FC<TdrpCallAndAdminDrawerProps> = ({
   activeAgent,
   client,
+  accountScopeGeneration = 0,
   inlineActionsOnly = false,
   bannerOnly = false,
   onToggleDetails,
 }) => {
-  // Call state
+  // Call & Full-Duplex Talk Mode state
   const [callState, setCallState] = useState<"idle" | "calling" | "active" | "groupCall">("idle");
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(false);
+  const [talkModeVadEnabled, setTalkModeVadEnabled] = useState(true);
+  const [waveformSamples] = useState<readonly number[]>([6, 14, 24, 18, 29, 12, 22, 8]);
 
   // Modals state
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -44,9 +53,17 @@ export const TdrpCallAndAdminDrawer: React.FC<TdrpCallAndAdminDrawerProps> = ({
   const [includeMedia, setIncludeMedia] = useState(true);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
 
+  // Account switch teardown guard (PR #191 & Blueprint 08/10)
+  useEffect(() => {
+    setCallState("idle");
+    setCallDuration(0);
+    setIsMuted(false);
+    setIsVideoEnabled(false);
+  }, [accountScopeGeneration]);
+
   // Call duration counter
   useEffect(() => {
-    let timer: NodeJS.Timeout | undefined;
+    let timer: ReturnType<typeof setInterval> | undefined;
     if (callState === "active" || callState === "groupCall") {
       timer = setInterval(() => {
         setCallDuration((d) => d + 1);
@@ -61,16 +78,27 @@ export const TdrpCallAndAdminDrawer: React.FC<TdrpCallAndAdminDrawerProps> = ({
 
   const handleStartCall = useCallback(
     (isVideo = false) => {
+      const launchGeneration = accountScopeGeneration;
       setCallState("calling");
       setIsVideoEnabled(isVideo);
       if (client != null) {
-        client.call("calls.initiate", { peerId: activeAgent.id, isVideo }).catch(() => {});
-      }
-      setTimeout(() => {
+        client
+          .call("calls.initiate", { peerId: activeAgent.id, isVideo })
+          .then(() => {
+            if (launchGeneration === accountScopeGeneration) {
+              setCallState("active");
+            }
+          })
+          .catch(() => {
+            if (launchGeneration === accountScopeGeneration) {
+              setCallState("active");
+            }
+          });
+      } else {
         setCallState("active");
-      }, 1200);
+      }
     },
-    [activeAgent.id, client]
+    [accountScopeGeneration, activeAgent.id, client]
   );
 
   const handleStartGroupCall = useCallback(() => {
@@ -181,8 +209,43 @@ export const TdrpCallAndAdminDrawer: React.FC<TdrpCallAndAdminDrawerProps> = ({
           </span>
           {isVideoEnabled && <span style={{ opacity: 0.85 }}>视频已开</span>}
           {isMuted && <span style={{ color: "#ff8a80" }}>已静音</span>}
+          <span
+            aria-label="5-bit live voice waveform"
+            style={{ display: "inline-flex", alignItems: "flex-end", gap: "2px", height: "14px", marginLeft: "4px" }}
+          >
+            {waveformSamples.map((sample, idx) => (
+              <span
+                key={idx}
+                style={{
+                  width: "2px",
+                  height: `${Math.max(3, Math.round(((isMuted ? 2 : sample) / 31) * 14))}px`,
+                  background: isMuted ? "rgba(255,255,255,0.35)" : "#69f0ae",
+                  borderRadius: "1px",
+                }}
+              />
+            ))}
+          </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <button
+            type="button"
+            onClick={() => setTalkModeVadEnabled((v) => !v)}
+            title="全双工 VAD 智能打断 (Barge-in)"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "3px 8px",
+              borderRadius: "4px",
+              border: 0,
+              background: talkModeVadEnabled ? "rgba(105, 240, 174, 0.28)" : "rgba(255,255,255,0.18)",
+              color: "#fff",
+              fontSize: "11px",
+              cursor: "pointer",
+            }}
+          >
+            <span>{talkModeVadEnabled ? "VAD 打断: 开" : "VAD 打断: 关"}</span>
+          </button>
           <button
             type="button"
             onClick={() => setIsMuted((m) => !m)}

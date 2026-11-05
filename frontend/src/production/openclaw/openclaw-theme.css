@@ -209,11 +209,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 44px;
-  min-height: 44px;
+  height: 52px;
+  min-height: 52px;
+  margin-right: var(--sand-window-controls-inset, 0px);
   padding: 0 16px;
   border-bottom: 1px solid var(--oc-border);
   background: var(--oc-bg-canvas);
+  box-sizing: border-box;
   user-select: none;
 }
 
@@ -724,15 +726,122 @@ textarea:focus-visible,
 }
 
 /* ==========================================================================
-   7. Responsive Multi-Tier Layout Breakpoints (UFX-R10)
+   7. Responsive Multi-Tier Layout Breakpoints (UFX-R10 & Blueprint 01/02)
+   - Upstream Alignment: Telegram Desktop `window/window_adaptive.cpp` (ThreeColumn / Normal / OneColumn)
    - Tier 1: ≥1200px — 3-Column Layout (Rail + Sidebar + Main Workspace + Docked Drawer)
    - Tier 2: 900–1199px — 2-Column Layout (Rail + Sidebar + Main Workspace, Mutually Exclusive Overlay Drawers)
    - Tier 3: <900px — Single-Column Mobile/Compact Layout (Stacked Navigation, Full-Width Drawers)
    ========================================================================== */
 
+.fabushi-shell-grid {
+  display: grid;
+  grid-template-columns: 52px var(--fabushi-sidebar-width, 280px) minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  background-color: var(--fabushi-bg-canvas);
+  color: var(--fabushi-text-primary);
+  position: relative;
+}
+
+.fabushi-tier-wide.fabushi-shell-grid {
+  grid-template-columns: 52px var(--fabushi-sidebar-width, 280px) minmax(0, 1fr);
+}
+
+.fabushi-tier-standard.fabushi-shell-grid {
+  grid-template-columns: 52px clamp(260px, var(--fabushi-sidebar-width, 280px), 340px) minmax(0, 1fr);
+}
+
+.fabushi-tier-compact.fabushi-shell-grid {
+  grid-template-columns: 48px minmax(0, 1fr);
+}
+
+/* Unified Conversation Header & Stage (Blueprint 02 §4.3) */
+.fabushi-conversation-stage {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  background-color: var(--fabushi-bg-canvas);
+  color: var(--fabushi-text-primary);
+  overflow: hidden;
+}
+
+.fabushi-conversation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  min-height: 52px;
+  margin-right: var(--sand-window-controls-inset, 0px);
+  padding: 0 16px;
+  background-color: var(--fabushi-bg-surface);
+  border-bottom: 1px solid var(--fabushi-border);
+  box-shadow: var(--fabushi-shadow-sm);
+  position: relative;
+  z-index: 5000;
+  box-sizing: border-box;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.fabushi-conversation-header :is(button, a, input, select, [role="button"]) {
+  position: relative;
+  z-index: 5001;
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.fabushi-header-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 32px;
+  height: 30px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--fabushi-border);
+  background: transparent;
+  color: var(--fabushi-text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.fabushi-header-action-btn:hover {
+  background-color: var(--fabushi-card-hover);
+  border-color: var(--fabushi-border-strong);
+  color: var(--fabushi-text-primary);
+}
+
+.fabushi-header-action-btn--active {
+  background-color: rgba(16, 132, 254, 0.12);
+  color: var(--fabushi-accent-primary);
+  border-color: var(--fabushi-accent-primary);
+}
+
+.fabushi-context-inspector {
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  min-width: 340px;
+  max-width: 420px;
+  height: 100%;
+  border-left: 1px solid var(--fabushi-border);
+  background-color: var(--fabushi-bg-canvas);
+  box-sizing: border-box;
+}
+
 /* Tier 1: ≥1200px: 3-column layout */
 @media (min-width: 1200px) {
-  .oc-copilot-drawer {
+  .oc-copilot-drawer,
+  .fabushi-context-inspector {
     position: relative;
     width: 360px;
     min-width: 340px;
@@ -749,7 +858,12 @@ textarea:focus-visible,
 
 /* Tier 2: 900–1199px: 2-column layout with mutually exclusive drawer overlays */
 @media (min-width: 900px) and (max-width: 1199px) {
-  .oc-copilot-drawer {
+  .fabushi-shell-grid {
+    grid-template-columns: 52px clamp(260px, var(--fabushi-sidebar-width, 280px), 340px) minmax(0, 1fr);
+  }
+
+  .oc-copilot-drawer,
+  .fabushi-context-inspector {
     position: absolute;
     right: 0;
     top: 0;
@@ -781,7 +895,12 @@ textarea:focus-visible,
 
 /* Tier 3: <900px: single-column compact layout */
 @media (max-width: 899px) {
-  .oc-copilot-drawer {
+  .fabushi-shell-grid {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .oc-copilot-drawer,
+  .fabushi-context-inspector {
     position: fixed;
     top: 0;
     left: 0;
@@ -822,17 +941,21 @@ textarea:focus-visible,
     padding: 8px 10px;
   }
 
-  .oc-nav-rail {
-    width: 48px;
-    min-width: 48px;
+  .oc-nav-rail,
+  .fabushi-primary-nav-rail {
+    width: 48px !important;
+    min-width: 48px !important;
   }
 
-  .oc-top-header {
+  .oc-top-header,
+  .fabushi-conversation-header {
     padding: 0 8px;
     height: 48px;
+    min-height: 48px;
   }
 
-  .oc-top-header__action-btn {
+  .oc-top-header__action-btn,
+  .fabushi-header-action-btn {
     min-height: 44px; /* WCAG touch target */
   }
 }

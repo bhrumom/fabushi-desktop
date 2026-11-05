@@ -1,6 +1,28 @@
+/**
+ * Forward message dialog and headless forward state machine.
+ *
+ * Upstream & Open PR Alignment:
+ * - Telegram Desktop `Telegram/SourceFiles/api/api_sending.cpp` (`forwardMessages`
+ *   and `Data::ForwardOptions`: `dropSenderNames` / `dropCaptions` normalization
+ *   and per-peer topic routing).
+ * - PR #189 (`origin/checkpoint/tdrp-forward-privacy-task20bf-r1`): Forward privacy
+ *   option coupling (`dropCaptions` implies `dropSenderNames`), `forcedForwardInfo`
+ *   guard, and topic eligibility filtering (`topicClosed` / `topicDeleted`).
+ * - PR #190 (`origin/checkpoint/tdrp-nmr50-recovery-20bf9475-r1`): Account-scoped
+ *   `ForwardDispatchScope` fencing and NMR-50i cumulative retry settlement
+ *   (`confirmedRecipientIds` / `confirmedSettlements`) so retrying failed targets
+ *   never re-sends to confirmed targets or drops them from the final settlement.
+ * - Blueprint 03 (`docs/specs/fusion-blueprints/03-unified-composer-and-typed-actions.md`).
+ */
+
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import type { TranscriptMessage } from "../recovered/features/conversation/workspace/model";
-import type { CoordinatorCallAdmission } from "./coordinator-client";
+import { CoordinatorCallError, type CoordinatorCallAdmission, type CoordinatorClient } from "./coordinator-client";
+import {
+  captureComposerDispatchOrigin,
+  type ComposerDispatchOrigin,
+  type ComposerDispatchScope,
+} from "./composer-dispatch-scope";
 import { OverlayDialog } from "../recovered/ui/overlay-primitives";
 import { SandButton } from "../recovered/ui/sand-kit-primitives";
 import {
@@ -9,6 +31,306 @@ import {
   isForwardToggleShortcut,
   nextForwardRecipientIndex,
 } from "./forward-recipient-navigation";
+
+export type ForwardDispatchScope = ComposerDispatchScope;
+
+export interface ForwardSourceSummary {
+  readonly messageId: string;
+  readonly fromPeerId: string;
+  readonly authorLabel: string;
+  readonly previewText: string;
+  readonly hasMediaCaption?: boolean;
+  readonly forwardRestricted?: boolean;
+}
+
+export interface ForwardRecipientOption {
+  readonly id: string;
+  readonly title: string;
+  readonly subtitle?: string;
+  readonly kind: "human" | "agent" | "group" | "channel";
+  readonly writeForbidden?: boolean;
+}
+
+export type ForwardCommentAttributionMode =
+  | "preserve-author"
+  | "hide-author"
+  | "hide-author-and-caption";
+
+export interface ForwardExecutionSettlement {
+  readonly toPeerId: string;
+  readonly messageId: string;
+  readonly commentMessageId?: string;
+  readonly createdAt: string;
+}
+
+export interface ForwardDialogSnapshot {
+  readonly source: ForwardSourceSummary;
+  readonly query: string;
+  readonly visibleRecipients: readonly ForwardRecipientOption[];
+  readonly selectedRecipientIds: readonly string[];
+  readonly confirmedRecipientIds: readonly string[];
+  readonly comment: string;
+  readonly attributionMode: ForwardCommentAttributionMode;
+  readonly phase: "idle" | "submitting" | "failed" | "completed";
+  readonly errorMessage: string | null;
+  readonly settlements: readonly ForwardExecutionSettlement[];
+}
+
+export interface ForwardDialogModelOptions {
+  readonly source: ForwardSourceSummary;
+  readonly recipients: readonly ForwardRecipientOption[];
+  readonly client: Pick<CoordinatorClient, "call">;
+  readonly initialRecipientIds?: readonly string[];
+  readonly readDispatchScope?: () => ForwardDispatchScope;
+  readonly onSettled?: (settlements: readonly ForwardExecutionSettlement[]) => void;
+  readonly onClosed?: () => void;
+}
+
+export interface ForwardDialogModel {
+  snapshot(): ForwardDialogSnapshot;
+  setQuery(query: string): ForwardDialogSnapshot;
+  toggleRecipient(peerId: string): ForwardDialogSnapshot;
+  setComment(comment: string): ForwardDialogSnapshot;
+  setAttributionMode(mode: ForwardCommentAttributionMode): ForwardDialogSnapshot;
+  submit(): Promise<readonly ForwardExecutionSettlement[]>;
+  subscribe(listener: (snapshot: ForwardDialogSnapshot) => void): () => void;
+}
+
+function normalizeHeadlessQuery(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function filterHeadlessRecipients(
+  recipients: readonly ForwardRecipientOption[],
+  query: string
+): readonly ForwardRecipientOption[] {
+  const normalized = normalizeHeadlessQuery(query);
+  return recipients.filter((recipient) => {
+    if (recipient.writeForbidden) return false;
+    if (!normalized) return true;
+    const haystack = `${recipient.title} ${recipient.subtitle ?? ""} ${recipient.id}`.toLowerCase();
+    return haystack.includes(normalized);
+  });
+}
+
+function retiredForwardError(): CoordinatorCallError {
+  return new CoordinatorCallError("request-retired", "Forward dispatch retired after account scope change.");
+}
+
+function requireCurrentForwardOrigin(origin: ComposerDispatchOrigin | null): void {
+  if (origin != null && !origin.isCurrent()) {
+    throw retiredForwardError();
+  }
+}
+
+export function createForwardDialogModel(options: ForwardDialogModelOptions): ForwardDialogModel {
+  if (options.source.forwardRestricted) {
+    throw new Error("Protected or restricted messages cannot be forwarded.");
+  }
+
+  const eligibleIds = new Set(
+    options.recipients.filter((recipient) => !recipient.writeForbidden).map((recipient) => recipient.id)
+  );
+  const listeners = new Set<(snapshot: ForwardDialogSnapshot) => void>();
+
+  let query = "";
+  let selectedRecipientIds = (options.initialRecipientIds ?? []).filter((id) => eligibleIds.has(id));
+  const confirmedSettlementsByPeer = new Map<string, ForwardExecutionSettlement>();
+  let targetOrderIds = [...selectedRecipientIds];
+  let comment = "";
+  let attributionMode: ForwardCommentAttributionMode = "preserve-author";
+  let phase: ForwardDialogSnapshot["phase"] = "idle";
+  let errorMessage: string | null = null;
+  let settlements: readonly ForwardExecutionSettlement[] = [];
+
+  const orderedConfirmedSettlements = (): ForwardExecutionSettlement[] => {
+    const ordered: ForwardExecutionSettlement[] = [];
+    const seen = new Set<string>();
+    for (const peerId of targetOrderIds) {
+      const settlement = confirmedSettlementsByPeer.get(peerId);
+      if (settlement != null) {
+        ordered.push(settlement);
+        seen.add(peerId);
+      }
+    }
+    for (const [peerId, settlement] of confirmedSettlementsByPeer.entries()) {
+      if (!seen.has(peerId)) {
+        ordered.push(settlement);
+      }
+    }
+    return ordered;
+  };
+
+  const buildSnapshot = (): ForwardDialogSnapshot => ({
+    source: options.source,
+    query,
+    visibleRecipients: filterHeadlessRecipients(options.recipients, query),
+    selectedRecipientIds: [...selectedRecipientIds],
+    confirmedRecipientIds: [...confirmedSettlementsByPeer.keys()],
+    comment,
+    attributionMode,
+    phase,
+    errorMessage,
+    settlements,
+  });
+
+  const emit = (): ForwardDialogSnapshot => {
+    const next = buildSnapshot();
+    for (const listener of listeners) {
+      listener(next);
+    }
+    return next;
+  };
+
+  return {
+    snapshot: buildSnapshot,
+    setQuery(nextQuery) {
+      query = nextQuery;
+      return emit();
+    },
+    toggleRecipient(peerId) {
+      if (!eligibleIds.has(peerId) || phase === "submitting") {
+        return buildSnapshot();
+      }
+      if (selectedRecipientIds.includes(peerId)) {
+        selectedRecipientIds = selectedRecipientIds.filter((id) => id !== peerId);
+      } else {
+        selectedRecipientIds = [...selectedRecipientIds, peerId];
+        if (!targetOrderIds.includes(peerId)) {
+          targetOrderIds = [...targetOrderIds, peerId];
+        }
+      }
+      errorMessage = null;
+      if (phase === "failed") phase = "idle";
+      return emit();
+    },
+    setComment(nextComment) {
+      if (phase === "submitting") return buildSnapshot();
+      comment = nextComment;
+      return emit();
+    },
+    setAttributionMode(nextMode) {
+      if (phase === "submitting") return buildSnapshot();
+      attributionMode = nextMode;
+      return emit();
+    },
+    async submit() {
+      if (phase === "submitting") return settlements;
+      const pendingTargets = selectedRecipientIds.filter((peerId) => !confirmedSettlementsByPeer.has(peerId));
+      if (pendingTargets.length === 0) {
+        errorMessage = "Select at least one recipient.";
+        phase = "failed";
+        emit();
+        return [];
+      }
+
+      for (const peerId of pendingTargets) {
+        if (!targetOrderIds.includes(peerId)) {
+          targetOrderIds = [...targetOrderIds, peerId];
+        }
+      }
+
+      const dispatchOrigin = options.readDispatchScope
+        ? captureComposerDispatchOrigin(options.readDispatchScope)
+        : null;
+      const callScoped = <T = unknown>(method: string, params: Record<string, unknown>): Promise<T> => {
+        requireCurrentForwardOrigin(dispatchOrigin);
+        return options.client.call<T>(
+          method,
+          params,
+          dispatchOrigin
+            ? {
+                isCurrent: dispatchOrigin.isCurrent,
+                isDispatchCurrent: dispatchOrigin.isCurrent,
+              }
+            : undefined
+        );
+      };
+
+      phase = "submitting";
+      errorMessage = null;
+      emit();
+
+      const trimmedComment = comment.trim();
+      const dropAuthor = attributionMode !== "preserve-author";
+      const dropCaption = attributionMode === "hide-author-and-caption";
+
+      try {
+        for (const toPeerId of pendingTargets) {
+          requireCurrentForwardOrigin(dispatchOrigin);
+          let commentMessageId: string | undefined;
+          if (trimmedComment.length > 0) {
+            const commentResponse = await callScoped<{ message_id?: string }>("messages.send", {
+              peer_id: toPeerId,
+              text: trimmedComment,
+              client_nonce: `fwd-comment:${options.source.messageId}:${toPeerId}`,
+              attachments: [],
+            });
+            requireCurrentForwardOrigin(dispatchOrigin);
+            commentMessageId =
+              typeof commentResponse?.message_id === "string" ? commentResponse.message_id : undefined;
+          }
+
+          const forwardResponse = await callScoped<{
+            message?: { id?: string; peer_id?: string; text?: string; created_at?: string };
+          }>("messages.forward", {
+            from_peer_id: options.source.fromPeerId,
+            to_peer_id: toPeerId,
+            message_id: options.source.messageId,
+            drop_author: dropAuthor,
+            drop_media_captions: dropCaption,
+          });
+          requireCurrentForwardOrigin(dispatchOrigin);
+
+          const forwardedId =
+            typeof forwardResponse?.message?.id === "string" && forwardResponse.message.id.length > 0
+              ? forwardResponse.message.id
+              : `fwd:${options.source.messageId}:${toPeerId}`;
+          const createdAt =
+            typeof forwardResponse?.message?.created_at === "string" &&
+            forwardResponse.message.created_at.length > 0
+              ? forwardResponse.message.created_at
+              : new Date().toISOString();
+
+          confirmedSettlementsByPeer.set(toPeerId, {
+            toPeerId,
+            messageId: forwardedId,
+            ...(commentMessageId ? { commentMessageId } : {}),
+            createdAt,
+          });
+          selectedRecipientIds = selectedRecipientIds.filter((id) => id !== toPeerId);
+        }
+
+        requireCurrentForwardOrigin(dispatchOrigin);
+        settlements = orderedConfirmedSettlements();
+        phase = "completed";
+        errorMessage = null;
+        emit();
+        options.onSettled?.(settlements);
+        options.onClosed?.();
+        return settlements;
+      } catch (error) {
+        if (dispatchOrigin != null && !dispatchOrigin.isCurrent()) {
+          phase = "failed";
+          errorMessage = "Forward cancelled because the active account changed.";
+          emit();
+          return [];
+        }
+        settlements = orderedConfirmedSettlements();
+        phase = "failed";
+        errorMessage = error instanceof Error ? error.message : String(error ?? "Forward failed");
+        emit();
+        return settlements;
+      }
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+}
 
 export interface ForwardRecipient {
   readonly id: string;
@@ -48,7 +370,7 @@ export interface ForwardMessageDialogProps {
     comment?: { text: string; entities?: readonly unknown[] };
     destinationTopics?: Readonly<Record<string, string>>;
     shareUrl?: string;
-  }, admission?: CoordinatorCallAdmission) => Promise<readonly ForwardSettlement[]>;
+  }, admission?: CoordinatorCallAdmission & (() => boolean)) => Promise<readonly ForwardSettlement[]>;
   readonly onForward?: (payload: {
     sourceConversationId: string;
     sourceEntryId: string;
@@ -79,9 +401,10 @@ interface ForwardDialogLifetime {
 
 type ForwardRequest = Parameters<NonNullable<ForwardMessageDialogProps["forwardMessage"]>>[0];
 
-interface ForwardDialogSnapshot {
+interface ForwardDialogIntentSnapshot {
   readonly request: ForwardRequest;
   readonly recipientNames: ReadonlyMap<string, string>;
+  readonly confirmedSettlements: Map<string, ForwardSettlement>;
 }
 
 // Match the existing Session request bound before freezing a retry intent.
@@ -113,7 +436,7 @@ export function ForwardMessageDialog({
   const searchGenerationRef = useRef(0);
   const lifetimeRef = useRef<ForwardDialogLifetime | null>(null);
   const submittingLifetimeRef = useRef<ForwardDialogLifetime | null>(null);
-  const snapshotRef = useRef<ForwardDialogSnapshot | null>(null);
+  const snapshotRef = useRef<ForwardDialogIntentSnapshot | null>(null);
   const selectedRef = useRef<ReadonlySet<string>>(new Set());
   const [query, setQuery] = useState("");
   const [recipients, setRecipients] = useState<readonly ForwardRecipient[]>([]);
@@ -388,11 +711,11 @@ export function ForwardMessageDialog({
         const name = lifetime.recipientNames.get(id);
         if (name != null) recipientNames.set(id, name);
       }
-      snapshot = { request, recipientNames };
+      snapshot = { request, recipientNames, confirmedSettlements: new Map() };
       snapshotRef.current = snapshot;
     }
     const destinationConversationIds = snapshot.request.destinationConversationIds
-      .filter((id) => selectedRef.current.has(id));
+      .filter((id) => selectedRef.current.has(id) && !snapshot.confirmedSettlements.has(id));
     let retryDestinationTopics: Record<string, string> | undefined;
     if (snapshot.request.destinationTopics != null) {
       const filtered: Record<string, string> = {};
@@ -425,12 +748,17 @@ export function ForwardMessageDialog({
           if (forwardMessage == null) throw error;
         }
       }
-      const settlement = forwardMessage != null
-        ? await forwardMessage(forwardPayload, {
-          // Readiness can outlive this dialog. Recheck the same lifetime at the
-          // request frame; after posting, the Host still owns the durable intent.
+      // Readiness can outlive this dialog. Recheck the same lifetime at the
+      // request frame; after posting, the Host still owns the durable intent.
+      const callAdmission: CoordinatorCallAdmission & (() => boolean) & { readonly isDispatchCurrent: () => boolean } = Object.assign(
+        () => isCurrent(lifetime),
+        {
           isCurrent: () => isCurrent(lifetime),
-        })
+          isDispatchCurrent: () => isCurrent(lifetime),
+        },
+      );
+      const settlement = forwardMessage != null
+        ? await forwardMessage(forwardPayload, callAdmission)
         : destinationConversationIds.map((conversationId): ForwardSettlement => ({
           conversationId,
           status: "sent",
@@ -443,6 +771,11 @@ export function ForwardMessageDialog({
           ? results[0]
           : { conversationId, status: "failed", error: "Delivery was not confirmed. Retry keeps your forwarding choices." };
       });
+      for (const item of completed) {
+        if (item.status === "sent") {
+          snapshot.confirmedSettlements.set(item.conversationId, item);
+        }
+      }
       const failed = completed.filter((item) => item.status !== "sent");
       updateSelected(new Set(failed.map((item) => item.conversationId)));
       // A consumer receives only this attempt's targets and cannot mutate the

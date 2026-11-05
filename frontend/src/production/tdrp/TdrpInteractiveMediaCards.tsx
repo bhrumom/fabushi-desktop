@@ -1,4 +1,21 @@
-import React, { useState } from "react";
+/**
+ * Interactive TDRP media cards for Polls, Todo Lists, and Invoice/Gift Checkout.
+ *
+ * Upstream & Open PR Alignment:
+ * - Telegram Desktop `Telegram/SourceFiles/data/data_poll.cpp` & `api/api_polls.cpp`
+ *   (Poll voting, multi-choice toggle, quiz answer reveal, vote retraction).
+ * - Telegram Desktop `Telegram/SourceFiles/data/data_todo_list.h`
+ *   (Collaborative Todo item completion tracking).
+ * - Telegram Desktop `Telegram/SourceFiles/api/api_credits.cpp` (`CreditsStatus`) &
+ *   `Telegram/SourceFiles/payments/payments_form.cpp` (`InvoiceCredits`, `InvoiceStarGift`):
+ *   Real Stars balance validation and idempotency-protected payment settlement.
+ * - Host Rust `crates/fabushi-Telegram/src/stories_gifts_stars.rs` (`stars.status`,
+ *   `stars.sendGift`) & `export_payments_bots.rs` (`payments.settlePayment`).
+ * - Blueprint 03 (`docs/specs/fusion-blueprints/03-unified-composer-and-typed-actions.md`) &
+ *   Blueprint 13 (`docs/specs/fusion-blueprints/13-checkout-stars-ledger-and-economy.md`).
+ */
+
+import React, { useEffect, useRef, useState } from "react";
 import type { ProductionCoordinatorClient } from "../coordinator-client";
 import { SandIcon, SandButton } from "../../recovered/ui/sand-kit-primitives";
 import {
@@ -13,11 +30,44 @@ import {
 
 export * from "./tdrp-interactive-models";
 
+export function createCheckoutIdempotencyKey(scope: string, itemId: string): string {
+  const randomPart =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  return `idemp_${scope}_${itemId}_${randomPart}`;
+}
+
+export function validateStarsCheckoutBalance(
+  availableBalance: number | null | undefined,
+  requiredStars: number
+): { readonly valid: boolean; readonly errorMessage: string | null } {
+  if (requiredStars <= 0) {
+    return { valid: true, errorMessage: null };
+  }
+  if (availableBalance == null || !Number.isFinite(availableBalance)) {
+    return { valid: true, errorMessage: null };
+  }
+  if (availableBalance < requiredStars) {
+    return {
+      valid: false,
+      errorMessage: `Stars 余额不足：当前可用 ${availableBalance} ⭐，本次需要 ${requiredStars} ⭐`,
+    };
+  }
+  return { valid: true, errorMessage: null };
+}
+
 export interface TdrpInteractiveMediaCardProps {
   readonly text: string;
   readonly client?: ProductionCoordinatorClient | null;
   readonly userId?: string;
   readonly onUpdateText?: (updatedText: string) => void;
+  /** Non-destructive direct message callback for card follow-up actions. */
+  readonly onSubmitDirectMessage?: (payload: string) => Promise<void> | void;
+  /** Real Stars balance from `stars.status` (never hardcoded). */
+  readonly starsBalance?: number | null;
+  /** Notifies parent when a Stars/Gift checkout debits the user's Stars balance. */
+  readonly onStarsBalanceChange?: (nextBalance: number) => void;
 }
 
 export function TdrpInteractiveMediaCard({
@@ -25,6 +75,9 @@ export function TdrpInteractiveMediaCard({
   client,
   userId = "me",
   onUpdateText,
+  onSubmitDirectMessage,
+  starsBalance,
+  onStarsBalanceChange,
 }: TdrpInteractiveMediaCardProps): React.JSX.Element | null {
   const payload = parseTdrpInteractivePayload(text);
   if (!payload) return null;
@@ -38,7 +91,17 @@ export function TdrpInteractiveMediaCard({
     return <TdrpTodoCard client={activeClient} data={payload} onUpdateText={onUpdateText} userId={userId} />;
   }
   if (payload.type === "tdrp-invoice") {
-    return <TdrpInvoiceCard client={activeClient} data={payload} onUpdateText={onUpdateText} />;
+    return (
+      <TdrpInvoiceCard
+        client={activeClient}
+        data={payload}
+        onStarsBalanceChange={onStarsBalanceChange}
+        onSubmitDirectMessage={onSubmitDirectMessage}
+        onUpdateText={onUpdateText}
+        starsBalance={starsBalance}
+        userId={userId}
+      />
+    );
   }
   return null;
 }
@@ -262,41 +325,151 @@ function TdrpTodoCard({
 function TdrpInvoiceCard({
   data,
   client,
+  userId = "me",
+  starsBalance,
+  onStarsBalanceChange,
+  onSubmitDirectMessage,
   onUpdateText,
 }: {
   data: TdrpInvoiceData;
   client?: ProductionCoordinatorClient | null;
+  userId?: string;
+  starsBalance?: number | null;
+  onStarsBalanceChange?: (nextBalance: number) => void;
+  onSubmitDirectMessage?: (payload: string) => Promise<void> | void;
   onUpdateText?: (newText: string) => void;
 }) {
   const [invoice, setInvoice] = useState<TdrpInvoiceData>(data);
   const [paying, setPaying] = useState(false);
+  const [liveStarsBalance, setLiveStarsBalance] = useState<number | null>(
+    typeof starsBalance === "number" ? starsBalance : null
+  );
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const idempotencyKeyRef = useRef<string>(
+    createCheckoutIdempotencyKey("invoice", data.invoiceId)
+  );
 
-  const priceFormatted =
-    invoice.currency === "STARS"
-      ? `${invoice.totalAmountCents} Stars`
-      : `${(invoice.totalAmountCents / 100).toFixed(2)} ${invoice.currency}`;
+  const isStarsCurrency = invoice.currency === "STARS" || invoice.currency === "XTR";
+
+  useEffect(() => {
+    if (typeof starsBalance === "number") {
+      setLiveStarsBalance(starsBalance);
+      return;
+    }
+    if (!isStarsCurrency || !client || invoice.isPaid) return;
+    let cancelled = false;
+    void client
+      .call("stars.status", { peerId: userId })
+      .then((res) => {
+        if (cancelled) return;
+        const status = res as { status?: { balance?: number }; balance?: number } | null;
+        const resolved =
+          typeof status?.status?.balance === "number"
+            ? status.status.balance
+            : typeof status?.balance === "number"
+              ? status.balance
+              : null;
+        if (resolved != null) {
+          setLiveStarsBalance(resolved);
+        }
+      })
+      .catch(() => {
+        /* Host balance query optional when offline */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [client, invoice.isPaid, isStarsCurrency, starsBalance, userId]);
+
+  const priceFormatted = isStarsCurrency
+    ? `${invoice.totalAmountCents} Stars`
+    : `${(invoice.totalAmountCents / 100).toFixed(2)} ${invoice.currency}`;
 
   const handlePay = async () => {
     if (invoice.isPaid || paying) return;
+    setCheckoutError(null);
     setPaying(true);
-    const chargeId = `ch_sim_${Date.now()}`;
-    const updatedInvoice: TdrpInvoiceData = { ...invoice, isPaid: true, chargeId };
-    setInvoice(updatedInvoice);
-    onUpdateText?.(formatTdrpInvoiceMessage(updatedInvoice));
 
-    if (client) {
-      try {
-        await client.call("payments.settlePayment", { invoiceId: invoice.invoiceId, chargeId });
-      } catch { /* Optimistic UI */ } finally {
-        setPaying(false);
+    try {
+      let currentBalance = liveStarsBalance;
+      if (isStarsCurrency && currentBalance == null && client) {
+        try {
+          const res = (await client.call("stars.status", { peerId: userId })) as {
+            status?: { balance?: number };
+            balance?: number;
+          } | null;
+          const fetched =
+            typeof res?.status?.balance === "number"
+              ? res.status.balance
+              : typeof res?.balance === "number"
+                ? res.balance
+                : null;
+          if (fetched != null) {
+            currentBalance = fetched;
+            setLiveStarsBalance(fetched);
+          }
+        } catch {
+          /* Proceed if stars.status RPC is unavailable in standalone mode */
+        }
       }
-    } else {
+
+      if (isStarsCurrency) {
+        const check = validateStarsCheckoutBalance(currentBalance, invoice.totalAmountCents);
+        if (!check.valid) {
+          setCheckoutError(check.errorMessage);
+          setPaying(false);
+          return;
+        }
+      }
+
+      const idempotencyKey = idempotencyKeyRef.current;
+      let chargeId = `ch_${idempotencyKey}`;
+
+      if (client) {
+        const settled = (await client.call("payments.settlePayment", {
+          invoiceId: invoice.invoiceId,
+          chargeId,
+          idempotencyKey,
+          currency: invoice.currency,
+          totalAmountCents: invoice.totalAmountCents,
+        })) as {
+          ok?: boolean;
+          receipt?: { charge_id?: string };
+          error?: string;
+        } | null;
+
+        if (settled?.ok === false) {
+          setCheckoutError(settled.error ?? "支付结算未通过校验，请重试。");
+          setPaying(false);
+          return;
+        }
+        if (typeof settled?.receipt?.charge_id === "string" && settled.receipt.charge_id.length > 0) {
+          chargeId = settled.receipt.charge_id;
+        }
+      }
+
+      if (isStarsCurrency && typeof currentBalance === "number") {
+        const nextBalance = Math.max(0, currentBalance - invoice.totalAmountCents);
+        setLiveStarsBalance(nextBalance);
+        onStarsBalanceChange?.(nextBalance);
+      }
+
+      const updatedInvoice: TdrpInvoiceData = { ...invoice, isPaid: true, chargeId };
+      setInvoice(updatedInvoice);
+      const formatted = formatTdrpInvoiceMessage(updatedInvoice);
+      onUpdateText?.(formatted);
+      if (onSubmitDirectMessage != null && onUpdateText == null) {
+        await onSubmitDirectMessage(formatted);
+      }
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : "支付失败，请稍后重试。");
+    } finally {
       setPaying(false);
     }
   };
 
   return (
-    <div style={cardStyle}>
+    <div style={cardStyle} data-idempotency-key={idempotencyKeyRef.current}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <SandIcon name="credit-card" size="sm" />
@@ -307,14 +480,46 @@ function TdrpInvoiceCard({
 
       {invoice.description && <p style={{ margin: "4px 0 10px 0", fontSize: 12, opacity: 0.8 }}>{invoice.description}</p>}
 
+      {isStarsCurrency && liveStarsBalance != null && (
+        <div
+          data-testid="tdrp-invoice-stars-balance"
+          style={{ marginBottom: 8, fontSize: 11, opacity: 0.8, display: "flex", justifyContent: "space-between" }}
+        >
+          <span>当前可用 Stars 余额</span>
+          <strong>{liveStarsBalance} ⭐</strong>
+        </div>
+      )}
+
       {invoice.prices && invoice.prices.length > 0 && (
         <div style={{ margin: "6px 0 10px 0", padding: "6px 8px", borderRadius: 6, background: "rgba(128, 128, 128, 0.06)", fontSize: 11 }}>
           {invoice.prices.map((p, idx) => (
             <div key={idx} style={{ display: "flex", justifyContent: "space-between", opacity: 0.85 }}>
               <span>{p.label}</span>
-              <span>{(p.amountCents / 100).toFixed(2)} {invoice.currency}</span>
+              <span>
+                {isStarsCurrency
+                  ? `${p.amountCents} Stars`
+                  : `${(p.amountCents / 100).toFixed(2)} ${invoice.currency}`}
+              </span>
             </div>
           ))}
+        </div>
+      )}
+
+      {checkoutError != null && (
+        <div
+          role="alert"
+          data-testid="tdrp-invoice-checkout-error"
+          style={{
+            marginBottom: 8,
+            padding: "6px 8px",
+            borderRadius: 6,
+            background: "rgba(220, 38, 38, 0.1)",
+            border: "1px solid rgba(220, 38, 38, 0.3)",
+            color: "#dc2626",
+            fontSize: 11,
+          }}
+        >
+          {checkoutError}
         </div>
       )}
 

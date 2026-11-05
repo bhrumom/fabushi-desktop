@@ -42,9 +42,9 @@ primary nav | collection/search/new | canonical workspace | optional detail/capa
 
 ## 4. Messages / Conversation information architecture
 
-一个 Messages domain 包含 Direct Human、Agent、Group、Channel、Hybrid、Topic/Thread。中间列表使用一个 canonical ConversationList，可提供全部、未读、私聊、群组、频道、Agent 以及后续确有价值的 saved/filter view。filter 只改变 query/view，不拥有第二份列表状态或 workspace。
+一个 Messages domain 包含 Direct Human、Agent、Group、Channel、Hybrid、Topic/Thread。中间列表使用一个 canonical ConversationList，顶部 Filter Bar 提供全部、未读、私聊、群组、频道、Agent 以及后续确有价值的 saved/filter view。Filter Bar 仅作为当前 Messages 集合的 query/view 筛选器，不拥有第二份列表状态或 workspace，也不得与左轨一级领域切换（Primary Nav）形成重复跳转或职责冲突；点击左轨“任务（Tasks）”必须进入跨会话的全局任务与自动化视图，不得受当前是否选中 Agent 会话限制。
 
-ConversationWorkspace 共享 header、transcript、scroll/pagination、draft/composer、reply/quote、attachment/resource、read/unread、selection、loading/error/empty、a11y/i18n。不同 kind 只能贡献 typed header actions、profile sections、entry renderers、composer actions、panels/overlays 和 policy。
+ConversationWorkspace 共享唯一的 canonical header、transcript、scroll/pagination、draft/composer、reply/quote、attachment/resource、read/unread、selection、loading/error/empty、a11y/i18n 以及唯一的右侧上下文详情栏（Context Inspector）。不同 kind 只能贡献 typed header actions、inspector sections、entry renderers、composer actions、capability overlays 和 policy，严禁按 `activeIsHuman` 渲染两套顶栏或在右侧并存 `OpenClawAskCopilotPanel` 等多个竞争抽屉（参见 `docs/specs/unified-fabushi-experience-20261105.md`）。
 
 ## 5. Unified Conversation creation
 

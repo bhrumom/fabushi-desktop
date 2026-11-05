@@ -100,8 +100,9 @@ import { AvatarEditorView } from "../recovered/features/agent-info/avatar-editor
 import { createPluginAuthProductionAdapter } from "../recovered/features/plugins/overlay/production-adapter";
 import { projectGroupMemberAgent } from "../recovered/features/agent-info/group-members/model";
 import { GROUP_INFO_PANE_HEADER, projectGroupInfoPaneRoute } from "../recovered/features/agent-info/group-members/route";
-import { createAsyncTasksProvider } from "../recovered/features/agent-info/async-tasks/provider";
+import { createAsyncTasksProvider, GLOBAL_ASYNC_TASKS_SCOPE_ID } from "../recovered/features/agent-info/async-tasks/provider";
 import { AsyncTasksPanel } from "../recovered/features/agent-info/async-tasks/view";
+import { useResponsiveLayout } from "./layout/useResponsiveLayout";
 import { createSharedRoomProvider } from "../recovered/features/agent-info/shared-room/controller";
 import { projectSharedRoomAgent, type SharedRoomAgent, type SharedRoomContext, type SharedRoomSnapshot } from "../recovered/features/agent-info/shared-room/model";
 import { SharedRoomDialog } from "../recovered/features/agent-info/shared-room/view";
@@ -1462,9 +1463,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     asyncTasksReturnFocusRef.current = null;
     if (target?.isConnected) target.focus();
   }, []);
-  const openAsyncTasks = useCallback((agentId: string) => {
-    if (accountRef.current?.kind !== "logged-in" || accountRef.current.isAnysphereUser !== true) return;
-    if (!agentsRef.current.some((agent) => agent.id === agentId)) return;
+  const openAsyncTasks = useCallback((agentId: string = GLOBAL_ASYNC_TASKS_SCOPE_ID) => {
+    if (accountRef.current?.kind !== "logged-in") return;
+    if (agentId !== GLOBAL_ASYNC_TASKS_SCOPE_ID) {
+      if (accountRef.current.isAnysphereUser !== true) return;
+      if (!agentsRef.current.some((agent) => agent.id === agentId)) return;
+    }
     if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) asyncTasksReturnFocusRef.current = document.activeElement;
     setOverlay(null);
     setCommandPaletteOpen(false);
@@ -1831,7 +1835,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     asyncTasksReturnFocusRef.current = null;
   }, [activeAgentId, asyncTasksAccountSlot]);
   useEffect(() => {
-    if (asyncTasksAgentId == null || agents.some((agent) => agent.id === asyncTasksAgentId)) return;
+    if (asyncTasksAgentId == null || asyncTasksAgentId === GLOBAL_ASYNC_TASKS_SCOPE_ID || agents.some((agent) => agent.id === asyncTasksAgentId)) return;
     setAsyncTasksAgentId(null);
     asyncTasksReturnFocusRef.current = null;
   }, [agents, asyncTasksAgentId]);
@@ -3636,6 +3640,73 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     setNotice(null);
   };
 
+  const submitDirectPayload = (directPromptText: string) => {
+    if (activeAgent == null || client == null) return;
+    if (!composerGuard.canSend) {
+      if (composerGuard.message) setNotice(composerGuard.message);
+      return;
+    }
+    const prompt = directPromptText.trim();
+    if (prompt.length === 0) return;
+    const draftScope = { accountSlot: transcriptAccountSlot, agentId: activeAgent.id };
+    if (draftScope.accountSlot == null) {
+      setNotice("This conversation is still loading. Try sending again.");
+      return;
+    }
+    const clientNonce = makeClientNonce();
+    const enteredAt = Date.now();
+    lastSentAtMsRef.current = enteredAt;
+    const submission = scopeComposerSubmission({
+      nonce: clientNonce,
+      agentId: activeAgent.id,
+      prompt,
+      attachments: [],
+      createdAtMs: enteredAt,
+    });
+    if (submission == null) {
+      setNotice("The authenticated Human identity is unavailable for this send");
+      return;
+    }
+    const scope = submission.transcriptScope;
+    acknowledgementController.insertOptimistic({
+      accountSlot: scope.accountSlot,
+      agentId: activeAgent.id,
+      nonce: clientNonce,
+      entries: optimisticAcknowledgementEntries(clientNonce, []),
+      phase: transportRef.current === "connected" ? "pending" : "queued",
+    });
+    setEntriesByAgent((current) =>
+      scope.invalidated || !isTranscriptScopeCurrent(scope)
+        ? current
+        : {
+            ...current,
+            [activeAgent.id]: [
+              ...(current[activeAgent.id] ?? []),
+              {
+                kind: "message",
+                id: `pending-${clientNonce}`,
+                role: "user",
+                author: "You",
+                text: prompt,
+                timestampMs: enteredAt,
+                attachments: [],
+                delivery: "pending",
+                clientNonce,
+                ...(activeTopicId ? { topicId: activeTopicId } : {}),
+                ...(typeof scope.humanAuthorId === "string"
+                  ? { authorKind: "human" as const, authorId: scope.humanAuthorId }
+                  : {}),
+              },
+            ],
+          }
+    );
+    const queuedSubmission = composerSubmissionQueue.submit(submission);
+    void queuedSubmission.completion.then((phase) => {
+      if (phase === "sent") scope.onSettled?.();
+    });
+    setNotice(null);
+  };
+
   const {
     removeTranscriptMessage,
     resendFailedSend,
@@ -4105,10 +4176,18 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const showTranscriptLoadError = activeAgent != null
     && transcriptLoadError?.agentId === activeAgent.id
     && transcriptLoadError.accountScopeGeneration === accountScopeGenerationRef.current;
+  const responsiveLayout = useResponsiveLayout();
+  const activeShareUrl = activeAgent != null
+    ? (typeof (activeAgent.raw as Record<string, unknown> | undefined)?.shareUrl === "string"
+        ? String((activeAgent.raw as Record<string, unknown>).shareUrl).trim()
+        : typeof (activeAgent.raw as Record<string, unknown> | undefined)?.inviteLink === "string"
+          ? String((activeAgent.raw as Record<string, unknown>).inviteLink).trim()
+          : "")
+    : "";
 
   // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L132101-L132102
   return (
-    <div className="sand-shell" data-agent-root-shell="true" data-empty={activeAgent == null ? true : undefined} data-loading={showRootLoading || undefined} data-product-shell="agent" data-runtime={bridge == null ? "browser" : "electron"} data-theme={RUNTIME_THEME_CLASS[resolvedTheme]} data-testid="messenger-workspace" style={{ "--fabushi-sidebar-width": `${renderedSidebarWidth}px`, height: "100%", position: "relative", width: "100%" } as CSSProperties}>
+    <div className={`sand-shell ${responsiveLayout.tierClassName}`} data-agent-root-shell="true" data-empty={activeAgent == null ? true : undefined} data-loading={showRootLoading || undefined} data-product-shell="agent" data-runtime={bridge == null ? "browser" : "electron"} data-theme={RUNTIME_THEME_CLASS[resolvedTheme]} data-testid="messenger-workspace" style={{ "--fabushi-sidebar-width": `${renderedSidebarWidth}px`, height: "100%", position: "relative", width: "100%" } as CSSProperties}>
       <WorkspaceIndicator isFullscreen={windowFullscreen} label={workspaceRoute == null ? activeAgent?.name ?? null : null} />
       {bridge == null ? null : <WindowStatusBadge isFullscreen={windowFullscreen} transport={transport} />}
       <RootShellNotificationHost bridge={bridge} client={client} />
@@ -4137,7 +4216,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               computer.close();
               if (domain === "agents") setActiveFolderId("agents");
               else if (domain === "messages") setActiveFolderId("all");
-              else if (domain === "tasks" && activeAgent != null && !activeIsHuman) openAsyncTasks(activeAgent.id);
+              else if (domain === "tasks") openAsyncTasks(activeAgent != null && !activeIsHuman ? activeAgent.id : GLOBAL_ASYNC_TASKS_SCOPE_ID);
             }
           }}
           unreadMessagesCount={unreadFolderCount}
@@ -4172,7 +4251,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                   onSelectFolder={setActiveFolderId}
                   onOpenNewChat={() => setIsCreateConvModalOpen(true)}
                   onOpenSearch={openSidebarSearch}
-                  unreadCount={unreadFolderCount} directCount={humanFolderCount} groupCount={groupFolderCount} agentCount={agentFolderCount} client={client}
+                  unreadCount={unreadFolderCount} directCount={humanFolderCount} groupCount={groupFolderCount} agentCount={agentFolderCount}
+                  accountId={pinnedAccountKey}
+                  accountScopeGeneration={renderedAccountScopeGeneration}
+                  client={client}
                   style={bridge != null && !windowFullscreen ? { paddingTop: "38px" } : undefined}
                 />
                 <ConversationSidebar activeAgentId={activeAgentId} agents={folderFilteredAgents} isHostReachable={transport === "connected"} sections={projectedSidebarSections} sidebarLayout={renderedSidebarLayout} onResize={resizeSidebar} onResizeEnd={finishSidebarResize} onToggleSectionCollapsed={(sectionId, collapsed) => sidebarCollapseStore.setSectionCollapsed(sectionId, collapsed)} listStatus={rosterListStatus} pinnedAgentIds={pinnedAgentIds} selectedAgentIds={selectedSidebarAgentIds} onToggleAgentSelection={toggleSidebarAgentSelection} onRangeSelectAgent={rangeSelectSidebarAgent} onClearAgentSelection={clearSidebarAgentSelection} onMoveSelectedAgentsToSection={moveSelectedSidebarAgentsToSection} onMoveSelectedAgentsToNewSection={moveSelectedSidebarAgentsToNewSection} onCopyAgentId={copyAgentId} onDuplicateAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void duplicateAgent(agentId); }} onHideAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void hideAgent(agentId); }} onNewChat={() => setIsCreateConvModalOpen(true)} onOpenAgent={(agentId) => void openAgent(agentId)} onOpenNetwork={agentNetworkTrigger} onOpenProfile={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) sidebarProfileAction.onSelect(agentId); }} onShowAsyncTasks={account?.kind === "logged-in" && account.isAnysphereUser === true ? (agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openAsyncTasks(agentId); } : undefined} onShowFullConversation={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openConversationOutline(agentId); }} onOpenSearch={sidebarSearchTrigger} onRenameAgent={(agentId, name) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void renameAgent(agentId, name); }} onReorderPinnedAgents={reorderPinnedAgents} onRequestDeleteAgent={(agent) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agent.id)) setDeleteAgent({ id: agent.id, name: agent.name, isGroup: agent.isGroup }); }} onRenameSection={renameSection} onRequestDeleteSection={requestDeleteSection} onMoveSection={moveSection} onMoveAgentToSection={moveAgentsToSection} onMoveAgentToNewSection={moveAgentsToNewSection} onSetAgentUnread={(agentId, isUnread) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void setAgentUnread(agentId, isUnread); }} onTogglePin={(agentId, isPinned) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) toggleAgentPin(agentId, isPinned); }} />
@@ -4209,35 +4291,35 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         /></Suspense></main> : showRootEmptyWorkspace ? <RootShellEmptyWorkspace isVisible /> : activeAgent == null ? null : <div style={{ display: "flex", flexDirection: "row", flex: 1, minHeight: 0, minWidth: 0, width: "100%", overflow: "hidden" }}>
           <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, minWidth: 0 }}>
           <main className="sand-chat-stage">
-          {activeIsHuman ? <div aria-labelledby="sand-conversation-heading" className="sand-chat-header" role="group">
-            <div className="sand-chat-header__identity">
-              <span id="sand-conversation-heading">{activeAgent.name}</span>
-              <small>Human</small>
-            </div>
-            <div style={{ alignItems: "center", display: "flex", gap: 8, marginLeft: "auto" }}>
-              <TdrpCallAndAdminDrawer activeAgent={activeAgent} client={client} inlineActionsOnly />
-              {client == null ? null : <HumanCallControls bridge={bridge} client={client} conversation={activeAgent} />}
-              <select aria-label="Agent for Human handoff" disabled={busy || availableHandoffAgents.length === 0} onChange={(event) => setHumanHandoffAgentId(event.currentTarget.value)} value={humanHandoffAgentId}>
-                {availableHandoffAgents.length === 0 ? <option value="">No Agent available</option> : availableHandoffAgents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
-              </select>
-              <SandButton disabled={busy || humanHandoffAgentId.length === 0} onClick={() => void handoffHumanConversationToAgent()} size="sm" variant="secondary">Ask Agent</SandButton>
-            </div>
-          </div> : <OpenClawTopHeader
+          <OpenClawTopHeader
             title={activeAgent.name}
             agent={activeAgent}
+            peerKind={activeIsHuman ? "human" : activeAgent.isGroup || activeAgent.isSharedRoom ? "group" : "agent"}
+            onlineState={transport === "connected" ? "online" : transport === "connecting" ? "connecting" : "offline"}
             isDetailsOpen={tdrpDetailsOpen || runtimeDetailPaneOpen}
             isLayoutSplit={copilotPanelOpen}
             onToggleDetails={() => setTdrpDetailsOpen((open) => !open)}
-            onToggleLayout={() => setCopilotPanelOpen((open) => !open)}
-            onShare={() => {
-              const shareLink = (activeAgent.raw as any)?.shareUrl ?? (activeAgent.raw as any)?.inviteLink ?? (typeof window !== "undefined" ? window.location.href : "");
-              if (shareLink && typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-                void navigator.clipboard.writeText(shareLink);
+            onToggleLayout={activeIsHuman ? undefined : () => setCopilotPanelOpen((open) => !open)}
+            canShare={activeShareUrl.length > 0}
+            shareUrl={activeShareUrl || undefined}
+            onShare={activeShareUrl.length > 0 ? () => {
+              if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+                void navigator.clipboard.writeText(activeShareUrl);
               }
-            }}
-            onOpenSettings={bridge == null ? undefined : () => { setGroupInfoPaneOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setAgentSettingsOpen(true); }}
-          />}
-          <TdrpCallAndAdminDrawer activeAgent={activeAgent} client={client} bannerOnly />
+            } : undefined}
+            onOpenSettings={activeIsHuman || bridge == null ? undefined : () => { setGroupInfoPaneOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setAgentSettingsOpen(true); }}
+            trailingExtras={activeIsHuman ? (
+              <div style={{ alignItems: "center", display: "flex", gap: 8 }}>
+                <TdrpCallAndAdminDrawer activeAgent={activeAgent} accountScopeGeneration={renderedAccountScopeGeneration} client={client} inlineActionsOnly />
+                {client == null ? null : <HumanCallControls bridge={bridge} client={client} conversation={activeAgent} />}
+                <select aria-label="Agent for Human handoff" disabled={busy || availableHandoffAgents.length === 0} onChange={(event) => setHumanHandoffAgentId(event.currentTarget.value)} value={humanHandoffAgentId}>
+                  {availableHandoffAgents.length === 0 ? <option value="">No Agent available</option> : availableHandoffAgents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
+                </select>
+                <SandButton disabled={busy || humanHandoffAgentId.length === 0} onClick={() => void handoffHumanConversationToAgent()} size="sm" variant="secondary">Ask Agent</SandButton>
+              </div>
+            ) : undefined}
+          />
+          <TdrpCallAndAdminDrawer activeAgent={activeAgent} accountScopeGeneration={renderedAccountScopeGeneration} client={client} bannerOnly />
           {findInChatOpen ? <FindInChatBar controller={findInChatController} focusNonce={findInChatFocusNonce} onClose={closeFindInChat} transcriptContainer={findTranscriptContainer} transcriptHandleRef={transcriptHandleRef} /> : null}
           <ForumTopicSwitcher
             visibleTopics={visibleTopics}
@@ -4251,7 +4333,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           {showTranscriptLoadError
             ? <TranscriptLoadErrorSurface onRetry={() => void openAgent(activeAgent.id)} />
             : displayedEntries.length === 0 && !activeIsHuman
-              ? <OpenClawWelcomeHero assistantName={activeAgent.name} agent={activeAgent} onSelectPrompt={(text) => { composerDraftStore.setDraft(activeAgent.id, { prompt: text, attachments: [] }); setTimeout(() => { void submit(); }, 50); }} />
+              ? <OpenClawWelcomeHero assistantName={activeAgent.name} agent={activeAgent} onSelectPrompt={(text) => { void submitDirectPayload(text); }} onDirectSubmitPrompt={(text) => { void submitDirectPayload(text); }} />
               : <ConversationTranscript
                 key={JSON.stringify([renderedAccountScopeGeneration, transcriptAccountSlot, activeAgentId, ...(activeTopicId != null ? [activeTopicId] : [])])}
                 entries={displayedEntries}
@@ -4320,13 +4402,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           <OpenClawAskCopilotPanel
             onClose={() => setCopilotPanelOpen(false)}
             gatewayAddress="ws://127.0.0.1:18789"
-            isGatewayOnline={false}
-            gatewayStatusText="未连接 (未知)"
+            isGatewayOnline={transport === "connected"}
+            gatewayStatusText={transport === "connected" ? "已连接 (Host Gateway)" : transport === "connecting" ? "连接中..." : "未连接"}
             agentName={activeAgent?.name}
-            onExecuteAction={(actionText) => {
-              if (activeAgent == null) return;
-              composerDraftStore.setDraft(activeAgent.id, { prompt: actionText, attachments: [] });
-            }}
+            activeAgent={activeAgent}
+            accountScopeGeneration={renderedAccountScopeGeneration}
+            client={client}
           />
         ) : null}
       </div>}
@@ -4336,12 +4417,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
       <TdrpConversationOverlay
         activeAgent={activeAgent ?? null} client={client} modalMode={tdrpModalMode}
+        accountScopeGeneration={renderedAccountScopeGeneration}
         onCloseModal={() => setTdrpModalMode(null)}
+        onSubmitDirectCard={(formattedPayload) => {
+          setTdrpModalMode(null);
+          void submitDirectPayload(formattedPayload);
+        }}
         onInsertMessage={(formattedPayload) => {
           setTdrpModalMode(null);
-          if (activeAgent == null) return;
-          composerDraftStore.setDraft(activeAgent.id, { prompt: formattedPayload, attachments: [] });
-          setTimeout(() => { void submit(); }, 50);
+          void submitDirectPayload(formattedPayload);
         }}
         isDetailsOpen={tdrpDetailsOpen} onCloseDetails={() => setTdrpDetailsOpen(false)} onOpenSearch={openSidebarSearch}
       />
@@ -4354,7 +4438,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         searchForwardRecipients={searchForwardRecipients}
         settleForward={settleForward}
         onClose={() => setForwardTarget((current) => current === forwardTarget ? null : current)}
-        shareUrl={activeAgent != null ? ((activeAgent.raw as any)?.shareUrl ?? (activeAgent.raw as any)?.inviteLink ?? undefined) : undefined}
+        shareUrl={activeShareUrl || undefined}
       />
 
       <CreateAgentDialog
@@ -4379,9 +4463,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         provider={conversationOutlineProvider}
         subagents={conversationOutlineSubagents}
       />}
-      {asyncTasksAgent == null || asyncTasksProvider == null ? null : <AsyncTasksPanel
-        agentId={asyncTasksAgent.id}
-        agentName={asyncTasksAgent.name}
+      {asyncTasksAgentId == null || asyncTasksProvider == null ? null : <AsyncTasksPanel
+        agentId={asyncTasksAgent?.id ?? GLOBAL_ASYNC_TASKS_SCOPE_ID}
+        agentName={asyncTasksAgent?.name}
+        mode={asyncTasksAgent == null ? "global" : "conversation"}
         onClose={closeAsyncTasks}
         provider={asyncTasksProvider}
       />}

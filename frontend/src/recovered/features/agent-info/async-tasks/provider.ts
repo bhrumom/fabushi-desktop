@@ -1,3 +1,10 @@
+// Upstream Source Provenance (Blueprint 05 §1 & §5):
+// - OpenClaw: src/agents/subagent-registry.ts (explicit parentSessionKey / runId / taskId lineage)
+// - OpenClaw: src/cron/service/state.ts & src/acp/control-plane/manager.ts (7-state task lifecycle FSM)
+// - Telegram Desktop: Telegram/SourceFiles/data/data_todo_list.h (cross-peer task item synchronization)
+
+export const GLOBAL_ASYNC_TASKS_SCOPE_ID = "__global__";
+
 export type AsyncTaskKind = "subagent" | "shell" | "cloud-agent";
 
 export type AsyncTaskStatus =
@@ -22,6 +29,33 @@ export interface AsyncTask {
   readonly error?: string;
   readonly parentTaskId?: string;
   readonly agentId?: string;
+}
+
+export interface AsyncTaskLineageNode {
+  readonly task: AsyncTask;
+  readonly children: readonly AsyncTask[];
+}
+
+export function groupAsyncTasksByLineage(tasks: readonly AsyncTask[]): readonly AsyncTaskLineageNode[] {
+  const byId = new Map<string, AsyncTask>();
+  for (const t of tasks) {
+    byId.set(t.id, t);
+  }
+  const childrenByParent = new Map<string, AsyncTask[]>();
+  const roots: AsyncTask[] = [];
+  for (const t of tasks) {
+    if (t.parentTaskId && byId.has(t.parentTaskId) && t.parentTaskId !== t.id) {
+      const list = childrenByParent.get(t.parentTaskId) ?? [];
+      list.push(t);
+      childrenByParent.set(t.parentTaskId, list);
+    } else {
+      roots.push(t);
+    }
+  }
+  return roots.map((root) => ({
+    task: root,
+    children: childrenByParent.get(root.id) ?? [],
+  }));
 }
 
 export type AsyncTasksSnapshot =

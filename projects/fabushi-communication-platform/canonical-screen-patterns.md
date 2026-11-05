@@ -26,9 +26,11 @@ Collection header：title + canonical SearchField + New/+。下面是 saved/filt
 
 ## 4. ConversationWorkspace
 
-Header：Avatar + title + secondary status + capability-aware actions（search/call/info/more）。Transcript：一个 canonical virtualized feed + typed entry registry。Composer：一个 canonical shell + reply/attachment/voice/Agent actions。Optional detail：Profile/Members/Media/Permissions/Tasks。
+Header：Avatar + title + secondary status + capability-aware actions（search/call/handoff/info/more）。Transcript：一个 canonical virtualized feed + typed entry registry。Composer：一个 canonical shell + reply/attachment/voice/Agent actions。Optional detail：单一右侧 Context Inspector（按对象类型组织 Profile/Members/Media/Permissions/Tasks/Routines/Channels sections）。
 
-Human/Agent/Group/Channel 只改变 typed sections/actions/policy；header/transcript/composer/scroll/pagination/draft/read state 不分叉。
+Human/Agent/Group/Channel/Hybrid 只改变 typed sections/actions/policy；header/transcript/composer/scroll/pagination/draft/read state **绝不分叉**（严禁在 `ProductionRenderer` 中用 `activeIsHuman ? <SandChatHeader> : <OpenClawTopHeader>` 渲染两套顶栏，也严禁在右侧并存 `OpenClawAskCopilotPanel` 等多个竞争抽屉或硬编码在线/离线状态；详见 `docs/specs/unified-fabushi-experience-20261105.md`）。
+
+富交互卡片（Poll/Todo/Invoice）与欢迎页快捷 Prompt 必须走独立 typed submission 或无损草稿挂载，严禁覆盖当前输入框内未发送的文本草稿，严禁依赖 `setTimeout(..., 50)` 触发发送。分享动作仅在具备真实 `shareUrl`/`inviteLink` 时启用并给出明确反馈，禁止回退复制 `window.location.href`。
 
 Message action hierarchy：高频 reply/reaction 可直接出现；forward/edit/delete/copy/pin 等按 permission 放 hover/focus toolbar 或 overflow；危险动作进入 confirm。
 
@@ -62,7 +64,7 @@ No results、search unavailable、remote pending、partial local results、permi
 
 ## 11. Tasks and Automations
 
-Tasks：collection/list + detail/activity/output。Automations：routine collection + schedule/editor + run history。Conversation 中的 Task/Artifact 跳转到同一 canonical owner。
+Tasks 是左轨一级可达的全局跨会话领域（primary-domain），不得被当前是否选中非真人会话（如 `!activeIsHuman && activeAgent != null`）门控拦截。点击左轨 Tasks 无条件进入全局任务与自动化中心：Tasks（需要我处理/待授权、进行中、已完成/失败/取消的 collection/list + detail/activity/subagent tree/output）与 Automations（routine collection + schedule/editor + run history）。Conversation 中的 Task Card/Artifact 与全局 Tasks 视图共享同一 canonical owner，支持双向跳转。
 
 ## 12. Computer
 

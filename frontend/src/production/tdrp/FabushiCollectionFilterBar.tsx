@@ -1,12 +1,23 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Plus, FolderPlus, Bell, User, Users, Bot, MessageSquare, Radio, X, Heart, MessageCircle } from "lucide-react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { Plus, FolderPlus, Bell, User, Users, Bot, MessageSquare, Radio, X } from "lucide-react";
 import type { ProductionCoordinatorClient } from "../coordinator-client";
 import { TdrpChatFilterEditModal, type ChatFilterModel } from "./TdrpChatFilterEditModal";
 import { TdrpStoryPostModal, type StoryPublishPayload } from "./TdrpStoryPostModal";
 
+/**
+ * Canonical Collection Filter Bar & Stories Strip (Blueprint 01 §4.1, §5.1, §5.3).
+ *
+ * Upstream Source Alignment:
+ * - Telegram Desktop: `Telegram/SourceFiles/data/data_chat_filters.cpp` (`Data::ChatFilter::FromTL`),
+ *   `Telegram/SourceFiles/dialogs/ui/dialogs_stories_content.cpp` (`Dialogs::Stories::ContentForSession`).
+ * - Invariant: Custom folders storage key is scoped by `accountId` and all async RPC responses / mutations
+ *   are fenced by `accountScopeGeneration` to prevent cross-account folder leakage.
+ */
+
 export interface FabushiFilterFolder {
   readonly id: string;
   readonly name: string;
+  readonly icon?: string;
   readonly badge?: number;
   readonly isCustom?: boolean;
 }
@@ -28,18 +39,46 @@ const INITIAL_STORIES: readonly StoryItem[] = [
 export interface FabushiCollectionFilterBarProps {
   readonly activeFolderId: string;
   readonly onSelectFolder: (folderId: string) => void;
-  readonly onOpenNewChat: () => void;
+  readonly onOpenNewChat?: () => void;
   readonly onOpenSearch?: () => void;
   readonly unreadCount?: number;
   readonly directCount?: number;
   readonly groupCount?: number;
   readonly channelCount?: number;
   readonly agentCount?: number;
+  readonly accountId?: string | null;
+  readonly accountScopeGeneration?: number;
   readonly client?: ProductionCoordinatorClient | null;
   readonly style?: React.CSSProperties;
 }
 
-const STORAGE_KEY = "fabushi_collection_custom_folders_v1";
+const STORAGE_KEY_PREFIX = "fabushi_collection_custom_folders_v1";
+
+export function resolveCollectionCustomFoldersStorageKey(accountId?: string | null): string {
+  const normalized = typeof accountId === "string" ? accountId.trim() : "";
+  return `${STORAGE_KEY_PREFIX}_${normalized.length > 0 ? normalized : "default"}`;
+}
+
+function loadCustomFoldersFromStorage(storageKey: string): FabushiFilterFolder[] {
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      const parsed: unknown = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(
+          (item): item is FabushiFilterFolder =>
+            typeof item === "object" &&
+            item !== null &&
+            typeof (item as { id?: unknown }).id === "string" &&
+            typeof (item as { name?: unknown }).name === "string",
+        );
+      }
+    }
+  } catch {
+    // Ignore storage read errors
+  }
+  return [];
+}
 
 const pillBase: React.CSSProperties = {
   display: "inline-flex",
@@ -74,27 +113,46 @@ export const FabushiCollectionFilterBar: React.FC<FabushiCollectionFilterBarProp
   groupCount = 0,
   channelCount = 0,
   agentCount = 0,
+  accountId = null,
+  accountScopeGeneration = 0,
   client,
   style,
 }) => {
-  const [customFolders, setCustomFolders] = useState<FabushiFilterFolder[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const storageKey = useMemo(
+    () => resolveCollectionCustomFoldersStorageKey(accountId),
+    [accountId],
+  );
+  const currentGenerationRef = useRef<number>(accountScopeGeneration);
+  const currentStorageKeyRef = useRef<string>(storageKey);
+  currentGenerationRef.current = accountScopeGeneration;
+  currentStorageKeyRef.current = storageKey;
+
+  const [customFolders, setCustomFolders] = useState<FabushiFilterFolder[]>(() =>
+    loadCustomFoldersFromStorage(storageKey),
+  );
   const [showAddFolderModal, setShowAddFolderModal] = useState(false);
   const [stories, setStories] = useState<StoryItem[]>(() => [...INITIAL_STORIES]);
   const [activeStory, setActiveStory] = useState<StoryItem | null>(null);
   const [showPostModal, setShowPostModal] = useState(false);
 
+  // Reload account-scoped folders immediately when accountId or accountScopeGeneration changes
+  useEffect(() => {
+    setCustomFolders(loadCustomFoldersFromStorage(storageKey));
+    setStories([...INITIAL_STORIES]);
+  }, [storageKey, accountScopeGeneration]);
+
   useEffect(() => {
     if (client == null) return;
+    const requestGeneration = accountScopeGeneration;
+    const requestStorageKey = storageKey;
+    const isCurrentScope = () =>
+      currentGenerationRef.current === requestGeneration &&
+      currentStorageKeyRef.current === requestStorageKey;
+
     client
       .call("folders.list", {})
       .then((res: unknown) => {
+        if (!isCurrentScope()) return;
         if (res && typeof res === "object" && "folders" in res && Array.isArray((res as { folders: unknown[] }).folders)) {
           const list = (res as { folders: Array<{ id: string; name: string }> }).folders.map((f) => ({
             id: f.id,
@@ -104,7 +162,7 @@ export const FabushiCollectionFilterBar: React.FC<FabushiCollectionFilterBarProp
           if (list.length > 0) {
             setCustomFolders(list);
             try {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+              localStorage.setItem(requestStorageKey, JSON.stringify(list));
             } catch {}
           }
         }
@@ -114,6 +172,7 @@ export const FabushiCollectionFilterBar: React.FC<FabushiCollectionFilterBarProp
     client
       .call("stories.list", {})
       .then((res: unknown) => {
+        if (!isCurrentScope()) return;
         if (res && typeof res === "object" && "stories" in res && Array.isArray((res as { stories: unknown[] }).stories)) {
           const fetched = (res as { stories: Array<{ id: string; authorName?: string; content?: string }> }).stories.map(
             (s, idx) => ({
@@ -130,10 +189,11 @@ export const FabushiCollectionFilterBar: React.FC<FabushiCollectionFilterBarProp
         }
       })
       .catch(() => {});
-  }, [client]);
+  }, [accountScopeGeneration, client, storageKey]);
 
   const handlePublishStory = useCallback(
     (payload: StoryPublishPayload) => {
+      const mutationGeneration = currentGenerationRef.current;
       const newStory: StoryItem = {
         id: `story-${Date.now()}`,
         authorName: "我",
@@ -141,6 +201,7 @@ export const FabushiCollectionFilterBar: React.FC<FabushiCollectionFilterBarProp
         content: payload.content,
         timestamp: "刚刚",
       };
+      if (currentGenerationRef.current !== mutationGeneration) return;
       setStories((prev) => [newStory, ...prev]);
       if (client != null) {
         client.call("stories.publish", payload).catch(() => {});
@@ -151,11 +212,19 @@ export const FabushiCollectionFilterBar: React.FC<FabushiCollectionFilterBarProp
 
   const handleSaveFilter = useCallback(
     (filter: ChatFilterModel) => {
+      const mutationGeneration = currentGenerationRef.current;
+      const mutationStorageKey = currentStorageKeyRef.current;
+      if (
+        currentGenerationRef.current !== mutationGeneration ||
+        currentStorageKeyRef.current !== mutationStorageKey
+      ) {
+        return;
+      }
       const newFolder: FabushiFilterFolder = { id: filter.id, name: filter.title, isCustom: true };
       const updated = [...customFolders, newFolder];
       setCustomFolders(updated);
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        localStorage.setItem(mutationStorageKey, JSON.stringify(updated));
       } catch {}
 
       if (client != null) {
@@ -168,6 +237,7 @@ export const FabushiCollectionFilterBar: React.FC<FabushiCollectionFilterBarProp
               flags: filter.flags,
               alwaysPeers: filter.alwaysPeers,
               neverPeers: filter.neverPeers,
+              accountScopeGeneration: mutationGeneration,
             },
           })
           .catch(() => {});
@@ -181,14 +251,22 @@ export const FabushiCollectionFilterBar: React.FC<FabushiCollectionFilterBarProp
   const handleDeleteFolder = useCallback(
     (folderId: string, event: React.MouseEvent) => {
       event.stopPropagation();
+      const mutationGeneration = currentGenerationRef.current;
+      const mutationStorageKey = currentStorageKeyRef.current;
+      if (
+        currentGenerationRef.current !== mutationGeneration ||
+        currentStorageKeyRef.current !== mutationStorageKey
+      ) {
+        return;
+      }
       const updated = customFolders.filter((f) => f.id !== folderId);
       setCustomFolders(updated);
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        localStorage.setItem(mutationStorageKey, JSON.stringify(updated));
       } catch {}
 
       if (client != null) {
-        client.call("folders.delete", { folderId }).catch(() => {});
+        client.call("folders.delete", { folderId, accountScopeGeneration: mutationGeneration }).catch(() => {});
       }
 
       if (activeFolderId === folderId) {

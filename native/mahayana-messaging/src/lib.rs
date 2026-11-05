@@ -19,6 +19,8 @@ pub mod engine_tdrp_dialogs;
 pub mod engine_tdrp_media_stories;
 pub mod engine_tdrp_moderation;
 pub mod engine_tdrp_topics_channels;
+pub mod extension;
+pub mod extension_trust;
 pub mod gateway;
 pub mod media;
 pub mod media_cache;
@@ -61,6 +63,8 @@ pub use engine::{
 pub use engine_tdrp_dialogs::*;
 pub use engine_tdrp_media_stories::*;
 pub use engine_tdrp_moderation::*;
+pub use extension::*;
+pub use extension_trust::*;
 pub use gateway::*;
 pub use media::*;
 pub use media_cache::*;

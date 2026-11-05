@@ -1,4 +1,19 @@
-import React, { useState, useCallback } from "react";
+/**
+ * Canonical TDRP Conversation Overlay & Modal Coordinator (`TdrpConversationOverlay`)
+ *
+ * Upstream comparative anchors studied before modification:
+ * - Telegram Desktop:
+ *   - `Telegram/SourceFiles/api/api_credits.cpp` (real Stars balance & gift ledger transactions)
+ *   - `Telegram/SourceFiles/data/data_chat_participant_status.cpp` (`ChatAdminRight`, `ChatRestriction`)
+ *   - `Telegram/SourceFiles/export/export_controller.cpp` (chat history HTML/JSON export)
+ * - Blueprint 04 (`04-unified-context-inspector-drawer.md`):
+ *   - Removes hardcoded fake Stars balance state; binds strictly to real `starsBalance ?? 0`
+ *     prop and live `stars.getBalance` / `credits.getSnapshot` RPC state.
+ *   - Adds `onSubmitDirectCard?: (payload: string) => void` so Poll/Todo/Invoice submission dispatches
+ *     directly without overwriting `composerDraftStore`.
+ */
+
+import React, { useState, useCallback, useEffect } from "react";
 import type { ProductionCoordinatorClient } from "../coordinator-client";
 import { TdrpProfileDetailsDrawer } from "./TdrpProfileDetailsDrawer";
 import { TdrpPollAndTodoModal } from "./TdrpPollAndTodoModal";
@@ -14,11 +29,24 @@ export interface TdrpConversationOverlayProps {
     readonly name: string;
     readonly isGroup?: boolean;
     readonly isHuman?: boolean;
+    readonly isChannel?: boolean;
+    readonly title?: string;
+    readonly description?: string;
   } | null;
+  readonly accountScopeGeneration?: number;
   readonly client?: ProductionCoordinatorClient | null;
+  /** Real Stars ledger balance prop; defaults to 0 until ledger snapshot arrives. */
+  readonly starsBalance?: number;
+  readonly onStarsBalanceChange?: (nextBalance: number) => void;
   readonly modalMode: "poll" | "todo" | "invoice" | "bot" | null;
   readonly onCloseModal: () => void;
-  readonly onInsertMessage: (formattedPayload: string) => void;
+  /**
+   * Direct card submission callback for Poll / Todo / Invoice / Inline Bot cards
+   * so callers never need to overwrite `composerDraftStore`.
+   */
+  readonly onSubmitDirectCard?: (payload: string) => void;
+  /** Backward-compatible fallback callback when `onSubmitDirectCard` is not provided. */
+  readonly onInsertMessage?: (formattedPayload: string) => void;
   readonly isDetailsOpen: boolean;
   readonly onCloseDetails: () => void;
   readonly onOpenSearch?: () => void;
@@ -28,16 +56,21 @@ const DEFAULT_GIFT: GiftItem = { name: "咖啡", cost: 50 };
 
 export const TdrpConversationOverlay: React.FC<TdrpConversationOverlayProps> = ({
   activeAgent,
+  accountScopeGeneration = 0,
   client,
+  starsBalance: propStarsBalance,
+  onStarsBalanceChange,
   modalMode,
   onCloseModal,
+  onSubmitDirectCard,
   onInsertMessage,
   isDetailsOpen,
   onCloseDetails,
   onOpenSearch,
 }) => {
-  // Stars state
-  const [starsBalance, setStarsBalance] = useState(1250);
+  // Real Stars ledger state (bound to prop or live RPC snapshot)
+  const [ledgerBalance, setLedgerBalance] = useState<number>(propStarsBalance ?? 0);
+  const [isLedgerSynced, setIsLedgerSynced] = useState<boolean>(propStarsBalance !== undefined);
   const [showStarsModal, setShowStarsModal] = useState(false);
   const [selectedGift, setSelectedGift] = useState<GiftItem>(DEFAULT_GIFT);
   const [transferStatus, setTransferStatus] = useState<string | null>(null);
@@ -56,6 +89,71 @@ export const TdrpConversationOverlay: React.FC<TdrpConversationOverlayProps> = (
 
   // Security state
   const [showSecurityModal, setShowSecurityModal] = useState(false);
+
+  useEffect(() => {
+    if (propStarsBalance !== undefined) {
+      setLedgerBalance(propStarsBalance);
+      setIsLedgerSynced(true);
+    }
+  }, [propStarsBalance]);
+
+  // Reset transient modals on accountScopeGeneration change
+  useEffect(() => {
+    setShowStarsModal(false);
+    setShowAdminModal(false);
+    setShowExportModal(false);
+    setShowSecurityModal(false);
+    setTransferStatus(null);
+    setAdminStatus(null);
+    setExportStatus(null);
+  }, [accountScopeGeneration]);
+
+  // Query real Stars ledger balance from Coordinator when available
+  useEffect(() => {
+    if (!client) return;
+    let active = true;
+    const reqGen = accountScopeGeneration;
+    void client
+      .call("stars.getBalance", {})
+      .then((res: unknown) => {
+        if (!active || reqGen !== accountScopeGeneration) return;
+        const payload = res as { balance?: number; starsBalance?: number } | null;
+        const balanceValue = payload?.balance ?? payload?.starsBalance;
+        if (typeof balanceValue === "number" && Number.isFinite(balanceValue)) {
+          setLedgerBalance(balanceValue);
+          setIsLedgerSynced(true);
+          onStarsBalanceChange?.(balanceValue);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [client, accountScopeGeneration, onStarsBalanceChange]);
+
+  const effectiveStarsBalance = propStarsBalance ?? ledgerBalance;
+
+  const updateBalance = useCallback(
+    (nextBalance: number) => {
+      setLedgerBalance(nextBalance);
+      setIsLedgerSynced(true);
+      onStarsBalanceChange?.(nextBalance);
+    },
+    [onStarsBalanceChange]
+  );
+
+  const handleCardDispatch = useCallback(
+    (formattedPayload: string) => {
+      if (onSubmitDirectCard) {
+        onSubmitDirectCard(formattedPayload);
+        return;
+      }
+      if (onInsertMessage) {
+        onInsertMessage(formattedPayload);
+      }
+    },
+    [onSubmitDirectCard, onInsertMessage]
+  );
 
   const handleStartCall = useCallback(
     (isVideo = false) => {
@@ -76,23 +174,24 @@ export const TdrpConversationOverlay: React.FC<TdrpConversationOverlayProps> = (
 
   const handleRechargeStars = useCallback(
     (amount: number) => {
-      setStarsBalance((b) => b + amount);
+      const next = effectiveStarsBalance + amount;
+      updateBalance(next);
       if (client != null && activeAgent) {
         client.call("stars.recharge", { amount }).catch(() => {});
       }
       setTransferStatus(`成功充值 ${amount} Stars！`);
-      setTimeout(() => setTransferStatus(null), 2500);
     },
-    [activeAgent, client]
+    [activeAgent, client, effectiveStarsBalance, updateBalance]
   );
 
   const handleSendGift = useCallback(
     (options: { hideMyName: boolean; convertStars: boolean }) => {
-      if (starsBalance < selectedGift.cost) {
+      if (effectiveStarsBalance < selectedGift.cost) {
         setTransferStatus("Stars 余额不足，请先充值");
         return;
       }
-      setStarsBalance((b) => b - selectedGift.cost);
+      const next = effectiveStarsBalance - selectedGift.cost;
+      updateBalance(next);
       if (client != null && activeAgent) {
         client
           .call("gifts.send", {
@@ -104,12 +203,8 @@ export const TdrpConversationOverlay: React.FC<TdrpConversationOverlayProps> = (
           .catch(() => {});
       }
       setTransferStatus(`礼物【${selectedGift.name}】已成功送出！`);
-      setTimeout(() => {
-        setTransferStatus(null);
-        setShowStarsModal(false);
-      }, 2000);
     },
-    [activeAgent, client, selectedGift, starsBalance]
+    [activeAgent, client, effectiveStarsBalance, selectedGift, updateBalance]
   );
 
   const handleAdminAction = useCallback(
@@ -126,7 +221,9 @@ export const TdrpConversationOverlay: React.FC<TdrpConversationOverlayProps> = (
             ...(payload ?? {}),
           })
           .then(() => {
-            setAdminStatus(`操作成功！已对用户 ${targetUserId} 执行${action === "ban" ? "封禁" : "权限更新"}`);
+            setAdminStatus(
+              `操作成功！已对用户 ${targetUserId} 执行${action === "ban" ? "封禁" : "权限更新"}`
+            );
           })
           .catch(() => {
             setAdminStatus("操作完成（已同步至本地权限表）");
@@ -134,7 +231,6 @@ export const TdrpConversationOverlay: React.FC<TdrpConversationOverlayProps> = (
       } else {
         setAdminStatus(`已对用户 ${targetUserId} 执行${action === "ban" ? "封禁" : "权限更新"}`);
       }
-      setTimeout(() => setAdminStatus(null), 3000);
     },
     [activeAgent, banDuration, client, targetUserId]
   );
@@ -160,35 +256,42 @@ export const TdrpConversationOverlay: React.FC<TdrpConversationOverlayProps> = (
       } else {
         setExportStatus(`导出就绪：已打包聊天记录为 ${exportFormat.toUpperCase()} 文件`);
       }
-      setTimeout(() => {
-        setExportStatus(null);
-        setShowExportModal(false);
-      }, 2500);
     },
     [activeAgent, client, exportFormat, includeMedia]
   );
 
   return (
     <>
-      {/* Telegram Profile & OpenClaw Details Drawer (Right Column) */}
+      {/* Unified Profile & Context Inspector Drawer (Right Column) */}
       {activeAgent != null && (
         <TdrpProfileDetailsDrawer
           isOpen={isDetailsOpen}
           onClose={onCloseDetails}
           activeAgent={activeAgent}
+          accountScopeGeneration={accountScopeGeneration}
           client={client}
-          starsBalance={starsBalance}
+          starsBalance={effectiveStarsBalance}
+          isStarsLedgerLoaded={isLedgerSynced}
           onStartCall={handleStartCall}
           onStartGroupCall={handleStartGroupCall}
           onOpenSearch={onOpenSearch}
-          onOpenAdminModal={() => setShowAdminModal(true)}
-          onOpenExportModal={() => setShowExportModal(true)}
-          onOpenStarsModal={() => setShowStarsModal(true)}
+          onOpenAdminModal={() => {
+            setAdminStatus(null);
+            setShowAdminModal(true);
+          }}
+          onOpenExportModal={() => {
+            setExportStatus(null);
+            setShowExportModal(true);
+          }}
+          onOpenStarsModal={() => {
+            setTransferStatus(null);
+            setShowStarsModal(true);
+          }}
           onOpenSecurityModal={() => setShowSecurityModal(true)}
         />
       )}
 
-      {/* Telegram In-Stream Interactive Media Creator Modal (Poll / Todo / Invoice / Bot) */}
+      {/* In-Stream Interactive Media Creator Modal (Poll / Todo / Invoice / Bot) */}
       {modalMode != null && activeAgent != null && (
         <TdrpPollAndTodoModal
           isOpen={modalMode !== null}
@@ -196,7 +299,7 @@ export const TdrpConversationOverlay: React.FC<TdrpConversationOverlayProps> = (
           conversationId={activeAgent.id}
           client={client}
           onClose={onCloseModal}
-          onInsertMessage={onInsertMessage}
+          onInsertMessage={handleCardDispatch}
         />
       )}
 
@@ -204,7 +307,7 @@ export const TdrpConversationOverlay: React.FC<TdrpConversationOverlayProps> = (
       <TdrpStarsModal
         isOpen={showStarsModal}
         onClose={() => setShowStarsModal(false)}
-        starsBalance={starsBalance}
+        starsBalance={effectiveStarsBalance}
         selectedGift={selectedGift}
         onSelectGift={setSelectedGift}
         onRechargeStars={handleRechargeStars}
@@ -257,26 +360,29 @@ export const TdrpConversationOverlay: React.FC<TdrpConversationOverlayProps> = (
               maxWidth: "92vw",
               maxHeight: "88vh",
               overflowY: "auto",
-              background: "var(--bg-elevated, #ffffff)",
+              background: "var(--fabushi-bg-surface, var(--bg-elevated, #ffffff))",
               borderRadius: "14px",
               boxShadow: "0 12px 36px rgba(0, 0, 0, 0.25)",
-              border: "1px solid var(--border, #e8e4dc)",
+              border: "1px solid var(--fabushi-border-subtle, var(--border, #e8e4dc))",
               padding: "20px",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-              <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-strong, #211e1a)" }}>
+              <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--fabushi-text-primary, #211e1a)" }}>
                 云密码与隐私安全
               </span>
               <button
                 type="button"
                 onClick={() => setShowSecurityModal(false)}
-                style={{ background: "none", border: 0, cursor: "pointer", color: "var(--muted, #6e6960)" }}
+                style={{ background: "none", border: 0, cursor: "pointer", color: "var(--fabushi-text-muted, #6e6960)" }}
               >
                 <X size={18} />
               </button>
             </div>
-            <TdrpCloudSecurityPanel client={client} />
+            <TdrpCloudSecurityPanel
+              client={client}
+              peerId={activeAgent?.id}
+            />
           </div>
         </div>
       )}

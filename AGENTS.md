@@ -1632,3 +1632,71 @@ FMEP-SOURCE-01 (`docs/specs/fabushi-deferred-ci-migration.md` §13) supersedes b
 
 OCRM-001 Revision 2 §17 governs source review and execution: deep review product/mixed/high-risk logic, contract review generated/dependency boundaries, evidenced disposition for non-product sources. Implement coherent owner-based product batches without waiting for unrelated global closure; run focused checks in Actions and retain full final acceptance. Use `projects/openclaw-rust/management/prompts/full-fusion-batch.md`. Reconcile existing working-branch schemas/validators with §17.2 before using new review states; never auto-upgrade coverage or acceptance.
 
+### Unified Fabushi Full-Source-to-Blueprint Subagent Development Workflow (`UFX-FLOW-01` — 2026-11-05)
+
+All AI agents and multi-agent teams (`agy /teamwork`, orchestrators, workers, reviewers, challengers, and auditors) executing the unified fusion of **Telegram Desktop (`TDRP-001`)** and **OpenClaw (`OCRM-001`)** into **Fabushi (`FBCP-001` / `UFX-001`)** MUST strictly follow this mandatory 4-stage engineering workflow. Skipping directly to code edits without full module source comprehension and persisted module blueprints in `docs/specs/fusion-blueprints/` is a hard governance violation.
+
+#### Stage 1: Exhaustive Tri-Source Reading & Deep Comprehension Methodology (全量源码精读方法论与零遗漏对齐)
+
+“源码精读”严禁仅停留在浏览目录树、阅读 README、或者只看几个表面组件。必须由主控编排并派发专注的只读调研子智能体（Research Subagents）通过**“四步精读法”**与**“源码五问”**彻底吃透底层：
+
+1. **第一步：宏观地图与账本核验（Macro Atlas & Ledger Audit）**
+   - 先读三方全景索引，建立全局心智模型，防止局部盲目开发：
+     - **Telegram 侧**：[`projects/telegram-desktop-rust/module-map.md`](file:///Users/bhrum/Documents/ChatGPT/fabushi-unified-design-20261105/projects/telegram-desktop-rust/module-map.md)、[`telegram-capability-graph.md`](file:///Users/bhrum/Documents/ChatGPT/fabushi-unified-design-20261105/projects/fabushi-communication-platform/telegram-capability-graph.md)（覆盖 `Telegram/SourceFiles` 40 个顶层目录与 50+ 个能力域）、`source-closure.md` 与 `dossiers/`；
+     - **OpenClaw 侧**：[`projects/openclaw-rust/module-map.md`](file:///Users/bhrum/Documents/ChatGPT/fabushi-unified-design-20261105/projects/openclaw-rust/module-map.md)（覆盖 `OCRM-M01` 至 `OCRM-M32` 全部 32 个责任域）、`parity-ledger.json`（特别是 141 项 `implemented` + `not-wired` 与 9 项 `not-started`）与 `dossiers/`；
+     - **Fabushi 侧**：[`current-owner-inventory.md`](file:///Users/bhrum/Documents/ChatGPT/fabushi-unified-design-20261105/projects/fabushi-communication-platform/current-owner-inventory.md)、`architecture-map.md`、`canonical-screen-patterns.md`、`ui-information-architecture.md` 与生产壳入口 `frontend/src/production/ProductionRenderer.tsx`。
+2. **第二步：三方源码并排精读（Tri-Source Side-by-Side Reading）**
+   - 针对具体功能域，同时打开并排阅读三方具体实现文件：
+     - **Telegram Desktop 锁定源码（`@f985723b552b30fe1c17d377d57f44e61a15a8c4`）**：C++/Qt 实现中的数据结构、消息模型、事件过滤、UI 状态机与错误处理；
+     - **OpenClaw 锁定源码（`@1440bb1771372334bea23d7642bb52deb7db1845`）**：TypeScript/Lit/Node 中的 Gateway RPC 协议、ACP 交互、Agent 调度、记忆检索、自动化与权限门禁；
+     - **Fabushi 生产源码**：`frontend/src/production/`、`frontend/src/recovered/features/`、`source/host/`、`source/node-agent-coordinator/`、`native/mahayana-messaging/`、`contracts/` 中的现有实现与接线断点。
+3. **第三步：端到端全链路调用追踪（End-to-End Call-Chain Tracing）**
+   - 追踪每一项能力从前端到后端的完整闭环：
+     `UI Entrypoint (Click/Key/Drag) -> Producer -> Controller/Store -> IPC/RPC Bridge -> Host/Coordinator Rust Service -> Storage/Network Provider -> Event/Subscription Loop back to UI Consumer`
+   - 必须记录真实的类名、函数名与文件路径，拒绝凭空臆造 API。
+4. **第四步：强制执行“源码五问”（The Mandatory Source Five Questions）**
+   - 对任何被研究的模块或功能，必须用确凿的代码行号证据回答以下 5 个问题：
+     - **Q1（上游真实现状）**：该功能在上游是如何实现的？核心状态机、数据模型与边界条件（超时、取消、重试、错误码）是什么？
+     - **Q2（现有链路定位）**：Fabushi 现有 canonical owner 是谁？现有的生产调用链路走到哪一步？
+     - **Q3（断点精确诊断）**：为什么该功能当前不可用？是 `implemented` 但 `not-wired`、是硬编码了假数据/假状态（如 `isGatewayOnline={false}` 或 `setTimeout` 假回复）、还是缺少状态传递或类型对接？（精确到文件和行号）
+     - **Q4（状态机与安全防护）**：跨组件信任边界如何？断网、重连、切换账号（`accountScopeGeneration`）、切换会话（`session_key`）时如何隔离，防止迟到事件和跨会话污染？
+     - **Q5（UI/UX 极致融合落点）**：在统一界面中它应当落在哪个标准位置？高频交互如何直达？低频配置如何通过渐进披露（Progressive Disclosure）收敛到唯一右侧 `ContextInspector`？如何绑定 `--fabushi-*` 语义 Token 与无障碍标准？
+
+#### Stage 2: Full Capability Indexing & Open-Ended High-Cohesion Blueprint Design (`docs/specs/fusion-blueprints/`)
+
+严禁预设固定的模块数量上限（如生搬硬套 8 个模块）或将十几个独立子系统塞进同一份蓝图充数。主控架构师必须基于 Stage 1 的全量源码精读，按照**客观的高内聚与深度标准**动态拆解蓝图（符合标准拆出多少份就是多少份）：
+
+1. **总控索引文件优先（`00-master-capability-and-module-index.md`）**：
+   - 必须在 `docs/specs/fusion-blueprints/` 下创建并持续同步维护 `00-master-capability-and-module-index.md`。
+   - **100% 覆盖 OpenClaw 32 个责任域（`OCRM-M01` 至 `OCRM-M32`）** 与 **Telegram Desktop 52+ 个能力域（`TCG-N01`..`TCG-N52+`）**。
+   - 将所有能力域无缝映射到全部高内聚分卷（`01..NN-*.md`）中，确保**零遗漏、零孤岛、零大杂烩挤压**。
+2. **不设数量上限的分卷拆分四项硬标准（Open-Ended Decomposition Standards，`01..NN-*.md`）**：
+   - **标准一（单卷领域密度上限 / Anti-Cramming Cap）**：每份分卷蓝图最多只允许承载 **1～4 个强内聚能力域**。严禁将超过 4 个松散相关的能力域塞进同一份文件（如严禁把远程桌面、端到端加密、数据库恢复、CLI、自动升级塞进同一个后端杂项分卷，或把音视频通话、Stories、媒体涂鸦编辑器、AI 多模态生成、实时语音 Talk 和会议 Bot 混塞在同一份文件里）。
+   - **标准二（独立状态机与独立 Schema 必拆准则）**：凡拥有独立持久层表结构、独立网络/信令/加密协议、独立后台执行引擎（如 Cron、QMD 向量检索与 Wiki、STT/TTS 语音与会议 Bot、AI 多模态生成、大文件分片传输、支付与星币账本、端到端加密与本地安全锁、SQLite 迁移与全量导出、社群统计与审核等）或独立复杂交互表面的子系统，**必须拆分为独立的专项蓝图文件**。
+   - **标准三（单能力契约深度下限）**：每个被覆盖的子系统在蓝图中都必须拥有完整的数学状态转移方程、完整的 TypeScript `interface`/Props、完整的 Rust `struct`/`enum`/RPC 契约与精确到行号的三方源码映射。凡因多域拥挤导致某个子系统缺少独立完整契约与状态机的，Auditor 必须判定为 `Crammed / Under-specified` 并强制拆出独立新卷。
+   - **标准四（1 Blueprint = 1 Focused Worker Slice）**：每份蓝图精确对应 Stage 3 中单个专项 Worker 一次施工的 1～4 个高内聚代码模块（每模块 **200–600 行**）。
+3. **每份分卷蓝图（`docs/specs/fusion-blueprints/01..NN-*.md`）必须严格包含 7 大强制章节**：
+   1. **源码精读与全量功能零遗漏矩阵**（含源码五问 Q1..Q5 回答，上游源文件/函数 $\rightarrow$ Fabushi 文件/行号）；
+   2. **现有割裂问题与根因诊断**（指出所有 UI 分裂、`not-wired` 断点、竞态或假状态）；
+   3. **统一架构与 Canonical Owner 归属**（`Same Owner != Same File`，内聚模块 **200–600 行**，`ProductionRenderer.tsx` 窄接线）；
+   4. **极致统一的 UI/UX 与交互设计**（渐进披露、单一顶栏/工作区/右侧栏、`--fabushi-*` 语义 Token、响应式断点、键盘与无障碍支持）；
+   5. **精确 TypeScript/Rust 接口契约与状态机**（Props 定义、RPC 结构体、状态转移图、Fencing 规则）；
+   6. **子智能体实施切片与文件写入边界**（各 Worker 专属的文件修改白名单，杜绝冲突）；
+   7. **防作弊审计与验收标准**（正反例检查表，拒绝假逻辑与空壳压缩）。
+
+#### Stage 3: Subagent Delegation & Strict Blueprint Execution (按蓝图派发子智能体执行)
+1. **Blueprint-Driven Prompts**: The orchestrator dispatches implementation subagents (`invoke_subagent`) ONLY after the corresponding blueprint file in `docs/specs/fusion-blueprints/` is written. Each worker subagent's prompt must point directly to its assigned blueprint file in `docs/specs/fusion-blueprints/`, its exact file write whitelist, and its required interfaces.
+2. **Non-Overlapping Write Boundaries**: Workers implement cohesive domain modules in their designated owner subdirectories (`200–600 lines`). Shared root files (`ProductionRenderer.tsx`, `model.ts`, canonical ledgers) are wired serially by the integrator/orchestrator to prevent merge clobbering.
+3. **Strict Anti-Fragmentation & Anti-Cheating Rules**:
+   - **No UI Split by Provenance**: Human, Agent, Group, Channel, and Hybrid conversations share ONE canonical Header, ONE Transcript, ONE `ConversationComposer`, and ONE right-hand `ContextInspector` drawer.
+   - **Zero Fake Online OR Fake Offline**: Remove `OpenClawAskCopilotPanel` completely. Never use `setTimeout` mock replies, hardcoded `"18 个连接器全量就绪"`, OR hardcoded `isGatewayOnline={false}` ("假离线") to evade checks. All status indicators must bind to authentic runtime owners (`transport`, `coordinatorPort`, `runtimeDetail`).
+   - **Non-Destructive Typed Submissions**: Polls, Todo lists, Invoices, and Welcome starter prompts must submit via dedicated typed actions or non-destructive attachment staging—never overwrite the user's unsent text draft via `composerDraftStore.setDraft` + `setTimeout(..., 50)`.
+   - **Honest Share Contract**: Only enable/show room/agent sharing when a real `shareUrl` or `inviteLink` exists, with explicit Toast/notice feedback; never fall back to copying `window.location.href`.
+   - **Unconditional Global Tasks Domain**: Clicking `tasks` in `FabushiPrimaryNavRail` must unconditionally open the global cross-session Tasks & Automations surface, regardless of whether `activeIsHuman` is true or `activeAgent` is null.
+
+#### Stage 4: Independent Forensic Audit & End-to-End Closure (独立取证审计与真实验收闭环)
+1. Every worker delivery must be audited by an independent Reviewer/Challenger/Auditor subagent against its `docs/specs/fusion-blueprints/*.md` contract and `docs/specs/unified-fabushi-experience-20261105.md`.
+2. Any shortcut, stub compression (`Anti-N-to-1 Stub Compression`), uncontained `--oc-*` styling, broken JSX/TS contract, or unverified claim is immediately rejected and sent back for remediation.
+3. Maintain strict fail-closed reporting: distinguish static source/contract verification from remote GitHub Actions CI and packaged binary acceptance (`UFX-AC01..09`), updating `docs/specs/unified-fabushi-execution-status-20261105.md` and canonical ledgers with exact facts.
+
+
