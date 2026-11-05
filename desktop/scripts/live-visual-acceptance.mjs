@@ -4,7 +4,8 @@ import { resolve } from "node:path";
 import { existsSync } from "node:fs";
 
 const appPath = "/Applications/Fabushi.app/Contents/MacOS/Fabushi";
-const screenshotPath = "/Users/bhrum/.gemini/antigravity/brain/1e5f0704-2329-4a7e-82df-96c3c8162362/fabushi-3segment-v2-live.png";
+const screenshotPath = "/Users/bhrum/.gemini/antigravity/brain/1e5f0704-2329-4a7e-82df-96c3c8162362/fabushi-3segment-v3-live.png";
+const computerScreenshotPath = "/Users/bhrum/.gemini/antigravity/brain/1e5f0704-2329-4a7e-82df-96c3c8162362/fabushi-computer-workbench-live.png";
 const port = 14333;
 
 async function main() {
@@ -51,6 +52,7 @@ async function main() {
   // Wait for React to render workspace
   console.log("Waiting for #root or workspace...");
   await page.waitForSelector("#root", { timeout: 15000 });
+  await page.waitForTimeout(2000);
 
   // Check 3-segment shell elements
   console.log("Checking 3-segment shell elements...");
@@ -74,7 +76,29 @@ async function main() {
   const sessionToolbarVisible = await sessionToolbar.isVisible().catch(() => false);
   console.log("fabushi-agent-session-toolbar visible:", sessionToolbarVisible);
 
-  // Take screenshot
+  // Test Computer Domain click & LocalComputerWorkbench
+  console.log("Testing Computer domain transition...");
+  const computerNavButton = page.locator('[data-testid="fabushi-nav-computer"]');
+  if (await computerNavButton.isVisible().catch(() => false)) {
+    console.log("Clicking Computer nav item...");
+    await computerNavButton.click();
+    await page.waitForTimeout(1000);
+    const workbench = page.locator('[data-testid="local-computer-workbench"]');
+    const workbenchVisible = await workbench.isVisible().catch(() => false);
+    console.log("local-computer-workbench visible:", workbenchVisible);
+    if (workbenchVisible) {
+      console.log("Capturing Computer Workbench screenshot to:", computerScreenshotPath);
+      await page.screenshot({ path: computerScreenshotPath, fullPage: false });
+    }
+    const backButton = page.locator('[data-testid="local-workbench-back-to-chat"]');
+    if (await backButton.isVisible().catch(() => false)) {
+      console.log("Clicking Back to Chat button...");
+      await backButton.click();
+      await page.waitForTimeout(1000);
+    }
+  }
+
+  // Take main screenshot
   console.log("Capturing live screenshot to:", screenshotPath);
   await page.screenshot({ path: screenshotPath, fullPage: false });
   console.log("Screenshot saved successfully!");

@@ -4131,12 +4131,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           activeDomain={activeNavDomain}
           onSelectDomain={(domain) => {
             setActiveNavDomain(domain);
-            if (domain === "computer") {
-              computer.open();
-            } else if (domain === "agents") {
-              setActiveFolderId("agents");
-            } else if (domain === "messages") {
-              setActiveFolderId("all");
+            if (domain === "computer") computer.open();
+            else {
+              computer.close();
+              if (domain === "agents") setActiveFolderId("agents");
+              else if (domain === "messages") setActiveFolderId("all");
             }
           }}
           unreadMessagesCount={unreadFolderCount}
@@ -4171,18 +4170,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                   onSelectFolder={setActiveFolderId}
                   onOpenNewChat={() => setIsCreateConvModalOpen(true)}
                   onOpenSearch={openSidebarSearch}
-                  unreadCount={unreadFolderCount}
-                  directCount={humanFolderCount}
-                  groupCount={groupFolderCount}
-                  agentCount={agentFolderCount}
-                  client={client}
+                  unreadCount={unreadFolderCount} directCount={humanFolderCount} groupCount={groupFolderCount} agentCount={agentFolderCount} client={client}
+                  style={bridge != null && !windowFullscreen ? { paddingTop: "38px" } : undefined}
                 />
                 <TdrpStoriesAndStarsBar client={client} />
                 <ConversationSidebar activeAgentId={activeAgentId} agents={folderFilteredAgents} isHostReachable={transport === "connected"} sections={projectedSidebarSections} sidebarLayout={renderedSidebarLayout} onResize={resizeSidebar} onResizeEnd={finishSidebarResize} onToggleSectionCollapsed={(sectionId, collapsed) => sidebarCollapseStore.setSectionCollapsed(sectionId, collapsed)} listStatus={rosterListStatus} pinnedAgentIds={pinnedAgentIds} selectedAgentIds={selectedSidebarAgentIds} onToggleAgentSelection={toggleSidebarAgentSelection} onRangeSelectAgent={rangeSelectSidebarAgent} onClearAgentSelection={clearSidebarAgentSelection} onMoveSelectedAgentsToSection={moveSelectedSidebarAgentsToSection} onMoveSelectedAgentsToNewSection={moveSelectedSidebarAgentsToNewSection} onCopyAgentId={copyAgentId} onDuplicateAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void duplicateAgent(agentId); }} onHideAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void hideAgent(agentId); }} onNewChat={() => setIsCreateConvModalOpen(true)} onOpenAgent={(agentId) => void openAgent(agentId)} onOpenNetwork={agentNetworkTrigger} onOpenProfile={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) sidebarProfileAction.onSelect(agentId); }} onShowAsyncTasks={account?.kind === "logged-in" && account.isAnysphereUser === true ? (agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openAsyncTasks(agentId); } : undefined} onShowFullConversation={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openConversationOutline(agentId); }} onOpenSearch={sidebarSearchTrigger} onRenameAgent={(agentId, name) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void renameAgent(agentId, name); }} onReorderPinnedAgents={reorderPinnedAgents} onRequestDeleteAgent={(agent) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agent.id)) setDeleteAgent({ id: agent.id, name: agent.name, isGroup: agent.isGroup }); }} onRenameSection={renameSection} onRequestDeleteSection={requestDeleteSection} onMoveSection={moveSection} onMoveAgentToSection={moveAgentsToSection} onMoveAgentToNewSection={moveAgentsToNewSection} onSetAgentUnread={(agentId, isUnread) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void setAgentUnread(agentId, isUnread); }} onTogglePin={(agentId, isPinned) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) toggleAgentPin(agentId, isPinned); }} />
               </div>
           {hiddenAgents.length > 0 && visibleAgents.length > 0 ? <SandButton aria-haspopup="dialog" onClick={() => setOverlay("hidden-chats")} size="sm" variant="secondary"><span>{UI_TEXT.hiddenBots}</span><SandBadge aria-label={`${hiddenAgents.length} hidden bots`}>{hiddenAgents.length}</SandBadge></SandButton> : null}
           {/* @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=2602084 (s0n Plugins footer button/icon/text composition) */}
-          <div className="sand-agents-sidebar__plugins-entry">
+          <div className="sand-agents-sidebar__plugins-entry" style={{ display: "none" }}>
             <SandButton className="sand-agents-sidebar__plugins" leadingIcon="plug" onClick={() => { setPluginQuery(""); setOverlay("plugins"); }} shape="pill" size="md" variant="secondary">{UI_TEXT.plugins}</SandButton>
           </div>
           <AccountMenu
@@ -4475,10 +4471,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         roomId={sharedRoomContext.roomId}
       /> : null}
       {bridge == null || activeAgent == null || activeAgent.isGroup || routinesInfoPaneOpen || agentSettingsOpen || channelsInfoPaneOpen || runtimeDetailPaneOpen ? null : <ComputerInfoPane bridge={bridge} experience={computer} isOpen={computerInfoOpen} onClose={() => setComputerInfoOpen(false)} subjectLabel={activeAgent.name} teachRecording={teachRecordingComposition.preview} />}
-      {activeAgent == null || activeAgent.isGroup || !(computer.isOpen || computerInfoOpen && computerViewerRetained) ? null : <ComputerFullscreen
+      {activeNavDomain !== "computer" || activeAgent == null || activeAgent.isGroup || !computer.isOpen ? null : <ComputerFullscreen
         bridge={bridge}
         experience={computer}
-        onRequestComposerFocus={() => document.querySelector<HTMLElement>(".sand-prompt-form textarea, .sand-prompt-form [contenteditable='true']")?.focus()}
+        onRequestComposerFocus={() => { setActiveNavDomain("messages"); computer.close(); document.querySelector<HTMLElement>(".sand-prompt-form textarea, .sand-prompt-form [contenteditable='true']")?.focus(); }}
         subjectLabel={activeAgent.name}
         teachRecording={teachRecordingComposition}
       />}

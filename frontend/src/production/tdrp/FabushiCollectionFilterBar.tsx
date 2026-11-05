@@ -21,6 +21,7 @@ export interface FabushiCollectionFilterBarProps {
   readonly channelCount?: number;
   readonly agentCount?: number;
   readonly client?: ProductionCoordinatorClient | null;
+  readonly style?: React.CSSProperties;
 }
 
 const STORAGE_KEY = "fabushi_collection_custom_folders_v1";
@@ -35,6 +36,7 @@ export const FabushiCollectionFilterBar: React.FC<FabushiCollectionFilterBarProp
   channelCount = 0,
   agentCount = 0,
   client,
+  style,
 }) => {
   const [customFolders, setCustomFolders] = useState<FabushiFilterFolder[]>(() => {
     try {
@@ -143,6 +145,7 @@ export const FabushiCollectionFilterBar: React.FC<FabushiCollectionFilterBarProp
         borderBottom: "1px solid var(--sand-border-weak, rgba(128, 128, 128, 0.12))",
         userSelect: "none",
         overflow: "hidden",
+        ...style,
       }}
     >
       {/* Horizontal scrollable tab pills */}

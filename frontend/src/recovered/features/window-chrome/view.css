@@ -7,8 +7,10 @@
   left: 0;
   height: 52px;
   z-index: 4999;
+  background: transparent !important;
   -webkit-app-region: drag;
   app-region: drag;
+  pointer-events: none;
 }
 
 .sand-window-controls {
