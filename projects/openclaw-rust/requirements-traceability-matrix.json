@@ -1407,12 +1407,22 @@
     {
       "acceptance_status": "verified",
       "blocker_ids": [],
-      "evidence_refs": [],
-      "gate_ids": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_mcp_channel_tools_contract.rs",
+        "projects/openclaw-rust/dossiers/mcp-channel-tools-scoped.md"
+      ],
+      "gate_ids": [
+        "OCRM-G04"
+      ],
       "id": "OCRM-AC09",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-MCP-BRIDGE-O01",
+        "OCRM-MCP-BRIDGE-O02",
+        "OCRM-MCP-TOOLS-O01",
+        "OCRM-MCP-TOOLS-O02"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
         "OCRM-RESP-MCP-CHANNEL-BRIDGE-001",

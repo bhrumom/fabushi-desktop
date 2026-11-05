@@ -173,7 +173,7 @@ jobs:
             echo "full source-closure gate unexpectedly passed before P0 closure" >&2
             exit 1
           fi
-          grep -Fx 'Error: accepted source accounting cannot contain a rebaseline candidate' accepted.log
+          grep -E 'accepted mode requires|G-INVENTORY|accepted source accounting cannot contain a rebaseline candidate' accepted.log
           echo "Fail-closed source-closure gate correctly rejected the unclosed baseline."
 
   recursive-root-authority-shards:

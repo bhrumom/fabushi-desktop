@@ -284,7 +284,10 @@ if "--negative-probes" in sys.argv:
             if str(e) == "Unread count false negative": raise
     finally:
         idx["inventory"]["unread"] = old
-    old_status = rtm["rows"][0]["acceptance_status"]; rtm["rows"][0]["acceptance_status"] = "accepted"
+    old_status = rtm["rows"][0]["acceptance_status"]
+    old_evidence = rtm["rows"][0]["evidence_refs"]
+    rtm["rows"][0]["acceptance_status"] = "accepted"
+    rtm["rows"][0]["evidence_refs"] = []
     probes.append("unbacked accepted verdict")
     try:
         try: structural(); fail("Accepted without evidence false negative")
@@ -292,6 +295,7 @@ if "--negative-probes" in sys.argv:
             if str(e) == "Accepted without evidence false negative": raise
     finally:
         rtm["rows"][0]["acceptance_status"] = old_status
+        rtm["rows"][0]["evidence_refs"] = old_evidence
     old_refs = record["responsibility_ids"]; record["responsibility_ids"] = ["OCRM-RESP-ORPHAN"]
     probes.append("orphan responsibility")
     try:
