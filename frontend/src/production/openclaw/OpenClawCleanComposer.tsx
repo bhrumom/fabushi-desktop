@@ -43,7 +43,7 @@ export interface OpenClawSendOptions {
 
 export interface OpenClawCleanComposerProps {
   draft: OpenClawComposerDraftInput;
-  onChange: (value: OpenClawComposerDraftInput) => void;
+  onChange: ((value: string) => void) | ((value: OpenClawComposerDraftInput) => void);
   onSubmit: (options?: OpenClawSendOptions) => void | Promise<void>;
   disabled?: boolean;
   placeholder?: string;
@@ -119,10 +119,11 @@ export function OpenClawCleanComposer({
   const resolvedModelLabel = activeModel ?? model ?? availableModels[0]?.label ?? "";
 
   const handleDraftChange = (nextText: string) => {
+    const notifyChange = onChange as (value: OpenClawComposerDraftInput) => void;
     if (typeof draft === "string") {
-      onChange(nextText);
+      notifyChange(nextText);
     } else {
-      onChange({ ...draft, prompt: nextText });
+      notifyChange({ ...draft, prompt: nextText });
     }
   };
 

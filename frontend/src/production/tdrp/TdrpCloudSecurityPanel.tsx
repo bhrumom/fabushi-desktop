@@ -116,12 +116,14 @@ export async function deriveCloudPasswordVerifier(
     sandwich.set(saltBytes, 0);
     sandwich.set(passwordBytes, saltBytes.length);
     sandwich.set(saltBytes, saltBytes.length + passwordBytes.length);
-    const stage1Digest = new Uint8Array(await globalThis.crypto.subtle.digest("SHA-256", sandwich));
+    const stage1Digest = new Uint8Array(
+      await globalThis.crypto.subtle.digest("SHA-256", sandwich as unknown as BufferSource)
+    );
 
     // Stage 2: PBKDF2-HMAC-SHA256 key stretching (100,000 iterations)
     const keyMaterial = await globalThis.crypto.subtle.importKey(
       "raw",
-      stage1Digest,
+      stage1Digest as unknown as BufferSource,
       { name: "PBKDF2" },
       false,
       ["deriveBits"]
@@ -129,7 +131,7 @@ export async function deriveCloudPasswordVerifier(
     const derivedBits = await globalThis.crypto.subtle.deriveBits(
       {
         name: "PBKDF2",
-        salt: saltBytes,
+        salt: saltBytes as unknown as BufferSource,
         iterations: 100000,
         hash: "SHA-256",
       },

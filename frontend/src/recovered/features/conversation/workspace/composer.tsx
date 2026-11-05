@@ -22,14 +22,11 @@ import { ComposerReplyPill, replyComposerPlaceholder, type ComposerReplyTarget }
 import { PromptRichTextEditor, type PromptEditorControls, type PromptEditorProviders } from "./rich-text-editor";
 import { SandIcon, SandIconButton } from "../../../ui/sand-kit-primitives";
 import {
+  SandMenuContent,
   SandMenuItem,
-  SandMenuList,
-  SandMenuPopup,
-  SandMenuPortal,
-  SandMenuPositioner,
   SandMenuRoot,
   SandMenuTrigger,
-} from "../../../ui/sand-menu-primitives";
+} from "../../../ui/sand-floating-primitives";
 import { SandSpinner } from "../../../ui/sand-status-primitives";
 import { TdrpAttachMenuPopover } from "../../../../production/tdrp/TdrpAttachMenuPopover";
 
@@ -404,25 +401,21 @@ export function ConversationComposer({
               {hasPayload ? <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_PAYLOAD_CLASS} disabled={disabled || voiceBusy} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" /> : null}
               {hasPayload ? <>
                 <button aria-label="Send message" className={PROMPT_SEND_CLASS} disabled={!canSend} type="submit"><span className="sand-1n2onr6 sand-1kky2od sand-lup9mm"><ComposerGlyph hidden={hasPayload} name="mic" /><ComposerGlyph hidden={!hasPayload} name="arrow-up" /></span></button>
-                {hasSendOptions ? <SandMenuRoot onOpenChange={setSendMenuOpen} open={sendMenuOpen}>
-                  <SandMenuTrigger aria-label="Send options" className="sand-prompt-send-options" disabled={!canSend} type="button">
-                    ▾
+                {hasSendOptions ? <SandMenuRoot onOpenChange={setSendMenuOpen} open={sendMenuOpen} placement="top-end" offset={8}>
+                  <SandMenuTrigger>
+                    <button aria-label="Send options" className="sand-prompt-send-options" disabled={!canSend} type="button">
+                      ▾
+                    </button>
                   </SandMenuTrigger>
-                  <SandMenuPortal>
-                    <SandMenuPositioner align="end" sideOffset={8}>
-                      <SandMenuPopup aria-label="Send options" style={{ minWidth: "200px" }}>
-                        <SandMenuList>
-                          {onSendSilently != null || onSubmitWithOptions != null ? <SandMenuItem onClick={triggerSilentSend}>Send Without Sound</SandMenuItem> : null}
-                          {onScheduleSend != null || onSubmitWithOptions != null ? <SandMenuItem onClick={() => {
-                            setSendMenuOpen(false);
-                            setScheduleError(null);
-                            setScheduleValue(formatDefaultScheduleValue());
-                            setScheduleOpen(true);
-                          }}>Schedule Message</SandMenuItem> : null}
-                        </SandMenuList>
-                      </SandMenuPopup>
-                    </SandMenuPositioner>
-                  </SandMenuPortal>
+                  <SandMenuContent ariaLabel="Send options" style={{ minWidth: "200px" }}>
+                    {onSendSilently != null || onSubmitWithOptions != null ? <SandMenuItem index={0} onSelect={triggerSilentSend}>Send Without Sound</SandMenuItem> : null}
+                    {onScheduleSend != null || onSubmitWithOptions != null ? <SandMenuItem index={1} onSelect={() => {
+                      setSendMenuOpen(false);
+                      setScheduleError(null);
+                      setScheduleValue(formatDefaultScheduleValue());
+                      setScheduleOpen(true);
+                    }}>Schedule Message</SandMenuItem> : null}
+                  </SandMenuContent>
                 </SandMenuRoot> : null}
               </> : <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_EMPTY_CLASS} disabled={disabled} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" />}
             </>}

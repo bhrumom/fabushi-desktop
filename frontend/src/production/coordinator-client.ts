@@ -126,6 +126,8 @@ export interface ProductionCoordinatorClient {
   dispose(): void;
 }
 
+export type CoordinatorClient = ProductionCoordinatorClient;
+
 let sharedCoordinatorClient: ProductionCoordinatorClient | null = null;
 
 export function setSharedCoordinatorClient(client: ProductionCoordinatorClient | null): void {
