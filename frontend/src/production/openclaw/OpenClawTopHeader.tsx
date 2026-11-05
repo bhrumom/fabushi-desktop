@@ -286,84 +286,182 @@ export function OpenClawTopHeader({
         </span>
 
         {/* Genuine Conversation Title, Peer Kind & Presence Subtitle */}
-        <div
-          className="oc-top-header__identity sand-chat-header__identity"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            minWidth: 0,
-            marginLeft: 4,
-          }}
-        >
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-            <span
-              className="oc-top-header__title"
-              id="sand-conversation-heading"
-              style={{
-                color: "var(--fabushi-text-primary, var(--oc-text-primary))",
-                fontWeight: 600,
-                fontSize: 14,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {title}
-            </span>
-            <small
-              data-testid="fabushi-header-peer-kind"
-              style={{
-                fontSize: 10,
-                fontWeight: 600,
-                padding: "1px 6px",
-                borderRadius: 6,
-                background: "var(--fabushi-card-hover, rgba(128, 128, 128, 0.12))",
-                color: "var(--fabushi-text-secondary, var(--oc-text-secondary))",
-                flexShrink: 0,
-              }}
-            >
-              {peerKindBadgeLabel(resolvedPeerKind)}
-            </small>
-            {topicTitle && (
+        {onOpenSettings ? (
+          <button
+            aria-controls="sand-conversation-details"
+            aria-expanded={resolvedInspectorOpen}
+            aria-label="View agent settings"
+            className="oc-top-header__identity sand-chat-header__identity"
+            data-info-row="settings"
+            onClick={onOpenSettings}
+            type="button"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              minWidth: 0,
+              marginLeft: 4,
+              background: "none",
+              border: "none",
+              padding: 0,
+              textAlign: "left",
+              cursor: "pointer",
+            }}
+          >
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, minWidth: 0 }}>
               <span
-                data-testid="fabushi-header-topic-pill"
+                className="oc-top-header__title"
+                id="sand-conversation-heading"
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 2,
-                  fontSize: 11,
-                  color: "var(--fabushi-accent-primary, #1084fe)",
-                  fontWeight: 500,
+                  color: "var(--fabushi-text-primary, var(--oc-text-primary))",
+                  fontWeight: 600,
+                  fontSize: 14,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
                 }}
               >
-                <Hash size={11} />
-                <span>{topicTitle}</span>
+                {title}
+              </span>
+              {agent?.isRunning && (
+                <small style={{ fontSize: 10, fontWeight: 600 }}>Working</small>
+              )}
+              <small
+                data-testid="fabushi-header-peer-kind"
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  padding: "1px 6px",
+                  borderRadius: 6,
+                  background: "var(--fabushi-card-hover, rgba(128, 128, 128, 0.12))",
+                  color: "var(--fabushi-text-secondary, var(--oc-text-secondary))",
+                  flexShrink: 0,
+                }}
+              >
+                {peerKindBadgeLabel(resolvedPeerKind)}
+              </small>
+              {topicTitle && (
+                <span
+                  data-testid="fabushi-header-topic-pill"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 2,
+                    fontSize: 11,
+                    color: "var(--fabushi-accent-primary, #1084fe)",
+                    fontWeight: 500,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <Hash size={11} />
+                  <span>{topicTitle}</span>
+                </span>
+              )}
+            </div>
+
+            {statusSubtitle && (
+              <span
+                className="fabushi-header-subtitle"
+                data-testid="fabushi-header-status-subtitle"
+                aria-live="polite"
+                style={{
+                  fontSize: 11,
+                  lineHeight: "14px",
+                  color: "var(--fabushi-text-secondary, var(--oc-text-secondary))",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {statusSubtitle}
+              </span>
+            )}
+          </button>
+        ) : (
+          <div
+            className="oc-top-header__identity sand-chat-header__identity"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              minWidth: 0,
+              marginLeft: 4,
+            }}
+          >
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+              <span
+                className="oc-top-header__title"
+                id="sand-conversation-heading"
+                style={{
+                  color: "var(--fabushi-text-primary, var(--oc-text-primary))",
+                  fontWeight: 600,
+                  fontSize: 14,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {title}
+              </span>
+              {agent?.isRunning && (
+                <small style={{ fontSize: 10, fontWeight: 600 }}>Working</small>
+              )}
+              <small
+                data-testid="fabushi-header-peer-kind"
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  padding: "1px 6px",
+                  borderRadius: 6,
+                  background: "var(--fabushi-card-hover, rgba(128, 128, 128, 0.12))",
+                  color: "var(--fabushi-text-secondary, var(--oc-text-secondary))",
+                  flexShrink: 0,
+                }}
+              >
+                {peerKindBadgeLabel(resolvedPeerKind)}
+              </small>
+              {topicTitle && (
+                <span
+                  data-testid="fabushi-header-topic-pill"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 2,
+                    fontSize: 11,
+                    color: "var(--fabushi-accent-primary, #1084fe)",
+                    fontWeight: 500,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <Hash size={11} />
+                  <span>{topicTitle}</span>
+                </span>
+              )}
+            </div>
+
+            {statusSubtitle && (
+              <span
+                className="fabushi-header-subtitle"
+                data-testid="fabushi-header-status-subtitle"
+                aria-live="polite"
+                style={{
+                  fontSize: 11,
+                  lineHeight: "14px",
+                  color: "var(--fabushi-text-secondary, var(--oc-text-secondary))",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {statusSubtitle}
               </span>
             )}
           </div>
-
-          {statusSubtitle && (
-            <span
-              className="fabushi-header-subtitle"
-              data-testid="fabushi-header-status-subtitle"
-              aria-live="polite"
-              style={{
-                fontSize: 11,
-                lineHeight: "14px",
-                color: "var(--fabushi-text-secondary, var(--oc-text-secondary))",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {statusSubtitle}
-            </span>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Center Context Indicator: Pinned Banner Quick Pill */}

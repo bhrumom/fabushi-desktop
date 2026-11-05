@@ -106,7 +106,7 @@ import { useResponsiveLayout } from "./layout/useResponsiveLayout";
 import { createSharedRoomProvider } from "../recovered/features/agent-info/shared-room/controller";
 import { projectSharedRoomAgent, type SharedRoomAgent, type SharedRoomContext, type SharedRoomSnapshot } from "../recovered/features/agent-info/shared-room/model";
 import { SharedRoomDialog } from "../recovered/features/agent-info/shared-room/view";
-import type { SharedRoomHeaderTriggerProps } from "../recovered/features/agent-info/shared-room/trigger";
+import { SharedRoomHeaderTrigger, type SharedRoomHeaderTriggerProps } from "../recovered/features/agent-info/shared-room/trigger";
 import { createAgentInfoChannelsController } from "../recovered/features/agent-info/channels/model";
 import { mountAgentInfoChannels } from "../recovered/features/agent-info/channels/view";
 import { useComputerExperience } from "../recovered/features/computer/shell/controller";
@@ -4257,7 +4257,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                   client={client}
                   style={bridge != null && !windowFullscreen ? { paddingTop: "38px" } : undefined}
                 />
-                <ConversationSidebar activeAgentId={activeAgentId} agents={folderFilteredAgents} isHostReachable={transport === "connected"} sections={projectedSidebarSections} sidebarLayout={renderedSidebarLayout} onResize={resizeSidebar} onResizeEnd={finishSidebarResize} onToggleSectionCollapsed={(sectionId, collapsed) => sidebarCollapseStore.setSectionCollapsed(sectionId, collapsed)} listStatus={rosterListStatus} pinnedAgentIds={pinnedAgentIds} selectedAgentIds={selectedSidebarAgentIds} onToggleAgentSelection={toggleSidebarAgentSelection} onRangeSelectAgent={rangeSelectSidebarAgent} onClearAgentSelection={clearSidebarAgentSelection} onMoveSelectedAgentsToSection={moveSelectedSidebarAgentsToSection} onMoveSelectedAgentsToNewSection={moveSelectedSidebarAgentsToNewSection} onCopyAgentId={copyAgentId} onDuplicateAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void duplicateAgent(agentId); }} onHideAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void hideAgent(agentId); }} onNewChat={() => setIsCreateConvModalOpen(true)} onOpenAgent={(agentId) => void openAgent(agentId)} onOpenNetwork={agentNetworkTrigger} onOpenProfile={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) sidebarProfileAction.onSelect(agentId); }} onShowAsyncTasks={account?.kind === "logged-in" && account.isAnysphereUser === true ? (agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openAsyncTasks(agentId); } : undefined} onShowFullConversation={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openConversationOutline(agentId); }} onOpenSearch={sidebarSearchTrigger} onRenameAgent={(agentId, name) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void renameAgent(agentId, name); }} onReorderPinnedAgents={reorderPinnedAgents} onRequestDeleteAgent={(agent) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agent.id)) setDeleteAgent({ id: agent.id, name: agent.name, isGroup: agent.isGroup }); }} onRenameSection={renameSection} onRequestDeleteSection={requestDeleteSection} onMoveSection={moveSection} onMoveAgentToSection={moveAgentsToSection} onMoveAgentToNewSection={moveAgentsToNewSection} onSetAgentUnread={(agentId, isUnread) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void setAgentUnread(agentId, isUnread); }} onTogglePin={(agentId, isPinned) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) toggleAgentPin(agentId, isPinned); }} />
+                <ConversationSidebar activeAgentId={activeAgentId} agents={folderFilteredAgents} isHostReachable={transport === "connected"} sections={projectedSidebarSections} sidebarLayout={renderedSidebarLayout} onResize={resizeSidebar} onResizeEnd={finishSidebarResize} onToggleSectionCollapsed={(sectionId, collapsed) => sidebarCollapseStore.setSectionCollapsed(sectionId, collapsed)} listStatus={rosterListStatus} pinnedAgentIds={pinnedAgentIds} selectedAgentIds={selectedSidebarAgentIds} onToggleAgentSelection={toggleSidebarAgentSelection} onRangeSelectAgent={rangeSelectSidebarAgent} onClearAgentSelection={clearSidebarAgentSelection} onMoveSelectedAgentsToSection={moveSelectedSidebarAgentsToSection} onMoveSelectedAgentsToNewSection={moveSelectedSidebarAgentsToNewSection} onCopyAgentId={copyAgentId} onDuplicateAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void duplicateAgent(agentId); }} onHideAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void hideAgent(agentId); }} onNewChat={openNewAgentDialog} onOpenAgent={(agentId) => void openAgent(agentId)} onOpenNetwork={agentNetworkTrigger} onOpenProfile={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) sidebarProfileAction.onSelect(agentId); }} onShowAsyncTasks={account?.kind === "logged-in" && account.isAnysphereUser === true ? (agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openAsyncTasks(agentId); } : undefined} onShowFullConversation={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openConversationOutline(agentId); }} onOpenSearch={sidebarSearchTrigger} onRenameAgent={(agentId, name) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void renameAgent(agentId, name); }} onReorderPinnedAgents={reorderPinnedAgents} onRequestDeleteAgent={(agent) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agent.id)) setDeleteAgent({ id: agent.id, name: agent.name, isGroup: agent.isGroup }); }} onRenameSection={renameSection} onRequestDeleteSection={requestDeleteSection} onMoveSection={moveSection} onMoveAgentToSection={moveAgentsToSection} onMoveAgentToNewSection={moveAgentsToNewSection} onSetAgentUnread={(agentId, isUnread) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void setAgentUnread(agentId, isUnread); }} onTogglePin={(agentId, isPinned) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) toggleAgentPin(agentId, isPinned); }} />
               </div>
           {hiddenAgents.length > 0 && visibleAgents.length > 0 ? <SandButton aria-haspopup="dialog" onClick={() => setOverlay("hidden-chats")} size="sm" variant="secondary"><span>{UI_TEXT.hiddenBots}</span><SandBadge aria-label={`${hiddenAgents.length} hidden bots`}>{hiddenAgents.length}</SandBadge></SandButton> : null}
           {/* @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=2602084 (s0n Plugins footer button/icon/text composition) */}
@@ -4307,7 +4307,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                 void navigator.clipboard.writeText(activeShareUrl);
               }
             } : undefined}
-            onOpenSettings={activeIsHuman || bridge == null ? undefined : () => { setGroupInfoPaneOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setAgentSettingsOpen(true); }}
+            onOpenSettings={activeIsHuman
+              ? undefined
+              : activeAgent.isGroup
+                ? groupInfoPaneRoute == null ? undefined : () => { setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setGroupInfoPaneOpen((open) => !open); }
+                : bridge == null ? undefined : () => { setGroupInfoPaneOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setAgentSettingsOpen(true); }}
             trailingExtras={activeIsHuman ? (
               <div style={{ alignItems: "center", display: "flex", gap: 8 }}>
                 <TdrpCallAndAdminDrawer activeAgent={activeAgent} accountScopeGeneration={renderedAccountScopeGeneration} client={client} inlineActionsOnly />
@@ -4317,7 +4321,27 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                 </select>
                 <SandButton disabled={busy || humanHandoffAgentId.length === 0} onClick={() => void handoffHumanConversationToAgent()} size="sm" variant="secondary">Ask Agent</SandButton>
               </div>
-            ) : undefined}
+            ) : (
+              <div style={{ alignItems: "center", display: "flex", gap: 6 }}>
+                {sharedRoomTrigger == null ? null : <SharedRoomHeaderTrigger {...sharedRoomTrigger} />}
+                {activeAgent.isGroup ? null : <ComputerHeaderControl active={computer.isComputerUseActive} isInfoOpen={computerInfoOpen} onToggle={() => { setGroupInfoPaneOpen(false); setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setManageSharedRoomId(null); setComputerInfoOpen((open) => !open); }} />}
+                {activeAgent.isRunning && client != null ? <SandButton aria-label="Stop response" onClick={() => {
+                  void client.call("interruptAgent", { id: activeAgent.id }).then((result) => {
+                    const interrupted = typeof result === "object"
+                      && result !== null
+                      && "interrupted" in result
+                      && result.interrupted === true;
+                    if (!interrupted) return;
+                    setAgents((current) => current.map((agent) => agent.id === activeAgent.id
+                      ? { ...agent, isRunning: false }
+                      : agent));
+                  }).catch((error: unknown) => {
+                    setNotice(error instanceof Error ? error.message : String(error));
+                  });
+                }} size="sm" variant="secondary">Stop</SandButton> : null}
+                {activeAgent.isGroup || bridge == null || agentChannelsController == null ? null : <SandButton aria-controls="sand-conversation-details" aria-expanded={channelsInfoPaneOpen} aria-label="Channels" data-info-row="channels" onClick={() => { setGroupInfoPaneOpen(false); setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setChannelsInfoPaneOpen((open) => !open); }} size="sm" variant="secondary"><SandIcon name="chat-bubbles" size="sm" />Channels</SandButton>}
+              </div>
+            )}
           />
           <TdrpCallAndAdminDrawer activeAgent={activeAgent} accountScopeGeneration={renderedAccountScopeGeneration} client={client} bannerOnly />
           {findInChatOpen ? <FindInChatBar controller={findInChatController} focusNonce={findInChatFocusNonce} onClose={closeFindInChat} transcriptContainer={findTranscriptContainer} transcriptHandleRef={transcriptHandleRef} /> : null}
@@ -4332,46 +4356,51 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           />
           {showTranscriptLoadError
             ? <TranscriptLoadErrorSurface onRetry={() => void openAgent(activeAgent.id)} />
-            : displayedEntries.length === 0 && !activeIsHuman
-              ? <OpenClawWelcomeHero assistantName={activeAgent.name} agent={activeAgent} onSelectPrompt={(text) => { void submitDirectPayload(text); }} onDirectSubmitPrompt={(text) => { void submitDirectPayload(text); }} />
-              : <ConversationTranscript
-                key={JSON.stringify([renderedAccountScopeGeneration, transcriptAccountSlot, activeAgentId, ...(activeTopicId != null ? [activeTopicId] : [])])}
-                entries={displayedEntries}
-                hasOlder={transcriptPaginationSnapshot.cursor.kind === "more"}
-                isLoadingOlder={transcriptPaginationSnapshot.isLoadingOlder}
-                olderLoadFailed={transcriptPaginationSnapshot.agentId === activeAgentId && transcriptPaginationSnapshot.accountSlot === transcriptAccountSlot && transcriptPaginationSnapshot.olderFailure != null}
-                onViewportChanged={bindTranscriptViewport}
-                isAgentRunning={activeIsHuman ? false : activeAgent.isRunning}
-                isTransportDown={transport === "down"}
-                loadOlder={loadOlderTranscript}
-                onCancelQueuedSend={cancelQueuedSend}
-                onDeleteFailedSend={removeTranscriptMessage}
-                onOpenReply={(targetId) => replyThreadController.navigate(targetId)}
-                onForward={(entry) => {
-                  const accountScopeGeneration = renderedAccountScopeGeneration;
-                  if (isForwardAccountScopeCurrent(accountScopeGeneration)) {
-                    setForwardTarget({ sourceConversationId: activeAgent.id, message: entry, accountScopeGeneration });
-                  }
-                }}
-                onReply={(entry) => { selectComposerReply(entry.id); }}
-                onStartThread={activeIsHuman ? undefined : (entry) => { replyThreadController.navigate(entry.id); }}
-                onResendFailedSend={(entry) => void resendFailedSend(entry)}
-                renderMessageReactionActions={renderReactionActions}
-                renderComputerHandoff={activeIsHuman ? undefined : (entry) => renderComputerHandoffEntry(entry, computer)}
-                renderMessageReactionPills={renderReactionPills}
-                resolveAttachmentMedia={resolveAttachmentMedia}
-                readAttachmentBytes={(path, maxBytes) => bridge.readAttachmentBytes(path, maxBytes)}
-                downloadAttachment={(path, suggestedName) => bridge.downloadAttachment(path, suggestedName)}
-                resolveReplyPreview={(targetId) => {
-                  const resolution = replyThreadController.resolve(targetId);
-                  return resolution.status === "resolved" ? resolution.preview : null;
-                }}
-                isReplyTargetInScope={(targetId) => replyThreadController.resolve(targetId).isInScope}
-                onOpenAutomation={activeIsHuman ? undefined : openTimelineAutomation}
-                resolveTranscriptCardInteractions={activeIsHuman ? undefined : transcriptCardInteractions}
-                transcriptCards={transcriptCardContract}
-                transcriptHandleRef={transcriptHandleRef}
-              />}
+            : <div style={{ position: "relative", display: "flex", flexDirection: "column", flex: "1 1 0", minHeight: 0, minWidth: 0 }}>
+                {displayedEntries.length === 0 && !activeIsHuman ? (
+                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1, pointerEvents: "auto", overflow: "auto" }}>
+                    <OpenClawWelcomeHero assistantName={activeAgent.name} agent={activeAgent} onSelectPrompt={(text) => { void submitDirectPayload(text); }} onDirectSubmitPrompt={(text) => { void submitDirectPayload(text); }} />
+                  </div>
+                ) : null}
+                <ConversationTranscript
+                  key={JSON.stringify([renderedAccountScopeGeneration, transcriptAccountSlot, activeAgentId, ...(activeTopicId != null ? [activeTopicId] : [])])}
+                  entries={displayedEntries}
+                  hasOlder={transcriptPaginationSnapshot.cursor.kind === "more"}
+                  isLoadingOlder={transcriptPaginationSnapshot.isLoadingOlder}
+                  olderLoadFailed={transcriptPaginationSnapshot.agentId === activeAgentId && transcriptPaginationSnapshot.accountSlot === transcriptAccountSlot && transcriptPaginationSnapshot.olderFailure != null}
+                  onViewportChanged={bindTranscriptViewport}
+                  isAgentRunning={activeIsHuman ? false : activeAgent.isRunning}
+                  isTransportDown={transport === "down"}
+                  loadOlder={loadOlderTranscript}
+                  onCancelQueuedSend={cancelQueuedSend}
+                  onDeleteFailedSend={removeTranscriptMessage}
+                  onOpenReply={(targetId) => replyThreadController.navigate(targetId)}
+                  onForward={(entry) => {
+                    const accountScopeGeneration = renderedAccountScopeGeneration;
+                    if (isForwardAccountScopeCurrent(accountScopeGeneration)) {
+                      setForwardTarget({ sourceConversationId: activeAgent.id, message: entry, accountScopeGeneration });
+                    }
+                  }}
+                  onReply={(entry) => { selectComposerReply(entry.id); }}
+                  onStartThread={activeIsHuman ? undefined : (entry) => { replyThreadController.navigate(entry.id); }}
+                  onResendFailedSend={(entry) => void resendFailedSend(entry)}
+                  renderMessageReactionActions={renderReactionActions}
+                  renderComputerHandoff={activeIsHuman ? undefined : (entry) => renderComputerHandoffEntry(entry, computer)}
+                  renderMessageReactionPills={renderReactionPills}
+                  resolveAttachmentMedia={resolveAttachmentMedia}
+                  readAttachmentBytes={(path, maxBytes) => bridge.readAttachmentBytes(path, maxBytes)}
+                  downloadAttachment={(path, suggestedName) => bridge.downloadAttachment(path, suggestedName)}
+                  resolveReplyPreview={(targetId) => {
+                    const resolution = replyThreadController.resolve(targetId);
+                    return resolution.status === "resolved" ? resolution.preview : null;
+                  }}
+                  isReplyTargetInScope={(targetId) => replyThreadController.resolve(targetId).isInScope}
+                  onOpenAutomation={activeIsHuman ? undefined : openTimelineAutomation}
+                  resolveTranscriptCardInteractions={activeIsHuman ? undefined : transcriptCardInteractions}
+                  transcriptCards={transcriptCardContract}
+                  transcriptHandleRef={transcriptHandleRef}
+                />
+              </div>}
           </main>
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}

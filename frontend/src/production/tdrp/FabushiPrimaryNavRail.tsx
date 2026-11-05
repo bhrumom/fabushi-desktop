@@ -56,6 +56,7 @@ export interface FabushiPrimaryNavRailProps {
 interface NavItemDef {
   readonly id: FabushiPrimaryNavDomain;
   readonly label: string;
+  readonly ariaLabel?: string;
   readonly shortcutHint: string;
   readonly icon: React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>;
   readonly badge?: number;
@@ -116,6 +117,7 @@ export const FabushiPrimaryNavRail: React.FC<FabushiPrimaryNavRailProps> = ({
     {
       id: "marketplace",
       label: "插件市场",
+      ariaLabel: "Plugins",
       shortcutHint: "⌘7",
       icon: ShoppingBag,
     },
@@ -212,7 +214,7 @@ export const FabushiPrimaryNavRail: React.FC<FabushiPrimaryNavRailProps> = ({
         data-nav-domain={item.id}
         data-testid={`fabushi-nav-${item.id}`}
         title={`${item.label} (${item.shortcutHint})`}
-        aria-label={item.label}
+        aria-label={item.ariaLabel ?? item.label}
         aria-current={isActive ? "page" : undefined}
         tabIndex={isRovingFocusTarget ? 0 : -1}
         onFocus={() => setFocusedDomain(item.id)}

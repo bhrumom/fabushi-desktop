@@ -365,7 +365,7 @@ button, textarea, input { font: inherit; }
   app-region: drag;
 }
 
-.sand-chat-header :is(button, a, input, [role="button"]) {
+.sand-chat-header :is(button, a, input, select, [role="button"]) {
   position: relative;
   z-index: 5001;
   pointer-events: auto;
