@@ -16,6 +16,11 @@ export interface TdrpPollData {
   isClosed: boolean;
   totalVoters: number;
   kind: TdrpPollKind;
+  publicVotes?: boolean;
+  shuffleAnswers?: boolean;
+  revotingDisabled?: boolean;
+  closePeriodSecs?: number;
+  closeDateMs?: number;
   selectedOptionIds?: number[];
 }
 
@@ -23,13 +28,32 @@ export interface TdrpTodoItem {
   itemId: string;
   text: string;
   completed: boolean;
+  completedBy?: string;
+  completionDateMs?: number;
+  assigneeId?: string;
+  dueDateMs?: number;
 }
 
 export interface TdrpTodoData {
   type: "tdrp-todo";
   listId: string;
   title: string;
+  othersCanAppend?: boolean;
+  othersCanComplete?: boolean;
   items: TdrpTodoItem[];
+}
+
+export interface TdrpLabeledPrice {
+  label: string;
+  amountCents: number;
+}
+
+export interface TdrpPaymentReceipt {
+  receiptId: string;
+  paidAtMs: number;
+  totalAmountCents: number;
+  currency: string;
+  providerName: string;
 }
 
 export interface TdrpInvoiceData {
@@ -41,6 +65,15 @@ export interface TdrpInvoiceData {
   totalAmountCents: number;
   isPaid: boolean;
   chargeId?: string;
+  prices?: TdrpLabeledPrice[];
+  suggestedTipAmounts?: number[];
+  maxTipAmount?: number;
+  isRecurring?: boolean;
+  needName?: boolean;
+  needPhone?: boolean;
+  needEmail?: boolean;
+  needShippingAddress?: boolean;
+  receipt?: TdrpPaymentReceipt;
 }
 
 export type TdrpInteractivePayload = TdrpPollData | TdrpTodoData | TdrpInvoiceData;
@@ -80,6 +113,11 @@ export function parseTdrpInteractivePayload(text: string): TdrpInteractivePayloa
           isClosed: Boolean(parsed.isClosed),
           totalVoters: Number(parsed.totalVoters || 0),
           kind: (parsed.kind as TdrpPollKind) || { type: "Regular", multiple_answers: false },
+          publicVotes: parsed.publicVotes !== undefined ? Boolean(parsed.publicVotes) : undefined,
+          shuffleAnswers: parsed.shuffleAnswers !== undefined ? Boolean(parsed.shuffleAnswers) : undefined,
+          revotingDisabled: parsed.revotingDisabled !== undefined ? Boolean(parsed.revotingDisabled) : undefined,
+          closePeriodSecs: typeof parsed.closePeriodSecs === "number" ? parsed.closePeriodSecs : undefined,
+          closeDateMs: typeof parsed.closeDateMs === "number" ? parsed.closeDateMs : undefined,
           selectedOptionIds: Array.isArray(parsed.selectedOptionIds) ? (parsed.selectedOptionIds as number[]) : [],
         };
       }
@@ -88,10 +126,16 @@ export function parseTdrpInteractivePayload(text: string): TdrpInteractivePayloa
           type: "tdrp-todo",
           listId: String(parsed.listId || ""),
           title: String(parsed.title || ""),
+          othersCanAppend: parsed.othersCanAppend !== undefined ? Boolean(parsed.othersCanAppend) : true,
+          othersCanComplete: parsed.othersCanComplete !== undefined ? Boolean(parsed.othersCanComplete) : true,
           items: (parsed.items as TdrpTodoItem[]).map((it, idx) => ({
             itemId: String(it.itemId || `item_${idx}`),
             text: String(it.text || ""),
             completed: Boolean(it.completed),
+            completedBy: it.completedBy ? String(it.completedBy) : undefined,
+            completionDateMs: typeof it.completionDateMs === "number" ? it.completionDateMs : undefined,
+            assigneeId: it.assigneeId ? String(it.assigneeId) : undefined,
+            dueDateMs: typeof it.dueDateMs === "number" ? it.dueDateMs : undefined,
           })),
         };
       }
@@ -105,6 +149,11 @@ export function parseTdrpInteractivePayload(text: string): TdrpInteractivePayloa
           totalAmountCents: Number(parsed.totalAmountCents || 0),
           isPaid: Boolean(parsed.isPaid),
           chargeId: parsed.chargeId ? String(parsed.chargeId) : undefined,
+          prices: Array.isArray(parsed.prices) ? (parsed.prices as TdrpLabeledPrice[]) : undefined,
+          suggestedTipAmounts: Array.isArray(parsed.suggestedTipAmounts) ? (parsed.suggestedTipAmounts as number[]) : undefined,
+          maxTipAmount: typeof parsed.maxTipAmount === "number" ? parsed.maxTipAmount : undefined,
+          isRecurring: parsed.isRecurring !== undefined ? Boolean(parsed.isRecurring) : undefined,
+          receipt: parsed.receipt ? (parsed.receipt as TdrpPaymentReceipt) : undefined,
         };
       }
     } catch {
