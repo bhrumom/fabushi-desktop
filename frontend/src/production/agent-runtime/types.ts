@@ -1,91 +1,84 @@
+import type { ProductionCoordinatorClient } from "../coordinator-client";
+
 export type RuntimeDetailSectionId = "runtime" | "security" | "channels" | "nodes";
 
-export type ChannelId =
-  | "telegram"
-  | "discord"
-  | "slack"
-  | "whatsapp"
-  | "feishu"
-  | "matrix"
-  | "signal"
-  | "line"
-  | "msteams"
-  | "googlechat"
-  | "mattermost"
-  | "irc"
-  | "twitch"
-  | "nostr"
-  | "zalo"
-  | "bluebubbles"
-  | "nextcloudtalk"
-  | "synologychat";
+export type ThinkingLevel = "inherit" | "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+export type VerboseLevel = "inherit" | "off" | "on" | "full";
+export type ReasoningLevel = "inherit" | "off" | "on" | "stream";
+export type ElevatedLevel = "inherit" | "off" | "on" | "ask" | "full";
 
-export type ChannelStatus = "connected" | "disconnected" | "connecting" | "error";
-export type DmPolicy = "open" | "allowlist" | "pairing";
-export type GroupPolicy = "open" | "allowlist" | "disabled";
+export type ExecSecurity = "deny" | "allowlist" | "full";
+export type ExecAsk = "off" | "on-miss" | "always";
+export type ExecMode = "deny" | "allowlist" | "ask" | "auto" | "full";
 
-export interface ChannelItem {
-  readonly id: ChannelId;
+export interface ExecAllowlistEntry {
+  readonly id: string;
+  readonly pattern: string;
+  readonly description?: string;
+  readonly lastUsedAt?: number;
+}
+
+export interface ExecApprovalsFile {
+  readonly version: 1;
+  readonly defaults?: {
+    readonly security?: ExecSecurity;
+    readonly ask?: ExecAsk;
+    readonly askFallback?: "deny" | "allowlist";
+    readonly autoAllowSkills?: boolean;
+  };
+  readonly allowlist?: readonly ExecAllowlistEntry[];
+}
+
+export interface ChannelStatusSummary {
+  readonly id: string;
   readonly name: string;
   readonly protocol: string;
-  readonly status: ChannelStatus;
-  readonly dmPolicy: DmPolicy;
-  readonly groupPolicy: GroupPolicy;
+  readonly configured: boolean;
+  readonly running: boolean;
+  readonly connected: boolean;
+  readonly lastError?: string | null;
+  readonly dmPolicy: "open" | "allowlist" | "pairing";
+  readonly groupPolicy: "open" | "allowlist" | "disabled";
   readonly activeChatsCount: number;
-  readonly webhookUrl?: string;
-  readonly tokenMasked?: string;
 }
 
-export interface NodeHostCapability {
-  readonly id: "system.run" | "browser.proxy" | "canvas";
+export interface NodeDescription {
+  readonly nodeId: string;
   readonly name: string;
-  readonly description: string;
-  readonly enabled: boolean;
-  readonly activeExecutions: number;
+  readonly platform: string;
+  readonly connected: boolean;
+  readonly capabilities: readonly string[];
+  readonly activeLeases: number;
 }
 
-export interface NodeHostLease {
-  readonly id: string;
-  readonly clientId: string;
-  readonly capability: string;
-  readonly grantedAt: string;
-  readonly ttlRemainingSeconds: number;
-}
-
-export interface DevicePairingEntry {
+export interface DevicePairingRequest {
   readonly id: string;
   readonly deviceName: string;
-  readonly platform: "ios" | "android" | "macos" | "linux" | "windows" | "web";
+  readonly platform: string;
   readonly requestedAt: string;
-  readonly status: "approved" | "pending" | "rejected";
+  readonly status: "pending" | "approved" | "rejected";
 }
 
-export interface SecurityPolicyState {
-  readonly shellAllowlist: boolean;
-  readonly ssrfProtection: boolean;
-  readonly commandObfuscationDetector: boolean;
-  readonly skillSourceScanner: boolean;
-  readonly viralTaintStatus: "clean" | "monitored" | "tainted" | "quarantined";
-  readonly taintTurnsCount: number;
-  readonly quarantinedPayloads: number;
-}
-
-export interface MultimodalVoiceState {
-  readonly audioTranscriptionEngine: string;
-  readonly imageDocInspectionEngine: string;
-  readonly videoAnalysisEngine: string;
-  readonly talkVoiceEngine: string;
-  readonly talkSpeedRate: number;
-  readonly talkPitch: number;
-}
-
-export interface SessionRuntimeStats {
+export interface SessionUsageSnapshot {
   readonly sessionId: string;
-  readonly modelName: string;
-  readonly provider: string;
-  readonly usedTokens: number;
-  readonly maxTokens: number;
-  readonly subagentQueueCount: number;
-  readonly branchesCount: number;
-  readonly memorySnippetsCount: number;
+  readonly key: string;
+  readonly model: string;
+  readonly modelProvider: string;
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+  readonly totalTokens: number;
+  readonly contextTokens: number;
+  readonly maxContextTokens: number;
+  readonly thinkingLevel: ThinkingLevel;
+  readonly verboseLevel: VerboseLevel;
+  readonly reasoningLevel: ReasoningLevel;
+  readonly elevatedLevel: ElevatedLevel;
+  readonly childSessions: readonly string[];
+  readonly subagentRole?: "orchestrator" | "leaf";
+  readonly spawnDepth?: number;
+}
+
+export interface AgentRuntimeBridgeProps {
+  readonly agentId: string;
+  readonly client: ProductionCoordinatorClient | null;
 }

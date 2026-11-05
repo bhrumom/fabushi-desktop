@@ -1,32 +1,32 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SandButton, SandIcon } from "../../recovered/ui/sand-kit-primitives";
-import type { SecurityPolicyState } from "./types";
+import type { ProductionCoordinatorClient } from "../coordinator-client";
+import type { ExecAllowlistEntry, ExecApprovalsFile, ExecAsk, ExecSecurity } from "./types";
 
 interface SecurityPolicySectionProps {
   readonly agentId: string;
+  readonly client?: ProductionCoordinatorClient | null;
 }
 
-const INITIAL_SECURITY_STATE: SecurityPolicyState = {
-  shellAllowlist: true,
-  ssrfProtection: true,
-  commandObfuscationDetector: true,
-  skillSourceScanner: true,
-  viralTaintStatus: "clean",
-  taintTurnsCount: 0,
-  quarantinedPayloads: 0,
+const DEFAULT_APPROVALS_FILE: ExecApprovalsFile = {
+  version: 1,
+  defaults: {
+    security: "allowlist",
+    ask: "on-miss",
+    askFallback: "deny",
+    autoAllowSkills: true,
+  },
+  allowlist: [
+    { id: "al-1", pattern: "git status", description: "版本控制状态只读检查" },
+    { id: "al-2", pattern: "cargo check", description: "代码库语法与类型编译" },
+    { id: "al-3", pattern: "npm test", description: "本地自动化测试验证" },
+  ],
 };
 
-export function SecurityPolicySection({ agentId: _agentId }: SecurityPolicySectionProps) {
-  const [securityState, setSecurityState] = useState<SecurityPolicyState>(() => {
-    try {
-      const saved = localStorage.getItem("sand_agent_security_policy");
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // fallback
-    }
-    return INITIAL_SECURITY_STATE;
-  });
-
+export function SecurityPolicySection({ agentId: _agentId, client }: SecurityPolicySectionProps) {
+  const [approvals, setApprovals] = useState<ExecApprovalsFile>(DEFAULT_APPROVALS_FILE);
+  const [baseHash, setBaseHash] = useState<string | undefined>(undefined);
+  const [taintStatus, setTaintStatus] = useState<"clean" | "monitored" | "tainted">("clean");
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -34,46 +34,67 @@ export function SecurityPolicySection({ agentId: _agentId }: SecurityPolicySecti
     setTimeout(() => setToast(null), 3000);
   };
 
-  const toggleGate = (key: keyof Pick<SecurityPolicyState, "shellAllowlist" | "ssrfProtection" | "commandObfuscationDetector" | "skillSourceScanner">) => {
-    setSecurityState((prev) => {
-      const updated = { ...prev, [key]: !prev[key] };
+  useEffect(() => {
+    let active = true;
+    async function loadExecApprovals() {
+      if (!client) return;
       try {
-        localStorage.setItem("sand_agent_security_policy", JSON.stringify(updated));
+        const res = (await client.call("exec.approvals.get", {})) as { file?: ExecApprovalsFile; hash?: string } | null;
+        if (!active || !res || !res.file) return;
+        setApprovals(res.file);
+        setBaseHash(res.hash);
+      } catch {
+        // Fallback to defaults
+      }
+    }
+    void loadExecApprovals();
+    return () => {
+      active = false;
+    };
+  }, [client]);
+
+  const updateDefaults = async (patch: Partial<NonNullable<ExecApprovalsFile["defaults"]>>) => {
+    const updated: ExecApprovalsFile = {
+      ...approvals,
+      defaults: {
+        ...approvals.defaults,
+        ...patch,
+      },
+    };
+    setApprovals(updated);
+    if (client) {
+      try {
+        await client.call("exec.approvals.set", { file: updated, baseHash });
+        showToast("网关执行安全策略已更新 (exec.approvals.set)");
+      } catch (err) {
+        showToast(`策略同步: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    } else {
+      showToast("本地安全策略已更新");
+    }
+  };
+
+  const removeAllowlistEntry = async (id: string) => {
+    const nextList = (approvals.allowlist ?? []).filter((e) => e.id !== id);
+    const updated: ExecApprovalsFile = { ...approvals, allowlist: nextList };
+    setApprovals(updated);
+    if (client) {
+      try {
+        await client.call("exec.approvals.set", { file: updated, baseHash });
+        showToast("已从白名单移除规则");
       } catch {
         // ignore
       }
-      return updated;
-    });
-    showToast(`安全门禁设置已更新`);
+    }
   };
 
-  const handleResetTaint = () => {
-    setSecurityState((prev) => {
-      const updated: SecurityPolicyState = {
-        ...prev,
-        viralTaintStatus: "clean",
-        taintTurnsCount: 0,
-        quarantinedPayloads: 0,
-      };
-      try {
-        localStorage.setItem("sand_agent_security_policy", JSON.stringify(updated));
-      } catch {
-        // ignore
-      }
-      return updated;
-    });
-    showToast("已重置对话污染隔离标记 (Taint Cleared)");
+  const resetTaint = () => {
+    setTaintStatus("clean");
+    showToast("对话污染审计标记已重置 (Taint Cleared)");
   };
-
-  const taintColor =
-    securityState.viralTaintStatus === "clean"
-      ? "#4ade80"
-      : securityState.viralTaintStatus === "monitored"
-      ? "#fbbf24"
-      : "#f87171";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {toast && (
         <div className="sand-agent-action-toast">
           <SandIcon name="shield" size="sm" />
@@ -81,105 +102,126 @@ export function SecurityPolicySection({ agentId: _agentId }: SecurityPolicySecti
         </div>
       )}
 
-      {/* Taint Monitor Card */}
+      {/* Upstream Exec Security Gate (exec.approvals.get / set) */}
       <div className="sand-runtime-card">
         <div className="sand-runtime-card-title">
-          <span>对话污染与安全审计 (Turn Taint Status)</span>
-          <span
-            className="sand-runtime-pill"
-            style={{ background: `${taintColor}20`, color: taintColor, border: `1px solid ${taintColor}40` }}
-          >
-            <span className="sand-session-status-dot" style={{ background: taintColor }} />
-            {securityState.viralTaintStatus === "clean" ? "清洁状态 (Clean)" : "受监控 (Monitored)"}
+          <span>命令执行前置安全策略 (Exec Approvals)</span>
+          <span className="sand-runtime-pill sand-runtime-pill--green">
+            模式: {approvals.defaults?.security ?? "allowlist"}
           </span>
         </div>
-        <p style={{ margin: "0 0 10px", fontSize: 11, color: "var(--cursor-text-secondary, #a1a1aa)" }}>
-          基于 ACP 病毒式提示词注入防护规范。外部渠道不可信输入将被附加污染标识，限制高危工具调用。
+        <p style={{ margin: "0 0 8px", fontSize: 11, color: "var(--cursor-text-secondary, #6b7280)" }}>
+          直接对齐 OpenClaw exec.approvals 协议。控制本地沙箱与命令提示门禁。
         </p>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 11, marginBottom: 10 }}>
+
+        <div className="sand-runtime-switch-row">
           <div>
-            <span style={{ color: "var(--cursor-text-secondary, #a1a1aa)" }}>污染轮次: </span>
-            <span>{securityState.taintTurnsCount}</span>
+            <div style={{ fontWeight: 500, fontSize: 11.5 }}>安全等级 (security)</div>
+            <div style={{ fontSize: 10.5, color: "var(--cursor-text-secondary, #6b7280)" }}>
+              deny: 完全拦截 / allowlist: 白名单拦截 / full: 全部允许
+            </div>
           </div>
-          <div>
-            <span style={{ color: "var(--cursor-text-secondary, #a1a1aa)" }}>已拦截载荷: </span>
-            <span>{securityState.quarantinedPayloads}</span>
-          </div>
+          <select
+            value={approvals.defaults?.security ?? "allowlist"}
+            onChange={(e) => void updateDefaults({ security: e.target.value as ExecSecurity })}
+            style={{ fontSize: 11, padding: "2px 4px", borderRadius: 4 }}
+          >
+            <option value="deny">deny (禁止执行)</option>
+            <option value="allowlist">allowlist (白名单)</option>
+            <option value="full">full (无限制)</option>
+          </select>
         </div>
-        <SandButton onClick={handleResetTaint} size="sm" variant="secondary">
-          <SandIcon name="refresh" size="sm" />
-          重置污染隔离
-        </SandButton>
+
+        <div className="sand-runtime-switch-row">
+          <div>
+            <div style={{ fontWeight: 500, fontSize: 11.5 }}>审批提示策略 (ask)</div>
+            <div style={{ fontSize: 10.5, color: "var(--cursor-text-secondary, #6b7280)" }}>
+              off: 不弹窗 / on-miss: 未匹配白名单时询问 / always: 每次询问
+            </div>
+          </div>
+          <select
+            value={approvals.defaults?.ask ?? "on-miss"}
+            onChange={(e) => void updateDefaults({ ask: e.target.value as ExecAsk })}
+            style={{ fontSize: 11, padding: "2px 4px", borderRadius: 4 }}
+          >
+            <option value="off">off (不提示)</option>
+            <option value="on-miss">on-miss (未命中提示)</option>
+            <option value="always">always (总是提示)</option>
+          </select>
+        </div>
+
+        <div className="sand-runtime-switch-row">
+          <div>
+            <div style={{ fontWeight: 500, fontSize: 11.5 }}>技能脚本自动放行 (autoAllowSkills)</div>
+            <div style={{ fontSize: 10.5, color: "var(--cursor-text-secondary, #6b7280)" }}>
+              允许通过完整性校验的已安装技能命令免审批运行
+            </div>
+          </div>
+          <input
+            type="checkbox"
+            checked={approvals.defaults?.autoAllowSkills ?? true}
+            onChange={(e) => void updateDefaults({ autoAllowSkills: e.target.checked })}
+            style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#3b82f6" }}
+          />
+        </div>
       </div>
 
-      {/* Pre-Execution Security Gates */}
+      {/* Allowlist Patterns List */}
       <div className="sand-runtime-card">
         <div className="sand-runtime-card-title">
-          <span>工具执行前置安全门禁 (Pre-Execution Gate)</span>
+          <span>命令白名单规则库 (Allowlist Patterns)</span>
+          <span style={{ fontSize: 10, color: "var(--cursor-text-secondary, #6b7280)" }}>
+            规则数: {(approvals.allowlist ?? []).length}
+          </span>
         </div>
-        <p style={{ margin: "0 0 10px", fontSize: 11, color: "var(--cursor-text-secondary, #a1a1aa)" }}>
-          由 Rust Host 审计层拦截，严禁未授权命令越权或网络探测。
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {(approvals.allowlist ?? []).map((entry: ExecAllowlistEntry) => (
+            <div
+              key={entry.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "4px 8px",
+                background: "rgba(128,128,128,0.04)",
+                borderRadius: 4,
+                fontSize: 11,
+              }}
+            >
+              <div>
+                <code style={{ fontWeight: 600 }}>{entry.pattern}</code>
+                {entry.description && (
+                  <span style={{ color: "var(--cursor-text-secondary, #6b7280)", marginLeft: 6, fontSize: 10 }}>
+                    ({entry.description})
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => void removeAllowlistEntry(entry.id)}
+                style={{ background: "transparent", border: "none", color: "#f87171", cursor: "pointer", fontSize: 10 }}
+              >
+                移除
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Turn Taint Audit Status */}
+      <div className="sand-runtime-card">
+        <div className="sand-runtime-card-title">
+          <span>对话污染隔离 (Viral Taint Audit)</span>
+          <span className="sand-runtime-pill sand-runtime-pill--green">
+            状态: {taintStatus}
+          </span>
+        </div>
+        <p style={{ margin: "0 0 8px", fontSize: 11, color: "var(--cursor-text-secondary, #6b7280)" }}>
+          外部渠道不可信提示词隔离防护。一旦标记为受污染，高危操作将自动熔断。
         </p>
-
-        <div className="sand-runtime-switch-row">
-          <div>
-            <div style={{ fontWeight: 500, fontSize: 11.5 }}>Shell 命令白名单 (Shell Allowlist)</div>
-            <div style={{ fontSize: 10.5, color: "var(--cursor-text-secondary, #a1a1aa)" }}>
-              仅允许预定义指令，拦截 rm -rf, curl | bash, ssh 遍历等高危行为
-            </div>
-          </div>
-          <input
-            type="checkbox"
-            checked={securityState.shellAllowlist}
-            onChange={() => toggleGate("shellAllowlist")}
-            style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#3b82f6" }}
-          />
-        </div>
-
-        <div className="sand-runtime-switch-row">
-          <div>
-            <div style={{ fontWeight: 500, fontSize: 11.5 }}>SSRF 局域网防护 (SSRF Guard)</div>
-            <div style={{ fontSize: 10.5, color: "var(--cursor-text-secondary, #a1a1aa)" }}>
-              阻止向 127.0.0.1、10.0.0.0/8、192.168.0.0/16 及元数据服务发起请求
-            </div>
-          </div>
-          <input
-            type="checkbox"
-            checked={securityState.ssrfProtection}
-            onChange={() => toggleGate("ssrfProtection")}
-            style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#3b82f6" }}
-          />
-        </div>
-
-        <div className="sand-runtime-switch-row">
-          <div>
-            <div style={{ fontWeight: 500, fontSize: 11.5 }}>指令混淆检测 (Obfuscation Detector)</div>
-            <div style={{ fontSize: 10.5, color: "var(--cursor-text-secondary, #a1a1aa)" }}>
-              识别 Base64、Hex 编码载荷、多语言 Polyglot 绕过尝试
-            </div>
-          </div>
-          <input
-            type="checkbox"
-            checked={securityState.commandObfuscationDetector}
-            onChange={() => toggleGate("commandObfuscationDetector")}
-            style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#3b82f6" }}
-          />
-        </div>
-
-        <div className="sand-runtime-switch-row">
-          <div>
-            <div style={{ fontWeight: 500, fontSize: 11.5 }}>技能源码指纹校验 (Skill Source Scanner)</div>
-            <div style={{ fontSize: 10.5, color: "var(--cursor-text-secondary, #a1a1aa)" }}>
-              验证安装技能的密码学 SHA-256 签名，杜绝动态篡改
-            </div>
-          </div>
-          <input
-            type="checkbox"
-            checked={securityState.skillSourceScanner}
-            onChange={() => toggleGate("skillSourceScanner")}
-            style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#3b82f6" }}
-          />
-        </div>
+        <SandButton onClick={resetTaint} size="sm" variant="secondary">
+          <SandIcon name="refresh" size="sm" />
+          重置污染标记
+        </SandButton>
       </div>
     </div>
   );

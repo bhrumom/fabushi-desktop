@@ -4,40 +4,59 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
-  padding: 6px 14px;
-  background: var(--cursor-bg-secondary, #1e1e1e);
-  border-bottom: 1px solid var(--cursor-border, rgba(255, 255, 255, 0.08));
+  height: 36px;
+  min-height: 36px;
+  padding: 0 12px;
+  background: var(--cursor-bg-secondary, rgba(128, 128, 128, 0.06));
+  border-bottom: 1px solid var(--cursor-border, rgba(128, 128, 128, 0.12));
+  color: var(--cursor-text-primary, #141414);
   font-size: var(--cursor-font-size-xs, 12px);
   user-select: none;
+  overflow-x: auto;
+  box-sizing: border-box;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sand-agent-session-toolbar {
+    background: var(--cursor-bg-secondary, #1a1a1a);
+    color: var(--cursor-text-primary, #f4f4f5);
+  }
 }
 
 .sand-agent-session-toolbar__left {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .sand-agent-session-toolbar__right {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .sand-session-status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 2px 7px;
+  gap: 4px;
+  padding: 2px 6px;
   border-radius: var(--cursor-radius-base, 4px);
   background: rgba(34, 197, 94, 0.12);
-  color: #4ade80;
+  color: #16a34a;
   font-weight: 500;
   font-size: 11px;
   border: 1px solid rgba(34, 197, 94, 0.25);
+  white-space: nowrap;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sand-session-status-badge {
+    color: #4ade80;
+  }
 }
 
 .sand-session-status-dot {
@@ -47,37 +66,62 @@
   background: #22c55e;
 }
 
-.sand-session-model-select {
+.sand-session-patch-select {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
+  gap: 3px;
+  padding: 1px 6px;
+  height: 24px;
   border-radius: var(--cursor-radius-base, 4px);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--cursor-stroke-secondary, rgba(255, 255, 255, 0.12));
-  color: var(--cursor-text-secondary, #a1a1aa);
+  background: rgba(128, 128, 128, 0.08);
+  border: 1px solid var(--cursor-stroke-secondary, rgba(128, 128, 128, 0.15));
+  color: var(--cursor-text-secondary, rgba(20, 20, 20, 0.7));
   font-size: 11px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sand-session-patch-select {
+    color: var(--cursor-text-secondary, #a1a1aa);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.sand-session-patch-select select {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: inherit;
+  outline: none;
+  cursor: pointer;
 }
 
 .sand-session-token-meter {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  color: var(--cursor-text-secondary, #a1a1aa);
+  gap: 5px;
+  color: var(--cursor-text-secondary, rgba(20, 20, 20, 0.7));
   font-size: 11px;
+  white-space: nowrap;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sand-session-token-meter {
+    color: var(--cursor-text-secondary, #a1a1aa);
+  }
 }
 
 .sand-session-token-bar-track {
-  width: 64px;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  width: 52px;
+  height: 4px;
+  background: rgba(128, 128, 128, 0.18);
+  border-radius: 2px;
   overflow: hidden;
 }
 
 .sand-session-token-bar-fill {
   height: 100%;
-  border-radius: 3px;
+  border-radius: 2px;
   background: var(--cursor-accent, #3b82f6);
   transition: width 0.3s ease;
 }
@@ -85,16 +129,23 @@
 .sand-agent-action-toast {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
+  gap: 4px;
+  padding: 2px 8px;
   border-radius: var(--cursor-radius-base, 4px);
   background: rgba(59, 130, 246, 0.15);
   border: 1px solid rgba(59, 130, 246, 0.3);
-  color: #93c5fd;
+  color: #2563eb;
   font-size: 11px;
+  white-space: nowrap;
 }
 
-/* Runtime Detail Sections in Right-Hand sand-info-pane */
+@media (prefers-color-scheme: dark) {
+  .sand-agent-action-toast {
+    color: #93c5fd;
+  }
+}
+
+/* Right-Hand sand-info-pane Runtime Details */
 
 .sand-agent-runtime-pane {
   display: flex;
@@ -102,67 +153,94 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  color: var(--cursor-text-primary, #e4e4e7);
+  color: var(--cursor-text-primary, #141414);
   font-size: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sand-agent-runtime-pane {
+    color: var(--cursor-text-primary, #f4f4f5);
+  }
 }
 
 .sand-runtime-section-nav {
   display: flex;
   gap: 2px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--cursor-border, rgba(255, 255, 255, 0.08));
-  background: rgba(0, 0, 0, 0.15);
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--cursor-border, rgba(128, 128, 128, 0.12));
+  background: rgba(128, 128, 128, 0.04);
   overflow-x: auto;
 }
 
 .sand-runtime-nav-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 8px;
+  gap: 4px;
+  padding: 4px 7px;
   border-radius: var(--cursor-radius-base, 4px);
   background: transparent;
   border: none;
-  color: var(--cursor-text-secondary, #a1a1aa);
-  font-size: 11.5px;
+  color: var(--cursor-text-secondary, rgba(20, 20, 20, 0.65));
+  font-size: 11px;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.12s ease;
 }
 
 .sand-runtime-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--cursor-text-primary, #fff);
+  background: rgba(128, 128, 128, 0.08);
+  color: var(--cursor-text-primary, #141414);
 }
 
 .sand-runtime-nav-btn[data-active="true"] {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: rgba(128, 128, 128, 0.14);
+  color: var(--cursor-text-primary, #141414);
   font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sand-runtime-nav-btn {
+    color: var(--cursor-text-secondary, #a1a1aa);
+  }
+  .sand-runtime-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+  }
+  .sand-runtime-nav-btn[data-active="true"] {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+  }
 }
 
 .sand-runtime-section-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 14px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .sand-runtime-card {
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--cursor-border, rgba(255, 255, 255, 0.08));
+  background: rgba(128, 128, 128, 0.04);
+  border: 1px solid var(--cursor-border, rgba(128, 128, 128, 0.12));
   border-radius: var(--cursor-radius-base, 6px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .sand-runtime-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
 }
 
 .sand-runtime-card-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   font-size: 12px;
   font-weight: 600;
 }
@@ -171,9 +249,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   padding: 6px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(128, 128, 128, 0.08);
 }
 
 .sand-runtime-switch-row:last-child {
@@ -183,34 +261,51 @@
 .sand-runtime-channel-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .sand-runtime-channel-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
+  padding: 6px 8px;
+  background: rgba(128, 128, 128, 0.03);
+  border: 1px solid rgba(128, 128, 128, 0.08);
+  border-radius: 4px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sand-runtime-channel-row {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
 }
 
 .sand-runtime-pill {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 1px 6px;
+  padding: 1px 5px;
   border-radius: 3px;
   font-size: 10.5px;
 }
 
 .sand-runtime-pill--green {
-  background: rgba(34, 197, 94, 0.15);
-  color: #4ade80;
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
 }
 
 .sand-runtime-pill--gray {
-  background: rgba(255, 255, 255, 0.06);
-  color: #a1a1aa;
+  background: rgba(128, 128, 128, 0.08);
+  color: var(--cursor-text-secondary, #6b7280);
+}
+
+@media (prefers-color-scheme: dark) {
+  .sand-runtime-pill--green {
+    color: #4ade80;
+  }
+  .sand-runtime-pill--gray {
+    color: #a1a1aa;
+    background: rgba(255, 255, 255, 0.06);
+  }
 }

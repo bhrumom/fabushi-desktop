@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { SandIcon } from "../recovered/ui/sand-kit-primitives";
+import type { ProductionCoordinatorClient } from "./coordinator-client";
 import type { RuntimeDetailSectionId } from "./agent-runtime/types";
 import { RuntimeSubagentsSection } from "./agent-runtime/RuntimeSubagentsSection";
 import { SecurityPolicySection } from "./agent-runtime/SecurityPolicySection";
@@ -11,6 +12,7 @@ export type { RuntimeDetailSectionId };
 
 export interface FabushiAgentRuntimeDetailSectionsProps {
   readonly agentId: string;
+  readonly client?: ProductionCoordinatorClient | null;
   readonly initialSection?: RuntimeDetailSectionId;
   readonly onClose?: () => void;
 }
@@ -24,6 +26,7 @@ const SECTIONS: Array<{ id: RuntimeDetailSectionId; label: string; icon: "slider
 
 export function FabushiAgentRuntimeDetailSections({
   agentId,
+  client = null,
   initialSection = "runtime",
   onClose: _onClose,
 }: FabushiAgentRuntimeDetailSectionsProps) {
@@ -50,10 +53,10 @@ export function FabushiAgentRuntimeDetailSections({
 
       {/* Section Scroll Container */}
       <div className="sand-runtime-section-scroll">
-        {activeSection === "runtime" && <RuntimeSubagentsSection agentId={agentId} />}
-        {activeSection === "security" && <SecurityPolicySection agentId={agentId} />}
-        {activeSection === "channels" && <ExternalChannelsSection agentId={agentId} />}
-        {activeSection === "nodes" && <NodesMultimodalSection agentId={agentId} />}
+        {activeSection === "runtime" && <RuntimeSubagentsSection agentId={agentId} client={client} />}
+        {activeSection === "security" && <SecurityPolicySection agentId={agentId} client={client} />}
+        {activeSection === "channels" && <ExternalChannelsSection agentId={agentId} client={client} />}
+        {activeSection === "nodes" && <NodesMultimodalSection agentId={agentId} client={client} />}
       </div>
     </div>
   );

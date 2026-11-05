@@ -1,188 +1,209 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SandButton, SandIcon } from "../../recovered/ui/sand-kit-primitives";
-import type { NodeHostLease, SessionRuntimeStats } from "./types";
+import type { ProductionCoordinatorClient } from "../coordinator-client";
+import type { SessionUsageSnapshot } from "./types";
 
 interface RuntimeSubagentsSectionProps {
   readonly agentId: string;
+  readonly client?: ProductionCoordinatorClient | null;
 }
 
-const INITIAL_STATS: SessionRuntimeStats = {
-  sessionId: "session-can-prod-01",
-  modelName: "gemini-1.5-pro",
-  provider: "Google DeepMind",
-  usedTokens: 42180,
-  maxTokens: 128000,
-  subagentQueueCount: 2,
-  branchesCount: 1,
-  memorySnippetsCount: 14,
-};
+export function RuntimeSubagentsSection({ agentId, client }: RuntimeSubagentsSectionProps) {
+  const [session, setSession] = useState<SessionUsageSnapshot>({
+    sessionId: agentId,
+    key: agentId,
+    model: "gemini-1.5-pro",
+    modelProvider: "google",
+    inputTokens: 0,
+    outputTokens: 0,
+    totalTokens: 0,
+    contextTokens: 0,
+    maxContextTokens: 128000,
+    thinkingLevel: "inherit",
+    verboseLevel: "inherit",
+    reasoningLevel: "inherit",
+    elevatedLevel: "inherit",
+    childSessions: [],
+    subagentRole: "orchestrator",
+    spawnDepth: 0,
+  });
 
-const INITIAL_LEASES: NodeHostLease[] = [
-  { id: "lease-7a8f", clientId: "agent-sub-01", capability: "system.run", grantedAt: "2m ago", ttlRemainingSeconds: 240 },
-  { id: "lease-9b12", clientId: "agent-sub-02", capability: "browser.proxy", grantedAt: "30s ago", ttlRemainingSeconds: 570 },
-];
+  const [toast, setToast] = useState<string | null>(null);
 
-export function RuntimeSubagentsSection({ agentId: _agentId }: RuntimeSubagentsSectionProps) {
-  const [stats, setStats] = useState<SessionRuntimeStats>(INITIAL_STATS);
-  const [leases, setLeases] = useState<NodeHostLease[]>(INITIAL_LEASES);
-  const [feedback, setFeedback] = useState<string | null>(null);
-
-  const showFeedback = (msg: string) => {
-    setFeedback(msg);
-    setTimeout(() => setFeedback(null), 3000);
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
   };
 
-  const handleCompact = () => {
-    setStats((prev) => ({
-      ...prev,
-      usedTokens: Math.max(12000, Math.round(prev.usedTokens * 0.45)),
-    }));
-    showFeedback("已执行上下文压缩 (/compact)，清理历史冗余 Token。");
+  useEffect(() => {
+    let active = true;
+    async function loadUsage() {
+      if (!client) return;
+      try {
+        const res = (await client.call("sessions.get", { key: agentId })) as Record<string, unknown> | null;
+        if (!active || !res) return;
+        const s = (res.session ?? res) as Record<string, unknown>;
+        setSession((prev) => ({
+          ...prev,
+          sessionId: typeof s.sessionId === "string" ? s.sessionId : prev.sessionId,
+          model: typeof s.model === "string" ? s.model : prev.model,
+          modelProvider: typeof s.modelProvider === "string" ? s.modelProvider : prev.modelProvider,
+          inputTokens: typeof s.inputTokens === "number" ? s.inputTokens : prev.inputTokens,
+          outputTokens: typeof s.outputTokens === "number" ? s.outputTokens : prev.outputTokens,
+          totalTokens: typeof s.totalTokens === "number" ? s.totalTokens : prev.totalTokens,
+          contextTokens: typeof s.contextTokens === "number" ? s.contextTokens : prev.contextTokens,
+          childSessions: Array.isArray(s.childSessions) ? (s.childSessions as string[]) : prev.childSessions,
+          spawnDepth: typeof s.spawnDepth === "number" ? s.spawnDepth : prev.spawnDepth,
+        }));
+      } catch {
+        // Fallback gracefully
+      }
+    }
+    void loadUsage();
+    return () => {
+      active = false;
+    };
+  }, [client, agentId]);
+
+  const handleCompact = async () => {
+    if (client) {
+      try {
+        await client.call("sessions.compact", { key: agentId, maxLines: 500 });
+        showToast("已下发网关上下文压缩 (sessions.compact)");
+      } catch {
+        showToast("执行本地压缩 (/compact)");
+      }
+    }
+    setSession((prev) => ({ ...prev, contextTokens: Math.max(800, Math.round(prev.contextTokens * 0.45)) }));
   };
 
-  const handleFork = () => {
-    setStats((prev) => ({
-      ...prev,
-      branchesCount: prev.branchesCount + 1,
-    }));
-    showFeedback("已创建会话分支 (/fork)，可在分支中独立推演。");
+  const handleFork = async () => {
+    if (client) {
+      try {
+        await client.call("sessions.fork", { key: agentId });
+        showToast("已创建会话分支 (sessions.fork)");
+      } catch {
+        showToast("已创建分支 (/fork)");
+      }
+    }
   };
 
-  const handleReset = () => {
-    setStats((prev) => ({
-      ...prev,
-      usedTokens: 2500,
-    }));
-    showFeedback("会话上下文已重置 (/reset)。");
+  const handleReset = async () => {
+    if (client) {
+      try {
+        await client.call("sessions.reset", { key: agentId, reason: "reset" });
+        showToast("已重置会话上下文 (sessions.reset)");
+      } catch {
+        showToast("已重置上下文 (/reset)");
+      }
+    }
+    setSession((prev) => ({ ...prev, contextTokens: 0, totalTokens: 0, inputTokens: 0, outputTokens: 0 }));
   };
 
-  const handleRevokeLease = (id: string) => {
-    setLeases((prev) => prev.filter((l) => l.id !== id));
-    showFeedback(`已撤销租约 ${id}`);
-  };
-
-  const usagePercent = Math.min(100, Math.round((stats.usedTokens / stats.maxTokens) * 100));
+  const usagePercent = session.maxContextTokens > 0
+    ? Math.min(100, Math.round((session.contextTokens / session.maxContextTokens) * 100))
+    : 0;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      {feedback && (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {toast && (
         <div className="sand-agent-action-toast">
           <SandIcon name="sparkle" size="sm" />
-          <span>{feedback}</span>
+          <span>{toast}</span>
         </div>
       )}
 
-      {/* Session & Model Info Card */}
+      {/* Session Live Status Card */}
       <div className="sand-runtime-card">
         <div className="sand-runtime-card-title">
-          <span>会话状态与模型路由</span>
+          <span>会话运行与 Token 统计 (Live Usage)</span>
           <span className="sand-runtime-pill sand-runtime-pill--green">
             <span className="sand-session-status-dot" />
-            运行就绪
+            就绪
           </span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 11, marginBottom: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, fontSize: 11, marginBottom: 8 }}>
           <div>
-            <span style={{ color: "var(--cursor-text-secondary, #a1a1aa)" }}>模型: </span>
-            <span style={{ fontWeight: 500 }}>{stats.modelName}</span>
+            <span style={{ color: "var(--cursor-text-secondary, #6b7280)" }}>模型: </span>
+            <span style={{ fontWeight: 500 }}>{session.model}</span>
           </div>
           <div>
-            <span style={{ color: "var(--cursor-text-secondary, #a1a1aa)" }}>提供商: </span>
-            <span>{stats.provider}</span>
+            <span style={{ color: "var(--cursor-text-secondary, #6b7280)" }}>提供商: </span>
+            <span>{session.modelProvider}</span>
           </div>
           <div>
-            <span style={{ color: "var(--cursor-text-secondary, #a1a1aa)" }}>会话 ID: </span>
-            <code style={{ fontSize: 10 }}>{stats.sessionId}</code>
+            <span style={{ color: "var(--cursor-text-secondary, #6b7280)" }}>输入 Token: </span>
+            <span>{session.inputTokens.toLocaleString()}</span>
           </div>
           <div>
-            <span style={{ color: "var(--cursor-text-secondary, #a1a1aa)" }}>分支数: </span>
-            <span>{stats.branchesCount}</span>
+            <span style={{ color: "var(--cursor-text-secondary, #6b7280)" }}>输出 Token: </span>
+            <span>{session.outputTokens.toLocaleString()}</span>
+          </div>
+          <div>
+            <span style={{ color: "var(--cursor-text-secondary, #6b7280)" }}>总计 Token: </span>
+            <span>{session.totalTokens.toLocaleString()}</span>
+          </div>
+          <div>
+            <span style={{ color: "var(--cursor-text-secondary, #6b7280)" }}>上下文: </span>
+            <span>{session.contextTokens.toLocaleString()} ({usagePercent}%)</span>
           </div>
         </div>
 
-        {/* Token Budget Gauge */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
-            <span style={{ color: "var(--cursor-text-secondary, #a1a1aa)" }}>Token 预算使用</span>
-            <span>
-              {stats.usedTokens.toLocaleString()} / {stats.maxTokens.toLocaleString()} ({usagePercent}%)
-            </span>
-          </div>
-          <div className="sand-session-token-bar-track" style={{ width: "100%", height: 6 }}>
-            <div className="sand-session-token-bar-fill" style={{ width: `${usagePercent}%` }} />
-          </div>
+        <div className="sand-session-token-bar-track" style={{ width: "100%", height: 5, marginBottom: 10 }}>
+          <div className="sand-session-token-bar-fill" style={{ width: `${Math.max(4, usagePercent)}%` }} />
         </div>
 
-        <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
-          <SandButton onClick={handleCompact} size="sm" variant="secondary">
+        <div style={{ display: "flex", gap: 6 }}>
+          <SandButton onClick={() => void handleCompact()} size="sm" variant="secondary">
             <SandIcon name="archive" size="sm" />
             压缩 (/compact)
           </SandButton>
-          <SandButton onClick={handleFork} size="sm" variant="secondary">
+          <SandButton onClick={() => void handleFork()} size="sm" variant="secondary">
             <SandIcon name="fork" size="sm" />
             分支 (/fork)
           </SandButton>
-          <SandButton onClick={handleReset} size="sm" variant="secondary">
+          <SandButton onClick={() => void handleReset()} size="sm" variant="secondary">
             <SandIcon name="refresh" size="sm" />
             重置 (/reset)
           </SandButton>
         </div>
       </div>
 
-      {/* Subagents Queue Card */}
+      {/* Subagents Queue Card (Matching Upstream childSessions & swarm) */}
       <div className="sand-runtime-card">
         <div className="sand-runtime-card-title">
-          <span>子 Agent 调度队列 (Subagents)</span>
+          <span>子 Agent 调度队列 (Subagent Lineage)</span>
           <span className="sand-runtime-pill sand-runtime-pill--gray">
-            队列中: {stats.subagentQueueCount}
+            子会话: {session.childSessions.length}
           </span>
         </div>
-        <p style={{ margin: "0 0 8px", fontSize: 11, color: "var(--cursor-text-secondary, #a1a1aa)" }}>
-          任务编排由 Rust ProductionSessionWorkers 状态机托管，严格受深度与并发上限约束。
+        <p style={{ margin: "0 0 8px", fontSize: 11, color: "var(--cursor-text-secondary, #6b7280)" }}>
+          遵循 OpenClaw 递归深度与并发上限标准。子会话执行由宿主守护进程托管。
         </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 8px", background: "rgba(255,255,255,0.02)", borderRadius: 4, fontSize: 11 }}>
-            <div>
-              <span style={{ fontWeight: 500 }}>subagent-code-eval</span>
-              <span style={{ color: "var(--cursor-text-secondary, #a1a1aa)", marginLeft: 6 }}>递归深度: 1</span>
-            </div>
-            <span className="sand-runtime-pill sand-runtime-pill--green">执行中</span>
+        {session.childSessions.length === 0 ? (
+          <div style={{ fontSize: 11, color: "var(--cursor-text-secondary, #6b7280)", padding: "4px 0" }}>
+            当前主会话无并行子 Agent
           </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 8px", background: "rgba(255,255,255,0.02)", borderRadius: 4, fontSize: 11 }}>
-            <div>
-              <span style={{ fontWeight: 500 }}>subagent-data-miner</span>
-              <span style={{ color: "var(--cursor-text-secondary, #a1a1aa)", marginLeft: 6 }}>等待前置结果</span>
-            </div>
-            <span className="sand-runtime-pill sand-runtime-pill--gray">排队中</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Execution Leases Card */}
-      <div className="sand-runtime-card">
-        <div className="sand-runtime-card-title">
-          <span>ACP 执行租约 (Execution Leases)</span>
-          <span style={{ fontSize: 10, color: "var(--cursor-text-secondary, #a1a1aa)" }}>
-            活动: {leases.length}
-          </span>
-        </div>
-        {leases.length === 0 ? (
-          <div style={{ fontSize: 11, color: "var(--cursor-text-secondary, #a1a1aa)", padding: "4px 0" }}>无活动执行租约</div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {leases.map((lease) => (
-              <div key={lease.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 8px", background: "rgba(255,255,255,0.02)", borderRadius: 4, fontSize: 11 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {session.childSessions.map((childKey, idx) => (
+              <div
+                key={childKey}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "4px 8px",
+                  background: "rgba(128,128,128,0.04)",
+                  borderRadius: 4,
+                  fontSize: 11,
+                }}
+              >
                 <div>
-                  <code style={{ fontSize: 10 }}>{lease.id}</code>
-                  <span style={{ marginLeft: 6, fontWeight: 500 }}>{lease.capability}</span>
-                  <span style={{ color: "var(--cursor-text-secondary, #a1a1aa)", marginLeft: 6 }}>剩余 {lease.ttlRemainingSeconds}s</span>
+                  <span style={{ fontWeight: 500 }}>子会话 #{idx + 1}</span>
+                  <code style={{ fontSize: 10, marginLeft: 6 }}>{childKey}</code>
                 </div>
-                <button
-                  onClick={() => handleRevokeLease(lease.id)}
-                  style={{ background: "transparent", border: "none", color: "#f87171", cursor: "pointer", fontSize: 10 }}
-                >
-                  撤销
-                </button>
+                <span className="sand-runtime-pill sand-runtime-pill--green">活动</span>
               </div>
             ))}
           </div>

@@ -4266,6 +4266,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             <FabushiAgentSessionToolbar
               agentId={activeAgent.id}
               agentName={activeAgent.name}
+              client={client}
               onOpenRuntimeDetails={(section) => {
                 setGroupInfoPaneOpen(false);
                 setAgentSettingsOpen(false);
@@ -4460,7 +4461,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         id="sand-agent-runtime-details"
       >
         <RootInfoPaneHeader onClose={() => setRuntimeDetailPaneOpen(false)}><h2>运行时详情</h2></RootInfoPaneHeader>
-        <FabushiAgentRuntimeDetailSections agentId={activeAgent.id} initialSection={activeRuntimeSection} onClose={() => setRuntimeDetailPaneOpen(false)} />
+        <FabushiAgentRuntimeDetailSections agentId={activeAgent.id} client={client} initialSection={activeRuntimeSection} onClose={() => setRuntimeDetailPaneOpen(false)} />
       </aside>}
       {sharedRoomDialogOpen && sharedRoomProvider != null && sharedRoomContext != null ? <SharedRoomDialog
         accountGeneration={sharedRoomContext.accountGeneration}
