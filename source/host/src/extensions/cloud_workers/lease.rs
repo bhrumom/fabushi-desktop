@@ -163,9 +163,10 @@ impl CloudWorkerLease {
         }
         let mut replay_keys = HashSet::with_capacity(self.replay_history.len());
         if self.replay_history.len() > MAX_REPLAY_HISTORY
-            || self.replay_history.iter().any(|key| {
-                !valid_text(&key.0, MAX_REPLAY_KEY_CHARS) || !replay_keys.insert(key)
-            })
+            || self
+                .replay_history
+                .iter()
+                .any(|key| !valid_text(&key.0, MAX_REPLAY_KEY_CHARS) || !replay_keys.insert(key))
         {
             return Err(CloudWorkerLeaseError::InvalidPersistedRecord);
         }
@@ -310,20 +311,52 @@ impl CloudWorkerLease {
 fn is_allowed_transition(from: CloudWorkerLifecycle, to: CloudWorkerLifecycle) -> bool {
     matches!(
         (from, to),
-        (CloudWorkerLifecycle::Admitted, CloudWorkerLifecycle::Preparing)
-            | (CloudWorkerLifecycle::Preparing, CloudWorkerLifecycle::Warming)
-            | (CloudWorkerLifecycle::Warming, CloudWorkerLifecycle::Bootstrapping)
-            | (CloudWorkerLifecycle::Bootstrapping, CloudWorkerLifecycle::Enrolled)
-            | (CloudWorkerLifecycle::Enrolled, CloudWorkerLifecycle::Enrolled)
-            | (CloudWorkerLifecycle::Enrolled, CloudWorkerLifecycle::Inspecting)
-            | (CloudWorkerLifecycle::Enrolled, CloudWorkerLifecycle::Heartbeating)
-            | (CloudWorkerLifecycle::Enrolled, CloudWorkerLifecycle::Stopping)
-            | (CloudWorkerLifecycle::Inspecting, CloudWorkerLifecycle::Enrolled)
-            | (CloudWorkerLifecycle::Heartbeating, CloudWorkerLifecycle::Enrolled)
-            | (CloudWorkerLifecycle::Stopping, CloudWorkerLifecycle::Disposed)
-            | (CloudWorkerLifecycle::OutcomeUnknown, CloudWorkerLifecycle::Admitted)
-            | (CloudWorkerLifecycle::OutcomeUnknown, CloudWorkerLifecycle::Stopping)
-            | (CloudWorkerLifecycle::OutcomeUnknown, CloudWorkerLifecycle::Disposed)
+        (
+            CloudWorkerLifecycle::Admitted,
+            CloudWorkerLifecycle::Preparing
+        ) | (
+            CloudWorkerLifecycle::Admitted,
+            CloudWorkerLifecycle::Enrolled
+        ) | (
+            CloudWorkerLifecycle::Preparing,
+            CloudWorkerLifecycle::Warming
+        ) | (
+            CloudWorkerLifecycle::Warming,
+            CloudWorkerLifecycle::Bootstrapping
+        ) | (
+            CloudWorkerLifecycle::Bootstrapping,
+            CloudWorkerLifecycle::Enrolled
+        ) | (
+            CloudWorkerLifecycle::Enrolled,
+            CloudWorkerLifecycle::Enrolled
+        ) | (
+            CloudWorkerLifecycle::Enrolled,
+            CloudWorkerLifecycle::Inspecting
+        ) | (
+            CloudWorkerLifecycle::Enrolled,
+            CloudWorkerLifecycle::Heartbeating
+        ) | (
+            CloudWorkerLifecycle::Enrolled,
+            CloudWorkerLifecycle::Stopping
+        ) | (
+            CloudWorkerLifecycle::Inspecting,
+            CloudWorkerLifecycle::Enrolled
+        ) | (
+            CloudWorkerLifecycle::Heartbeating,
+            CloudWorkerLifecycle::Enrolled
+        ) | (
+            CloudWorkerLifecycle::Stopping,
+            CloudWorkerLifecycle::Disposed
+        ) | (
+            CloudWorkerLifecycle::OutcomeUnknown,
+            CloudWorkerLifecycle::Admitted
+        ) | (
+            CloudWorkerLifecycle::OutcomeUnknown,
+            CloudWorkerLifecycle::Stopping
+        ) | (
+            CloudWorkerLifecycle::OutcomeUnknown,
+            CloudWorkerLifecycle::Disposed
+        )
     )
 }
 
@@ -394,8 +427,7 @@ mod tests {
             lease_id: LeaseId("lease-1".into()),
             owner_epoch: OwnerEpoch(3),
             generation: LeaseGeneration(7),
-            runtime: CloudWorkerRuntimeIdentity::new("provider", "profile", "runtime")
-                .unwrap(),
+            runtime: CloudWorkerRuntimeIdentity::new("provider", "profile", "runtime").unwrap(),
             lifecycle: CloudWorkerLifecycle::Admitted,
             last_outcome: CloudWorkerMutationOutcome::Completed,
             replay_history: Vec::new(),
@@ -511,10 +543,7 @@ mod tests {
     #[test]
     fn rejects_duplicate_replay_history_on_restore() {
         let mut lease = lease();
-        lease.replay_history = vec![
-            ReplayKey("settled-1".into()),
-            ReplayKey("settled-1".into()),
-        ];
+        lease.replay_history = vec![ReplayKey("settled-1".into()), ReplayKey("settled-1".into())];
         assert_eq!(
             lease.validate_persisted(),
             Err(CloudWorkerLeaseError::InvalidPersistedRecord)

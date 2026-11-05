@@ -84,7 +84,7 @@ jobs:
 
   focused-electron-e2e:
     name: Focused Electron chat E2E
-    runs-on: macos-14
+    runs-on: macos-15
     defaults:
       run:
         working-directory: desktop
