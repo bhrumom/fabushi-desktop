@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { existsSync } from "node:fs";
 
 const appPath = "/Applications/Fabushi.app/Contents/MacOS/Fabushi";
-const screenshotPath = "/Users/bhrum/.gemini/antigravity/brain/1e5f0704-2329-4a7e-82df-96c3c8162362/fabushi-3segment-live.png";
+const screenshotPath = "/Users/bhrum/.gemini/antigravity/brain/1e5f0704-2329-4a7e-82df-96c3c8162362/fabushi-3segment-v2-live.png";
 const port = 14333;
 
 async function main() {
