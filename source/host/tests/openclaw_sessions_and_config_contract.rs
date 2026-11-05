@@ -606,7 +606,7 @@ fn test_background_result_owner_rolls_back_when_commit_fails() {
         .split("pub fn commit_session_work_result(")
         .nth(1)
         .expect("background result owner exists")
-        .split("pub fn read_session_provider_review(")
+        .split("pub fn read_metadata(")
         .next()
         .expect("background result owner boundary exists");
     assert!(result_owner.contains("if let Err(error) = db.execute_batch(\"COMMIT\")"));
@@ -668,7 +668,7 @@ fn test_session_transcript_delete_and_conversation_clear_roll_back_when_commit_f
         .split("pub fn clear_conversation(")
         .nth(1)
         .expect("conversation clear owner exists")
-        .split("pub fn clear_clone_mutation_journals(")
+        .split("pub fn upsert_conversation_topic(")
         .next()
         .expect("conversation clear owner boundary exists");
     assert!(clear_owner.contains("if let Err(error) = db.execute_batch(\"COMMIT\")"));
