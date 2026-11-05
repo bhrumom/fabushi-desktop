@@ -96,6 +96,7 @@ function validateReply(method: string, value: unknown): unknown {
 
 export interface CoordinatorCallAdmission {
   readonly isCurrent?: () => boolean;
+  readonly isDispatchCurrent?: () => boolean;
   /** Marks possible Host admission before postMessage; a post failure is ambiguous. */
   readonly onRequestWillPost?: () => void;
 }
@@ -313,11 +314,13 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
       throw new Error("retryHumanMessage requires only a valid conversationId and original clientNonce");
     }
     if (admission?.isCurrent?.() === false) throw new Error(`Coordinator request scope expired for ${method}`);
+    if (admission?.isDispatchCurrent?.() === false) throw new CoordinatorCallError("request-retired", `${method} request is no longer current`);
     await currentReady;
     if (disposed || port == null || !serving) throw new Error(`coordinator is unavailable for ${method}`);
     // Reconnect can replace readiness after the renderer's initial ready has
     // resolved. Scope admission belongs immediately before the actual frame.
     if (admission?.isCurrent?.() === false) throw new Error(`Coordinator request scope expired for ${method}`);
+    if (admission?.isDispatchCurrent?.() === false) throw new CoordinatorCallError("request-retired", `${method} request is no longer current`);
     const requestId = `r-${++nextRequestId}`;
     admission?.onRequestWillPost?.();
     const response = new Promise<unknown>((resolve, reject) => pending.set(requestId, { method, resolve, reject }));

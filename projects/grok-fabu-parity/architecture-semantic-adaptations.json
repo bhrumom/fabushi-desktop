@@ -1536,7 +1536,7 @@
       "referencePath": "frontend/src/production/coordinator-client.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "55a768f02a1e4c25976e103a0927e5c2816b5dc7",
+      "targetBlobSha": "c63ebfdcbe658650a409f239fc28fa44a4fcba6f",
       "behavioralEvidence": [
         "frontend/src/production/coordinator-client.ts"
       ],
