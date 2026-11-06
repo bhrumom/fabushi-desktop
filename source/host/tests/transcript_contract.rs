@@ -284,12 +284,16 @@ fn send_pipeline_coalesces_inflight_nonce_and_preserves_accepted_outcome_on_fail
     let different = sample_input("different while first is running");
     assert_eq!(
         pipeline
-            .begin_send(&mut ledger, &different, Some("nonce-1"))
+            .begin_send(&mut ledger, &input, Some("nonce-1"))
             .unwrap(),
         SendBegin::Coalesced {
             client_nonce: "nonce-1".into(),
         }
     );
+    assert!(matches!(
+        pipeline.begin_send(&mut ledger, &different, Some("nonce-1")),
+        Err(PromptAcceptanceError::DigestMismatch { .. })
+    ));
 
     let pending = pipeline
         .record_pending_acceptance(
