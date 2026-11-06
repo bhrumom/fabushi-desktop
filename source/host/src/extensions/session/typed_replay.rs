@@ -159,6 +159,9 @@ fn project_entry(index: usize, entry: &Value) -> Result<TypedReplayEntry, TypedR
     match kind {
         Some("compaction") => project_compaction(index, object),
         Some("message") => project_message(index, object).map(TypedReplayEntry::Message),
+        Some("send-message") => {
+            project_send_message(index, object).map(TypedReplayEntry::Message)
+        }
         Some("user-attachment") => {
             required_string(index, object, "file_path")?;
             Ok(TypedReplayEntry::UserAttachment(ReplayAttachment {
@@ -189,6 +192,43 @@ fn project_compaction(
             details: object.get("details").cloned(),
         },
     ))
+}
+
+fn project_send_message(
+    index: usize,
+    object: &serde_json::Map<String, Value>,
+) -> Result<ReplayMessage, TypedReplayError> {
+    let message = object
+        .get("message")
+        .and_then(Value::as_object)
+        .ok_or_else(|| malformed(index, "send-message message must be an object"))?;
+    if message.get("type").and_then(Value::as_str) != Some("text") {
+        return Err(malformed(
+            index,
+            "send-message replay requires message.type text",
+        ));
+    }
+    let content = message
+        .get("content")
+        .and_then(Value::as_str)
+        .ok_or_else(|| malformed(index, "send-message text content must be a string"))?;
+    if message
+        .get("images")
+        .is_some_and(|images| !images.as_array().is_some_and(Vec::is_empty))
+    {
+        return Err(malformed(
+            index,
+            "send-message images are not supported in typed replay",
+        ));
+    }
+    Ok(ReplayMessage {
+        id: object.get("id").and_then(Value::as_str).map(ToOwned::to_owned),
+        role: ReplayRole::Assistant,
+        content: vec![ReplayContentPart::Text(content.to_string())],
+        attachments: Vec::new(),
+        tool_calls: Vec::new(),
+        tool_result: None,
+    })
 }
 
 fn project_message(

@@ -14,6 +14,7 @@ use super::agent_db::{
     read_persisted_agent_name, read_persisted_latest_root_blob_id,
     SandAgentDb,
 };
+use super::agent_db_serde::is_valid_transcript_entry;
 use super::conversation_recovery::{
     OutlineItem, conversation_structure_fully_resolves, parse_conversation_state_structure,
     rebuild_transcript_entries_from_state, select_hidden_artifact_entry_ids,
@@ -129,7 +130,10 @@ pub fn backfill_transcript(
 ) -> Result<usize, String> {
     let persisted = owner
         .get_transcript_entries()
-        .map_err(|error| error.to_string())?;
+        .map_err(|error| error.to_string())?
+        .into_iter()
+        .filter(is_valid_transcript_entry)
+        .collect::<Vec<_>>();
     if persisted.len() >= rebuilt.len()
         || !persisted.iter().enumerate().all(|(index, entry)| {
             rebuilt

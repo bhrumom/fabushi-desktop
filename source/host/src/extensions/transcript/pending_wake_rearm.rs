@@ -316,7 +316,10 @@ impl PendingWakeRearm {
 
         match result {
             Ok(()) => {
-                let clear_after_success = marker.kind != PendingWakeKind::Subagent
+                let clear_after_success = !matches!(
+                    marker.kind,
+                    PendingWakeKind::CloudAgent | PendingWakeKind::Subagent
+                )
                     && !(marker.kind == PendingWakeKind::Shell
                         && marker.interrupted_by_recreate);
                 if clear_after_success {
