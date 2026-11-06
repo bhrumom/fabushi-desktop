@@ -1,0 +1,125 @@
+name: TDRP pinned artifact evidence
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - scripts/tdrp-summarize-protocol-artifact.py
+      - .github/workflows/tdrp-protocol-failure-evidence.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  read-complete-pinned-artifact:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Bind exact diagnostic source
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download the exact fixed-U inventory artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/inventory-download
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13118749668 > artifacts/inventory-download/metadata.json
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13118749668/zip > artifacts/inventory-download/artifact.zip
+      - name: Read and hash full logs with bounded diagnostic output
+        run: >-
+          python3 scripts/tdrp-summarize-protocol-artifact.py
+          --metadata artifacts/inventory-download/metadata.json
+          --archive artifacts/inventory-download/artifact.zip
+          --output-dir artifacts/inventory-recovery
+          --repository bhrumom/fabushi-desktop
+          --head-sha 9f77bb2389cba6a65d589eb309d1392501ed308d
+          --artifact-id 13118749668
+          --run-id 41397005716
+          --expected-digest sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60
+      - name: Return complete inventory bytes without repeating acquisition
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, gzip, hashlib, json
+          from pathlib import Path
+          root = Path('artifacts/inventory-recovery')
+          index = json.loads((root / 'index.json').read_text())
+          if index.get('complete') is not True:
+              raise SystemExit('Incomplete pinned artifact recovery')
+          raw = root / 'raw'
+          report = json.loads((raw / 'authority-report.json').read_text())
+          expected_u = 'f985723b552b30fe1c17d377d57f44e61a15a8c4'
+          expected_h = '9f77bb2389cba6a65d589eb309d1392501ed308d'
+          if (report.get('target_commit') != expected_h
+                  or report.get('root', {}).get('commit') != expected_u
+                  or report.get('status') != 'success'
+                  or report.get('canonical_inventory_complete') is not True
+                  or report.get('git_trees_enumerated_completely') is not True
+                  or report.get('baseline_accepted') is not False):
+              raise SystemExit('Unexpected pinned inventory identity or producer status')
+          acquisition_data = (raw / 'upstream-git-acquisition.json').read_bytes()
+          acquisition = json.loads(acquisition_data)
+          # Every source entry is transferred in the original canonical recursive
+          # inventory. Omit only the redundant raw entry arrays from this summary;
+          # the exact original acquisition manifest remains in the verified ZIP.
+          acquisition['repositories'] = [
+              {key: value for key, value in item.items() if key != 'entries'}
+              for item in acquisition['repositories']
+          ]
+          acquisition['transfer_summary_of'] = {
+              'path': 'upstream-git-acquisition.json', 'bytes': len(acquisition_data),
+              'sha256': hashlib.sha256(acquisition_data).hexdigest(),
+              'omitted_fields': ['repositories[*].entries'],
+          }
+          summary = json.dumps(acquisition, ensure_ascii=True, sort_keys=True, indent=2).encode('ascii') + b'\n'
+          (root / 'acquisition-summary.json').write_bytes(summary)
+          selected = [
+              ('upstream-recursive-inventory.json', raw / 'upstream-recursive-inventory.json'),
+              ('upstream-root-inventory.json', raw / 'upstream-root-inventory.json'),
+              ('authority-report.json', raw / 'authority-report.json'),
+              ('acquisition-summary.json', root / 'acquisition-summary.json'),
+              ('index.json', root / 'index.json'),
+          ]
+          prepared = []
+          for name, path in selected:
+              data = path.read_bytes()
+              if len(data) > 32 * 1024 * 1024:
+                  raise SystemExit('Selected inventory exceeds 32 MiB transfer bound')
+              prepared.append((name, data, gzip.compress(data, mtime=0)))
+          if sum(len(packed) for _, _, packed in prepared) > 2 * 1024 * 1024:
+              raise SystemExit('Compressed inventory exceeds 2 MiB transfer bound')
+          for name, data, packed in prepared:
+              digest = hashlib.sha256(data).hexdigest()
+              print('TDRP_INVENTORY_JSON ' + json.dumps({'record': 'header', 'file': name,
+                    'bytes': len(data), 'sha256': digest, 'gzip_bytes': len(packed),
+                    'producer_head': expected_h, 'producer_run': 41397005716,
+                    'acquisition_repeated': False, 'source_acceptance': False}))
+              for offset in range(0, len(packed), 3072):
+                  print('TDRP_INVENTORY_JSON ' + json.dumps({'record': 'chunk', 'file': name,
+                        'offset': offset, 'base64': base64.b64encode(packed[offset:offset + 3072]).decode('ascii')}))
+              print('TDRP_INVENTORY_JSON ' + json.dumps({'record': 'end', 'file': name,
+                    'complete': True, 'sha256': digest}))
+          print('TDRP_INVENTORY_JSON ' + json.dumps({'record': 'receipt',
+                'producer_head': expected_h, 'upstream': expected_u,
+                'root_entries': report['root_non_directory_entries'],
+                'recursive_entries': report['recursive_non_directory_entries'],
+                'repositories': report['repository_count'], 'edges': report['edge_count'],
+                'source_acceptance': False, 'tests_rerun': False}))
+          PY
+      - name: Preserve the original inventory and complete byte verification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-inventory-transfer-41397005716-${{ github.sha }}
+          path: artifacts/inventory-recovery
+          if-no-files-found: error

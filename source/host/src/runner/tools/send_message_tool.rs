@@ -90,6 +90,8 @@ pub trait SendMessageSink: Send + Sync {
         None
     }
 
+    fn abort_attachment_custody(&self, _tool_call_id: &str) {}
+
     fn send_message(
         &self,
         message: Value,
@@ -155,6 +157,10 @@ impl SendMessageSink for CountingSendMessageSink {
 
     fn read_media_dimensions(&self, resolved_url: &str) -> Option<(u32, u32)> {
         self.delegate.read_media_dimensions(resolved_url)
+    }
+
+    fn abort_attachment_custody(&self, tool_call_id: &str) {
+        self.delegate.abort_attachment_custody(tool_call_id);
     }
 
     fn send_message(
@@ -400,8 +406,20 @@ impl RoutedToolBridge for SendMessageToolBridge {
                 .join("; ");
             return Err(ProviderSessionError::Tool(message));
         }
-        let message = build_sand_send_message(&input, self.sink.as_ref(), tool_call_id)?;
-        let encoded_args = encode_send_message_wire(&message).map_err(ProviderSessionError::Tool)?;
+        let message = match build_sand_send_message(&input, self.sink.as_ref(), tool_call_id) {
+            Ok(message) => message,
+            Err(error) => {
+                self.sink.abort_attachment_custody(tool_call_id);
+                return Err(error);
+            }
+        };
+        let encoded_args = match encode_send_message_wire(&message) {
+            Ok(encoded_args) => encoded_args,
+            Err(error) => {
+                self.sink.abort_attachment_custody(tool_call_id);
+                return Err(ProviderSessionError::Tool(error));
+            }
+        };
         let started_at_ms = now_ms();
         let mut initial = create_send_message_tool_call(SendMessageToolCall {
             args: Some(encoded_args.clone()),
@@ -415,6 +433,7 @@ impl RoutedToolBridge for SendMessageToolBridge {
 
         if self.sink.is_awaiting_user_selection() {
             let error = SAND_AWAITING_USER_SEND_MESSAGE_BLOCKED.to_string();
+            self.sink.abort_attachment_custody(tool_call_id);
             self.emit_completed(
                 tool_call_id,
                 started_at_ms,

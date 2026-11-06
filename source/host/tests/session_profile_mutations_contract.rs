@@ -121,11 +121,27 @@ fn avatar_mutation_owns_canonical_file_cleanup_and_legacy_db_pointer_clear() {
     .expect("legacy profile");
     fs::write(agent.join("avatar.jpg"), b"old").expect("old conventional");
 
-    set_agent_avatar_bytes(&db_path, 500, Some(&png_bytes())).expect("set avatar");
+    set_agent_avatar_bytes(&db_path, 500, Some(&png_bytes()), |_| Ok(())).expect("set avatar");
     assert!(!agent.join("avatar.jpg").exists());
     assert_eq!(fs::read(agent.join("avatar.png")).expect("canonical"), png_bytes());
 
-    set_agent_avatar_bytes(&db_path, 500, None).expect("clear avatar");
+    set_agent_avatar_bytes(
+        &db_path,
+        500,
+        None,
+        |profile| {
+            set_persisted_sand_profile(&db_path, 500, profile)
+                .map(|changed| {
+                    if changed {
+                        ()
+                    } else {
+                        panic!("legacy avatar pointer should change")
+                    }
+                })
+                .map_err(|error| error.to_string())
+        },
+    )
+    .expect("clear avatar");
     assert!(!agent.join("avatar.png").exists());
     assert_eq!(
         read_persisted_agent_serde_snapshot(&db_path, 500)

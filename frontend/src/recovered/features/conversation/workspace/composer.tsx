@@ -1,10 +1,34 @@
+/**
+ * Conversation workspace composer with rich-text editing, voice dictation,
+ * attachment staging, non-destructive typed action popover, and Human silent /
+ * scheduled delivery options.
+ *
+ * Upstream & Open PR Alignment:
+ * - Telegram Desktop `Telegram/SourceFiles/api/api_sending.cpp` (`InnerFillMessagePostFlags`
+ *   silent/scheduled send options; `SendSimpleMedia` `action.clearDraft = false`).
+ * - PR #111 (`origin/tdrp/human-silent-scheduled-current-main-20261018`):
+ *   `onSendSilently` ("Send Without Sound") and `onScheduleSend` ("Schedule Message")
+ *   via `SandMenuRoot` and future-time-validated schedule dialog.
+ * - Blueprint 03 (`docs/specs/fusion-blueprints/03-unified-composer-and-typed-actions.md`):
+ *   Unified composer contract (`onDirectSendTypedAction`, `onSubmitDirectMessage`,
+ *   dynamic model/thinking effort selectors).
+ */
+
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from "react";
 import { COMPOSER_ATTACHMENT_LIMIT, attachmentBasename, formatAttachmentBytes, inferAttachmentKind, isComposerDraftEmpty, type ComposerDraft, type DraftAttachment } from "./model";
+import type { DirectTypedActionPayload } from "./submission";
 import { useVoiceSession, VoiceWaveform, type VoiceTranscriber } from "./voice";
 import { ComposerReplyPill, replyComposerPlaceholder, type ComposerReplyTarget } from "./reply-preview";
 import { PromptRichTextEditor, type PromptEditorControls, type PromptEditorProviders } from "./rich-text-editor";
 import { SandIcon, SandIconButton } from "../../../ui/sand-kit-primitives";
+import {
+  SandMenuContent,
+  SandMenuItem,
+  SandMenuRoot,
+  SandMenuTrigger,
+} from "../../../ui/sand-floating-primitives";
 import { SandSpinner } from "../../../ui/sand-status-primitives";
+import { TdrpAttachMenuPopover } from "../../../../production/tdrp/TdrpAttachMenuPopover";
 
 // Immutable Mac voice carriers: index-UbX-y3il.js#byteOffset=4538599 (recording
 // chip/waveform), 4539081 (Stop dictation), and 4543238 (mic action).
@@ -24,10 +48,16 @@ function ComposerGlyph({ name, hidden = false }: { readonly name: "mic" | "arrow
   return <SandIcon className={hidden ? COMPOSER_GLYPH_HIDDEN_CLASS : COMPOSER_GLYPH_VISIBLE_CLASS} name={name} size="sm" style={{ lineHeight: 1 }} variant="filled" />;
 }
 
+export function formatDefaultScheduleValue(nowMs = Date.now()): string {
+  const target = new Date(nowMs + 60 * 60 * 1000);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())}T${pad(target.getHours())}:${pad(target.getMinutes())}`;
+}
+
 // Immutable prompt editor keyboard contract: Escape cancels an active voice
 // session or blurs the prompt when no voice session is active.
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=4738296 (e9n prompt editor; UTF-8 region SHA-256 0a96b805946245180330a9bffda0053e11015e9c8fe850dfa62361ab85acee35)
-// @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=5948419 (e9n prompt editor; UTF-8 region SHA-256 6f8b718ba4e43704baea5078c9498184b98f82a3ad84d47bf1e5a9f516988f07)
+// @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=5705592 (e9n prompt editor; UTF-8 region SHA-256 6f8b718ba4e43704baea5078c9498184b98f82a3ad84d47bf1e5a9f516988f07)
 
 export interface ConversationComposerProps {
   draft: ComposerDraft;
@@ -38,12 +68,31 @@ export interface ConversationComposerProps {
   onChange(draft: ComposerDraft): void;
   onStageFiles(files: File[]): void | Promise<void>;
   onSubmit(): void | Promise<void>;
+  onSendSilently?(): void | Promise<void>;
+  onScheduleSend?(scheduledAtMs: number): void | Promise<void>;
+  onSubmitWithOptions?(options?: {
+    silent?: boolean;
+    scheduledAtMs?: number;
+    scheduleDate?: number;
+    scheduledAt?: string;
+  }): void | Promise<void>;
+  silent?: boolean;
+  scheduleDate?: number;
+  scheduledAt?: string;
+  activeModel?: string;
+  availableModels?: ReadonlyArray<{ id: string; label: string }>;
+  thinkingEffort?: "low" | "medium" | "high";
+  onChangeModel?(modelId: string): void;
+  onChangeThinkingEffort?(effort: "low" | "medium" | "high"): void;
+  onDirectSendTypedAction?(payload: DirectTypedActionPayload): void | Promise<void>;
+  onSubmitDirectMessage?(payload: string): void | Promise<void>;
   onRemoveAttachment?(attachment: DraftAttachment): void | Promise<void>;
   replyTarget?: ComposerReplyTarget;
   onClearReplyTarget?(): void;
   editorProviders?: PromptEditorProviders;
   scopeKey?: string;
   acceptedSendGeneration?: number;
+  onOpenModal?: (mode: "poll" | "todo" | "invoice" | "bot" | "gift") => void;
 }
 
 export function extractClipboardFiles(items: DataTransferItemList | null | undefined): File[] {
@@ -68,11 +117,42 @@ export function selectComposerFiles(files: readonly File[], existingCount: numbe
   return files.slice(0, remaining);
 }
 
-export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabled = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onRemoveAttachment, onStageFiles, onSubmit, replyTarget, editorProviders, scopeKey }: ConversationComposerProps) {
+export function ConversationComposer({
+  acceptedSendGeneration = 0,
+  draft,
+  disabled = false,
+  notice,
+  placeholder = "Ask anything, or drop a file.",
+  transcribeAudio,
+  onChange,
+  onClearReplyTarget,
+  onRemoveAttachment,
+  onStageFiles,
+  onSubmit,
+  onSendSilently,
+  onScheduleSend,
+  onSubmitWithOptions,
+  activeModel,
+  availableModels,
+  thinkingEffort,
+  onChangeModel,
+  onChangeThinkingEffort,
+  onDirectSendTypedAction,
+  onSubmitDirectMessage,
+  replyTarget,
+  editorProviders,
+  scopeKey,
+  onOpenModal,
+}: ConversationComposerProps) {
   const fileInput = useRef<HTMLInputElement>(null);
   const editorControls = useRef<PromptEditorControls | null>(null);
   const dragDepth = useRef(0);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
+  const [sendMenuOpen, setSendMenuOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleValue, setScheduleValue] = useState(() => formatDefaultScheduleValue());
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
   const draftRef = useRef(draft);
   const hasPayload = !isComposerDraftEmpty(draft);
   draftRef.current = draft;
@@ -80,6 +160,7 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
   const voice = useVoiceSession(voiceOptions, scopeKey);
   const voiceBusy = voice.isRecording || voice.isProcessing || voice.isActivating;
   const canSend = hasPayload && !disabled && !voiceBusy;
+  const hasSendOptions = onSendSilently != null || onScheduleSend != null || onSubmitWithOptions != null;
   const atLimit = draft.attachments.length >= COMPOSER_ATTACHMENT_LIMIT;
 
   useEffect(() => voice.controller.onFinal((text) => {
@@ -94,8 +175,19 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
   }, [disabled, voiceBusy, voice.handleCancelClick]);
 
   useEffect(() => {
-    if (acceptedSendGeneration > 0) editorControls.current?.clear();
+    if (acceptedSendGeneration > 0) {
+      editorControls.current?.clear();
+      setSendMenuOpen(false);
+      setScheduleOpen(false);
+      setScheduleError(null);
+    }
   }, [acceptedSendGeneration]);
+
+  useEffect(() => {
+    setSendMenuOpen(false);
+    setScheduleOpen(false);
+    setScheduleError(null);
+  }, [scopeKey]);
 
   const cancelVoiceAndRefocus = useCallback(() => {
     voice.handleCancelClick();
@@ -157,6 +249,38 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
     if (canSend) void onSubmit();
   };
 
+  const triggerSilentSend = () => {
+    if (!canSend) return;
+    setSendMenuOpen(false);
+    setScheduleOpen(false);
+    setScheduleError(null);
+    if (onSendSilently != null) {
+      void onSendSilently();
+    } else if (onSubmitWithOptions != null) {
+      void onSubmitWithOptions({ silent: true });
+    }
+  };
+
+  const submitScheduledSend = () => {
+    if (!canSend || (onScheduleSend == null && onSubmitWithOptions == null)) return;
+    const parsed = Date.parse(scheduleValue);
+    if (!Number.isFinite(parsed) || parsed <= Date.now()) {
+      setScheduleError("Choose a future date and time.");
+      return;
+    }
+    setScheduleError(null);
+    setScheduleOpen(false);
+    if (onScheduleSend != null) {
+      void onScheduleSend(parsed);
+    } else if (onSubmitWithOptions != null) {
+      void onSubmitWithOptions({
+        scheduledAtMs: parsed,
+        scheduleDate: Math.floor(parsed / 1000),
+        scheduledAt: new Date(parsed).toISOString(),
+      });
+    }
+  };
+
   return (
     <form className="sand-prompt-form" onSubmit={submit}>
       <div className="sand-prompt-shell" data-expanded={hasPayload || undefined} onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
@@ -197,7 +321,72 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
         />
         {voice.isRecording || voice.isActivating ? <span aria-live="polite" className="sand-prompt-voice-status" role="status">Listening…</span> : null}
         <div className="sand-prompt-actions-row">
-          <SandIconButton aria-label="Attach file" className={PROMPT_ATTACH_CLASS} disabled={disabled || atLimit || voiceBusy} icon="plus" onClick={() => fileInput.current?.click()} shape="circle" size="lg" type="button" variant="default" />
+          <div style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <SandIconButton
+              aria-label="Attach file"
+              className={PROMPT_ATTACH_CLASS}
+              disabled={disabled || atLimit || voiceBusy}
+              icon="plus"
+              onClick={() => {
+                if (onOpenModal != null) {
+                  setIsAttachMenuOpen((open) => !open);
+                } else {
+                  fileInput.current?.click();
+                }
+              }}
+              shape="circle"
+              size="lg"
+              type="button"
+              variant="default"
+            />
+            <TdrpAttachMenuPopover
+              isOpen={isAttachMenuOpen}
+              onClose={() => setIsAttachMenuOpen(false)}
+              onSelectPhotoOrFile={() => fileInput.current?.click()}
+              onOpenModal={(mode) => {
+                setIsAttachMenuOpen(false);
+                onOpenModal?.(mode);
+              }}
+              onDirectSendTypedAction={onDirectSendTypedAction}
+              onSubmitDirectMessage={onSubmitDirectMessage}
+            />
+            {availableModels != null ? (
+              availableModels.length > 0 ? (
+                <select
+                  aria-label="Select model"
+                  className="sand-prompt-model-select"
+                  disabled={disabled || onChangeModel == null}
+                  onChange={(event) => onChangeModel?.(event.currentTarget.value)}
+                  value={activeModel ?? availableModels[0]?.id ?? ""}
+                >
+                  {availableModels.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span aria-label="Model status" className="sand-prompt-model-unconfigured" role="status">
+                  No models configured
+                </span>
+              )
+            ) : null}
+            {thinkingEffort != null && onChangeThinkingEffort != null ? (
+              <select
+                aria-label="Select thinking effort"
+                className="sand-prompt-thinking-select"
+                disabled={disabled}
+                onChange={(event) =>
+                  onChangeThinkingEffort(event.currentTarget.value as "low" | "medium" | "high")
+                }
+                value={thinkingEffort}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            ) : null}
+          </div>
           <span className="sand-prompt-actions-trailing sand-prompt-cta-cluster sand-78zum5 sand-6s0dn4 sand-2lah0s">
             {voice.isRecording ? <button aria-label="Stop dictation" className={RECORDING_CHIP_CLASS} onClick={() => voice.handleStopClick()} onKeyDown={(event) => {
               if (event.key === "Escape") {
@@ -210,10 +399,64 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
               <span className="sand-recording-chip__waveform sand-1xp8n7a sand-18gnavp sand-2lah0s sand-78zum5 sand-6s0dn4"><VoiceWaveform stream={voice.stream} /></span>
             </button> : voice.isProcessing ? <span aria-label="Transcribing voice input…" className="sand-prompt-voice-processing sand-2lah0s sand-16w9d4f sand-1th6cxs sand-78zum5 sand-6s0dn4 sand-l56j7k" role="status"><SandSpinner ariaLabel="Transcribing voice input…" size={18} />Transcribing…</span> : <>
               {hasPayload ? <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_PAYLOAD_CLASS} disabled={disabled || voiceBusy} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" /> : null}
-              {hasPayload ? <button aria-label="Send message" className={PROMPT_SEND_CLASS} disabled={!canSend} type="submit"><span className="sand-1n2onr6 sand-1kky2od sand-lup9mm"><ComposerGlyph hidden={hasPayload} name="mic" /><ComposerGlyph hidden={!hasPayload} name="arrow-up" /></span></button> : <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_EMPTY_CLASS} disabled={disabled} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" />}
+              {hasPayload ? <>
+                <button aria-label="Send message" className={PROMPT_SEND_CLASS} disabled={!canSend} type="submit"><span className="sand-1n2onr6 sand-1kky2od sand-lup9mm"><ComposerGlyph hidden={hasPayload} name="mic" /><ComposerGlyph hidden={!hasPayload} name="arrow-up" /></span></button>
+                {hasSendOptions ? <SandMenuRoot onOpenChange={setSendMenuOpen} open={sendMenuOpen} placement="top-end" offset={8}>
+                  <SandMenuTrigger>
+                    <button aria-label="Send options" className="sand-prompt-send-options" disabled={!canSend} type="button">
+                      ▾
+                    </button>
+                  </SandMenuTrigger>
+                  <SandMenuContent ariaLabel="Send options" style={{ minWidth: "200px" }}>
+                    {onSendSilently != null || onSubmitWithOptions != null ? <SandMenuItem index={0} onSelect={triggerSilentSend}>Send Without Sound</SandMenuItem> : null}
+                    {onScheduleSend != null || onSubmitWithOptions != null ? <SandMenuItem index={1} onSelect={() => {
+                      setSendMenuOpen(false);
+                      setScheduleError(null);
+                      setScheduleValue(formatDefaultScheduleValue());
+                      setScheduleOpen(true);
+                    }}>Schedule Message</SandMenuItem> : null}
+                  </SandMenuContent>
+                </SandMenuRoot> : null}
+              </> : <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_EMPTY_CLASS} disabled={disabled} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" />}
             </>}
           </span>
         </div>
+        {scheduleOpen && (onScheduleSend != null || onSubmitWithOptions != null) ? <div aria-label="Schedule message" className="sand-prompt-schedule-popover" role="dialog">
+          <label className="sand-prompt-schedule-label">
+            <span>Schedule send time</span>
+            <input
+              aria-label="Scheduled send time"
+              className="sand-prompt-schedule-input"
+              onChange={(event) => {
+                setScheduleValue(event.currentTarget.value);
+                setScheduleError(null);
+              }}
+              type="datetime-local"
+              value={scheduleValue}
+            />
+          </label>
+          {scheduleError != null ? <p aria-live="polite" className="sand-prompt-schedule-error" role="alert">{scheduleError}</p> : null}
+          <div className="sand-prompt-schedule-actions">
+            <button
+              className="sand-prompt-schedule-confirm"
+              disabled={!canSend}
+              onClick={submitScheduledSend}
+              type="button"
+            >
+              Schedule
+            </button>
+            <button
+              className="sand-prompt-schedule-cancel"
+              onClick={() => {
+                setScheduleOpen(false);
+                setScheduleError(null);
+              }}
+              type="button"
+            >
+              Cancel
+            </button>
+          </div>
+        </div> : null}
         {voice.error ? <p aria-live="polite" className="sand-prompt-voice-error" role="status">{voice.error.message}</p> : null}
         <input aria-hidden="true" className="sand-prompt-file-input" multiple onChange={stageSelectedFiles} ref={fileInput} tabIndex={-1} type="file" />
       </div>

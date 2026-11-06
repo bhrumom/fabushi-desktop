@@ -5,6 +5,8 @@ export const COORDINATOR_MAIN_METHOD_TABLE = {
   readAttachmentChunk: { args: "object" },
   fetchLinkMetadata: { args: "object" },
   getHostSettings: { args: "none" },
+  "settings.snapshot": { args: "none" },
+  "settings.mutateNetworkProxy": { args: "object" },
   setHostSettings: { args: "object" },
   setBoxSecrets: { args: "object" },
   refreshMcp: { args: "object" },

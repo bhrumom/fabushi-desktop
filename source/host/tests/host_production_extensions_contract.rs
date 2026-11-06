@@ -19,7 +19,7 @@ const MEMORY_PRODUCTION: &str = include_str!("../src/extensions/memory/productio
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 
 #[test]
-fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
+fn current_shipping_subset_is_declared_in_the_frozen_36_slot_registry() {
     let all = HOST_EXTENSION_ORDER.iter().copied().collect::<BTreeSet<_>>();
     let shipping = CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS
         .iter()
@@ -34,7 +34,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
         shipping.iter().all(|id| all.contains(id)),
         "every shipping production extension must occupy a frozen Grok registry slot"
     );
-    assert_eq!(HOST_EXTENSION_ORDER.len(), 35);
+    assert_eq!(HOST_EXTENSION_ORDER.len(), 36);
     assert!(shipping.contains(&HostExtensionId::Auth));
     assert!(shipping.contains(&HostExtensionId::Notifications));
     assert!(shipping.contains(&HostExtensionId::Automations));
@@ -46,6 +46,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
     assert!(shipping.contains(&HostExtensionId::LocalToolPermission));
     assert!(shipping.contains(&HostExtensionId::LocalExec));
     assert!(shipping.contains(&HostExtensionId::CloudAgents));
+    assert!(shipping.contains(&HostExtensionId::CloudWorkers));
     assert!(shipping.contains(&HostExtensionId::WebauthnProxy));
     assert!(shipping.contains(&HostExtensionId::StateBackstop));
     assert!(shipping.contains(&HostExtensionId::Inference));
@@ -76,6 +77,81 @@ fn shipping_production_extension_owner_remains_send_sync() {
     assert_send_sync::<mahayana_host_runtime::host_production_extensions::ProductionHostBoxExtensions>();
     assert_send_sync::<ProductionBrowserUaLog>();
     assert_send_sync::<ProductionInferenceExtension>();
+}
+
+#[test]
+fn production_host_owns_the_canonical_plugin_capability_catalog() {
+    for needle in [
+        "pub plugin_capability_catalog: Arc<PluginCapabilityCatalog>",
+        "let plugin_capability_catalog = Arc::new(PluginCapabilityCatalog::new());",
+        "register_bundled_channel_capabilities(&plugin_capability_catalog)?;",
+        "register_bundled_worker_capabilities(&plugin_capability_catalog);",
+        "plugin_capability_catalog,",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own the plugin capability catalog: {needle}"
+        );
+    }
+    assert!(
+        PRODUCTION_OWNER.contains("pub fn register_channel_delivery_provider("),
+        "provider registration must be owned by ProductionHostExtensions"
+    );
+    assert!(
+        PRODUCTION_OWNER.contains("family: CAPABILITY_FAMILY_WORKER_PROVIDERS.into()")
+            && PRODUCTION_OWNER.contains("provider_id: \"crabbox\".into()")
+            && PRODUCTION_OWNER.contains("plugin_id: \"crabbox\".into()"),
+        "bundled Crabbox registration must remain capability metadata only"
+    );
+    assert!(
+        SHIPPING_HOST.contains("plugin_capability_catalog: Arc::clone(&production_extensions.plugin_capability_catalog)")
+            && SHIPPING_HOST.contains("if method == \"cloudWorkers.capabilities\"")
+            && SHIPPING_HOST.contains("\"metadataOnly\": true"),
+        "worker capability metadata must be projected through the existing Host catalog"
+    );
+    assert!(
+        PRODUCTION_OWNER.contains("if self.plugin_capability_catalog.get_channel(channel_id).is_none()"),
+        "provider registration must reject channels absent from the capability catalog"
+    );
+}
+
+#[test]
+fn production_host_owns_the_channel_delivery_boundary_consumed_by_gateway() {
+    for needle in [
+        "pub channel_delivery: HostChannelDelivery",
+        "channel_delivery_router: ChannelDeliveryRouter",
+        "let channel_delivery_router = ChannelDeliveryRouter::new();",
+        "let channel_delivery = HostChannelDelivery::new(Arc::new(channel_delivery_router.clone()));",
+        "channel_delivery,",
+        "channel_delivery_router,",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own channel delivery: {needle}"
+        );
+    }
+    assert!(
+        SHIPPING_HOST.contains("channel_delivery: production_extensions.channel_delivery.clone()"),
+        "Gateway must consume the canonical ProductionHostExtensions channel delivery"
+    );
+    for needle in [
+        "pub fn replace_channel_delivery_provider(",
+        "pub fn unregister_channel_delivery_provider(",
+        "pub fn revoke_bundled_channel(",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "provider lifecycle operation must be owned by ProductionHostExtensions: {needle}"
+        );
+    }
+    assert!(
+        PRODUCTION_OWNER.contains("fn register_bundled_channel_capabilities("),
+        "production startup must own bundled channel capability discovery"
+    );
+    assert!(
+        PRODUCTION_OWNER.contains("PluginRegistrationMode::Capabilities"),
+        "bundled startup discovery must remain capability-only"
+    );
 }
 
 
@@ -286,14 +362,14 @@ fn cross_user_host_upgrade_and_teach_recording_have_one_shipping_owner() {
 }
 
 #[test]
-fn shipping_production_composition_covers_the_exact_frozen_35_slots() {
+fn shipping_production_composition_covers_the_exact_frozen_36_slots() {
     let frozen = HOST_EXTENSION_ORDER.iter().copied().collect::<BTreeSet<_>>();
     let shipping = CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS
         .iter()
         .copied()
         .collect::<BTreeSet<_>>();
-    assert_eq!(CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS.len(), 35);
-    assert_eq!(shipping.len(), 35, "shipping production registry must not duplicate slots");
+    assert_eq!(CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS.len(), 36);
+    assert_eq!(shipping.len(), 36, "shipping production registry must not duplicate slots");
     assert_eq!(shipping, frozen, "shipping production registry must cover the exact frozen slots");
     assert!(
         !PRODUCTION_OWNER.contains("NoopProductionExtension")
@@ -458,12 +534,18 @@ fn memory_synthesis_is_pinned_to_authenticated_statsig_and_shipping_inference() 
         "is_cancelled()",
         "memory_synthesis_telemetry_report",
         "report_memory_synthesis",
+        "ProductionSynthesisTarget",
+        "apply_synthesis_with_gate",
     ] {
         assert!(
             MEMORY_PRODUCTION.contains(needle),
             "shipping Memory production must consume the shared inference/telemetry path: {needle}"
         );
     }
+    assert!(
+        SHIPPING_HOST.contains("bind_memory_synthesis_gate()"),
+        "shipping Host must bind Memory synthesis to the session owner before runtime use"
+    );
 }
 
 #[test]

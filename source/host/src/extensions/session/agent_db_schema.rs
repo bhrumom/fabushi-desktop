@@ -4,6 +4,8 @@ pub const WINDOW_ENTRY_FILTER_SQL: &str = r#"json_extract(entry, '$.kind') != 't
 pub const BRANCHED_ENTRY_FILTER_SQL: &str =
     r#"COALESCE(json_extract(entry, '$.branched'), 0) = 1"#;
 
+pub const AGENT_DB_SCHEMA_VERSION: &str = "2";
+
 pub const AGENT_DB_SCHEMA: &str = r#"
 CREATE TABLE IF NOT EXISTS kv (
   key TEXT PRIMARY KEY,
@@ -27,6 +29,58 @@ CREATE INDEX IF NOT EXISTS idx_transcript_window
 CREATE INDEX IF NOT EXISTS idx_transcript_branched
   ON transcript_entries(seq, entry)
   WHERE COALESCE(json_extract(entry, '$.branched'), 0) = 1;
+CREATE TABLE IF NOT EXISTS cron_session_runs (
+  session_key TEXT PRIMARY KEY,
+  automation_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  lifecycle_revision TEXT NOT NULL,
+  updated_at_ms REAL NOT NULL,
+  base_session INTEGER NOT NULL DEFAULT 0,
+  state TEXT NOT NULL,
+  terminal_outcome TEXT,
+  terminal_detail TEXT,
+  active_controller INTEGER NOT NULL DEFAULT 0,
+  pending_outgoing_media INTEGER NOT NULL DEFAULT 0,
+  unsettled_subagent INTEGER NOT NULL DEFAULT 0,
+  fence_state_known INTEGER NOT NULL DEFAULT 0
+) STRICT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cron_session_runs_automation_run
+  ON cron_session_runs(automation_id, run_id);
+CREATE INDEX IF NOT EXISTS idx_cron_session_runs_expiry
+  ON cron_session_runs(updated_at_ms, base_session, state);
+CREATE TABLE IF NOT EXISTS conversation_topics (
+  topic_id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  icon TEXT,
+  creator_id TEXT NOT NULL,
+  created_at_ms INTEGER NOT NULL,
+  pinned INTEGER NOT NULL DEFAULT 0,
+  closed INTEGER NOT NULL DEFAULT 0,
+  hidden INTEGER NOT NULL DEFAULT 0,
+  last_message_id TEXT,
+  unread_count INTEGER NOT NULL DEFAULT 0
+) STRICT;
+CREATE TABLE IF NOT EXISTS conversation_members (
+  actor_id TEXT PRIMARY KEY,
+  status TEXT NOT NULL,
+  admin_title TEXT,
+  admin_rights TEXT,
+  restrictions TEXT,
+  joined_at_ms INTEGER NOT NULL,
+  invited_by TEXT,
+  updated_at_ms INTEGER NOT NULL
+) STRICT;
+CREATE TABLE IF NOT EXISTS conversation_pins (
+  child_scope TEXT NOT NULL,
+  message_id TEXT NOT NULL,
+  pinned_at_ms INTEGER NOT NULL,
+  pinned_by TEXT NOT NULL,
+  PRIMARY KEY (child_scope, message_id)
+) STRICT;
+CREATE INDEX IF NOT EXISTS idx_transcript_topic
+  ON transcript_entries(json_extract(entry, '$.topicId'), seq)
+  WHERE json_extract(entry, '$.topicId') IS NOT NULL;
 "#;
 
 pub const MAIN_TRANSCRIPT_MESSAGE_FILTER_SQL: &str = r#"

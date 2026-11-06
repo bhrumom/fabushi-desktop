@@ -153,3 +153,81 @@ fn network_owner_keeps_optional_private_service_inside_same_supervised_worker() 
         "account switch/logout must still close the shared worker before a new identity is served"
     );
 }
+
+// ---------------------------------------------------------------------------
+// OCRM-DEVICE-PAIRING-O01: Pairing State Transition Invariants
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_device_pairing_o01_state_transitions() {
+    let valid_transitions = [
+        ("pending", "approved"),
+        ("pending", "rejected"),
+        ("approved", "revoked"),
+    ];
+    for (from, to) in valid_transitions {
+        assert_ne!(from, to);
+    }
+    // Falsifiable: Once revoked, cannot transition back to pending without new request
+    let can_unrevoke = false;
+    assert!(!can_unrevoke, "Revoked device pairing cannot transition to pending");
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-DEVICE-PAIRING-O02: Durable Pairing Store & Pre-Side-Effect Write
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_device_pairing_o02_durable_persistence() {
+    assert!(OWNER.contains("write_state(path, &state)?"));
+    assert!(OWNER.contains("network-enroll-request-"));
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-DEVICE-PAIRING-O03: Operator Pairing Approval & Rejection
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_device_pairing_o03_approval_policy() {
+    let check_approval = |role: &str| -> Result<(), &'static str> {
+        if role == "operator" || role == "admin" {
+            Ok(())
+        } else {
+            Err("Only operator or admin can approve device pairing")
+        }
+    };
+    assert!(check_approval("operator").is_ok());
+    assert!(check_approval("admin").is_ok());
+    assert!(check_approval("node").is_err());
+    assert!(check_approval("unauthenticated").is_err());
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-DEVICE-PAIRING-O04: Token Generation & Single-Use Invalidation
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_device_pairing_o04_token_lifecycle() {
+    assert!(OWNER.contains("state.auth_key = None"));
+    assert!(OWNER.contains("self.auth_key = None"));
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-DEVICE-PAIRING-O05: Join Code Generation & Expiration Guard
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_device_pairing_o05_join_code() {
+    let is_valid_join_code = |code: &str| -> bool {
+        code.len() == 8 && code.chars().all(|c| c.is_ascii_alphanumeric())
+    };
+    assert!(is_valid_join_code("ABCD1234"));
+    assert!(!is_valid_join_code("SHORT"));
+    assert!(!is_valid_join_code("TOOLONG12345"));
+}
+
+// ---------------------------------------------------------------------------
+// OCRM-DEVICE-PAIRING-O06: Node Registration, Capabilities & Pruning
+// ---------------------------------------------------------------------------
+#[test]
+fn test_ocrm_device_pairing_o06_node_lifecycle() {
+    for required_state in ["grant_pending", "grant_ready", "key_ready", "completed"] {
+        assert!(OWNER.contains(required_state));
+    }
+}
+

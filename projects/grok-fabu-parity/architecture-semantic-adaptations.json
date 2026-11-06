@@ -22,7 +22,7 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "26dcb2aad353551e6e8f8468f7ce3a63335730ce",
+      "targetBlobSha": "bcddc74a8d890525d997ccf46b9052bc8d97285b",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/account/session/sign-in-status.tsx",
@@ -35,7 +35,7 @@
         "desktop/e2e/mahayana-agent-workbench.spec.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/pr20-verify-once.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/session_gateway_contract.rs",
         "desktop/e2e/openbot-packaged-acceptance.spec.ts",
         ".github/workflows/release-macos-main.yml",
@@ -48,7 +48,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "5cf2f33c394f885a37709a01361dc516b0fb4240",
+      "targetBlobSha": "d0409c51865a80091e1fd04eb5acf46e789f6afd",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "frontend/src/production/ProductionRenderer.tsx",
@@ -66,7 +66,7 @@
       "referencePath": "frontend/src/production/model.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "a8607a383ec32f6fba7142bd7ce8ae93f6af7dc5",
+      "targetBlobSha": "499ff59705eca7e165860eecb16dd7db3d1f80bf",
       "behavioralEvidence": [
         "frontend/src/production/model.ts",
         "frontend/src/production/coordinator-client.ts"
@@ -75,15 +75,48 @@
         "desktop/e2e/grok-parity.spec.ts",
         "desktop/e2e/mahayana-agent-workbench.spec.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        ".github/workflows/pr20-verify-once.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "rationale": "Keeps Grok 0.18 Agent projection/filter/sort semantics while accepting the shipping Mahayana Coordinator agents event envelope { agents: [...] } in addition to the frozen direct array form. The adaptation is limited to transport normalization at the renderer projection boundary; Agent identity, hidden state, activity and ordering continue through the frozen Grok projection logic. It also normalizes authoritative Mahayana transcript echoes that carry Grok attachment contexts on user messages, preserving committed path/name/MIME/size metadata for mixed and attachment-only sends without relying on optimistic renderer state. Phase 1 extends this same projection boundary with Human-conversation and Human-transcript normalization while preserving the RendererAgent/ConversationTranscriptEntry contracts, including canonical attachment metadata, reply relation fields and trusted Agent author names. The renderer also maps legacy Grok/Grok Bot default profile names to the Fabushi product label while preserving all other configured Agent names."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/model.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "6d49e1badea98c5fa48310a2e0160c4dd4c4bd22",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/model.ts",
+        "frontend/src/production/model.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "testEvidence": [
+        "frontend/src/production/transcript-projection.contract.test.ts",
+        "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+        ".github/workflows/native-service-contracts.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 ConversationTranscriptEntry and TranscriptMessage contracts while adding optional Human-message projection fields (`readAt`, `forwardedFromConversationId`, `forwardedFromMessageId`, `forwardedFromAuthorName`, `forcedForwardInfo`, and `protectedContent`) used by the canonical ConversationTranscript and ForwardMessageDialog owners without creating a second transcript model."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "daff11acf54e6b9906ac62bcaeced0245789cb8d",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.contract.test.ts",
+        "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+        ".github/workflows/native-service-contracts.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 ReplyThreadController ownership, scope fencing, and unloaded-target continuity while retiring active reply selections when a loaded message entry's content is cleared in-place (`isActionableReplyTargetEntry`, `ClearDraftReplyTo`) without losing the composer draft text."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "638a2df9675ec9809ab63c0684222e65f416d0e9",
+      "targetBlobSha": "8931a644528d7bfe1ffdc651f58d02eb2cb5812d",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/draft-state.ts"
       ],
@@ -98,7 +131,7 @@
       "referencePath": "source/electron-preload/preload.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "4d4aadb62aacb85cae559c4cb6aa01885a9990b8",
+      "targetBlobSha": "0a23bba77fc6667cbb417067e63fcc13f3274028",
       "behavioralEvidence": [
         "source/electron-preload/preload.ts",
         "source/electron-preload/runtime/primary.ts",
@@ -282,7 +315,7 @@
       "referencePath": "source/electron-main/production-binding-providers.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "e65c2b1e9160d30dad1b549558e3d01826069dce",
+      "targetBlobSha": "6cb54a6178cca81b9324df18aeb123915c7af38c",
       "behavioralEvidence": [
         "source/electron-main/production-binding-providers.ts",
         "source/electron-main/local-exec/local-exec-daemon-protocol.ts",
@@ -373,7 +406,7 @@
       "referencePath": "source/shared/rpc/coordinator-main.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "9ee4b210ea92fbaeb4933b41ccb8e22ae5f3f4f3",
+      "targetBlobSha": "da1c1f13b6ab5d8147242bf9856a53c81dcf8b8a",
       "behavioralEvidence": [
         "source/shared/rpc/coordinator-main.ts",
         "source/electron-main/adapters/attachment-gateway.ts",
@@ -421,7 +454,7 @@
       "referencePath": "source/electron-main/coordinator/production-provider.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "3b7591fbaf07cd7a5b13bfda27bca717c8603e01",
+      "targetBlobSha": "83cb89e8ae85a21776335b557b81876f1a7f8a64",
       "behavioralEvidence": [
         "source/electron-main/coordinator/production-provider.ts",
         "source/electron-main/coordinator/coordinator-executors.ts",
@@ -438,7 +471,7 @@
       "referencePath": "source/electron-main/main-production-services.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "8ca982cf2401d31a4782870b37688703e7f96895",
+      "targetBlobSha": "45003d35c42e5eabc0a78303c25dfce35e98980b",
       "behavioralEvidence": [
         "source/electron-main/main-production-services.ts",
         "docs/specs/desktop-miniapp-publisher.md",
@@ -588,7 +621,7 @@
       "referencePath": "frontend/src/recovered/runtime/coordinator-source.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "db7859728adba5129fab1d0572720390807dabad",
+      "targetBlobSha": "7349b138615c1183fc66601d0b3ee8efa6ea802f",
       "behavioralEvidence": [
         "frontend/src/recovered/runtime/coordinator-source.ts",
         "frontend/src/production/ProductionRenderer.tsx"
@@ -625,7 +658,7 @@
       "referencePath": "frontend/src/recovered/contracts/surface-notice.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "0ddf77339c4ea91f49cada27b0bf54bc563994d4",
+      "targetBlobSha": "b0e89f60fd7eac7052d902993419f17b54ea0058",
       "behavioralEvidence": [
         "frontend/src/recovered/contracts/surface-notice.ts",
         "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
@@ -641,7 +674,7 @@
       "referencePath": "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "2ccb6c4f94c094495c24907be32cee6447796d6d",
+      "targetBlobSha": "da8f3f885455419accd6c834271dfb6c098efad1",
       "behavioralEvidence": [
         "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx",
         "frontend/src/recovered/features/settings/overlay/desktop.ts",
@@ -659,7 +692,7 @@
       "referencePath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "ff8e61b13ea9475c502da6ed58a0906fd44538d6",
+      "targetBlobSha": "e0a0e7a16218affe4706fc708ca640fc2c584905",
       "behavioralEvidence": [
         "frontend/src/recovered/features/settings/overlay/desktop.ts",
         "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
@@ -676,7 +709,7 @@
       "referencePath": "frontend/src/recovered/features/settings/overlay/panels.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "994d0e009430e6dfb0b1edb39f717b673be40a8f",
+      "targetBlobSha": "1cb5508daf79ea12458124b09ee497c4c08fd618",
       "behavioralEvidence": [
         "frontend/src/recovered/features/settings/overlay/panels.tsx",
         "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
@@ -693,7 +726,7 @@
       "referencePath": "source/electron-main/main-edge.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "34ebc09f00048d16649fb7b326b2335d85d03734",
+      "targetBlobSha": "e4f060662317644ddaad8632d5745f3ad2b42f5b",
       "behavioralEvidence": [
         "source/electron-main/main-edge.ts",
         "source/shared/node/settings/sand-settings-store.ts",
@@ -748,7 +781,7 @@
       "referencePath": "source/electron-main/adapters/main-rpc.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "2ae92ffde6e817c146a272f21ceee0e448ad6297",
+      "targetBlobSha": "d91e41255f7c4f8750269ec2555eca1074bf0973",
       "behavioralEvidence": [
         "source/electron-main/adapters/main-rpc.ts",
         "source/electron-main/call-media.ts",
@@ -784,7 +817,7 @@
       "referencePath": "frontend/src/recovered/features/settings/overlay/view.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "c79bf6787f5d423e7c958bc85bf068e65f45b0d3",
+      "targetBlobSha": "b2c93c3ad304b4a008eabe45075c74f6dec29731",
       "behavioralEvidence": [
         "frontend/src/recovered/features/settings/overlay/view.tsx",
         "frontend/src/recovered/features/settings/overlay/localization.ts",
@@ -891,7 +924,7 @@
       "referencePath": "frontend/src/recovered/features/computer/shell/view.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "3289962193d6bca326229a0abf63d99e84a65af4",
+      "targetBlobSha": "aa4b8515b112e0c1e85d3690b2d9c3206d6f9a8d",
       "behavioralEvidence": [
         "frontend/src/recovered/features/computer/shell/view.tsx",
         "source/shared/product-name.ts"
@@ -1212,7 +1245,7 @@
       "referencePath": "frontend/src/recovered/features/settings/overlay/updates.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "2da4ba45f821bec3242ff88ae2b82f1246219182",
+      "targetBlobSha": "6ed2a5a43b8f08699f3570b159a60d97a41ccd27",
       "behavioralEvidence": [
         "frontend/src/recovered/features/settings/overlay/updates.ts"
       ],
@@ -1321,7 +1354,7 @@
       "referencePath": "source/electron-main/main.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "b8eeed322ec07e5c8f67fa367cd2f58ac212b4f0",
+      "targetBlobSha": "e2451a6d8f809fb0855ae0d34b0f3913a87b1ace",
       "behavioralEvidence": [
         "source/electron-main/main.ts",
         "source/electron-main/mcp/miniapp-window.ts",
@@ -1440,6 +1473,354 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "The user explicitly requires removing Cursor services while retaining Fabushi capabilities. Preserve native application menu roles, shortcuts, window ownership and feedback callbacks; change only Help Center navigation to the existing Fabushi repository support entry. This is a source-locked product adaptation, not a service-migration or packaged-release acceptance claim."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/coordinator-main-legs.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "e73c336c9a48346acb7b6a5af74c842c6feeb14a",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/coordinator-main-legs.ts",
+        "source/electron-main/coordinator/coordinator-main-port-client.ts",
+        "projects/openclaw-rust/dossiers/coordinator-main-port-post-failure-recovery-20261029.md"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-main-port-client.contract.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This is an evidence-locked TypeScript adaptation of the frozen Coordinator main-data leg. The existing Electron owner remains authoritative while a failed MessagePort post is reported and rethrown so the paired client can settle pending calls; port close/dispose still owns endpoint cleanup and no new Coordinator or runtime is introduced. The direct contract covers post-failure settlement and leg failure reporting; packaged and renderer acceptance remain separate gates."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/coordinator-main-port-client.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "4b573248c9a567e36c865d1e572c8290017db8ef",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/coordinator-main-port-client.ts",
+        "source/shared/rpc/coordinator-port.ts",
+        "projects/openclaw-rust/dossiers/coordinator-main-port-post-failure-recovery-20261029.md"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-main-port-client.contract.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This is an evidence-locked TypeScript adaptation of the frozen main-data port client. It preserves the existing protocol and pending-call owner, but converts a failed request post into an explicit post-failed settlement that rejects pending callers and closes the owned endpoint, avoiding an indefinitely pending Coordinator transition without creating a second state owner. Direct contract coverage exercises post failure, disposal and endpoint lifecycle outcomes."
+    },
+    {
+      "referencePath": "frontend/src/production/command-palette-provider.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c4036339112051737b1104a20d19e8abf56b9ef5",
+      "behavioralEvidence": [
+        "frontend/src/production/command-palette-provider.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of frontend/src/production/command-palette-provider.ts."
+    },
+    {
+      "referencePath": "frontend/src/production/command-palette-search-provider.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "e5dcfcc24a2040786a418ddbbe2b702869d734be",
+      "behavioralEvidence": [
+        "frontend/src/production/command-palette-search-provider.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of frontend/src/production/command-palette-search-provider.ts."
+    },
+    {
+      "referencePath": "frontend/src/production/coordinator-client.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c63ebfdcbe658650a409f239fc28fa44a4fcba6f",
+      "behavioralEvidence": [
+        "frontend/src/production/coordinator-client.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of frontend/src/production/coordinator-client.ts."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/agent-info/async-tasks/view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "448c787de36a1ea066c214371b045975bfef4243",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/agent-info/async-tasks/view.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of frontend/src/recovered/features/agent-info/async-tasks/view.tsx."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/composer.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "d2a467715e4667ca6997d3b1a852c368cbb2b875",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/composer.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of frontend/src/recovered/features/conversation/workspace/composer.tsx."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "b4464b51e894d511104be343ea82e9a16f39b49d",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of frontend/src/recovered/features/conversation/workspace/media-viewer.tsx."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/pagination.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "14948daf77d67ab75dbc7b2a401253592554c8e5",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/pagination.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of frontend/src/recovered/features/conversation/workspace/pagination.ts."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer-provider.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "67afaab704b0860ac64f719b425683d76da15637",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer-provider.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer-provider.ts."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/submission.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "bbccfe4ad9ab3469bc5e772a55d79e8f7e36aaf9",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/submission.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of frontend/src/recovered/features/conversation/workspace/submission.ts."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/onboarding/signed-in/computer-readiness.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "729780b5e82e0930b8c241bcf36595e5ec03ac5b",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/onboarding/signed-in/computer-readiness.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of frontend/src/recovered/features/onboarding/signed-in/computer-readiness.ts."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/onboarding/signed-in/model.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "11e0286bea3cbf33751f2da9ba9262485d24be42",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/onboarding/signed-in/model.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of frontend/src/recovered/features/onboarding/signed-in/model.ts."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/onboarding/signed-in/view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "8bfb333d641273dee0a46aea1b003e425f0f9343",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/onboarding/signed-in/view.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of frontend/src/recovered/features/onboarding/signed-in/view.tsx."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/root-resilience/connection-state.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "7c2cf9c0233aa1598128e2ad24927b1adfe3ede0",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/root-resilience/connection-state.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of frontend/src/recovered/features/root-resilience/connection-state.ts."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/account-transition-cleanup.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "9a5d5701ceefbeb137b407a8891db06737577a8f",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/account-transition-cleanup.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of source/electron-main/coordinator/account-transition-cleanup.ts."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/production-root-provider.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "4c5a4f73315994da7258d1d605ba4f5a4d438605",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/production-root-provider.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of source/electron-main/coordinator/production-root-provider.ts."
+    },
+    {
+      "referencePath": "source/electron-main/update/sand-update-service.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "74f708492d282f386a759c6b5c6136ad1aca1846",
+      "behavioralEvidence": [
+        "source/electron-main/update/sand-update-service.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of source/electron-main/update/sand-update-service.ts."
+    },
+    {
+      "referencePath": "source/electron-main/update/update-feed.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "b27636414be28290ec9ee221ea8e06fb8e0a3db2",
+      "behavioralEvidence": [
+        "source/electron-main/update/update-feed.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of source/electron-main/update/update-feed.ts."
+    },
+    {
+      "referencePath": "source/electron-main/update/update-telemetry.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "79695b9457f9fd94823b07cc28ca6171839a3ecf",
+      "behavioralEvidence": [
+        "source/electron-main/update/update-telemetry.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of source/electron-main/update/update-telemetry.ts."
+    },
+    {
+      "referencePath": "source/electron-main/update/update-wiring.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "40632119b745a0bfea88b89405c2448e155fcd93",
+      "behavioralEvidence": [
+        "source/electron-main/update/update-wiring.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of source/electron-main/update/update-wiring.ts."
+    },
+    {
+      "referencePath": "source/electron-main/update/win32-installer.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "e975f9bafde36000ee9b47b25039c49f32089c5c",
+      "behavioralEvidence": [
+        "source/electron-main/update/win32-installer.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of source/electron-main/update/win32-installer.ts."
+    },
+    {
+      "referencePath": "source/electron-main/window-chrome.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "26715ac6593835cc3a30b172d39608efd837edcd",
+      "behavioralEvidence": [
+        "source/electron-main/window-chrome.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of source/electron-main/window-chrome.ts."
+    },
+    {
+      "referencePath": "source/shared/client-persistence-store.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "86750721807f892e6aa02213fb45c6eb7d18c4b1",
+      "behavioralEvidence": [
+        "source/shared/client-persistence-store.ts"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Unified Fabushi UFX-001 / TDRP-001 / OCRM-001 semantic adaptation of source/shared/client-persistence-store.ts."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/protocol.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "f269579e4b0e6ec9cc5e0207a1989372c52c8be0",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/protocol.ts",
+        "frontend/src/production/model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok transcript-card protocol semantics while adding explicit .ts module specifiers required by Node --experimental-strip-types contract test execution."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/send-message-text.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "dbf363dd4011fcde50c7e491bcdcb3421a7ca8ae",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/send-message-text.ts",
+        "frontend/src/production/model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok send-message-text card semantics while adding explicit .ts module specifiers required by Node --experimental-strip-types contract test execution."
     }
   ]
 }

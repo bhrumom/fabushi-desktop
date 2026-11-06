@@ -163,8 +163,11 @@ fn box_store_backend_policy_matches_local_v2_default_and_cached_env_identity() {
         BoxStoreBackendKind::SandBoxStoreV2
     );
 
-    let local_dir = std::env::temp_dir().join("fabushi-box-store-policy");
-    environment.insert(SAND_BOX_STORE_LOCAL_DIR_ENV.into(), local_dir.to_string_lossy().into_owned());
+    let local_dir = std::env::temp_dir().join("fabushi-box-store");
+    environment.insert(
+        SAND_BOX_STORE_LOCAL_DIR_ENV.into(),
+        local_dir.to_string_lossy().into_owned(),
+    );
     let local = resolve_box_store_backend_policy(&environment);
     assert_eq!(local.kind, BoxStoreBackendKind::LocalFs);
     assert_eq!(

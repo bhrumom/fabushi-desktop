@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{BTreeSet, VecDeque};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use mahayana_host_runtime::extensions::box_store_sync::box_store_manifest_format::BoxStoreManifestEntry;
 use mahayana_host_runtime::extensions::box_store_sync::store_db_snapshot_upload::{
     BoxManifestMap, SnapshotFailurePhase, SnapshotUploadOutcome,
-    StoreDbSnapshotRuntimePort, StoreDbSnapshotUpload, sha256_bytes,
+    SnapshotArtifact, StoreDbSnapshotRuntimePort, StoreDbSnapshotUpload, sha256_bytes,
 };
 
 #[derive(Default)]
@@ -14,6 +14,19 @@ struct FakeRuntime {
     byte_puts: Mutex<Vec<(String, String, Vec<u8>, bool)>>,
     file_puts: Mutex<Vec<(String, String, PathBuf, String, u64)>>,
     fail_upload: Mutex<Option<String>>,
+    upload_count: Mutex<usize>,
+    fail_after: Mutex<Option<usize>>,
+}
+
+impl FakeRuntime {
+    fn should_fail(&self) -> bool {
+        let mut count = self.upload_count.lock().unwrap();
+        *count += 1;
+        self.fail_after
+            .lock()
+            .unwrap()
+            .is_some_and(|limit| *count >= limit)
+    }
 }
 
 impl StoreDbSnapshotRuntimePort for FakeRuntime {
@@ -26,6 +39,9 @@ impl StoreDbSnapshotRuntimePort for FakeRuntime {
     ) -> Result<(), String> {
         if let Some(error) = self.fail_upload.lock().unwrap().clone() {
             return Err(error);
+        }
+        if self.should_fail() {
+            return Err("injected upload failure".into());
         }
         self.byte_puts.lock().unwrap().push((
             store_id.to_string(),
@@ -46,6 +62,9 @@ impl StoreDbSnapshotRuntimePort for FakeRuntime {
     ) -> Result<(), String> {
         if let Some(error) = self.fail_upload.lock().unwrap().clone() {
             return Err(error);
+        }
+        if self.should_fail() {
+            return Err("injected upload failure".into());
         }
         self.file_puts.lock().unwrap().push((
             store_id.to_string(),
@@ -125,6 +144,173 @@ fn small_snapshot_uploads_content_addressed_bytes_and_updates_manifest() {
     );
 
     let _ = fs::remove_dir_all(path.parent().unwrap());
+}
+
+#[test]
+fn multi_artifact_upload_reuses_owner_and_preflights_paths() {
+    let runtime = Arc::new(FakeRuntime::default());
+    let logs = Arc::new(Mutex::new(Vec::new()));
+    let service = service(runtime.clone(), 1024, 100, vec![10, 20, 30, 40], logs);
+    let manifest = &mut BoxManifestMap::new();
+    let first = temp_file("manifest.json", b"manifest");
+    let second = temp_file("schema.sql", b"schema");
+    let results = service
+        .upload_artifact_set(
+            "store-1",
+            manifest,
+            &[
+                SnapshotArtifact {
+                    rel_path: "global/manifest.json".into(),
+                    path: first.clone(),
+                    mode: 0o600,
+                },
+                SnapshotArtifact {
+                    rel_path: "global/schema.sql".into(),
+                    path: second,
+                    mode: 0o600,
+                },
+            ],
+        )
+        .expect("upload admitted artifact set");
+    assert_eq!(results.len(), 2);
+    assert!(results
+        .iter()
+        .all(|result| result.outcome == SnapshotUploadOutcome::Uploaded));
+    assert_eq!(manifest.len(), 2);
+    assert!(service
+        .upload_artifact_set(
+            "store-1",
+            manifest,
+            &[SnapshotArtifact {
+                rel_path: "../escape".into(),
+                path: temp_file("escape", b"x"),
+                mode: 0o600,
+            }],
+        )
+        .is_err());
+    assert_eq!(manifest.len(), 2, "invalid batch must not mutate manifest");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::symlink;
+        let symlink_path = temp_file("symlink-target", b"target").with_file_name("symlink");
+        symlink(&first, &symlink_path).expect("create source symlink");
+        assert!(service
+            .upload_artifact_set(
+                "store-1",
+                manifest,
+                &[SnapshotArtifact {
+                    rel_path: "global/symlink.json".into(),
+                    path: symlink_path,
+                    mode: 0o600,
+                }],
+            )
+            .is_err());
+        assert_eq!(manifest.len(), 2, "source alias must not mutate manifest");
+    }
+}
+
+#[test]
+fn live_sqlite_export_reaches_existing_box_store_owner() {
+    let runtime = Arc::new(FakeRuntime::default());
+    let logs = Arc::new(Mutex::new(Vec::new()));
+    let service = service(runtime.clone(), 1024 * 1024, 1024, vec![10; 8], logs);
+    let connection = rusqlite::Connection::open_in_memory().expect("open SQLite producer");
+    connection
+        .execute_batch("CREATE TABLE messages (id INTEGER PRIMARY KEY, body TEXT); INSERT INTO messages VALUES (1, 'hello');")
+        .expect("seed SQLite producer");
+    let staging = std::env::temp_dir().join(format!(
+        "fabushi-live-sqlite-export-{}",
+        uuid::Uuid::new_v4()
+    ));
+    let manifest = &mut BoxManifestMap::new();
+    let results = service
+        .export_and_upload_sqlite_backup(
+            "store-1",
+            manifest,
+            &connection,
+            &staging,
+            mahayana_host_runtime::extensions::snapshot::git_backup_manager::GitBackupIdentity {
+                role: "generic".into(),
+                agent_id: None,
+                id: Some("store_one".into()),
+            },
+            &BTreeSet::new(),
+            "stores/store_one/portable",
+            0o600,
+        )
+        .expect("export and upload through BoxStore owner");
+    assert_eq!(results.len(), 3, "manifest, schema, and one table artifact");
+    assert!(results
+        .iter()
+        .all(|result| result.outcome == SnapshotUploadOutcome::Uploaded));
+    assert_eq!(manifest.len(), 3);
+    assert!(!staging.exists(), "owner must clean portable staging");
+    assert!(manifest.contains_key("stores/store_one/portable/manifest.json"));
+    assert!(manifest.contains_key("stores/store_one/portable/schema.sql"));
+    assert!(manifest.contains_key("stores/store_one/portable/tables/messages.jsonl"));
+}
+
+#[test]
+fn partial_portable_upload_does_not_commit_manifest_entries() {
+    let runtime = Arc::new(FakeRuntime::default());
+    *runtime.fail_after.lock().unwrap() = Some(2);
+    let logs = Arc::new(Mutex::new(Vec::new()));
+    let service = service(runtime.clone(), 1024 * 1024, 1024, vec![10; 8], logs);
+    let connection = rusqlite::Connection::open_in_memory().expect("open SQLite producer");
+    connection
+        .execute_batch("CREATE TABLE messages (id INTEGER PRIMARY KEY, body TEXT); INSERT INTO messages VALUES (1, 'hello');")
+        .expect("seed SQLite producer");
+    let staging = std::env::temp_dir().join(format!(
+        "fabushi-live-sqlite-partial-{}",
+        uuid::Uuid::new_v4()
+    ));
+    let manifest = &mut BoxManifestMap::new();
+    assert!(service
+        .export_and_upload_sqlite_backup(
+            "store-1",
+            manifest,
+            &connection,
+            &staging,
+            mahayana_host_runtime::extensions::snapshot::git_backup_manager::GitBackupIdentity {
+                role: "generic".into(),
+                agent_id: None,
+                id: Some("store_one".into()),
+            },
+            &BTreeSet::new(),
+            "stores/store_one/portable",
+            0o600,
+        )
+        .is_err());
+    assert!(manifest.is_empty(), "partial upload must not commit manifest");
+    assert!(!staging.exists(), "partial upload must clean staging");
+
+    // Recovery is a fresh generation: once the backend is healthy, the
+    // producer can be retried and publishes the complete set without
+    // relying on any partially written manifest state.
+    *runtime.fail_after.lock().unwrap() = None;
+    let retry_staging = std::env::temp_dir().join(format!(
+        "fabushi-live-sqlite-partial-retry-{}",
+        uuid::Uuid::new_v4()
+    ));
+    let retry_results = service
+        .export_and_upload_sqlite_backup(
+            "store-1",
+            manifest,
+            &connection,
+            &retry_staging,
+            mahayana_host_runtime::extensions::snapshot::git_backup_manager::GitBackupIdentity {
+                role: "generic".into(),
+                agent_id: None,
+                id: Some("store_one".into()),
+            },
+            &BTreeSet::new(),
+            "stores/store_one/portable",
+            0o600,
+        )
+        .expect("healthy retry should publish a complete generation");
+    assert_eq!(retry_results.len(), 3);
+    assert_eq!(manifest.len(), 3);
+    assert!(!retry_staging.exists());
 }
 
 #[test]

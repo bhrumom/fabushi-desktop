@@ -7,7 +7,8 @@ use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
     SandPendingWakeStore, parse_pending_wake_file,
 };
 use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::{
-    SandUpgradeResumeStore, UpgradeResumeMarker, parse_upgrade_resume_file,
+    upgrade_resume_marker_identity_is_well_formed, SandUpgradeResumeStore, UpgradeResumeMarker,
+    parse_upgrade_resume_file,
 };
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -31,6 +32,10 @@ fn pending(agent_id: &str, kind: PendingWakeKind, work_id: &str, at: f64) -> Dur
         title: None,
         subagent_type: None,
         interrupted_by_recreate: false,
+        delivery_operation_id: None,
+        address_token: None,
+        failure_reason: None,
+        session_key: None,
     }
 }
 
@@ -62,6 +67,23 @@ fn pending_wake_parser_preserves_frozen_coercion_and_filters_invalid_rows() {
     );
     assert!(rows[1].interrupted_by_recreate);
     assert!(parse_pending_wake_file(Some("not-json")).is_empty());
+}
+
+#[test]
+fn channel_delivery_failure_marker_round_trips_operation_identity() {
+    let root = temp_root("channel-delivery");
+    fs::create_dir_all(&root).expect("root");
+    let store = SandPendingWakeStore::new(&root);
+    let mut marker = pending("agent-channel", PendingWakeKind::ChannelDelivery, "op-1", 10.0);
+    marker.delivery_operation_id = Some("op-1".into());
+    marker.address_token = Some("telegram:123".into());
+    marker.failure_reason = Some("provider unavailable".into());
+    assert!(store.mark_pending(marker));
+    let restored = store.list_pending().pop().expect("channel marker");
+    assert_eq!(restored.kind, PendingWakeKind::ChannelDelivery);
+    assert_eq!(restored.delivery_operation_id.as_deref(), Some("op-1"));
+    assert_eq!(restored.address_token.as_deref(), Some("telegram:123"));
+    assert_eq!(restored.failure_reason.as_deref(), Some("provider unavailable"));
 }
 
 #[test]
@@ -116,6 +138,60 @@ fn upgrade_resume_store_coerces_upserts_and_deletes_file_when_empty() {
     store.clear("a");
     assert!(store.list_pending().is_empty());
     assert!(!store.file_path().exists());
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn upgrade_resume_store_clears_only_the_observed_marker() {
+    let root = temp_root("upgrade-cas");
+    let store = SandUpgradeResumeStore::new(&root);
+    let old = UpgradeResumeMarker {
+        agent_id: "a".into(),
+        marked_at_ms: 1.0,
+        source: Some("turn".into()),
+        automation_id: None,
+        automation_run_id: None,
+    };
+    let newer = UpgradeResumeMarker {
+        marked_at_ms: 2.0,
+        ..old.clone()
+    };
+    store.mark_pending(old.clone());
+    store.mark_pending(newer.clone());
+    assert!(!store.clear_if_matches(&old));
+    assert_eq!(store.list_pending(), vec![newer.clone()]);
+    assert!(store.clear_if_matches(&newer));
+    assert!(store.list_pending().is_empty());
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn upgrade_resume_marker_rejects_incomplete_automation_identity() {
+    let marker = UpgradeResumeMarker {
+        agent_id: "agent-a".into(),
+        marked_at_ms: 1.0,
+        source: Some("automation".into()),
+        automation_id: None,
+        automation_run_id: Some("run-a".into()),
+    };
+    assert!(!upgrade_resume_marker_identity_is_well_formed(&marker));
+}
+
+#[test]
+fn pending_wake_store_does_not_clear_or_overwrite_a_newer_marker() {
+    let root = temp_root("pending-cas");
+    let store = SandPendingWakeStore::new(&root);
+    let old = pending("agent-a", PendingWakeKind::Shell, "work", 1.0);
+    let newer = DurablePendingWakeMarker {
+        marked_at_ms: 2.0,
+        title: Some("newer".into()),
+        ..old.clone()
+    };
+    assert!(store.mark_pending(newer.clone()));
+    assert!(!store.clear_if_matches(&old));
+    assert_eq!(store.list_pending(), vec![newer.clone()]);
+    assert!(!store.mark_if_absent_or_matches(&old));
+    assert_eq!(store.list_pending(), vec![newer]);
     let _ = fs::remove_dir_all(root);
 }
 

@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::background_work::{derive_background_subagent_title, format_steer_prompt};
@@ -56,6 +57,7 @@ pub struct ComputerUseUsageSnapshot {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SubagentStatus {
+    Pending,
     Running,
     Done,
     Error,
@@ -70,10 +72,45 @@ pub struct SubagentRecord {
     pub status: SubagentStatus,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SubagentRunRecord {
+    pub run_id: String,
+    pub child_session_key: String,
+    pub controller_session_key: String,
+    pub requester_session_key: String,
+    pub subagent_type: String,
+    pub title: String,
+    pub created_at_ms: u64,
+    pub status: String,
+}
+
+impl From<SubagentRecord> for SubagentRunRecord {
+    fn from(rec: SubagentRecord) -> Self {
+        Self {
+            run_id: uuid::Uuid::new_v4().to_string(),
+            child_session_key: String::new(),
+            controller_session_key: String::new(),
+            requester_session_key: String::new(),
+            subagent_type: rec.subagent_type,
+            title: rec.title,
+            created_at_ms: rec.started_at_ms,
+            status: match rec.status {
+                SubagentStatus::Pending => "pending".into(),
+                SubagentStatus::Running => "running".into(),
+                SubagentStatus::Done => "done".into(),
+                SubagentStatus::Error => "error".into(),
+                SubagentStatus::Aborted => "aborted".into(),
+            },
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BackgroundSubagentCompletion {
     pub parent_agent_id: String,
     pub subagent_agent_id: String,
+    pub lifecycle_revision: String,
+    pub marked_at_ms: u64,
     pub subagent_type: String,
     pub tool_call_id: String,
     pub title: String,
@@ -109,6 +146,7 @@ pub struct PendingWake {
     pub work_id: String,
     pub title: String,
     pub subagent_type: String,
+    pub marked_at_ms: u64,
     pub quiet_origin: Option<String>,
 }
 
@@ -172,6 +210,7 @@ struct RuntimeMeta {
     lineage: Option<SubagentLineage>,
     quiet_origin: Option<String>,
     box_id: String,
+    lifecycle_revision: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -234,6 +273,33 @@ impl SubagentRuntime {
         quiet_origin: Option<&str>,
         now_ms: u64,
     ) -> Option<PendingWake> {
+        self.dispatch_background_subagent_with_lifecycle(
+            parent_agent_id,
+            box_id,
+            subagent_agent_id,
+            subagent_type,
+            tool_call_id,
+            prompt,
+            lineage,
+            quiet_origin,
+            "",
+            now_ms,
+        )
+    }
+
+    pub fn dispatch_background_subagent_with_lifecycle(
+        &mut self,
+        parent_agent_id: &str,
+        box_id: &str,
+        subagent_agent_id: &str,
+        subagent_type: &str,
+        tool_call_id: &str,
+        prompt: &str,
+        lineage: Option<SubagentLineage>,
+        quiet_origin: Option<&str>,
+        lifecycle_revision: &str,
+        now_ms: u64,
+    ) -> Option<PendingWake> {
         if self.running.contains(subagent_agent_id) {
             return None;
         }
@@ -249,6 +315,7 @@ impl SubagentRuntime {
                 lineage,
                 quiet_origin: quiet_origin.map(ToOwned::to_owned),
                 box_id: box_id.to_string(),
+                lifecycle_revision: lifecycle_revision.to_string(),
             },
         );
         self.registry.insert(
@@ -266,6 +333,7 @@ impl SubagentRuntime {
             work_id: subagent_agent_id.to_string(),
             title,
             subagent_type: subagent_type.to_string(),
+            marked_at_ms: now_ms,
             quiet_origin: quiet_origin.map(ToOwned::to_owned),
         })
     }
@@ -412,6 +480,8 @@ impl SubagentRuntime {
         result.completion = Some(BackgroundSubagentCompletion {
             parent_agent_id: meta.parent_agent_id,
             subagent_agent_id: id.to_string(),
+            lifecycle_revision: meta.lifecycle_revision,
+            marked_at_ms: meta.started_at_ms,
             subagent_type: meta.subagent_type,
             tool_call_id: meta.tool_call_id,
             title: meta.title,

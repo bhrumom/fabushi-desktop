@@ -726,24 +726,11 @@ impl TranscriptManager {
             })),
             "deleteAgentMemory" => Some(required("id").and_then(|agent_id| {
                 let memory_id = required("memoryId")?;
-                let removed = self
-                    .session_workers
-                    .memory_service()
-                    .remove(agent_id, memory_id)
-                    .map_err(|error| error.to_string())?;
-                if removed {
-                    self.session_workers
-                        .clear_agent_memory_prompt_snapshot(agent_id)?;
-                }
+                let removed = self.session_workers.remove_agent_memory(agent_id, memory_id)?;
                 Ok(Value::Bool(removed))
             })),
             "clearAgentMemories" => Some(required("id").and_then(|agent_id| {
-                self.session_workers
-                    .memory_service()
-                    .clear(agent_id)
-                    .map_err(|error| error.to_string())?;
-                self.session_workers
-                    .clear_agent_memory_prompt_snapshot(agent_id)?;
+                self.session_workers.clear_agent_memories(agent_id)?;
                 Ok(Value::Null)
             })),
             _ => None,

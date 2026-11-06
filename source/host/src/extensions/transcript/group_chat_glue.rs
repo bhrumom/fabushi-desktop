@@ -181,16 +181,21 @@ impl GroupChatGlue {
         let record = store
             .create_session(Some(&profile), "user", None)
             .map_err(GroupChatGlueError::Internal)?;
-        write_sand_group_config(
-            store.get_agent_dir(&record.id),
-            &SandGroupConfig {
-                version: GROUP_CONFIG_VERSION,
-                member_ids: cleaned,
-                remote_members: None,
-                shared_room_id: None,
-            },
-        )
-        .map_err(|error| GroupChatGlueError::Internal(error.to_string()))?;
+        let session = Arc::clone(&self.session);
+        session
+            .with_agent_admitted_filesystem_mutation(&record.id, || {
+                write_sand_group_config(
+                    store.get_agent_dir(&record.id),
+                    &SandGroupConfig {
+                        version: GROUP_CONFIG_VERSION,
+                        member_ids: cleaned,
+                        remote_members: None,
+                        shared_room_id: None,
+                    },
+                )
+                .map_err(|error| error.to_string())
+            })
+            .map_err(GroupChatGlueError::Internal)?;
         store
             .write_active_agent_id(&record.id)
             .map_err(|error| GroupChatGlueError::Internal(error.to_string()))?;
@@ -242,16 +247,21 @@ impl GroupChatGlue {
             .take(GROUP_MAX_MEMBERS)
             .collect::<Vec<_>>();
         if !cleaned.is_empty() {
-            write_sand_group_config(
-                &dir,
-                &SandGroupConfig {
-                    version: GROUP_CONFIG_VERSION,
-                    member_ids: cleaned,
-                    remote_members: None,
-                    shared_room_id: None,
-                },
-            )
-            .map_err(|error| GroupChatGlueError::Internal(error.to_string()))?;
+            let session = Arc::clone(&self.session);
+            session
+                .with_agent_admitted_filesystem_mutation(group_id, || {
+                    write_sand_group_config(
+                        &dir,
+                        &SandGroupConfig {
+                            version: GROUP_CONFIG_VERSION,
+                            member_ids: cleaned,
+                            remote_members: None,
+                            shared_room_id: None,
+                        },
+                    )
+                    .map_err(|error| error.to_string())
+                })
+                .map_err(GroupChatGlueError::Internal)?;
         }
         store
             .summarize_agent_by_id(group_id)

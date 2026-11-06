@@ -40,8 +40,14 @@ fn frozen_handoff_prompts_and_hidden_send_contract_are_preserved() {
         BOX_HANDOFF_VIEWER_CLOSED_PROMPT
     );
 
-    let args = build_box_handoff_resume_send_args("agent-a", "dismissed", 123);
+    let args = build_box_handoff_resume_send_args(
+        "agent-a",
+        "agent:agent-a:main",
+        "dismissed",
+        123,
+    );
     assert_eq!(args["agentId"], "agent-a");
+    assert_eq!(args["sessionKey"], "agent:agent-a:main");
     assert_eq!(args["prompt"], BOX_HANDOFF_DISMISSED_PROMPT);
     assert_eq!(args["appendUserMessage"], false);
     assert_eq!(args["awaitTurn"], false);
@@ -164,7 +170,14 @@ fn mcp_and_listener_resume_prompts_match_frozen_hidden_handoff_contract() {
     assert!(github.starts_with("[GitHub is now connected"));
     assert!(!github.contains("/invite @Cursor"));
 
-    let args = build_hidden_handoff_resume_send_args("agent-a", &mcp, "mcp-auth-resume", 42);
+    let args = build_hidden_handoff_resume_send_args(
+        "agent-a",
+        "agent:agent-a:main",
+        &mcp,
+        "mcp-auth-resume",
+        42,
+    );
+    assert_eq!(args["sessionKey"], "agent:agent-a:main");
     assert_eq!(args["appendUserMessage"], false);
     assert_eq!(args["awaitTurn"], false);
     assert_eq!(args["requestSource"], "handoff-resume");
@@ -268,4 +281,15 @@ fn shipping_host_wires_box_listener_mcp_resume_and_error_projection() {
     assert!(SHIPPING_HOST.contains("LISTENER_CONNECT_RESUME_TITLE"));
     assert!(SHIPPING_HOST.contains("MCP_AUTH_RESUME_TITLE"));
     assert!(SHIPPING_HOST.contains("\"channel\": \"forever-box\""));
+
+    let box_help = SHIPPING_HOST
+        .split("fn request_box_help(")
+        .nth(1)
+        .expect("shipping request_box_help owner exists")
+        .split("fn resolve_attachment_source(")
+        .next()
+        .expect("shipping request_box_help boundary exists");
+    assert!(box_help.contains("append_agent_transcript_entries_if_session_admitted"));
+    assert!(box_help.contains("self.session_key.as_deref()"));
+    assert!(!box_help.contains("append_agent_transcript_entries(\n                    &self.agent_id"));
 }

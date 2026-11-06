@@ -89,6 +89,23 @@ impl SharedRooms {
         text: &str,
         timestamp_ms: f64,
     ) -> Result<LocalAgentGroupPost, String> {
+        self.post_local_agent_message_with_session(
+            from_agent_id,
+            None,
+            group_id,
+            text,
+            timestamp_ms,
+        )
+    }
+
+    pub fn post_local_agent_message_with_session(
+        &self,
+        from_agent_id: &str,
+        from_session_key: Option<&str>,
+        group_id: &str,
+        text: &str,
+        timestamp_ms: f64,
+    ) -> Result<LocalAgentGroupPost, String> {
         let group_dir = self.sessions.agents_root().join(group_id);
         let config = read_sand_group_config(&group_dir)
             .ok_or_else(|| format!("{group_id} is not a group chat."))?;
@@ -105,7 +122,7 @@ impl SharedRooms {
             .ok_or_else(|| format!("No agent found with id {from_agent_id}."))?;
         let source_entries = self.sessions.read_agent_transcript_entries(from_agent_id)?;
         let outbound_id = next_entry_id(&source_entries, TranscriptEntryIdKind::AssistantMessage);
-        self.sessions.append_agent_transcript_entries(from_agent_id, &[json!({
+        let mut outbound_entry = json!({
             "kind": "message",
             "id": outbound_id,
             "role": "assistant",
@@ -113,17 +130,35 @@ impl SharedRooms {
             "isStreaming": false,
             "timestampMs": timestamp_ms,
             "toAgent": {"id": group_id, "name": group.name, "kind": "group"},
-        })])?;
+        });
+        let sender_session_key = match from_session_key {
+            Some(session_key) => Some(session_key.to_string()),
+            None => self
+                .sessions
+                .read_session_work_admission(from_agent_id)?
+                .map(|record| record.session_key),
+        };
+        if let Some(session_key) = sender_session_key.as_deref() {
+            outbound_entry["sessionKey"] = Value::String(session_key.trim().to_string());
+            self.sessions.append_agent_transcript_entries_if_session_admitted(
+                from_agent_id,
+                session_key,
+                &[outbound_entry],
+            )?;
+        } else {
+            self.sessions
+                .append_agent_transcript_entries(from_agent_id, &[outbound_entry])?;
+        }
 
         let room_entries = self.sessions.read_agent_transcript_entries(group_id)?;
         let room_entry_id = next_entry_id(&room_entries, TranscriptEntryIdKind::SendMessage);
-        self.sessions.append_agent_transcript_entries(group_id, &[json!({
+        self.append_room_owned_entry(group_id, json!({
             "kind": "send-message",
             "id": room_entry_id,
             "message": {"type": "text", "content": text},
             "timestampMs": timestamp_ms,
             "author": {"id": from_agent_id, "name": sender.name},
-        })])?;
+        }))?;
         let _ = self.sessions.mark_agent_activity(group_id, timestamp_ms)?;
         Ok(LocalAgentGroupPost {
             group_name: group.name,
@@ -184,18 +219,21 @@ impl SharedRooms {
         is_creation_allowed: bool,
     ) -> Result<Option<String>, String> {
         if let Some(existing_id) = self.resolve_canonical_room_agent(room_id)? {
-            let dir = self.sessions.agents_root().join(&existing_id);
-            let previous = read_sand_group_config(&dir);
-            let binding = SandGroupConfig {
-                version: GROUP_CONFIG_VERSION,
-                member_ids: self.filter_local_member_ids(local_member_ids),
-                remote_members: merge_remote_member_avatars(
-                    previous.as_ref().and_then(|value| value.remote_members.as_deref()),
-                    remote_members,
-                ),
-                shared_room_id: Some(room_id.to_string()),
-            };
-            write_sand_group_config(&dir, &binding).map_err(|error| error.to_string())?;
+            let sessions = Arc::clone(&self.sessions);
+            sessions.with_agent_admitted_filesystem_mutation(&existing_id, || {
+                let dir = sessions.agents_root().join(&existing_id);
+                let previous = read_sand_group_config(&dir);
+                let binding = SandGroupConfig {
+                    version: GROUP_CONFIG_VERSION,
+                    member_ids: self.filter_local_member_ids(local_member_ids),
+                    remote_members: merge_remote_member_avatars(
+                        previous.as_ref().and_then(|value| value.remote_members.as_deref()),
+                        remote_members,
+                    ),
+                    shared_room_id: Some(room_id.to_string()),
+                };
+                write_sand_group_config(&dir, &binding).map_err(|error| error.to_string())
+            })?;
             return Ok(Some(existing_id));
         }
         if !is_creation_allowed {
@@ -222,11 +260,11 @@ impl SharedRooms {
             remote_members: (!remote_members.is_empty()).then(|| remote_members.to_vec()),
             shared_room_id: Some(room_id.to_string()),
         };
-        write_sand_group_config(
-            self.sessions.agents_root().join(&created.id),
-            &binding,
-        )
-        .map_err(|error| error.to_string())?;
+        let sessions = Arc::clone(&self.sessions);
+        sessions.with_agent_admitted_filesystem_mutation(&created.id, || {
+            write_sand_group_config(sessions.agents_root().join(&created.id), &binding)
+                .map_err(|error| error.to_string())
+        })?;
         Ok(Some(created.id))
     }
 
@@ -283,7 +321,10 @@ impl SharedRooms {
             members: filtered,
             is_revoked: None,
         };
-        write_sand_remote_room_config(&dir, &config).map_err(|error| error.to_string())?;
+        let sessions = Arc::clone(&self.sessions);
+        sessions.with_agent_admitted_filesystem_mutation(&agent_id, || {
+            write_sand_remote_room_config(&dir, &config).map_err(|error| error.to_string())
+        })?;
         Ok(agent_id)
     }
 
@@ -291,7 +332,7 @@ impl SharedRooms {
         let Some(agent_id) = self.resolve_canonical_room_agent(room_id)? else {
             return Ok(());
         };
-        let dir = self.sessions.agents_root().join(agent_id);
+        let dir = self.sessions.agents_root().join(&agent_id);
         let Some(mut config) = read_sand_remote_room_config(&dir) else {
             return Ok(());
         };
@@ -299,7 +340,10 @@ impl SharedRooms {
             return Ok(());
         }
         config.is_revoked = Some(true);
-        write_sand_remote_room_config(&dir, &config).map_err(|error| error.to_string())
+        let sessions = Arc::clone(&self.sessions);
+        sessions.with_agent_admitted_filesystem_mutation(&agent_id, || {
+            write_sand_remote_room_config(&dir, &config).map_err(|error| error.to_string())
+        })
     }
 
     pub fn append_shared_room_activity_notice(
@@ -316,8 +360,7 @@ impl SharedRooms {
             "text": text,
             "timestampMs": now_ms(),
         });
-        self.sessions
-            .append_agent_transcript_entries(&agent_id, &[entry])?;
+        self.append_room_owned_entry(&agent_id, entry)?;
         let _ = self.sessions.mark_agent_activity(&agent_id, now_ms());
         Ok(true)
     }
@@ -349,10 +392,24 @@ impl SharedRooms {
             return Ok(false);
         };
         object.insert("timestampMs".into(), json!(timestamp_ms));
-        Ok(self
-            .sessions
-            .update_agent_transcript_entry(&agent_id, entry_id, &entry)?
-            .is_some())
+        let updated = entry
+            .get("sessionKey")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(|session_key| {
+                self.sessions.update_agent_transcript_entry_if_session_admitted(
+                    &agent_id,
+                    session_key,
+                    entry_id,
+                    &entry,
+                )
+            })
+            .unwrap_or_else(|| {
+                self.sessions
+                    .update_agent_transcript_entry(&agent_id, entry_id, &entry)
+            })?;
+        Ok(updated.is_some())
     }
 
     pub fn post_shared_room_guest_message(
@@ -395,12 +452,6 @@ impl SharedRooms {
             event.get("images").cloned().unwrap_or_else(|| Value::Array(Vec::new())),
         )
         .unwrap_or_default();
-        let db_path = self.sessions.session_db_path(&agent_id)?;
-        let images = materialize_inline_images(&db_path, &inline_images);
-        if text.is_empty() && images.is_empty() {
-            return Ok(Some(agent_id));
-        }
-
         let author_auth_id = event
             .get("authorAuthId")
             .and_then(Value::as_str)
@@ -410,33 +461,44 @@ impl SharedRooms {
             .and_then(Value::as_str)
             .filter(|value| !value.trim().is_empty())
             .unwrap_or("Someone");
-        let mut entry = json!({
-            "kind": "message",
-            "id": format!("user-message-xuser-{}", uuid::Uuid::new_v4()),
-            "role": "user",
-            "content": text,
-            "isStreaming": false,
-            "timestampMs": event.get("timestampMs").and_then(Value::as_f64).unwrap_or_else(now_ms),
-            "fromUser": {
-                "name": author_name,
-                "authId": author_auth_id,
-            },
-        });
-        if let Some(nonce) = client_nonce {
-            entry["clientNonce"] = Value::String(nonce.to_string());
+        let result = self.sessions.with_agent_admitted_filesystem_mutation(&agent_id, || {
+            let db_path = self.sessions.session_db_path(&agent_id)?;
+            let images = materialize_inline_images(&db_path, &inline_images);
+            if text.is_empty() && images.is_empty() {
+                return Ok(false);
+            }
+
+            let mut entry = json!({
+                "kind": "message",
+                "id": format!("user-message-xuser-{}", uuid::Uuid::new_v4()),
+                "role": "user",
+                "content": text,
+                "isStreaming": false,
+                "timestampMs": event.get("timestampMs").and_then(Value::as_f64).unwrap_or_else(now_ms),
+                "fromUser": {
+                    "name": author_name,
+                    "authId": author_auth_id,
+                },
+            });
+            if let Some(nonce) = client_nonce {
+                entry["clientNonce"] = Value::String(nonce.to_string());
+            }
+            if let Some(avatar_url) = event
+                .get("authorAvatarUrl")
+                .and_then(Value::as_str)
+                .filter(|value| !value.is_empty())
+            {
+                entry["fromUser"]["avatarUrl"] = Value::String(avatar_url.to_string());
+            }
+            if !images.is_empty() {
+                entry["images"] = serde_json::to_value(images).unwrap_or(Value::Array(Vec::new()));
+            }
+            self.append_room_owned_entry_locked(&agent_id, entry)?;
+            Ok(true)
+        })?;
+        if !result {
+            return Ok(Some(agent_id));
         }
-        if let Some(avatar_url) = event
-            .get("authorAvatarUrl")
-            .and_then(Value::as_str)
-            .filter(|value| !value.is_empty())
-        {
-            entry["fromUser"]["avatarUrl"] = Value::String(avatar_url.to_string());
-        }
-        if !images.is_empty() {
-            entry["images"] = serde_json::to_value(images).unwrap_or(Value::Array(Vec::new()));
-        }
-        self.sessions
-            .append_agent_transcript_entries(&agent_id, &[entry])?;
         let _ = self.sessions.mark_agent_activity(&agent_id, now_ms());
         Ok(Some(agent_id))
     }
@@ -488,8 +550,6 @@ impl SharedRooms {
             wire.get("images").cloned().unwrap_or_else(|| Value::Array(Vec::new())),
         )
         .unwrap_or_default();
-        let db_path = self.sessions.session_db_path(&agent_id)?;
-        let images = materialize_inline_images(&db_path, &inline_images);
         let timestamp_ms = wire
             .get("timestampMs")
             .and_then(Value::as_f64)
@@ -500,7 +560,10 @@ impl SharedRooms {
             .unwrap_or_default()
             .to_string();
 
-        let mut entry = match wire.get("kind").and_then(Value::as_str) {
+        let result = self.sessions.with_agent_admitted_filesystem_mutation(&agent_id, || {
+            let db_path = self.sessions.session_db_path(&agent_id)?;
+            let images = materialize_inline_images(&db_path, &inline_images);
+            let mut entry = match wire.get("kind").and_then(Value::as_str) {
             Some("human-message") => {
                 let author_auth_id = wire
                     .get("authorAuthId")
@@ -571,22 +634,26 @@ impl SharedRooms {
                 })
             }
             _ => return Ok(true),
-        };
-        if !images.is_empty() {
-            match entry.get("kind").and_then(Value::as_str) {
-                Some("message") => {
-                    entry["images"] =
-                        serde_json::to_value(&images).unwrap_or(Value::Array(Vec::new()));
+            };
+            if !images.is_empty() {
+                match entry.get("kind").and_then(Value::as_str) {
+                    Some("message") => {
+                        entry["images"] =
+                            serde_json::to_value(&images).unwrap_or(Value::Array(Vec::new()));
+                    }
+                    Some("send-message") => {
+                        entry["message"]["images"] =
+                            serde_json::to_value(&images).unwrap_or(Value::Array(Vec::new()));
+                    }
+                    _ => {}
                 }
-                Some("send-message") => {
-                    entry["message"]["images"] =
-                        serde_json::to_value(&images).unwrap_or(Value::Array(Vec::new()));
-                }
-                _ => {}
             }
+            self.append_room_owned_entry_locked(&agent_id, entry)?;
+            Ok(true)
+        })?;
+        if !result {
+            return Ok(true);
         }
-        self.sessions
-            .append_agent_transcript_entries(&agent_id, &[entry])?;
         let _ = self.sessions.mark_agent_activity(&agent_id, now_ms());
         Ok(true)
     }
@@ -603,6 +670,51 @@ impl SharedRooms {
                 (!summary.is_group).then(|| summary.id)
             })
             .collect()
+    }
+
+    fn append_room_owned_entry(
+        &self,
+        agent_id: &str,
+        mut entry: Value,
+    ) -> Result<(), String> {
+        let session_key = self
+            .sessions
+            .read_session_work_admission(agent_id)?
+            .map(|record| record.session_key)
+            .filter(|value| !value.trim().is_empty());
+        if let Some(session_key) = session_key {
+            entry["sessionKey"] = Value::String(session_key.clone());
+            self.sessions.append_agent_transcript_entries_if_session_admitted(
+                agent_id,
+                &session_key,
+                &[entry],
+            )?;
+        } else {
+            self.sessions
+                .append_agent_transcript_entries(agent_id, &[entry])?;
+        }
+        Ok(())
+    }
+
+    fn append_room_owned_entry_locked(
+        &self,
+        agent_id: &str,
+        mut entry: Value,
+    ) -> Result<(), String> {
+        let session_key = self
+            .sessions
+            .read_session_work_admission_locked(agent_id)?
+            .map(|record| record.session_key)
+            .filter(|value| !value.trim().is_empty());
+        if let Some(session_key) = session_key.as_deref() {
+            entry["sessionKey"] = Value::String(session_key.to_string());
+        }
+        self.sessions.append_agent_transcript_entries_locked(
+            agent_id,
+            session_key.as_deref(),
+            &[entry],
+        )?;
+        Ok(())
     }
 }
 

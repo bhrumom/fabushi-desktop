@@ -1,9 +1,12 @@
 use std::env;
+use std::sync::Arc;
 
 use crate::extensions::memory::memory_service::{
     FileMemoryStore, MemoryKind,
 };
+use crate::extensions::session::agent_db_serde::EpisodeTurn;
 use crate::extensions::session::agent_db::SandAgentDb;
+use crate::extensions::session::production::ProductionSessionWorkers;
 
 use super::sand_memory::{
     MEMORY_EPISODE_PREFIX, MEMORY_EXTRACTION_ARCHIVE_SCAN_LIMIT,
@@ -54,6 +57,57 @@ pub enum TurnMemoryMode<'a> {
     RecordEvidence(&'a mut dyn FnMut(&TurnExchange)),
 }
 
+pub trait EpisodeProgress: Send + Sync {
+    fn clear_pending_episode_turns(&self) -> Result<bool, String>;
+    fn record_episode_turn(&self, turn: &EpisodeTurn) -> Result<bool, String>;
+    fn get_pending_episode_turns(&self) -> Result<Vec<EpisodeTurn>, String>;
+}
+
+impl EpisodeProgress for SandAgentDb {
+    fn clear_pending_episode_turns(&self) -> Result<bool, String> {
+        self.clear_pending_episode_turns()
+            .map_err(|error| error.to_string())
+    }
+
+    fn record_episode_turn(&self, turn: &EpisodeTurn) -> Result<bool, String> {
+        self.record_episode_turn(turn)
+            .map_err(|error| error.to_string())
+    }
+
+    fn get_pending_episode_turns(&self) -> Result<Vec<EpisodeTurn>, String> {
+        self.get_pending_episode_turns()
+            .map_err(|error| error.to_string())
+    }
+}
+
+pub struct ProductionEpisodeProgress {
+    sessions: Arc<ProductionSessionWorkers>,
+    agent_id: String,
+}
+
+impl ProductionEpisodeProgress {
+    pub fn new(sessions: Arc<ProductionSessionWorkers>, agent_id: impl Into<String>) -> Self {
+        Self {
+            sessions,
+            agent_id: agent_id.into(),
+        }
+    }
+}
+
+impl EpisodeProgress for ProductionEpisodeProgress {
+    fn clear_pending_episode_turns(&self) -> Result<bool, String> {
+        self.sessions.clear_agent_pending_episode_turns(&self.agent_id)
+    }
+
+    fn record_episode_turn(&self, turn: &EpisodeTurn) -> Result<bool, String> {
+        self.sessions.record_agent_episode_turn(&self.agent_id, turn)
+    }
+
+    fn get_pending_episode_turns(&self) -> Result<Vec<EpisodeTurn>, String> {
+        self.sessions.get_agent_pending_episode_turns(&self.agent_id)
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct TurnMemoryReport {
     pub evidence_recorded: bool,
@@ -67,7 +121,7 @@ pub struct TurnMemoryReport {
 
 pub fn run_turn_memory_with<Execute>(
     memory_store: &FileMemoryStore,
-    episode_progress: Option<&SandAgentDb>,
+    episode_progress: Option<&dyn EpisodeProgress>,
     turn_timestamp: i64,
     exchange: TurnExchange,
     mode: TurnMemoryMode<'_>,
@@ -100,7 +154,7 @@ where
     };
     if progress
         .record_episode_turn(
-            &crate::extensions::session::agent_db_serde::EpisodeTurn {
+            &EpisodeTurn {
                 ts: turn_timestamp as f64,
                 user: exchange.user.clone(),
                 agent: exchange.agent.clone(),

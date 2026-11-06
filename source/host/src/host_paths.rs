@@ -212,6 +212,14 @@ pub fn get_host_secrets_path() -> PathBuf {
     get_sand_root_dir().join("host-secrets.json")
 }
 
+pub fn get_host_node_identity_path() -> PathBuf {
+    get_sand_root_dir().join("host-node-identity.json")
+}
+
+pub fn get_host_node_auth_path() -> PathBuf {
+    get_sand_root_dir().join("host-node-auth.json")
+}
+
 pub fn get_host_upgrade_marker_path() -> PathBuf {
     get_sand_root_dir().join(".sand-host-upgrade.json")
 }

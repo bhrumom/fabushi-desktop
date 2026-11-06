@@ -737,6 +737,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "core_detect"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f8f80099a98041a3d1622845c271458a2d73e688351bf3cb999266764b81d48"
+
+[[package]]
 name = "cpubits"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1054,6 +1060,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e9c71c2167ca323c882b99918929403426e2373ea17242ff5653e0d5e1058be"
 
 [[package]]
+name = "encoding_rs"
+version = "0.8.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "89253175e704ab869b04f9db224d38630e0211a53841a79181deae0889e169f5"
+dependencies = [
+ "cfg-if",
+ "core_detect",
+ "multiversion_no_op",
+ "rustversion",
+ "scopeguard",
+ "simdutf8",
+]
+
+[[package]]
 name = "endi"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1173,74 +1193,6 @@ dependencies = [
  "sha2 0.10.9",
  "url",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "fabushi-telegram-core"
-version = "0.1.0"
-dependencies = [
- "serde",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "fabushi-telegram-network"
-version = "0.1.0"
-dependencies = [
- "fabushi-telegram-protocol",
- "getrandom 0.2.17",
- "thiserror 1.0.69",
- "zeroize",
-]
-
-[[package]]
-name = "fabushi-telegram-protocol"
-version = "0.1.0"
-dependencies = [
- "aes 0.8.4",
- "crc32fast",
- "fabushi-telegram-core",
- "getrandom 0.2.17",
- "hex",
- "num-bigint-dig",
- "pbkdf2 0.12.2",
- "serde",
- "serde_json",
- "sha1 0.10.7",
- "sha2 0.10.9",
- "subtle",
- "thiserror 1.0.69",
- "zeroize",
-]
-
-[[package]]
-name = "fabushi-telegram-runtime"
-version = "0.1.0"
-dependencies = [
- "fabushi-telegram-core",
- "fabushi-telegram-network",
- "fabushi-telegram-protocol",
- "fabushi-telegram-storage",
- "once_cell",
- "serde_json",
- "thiserror 1.0.69",
- "zeroize",
-]
-
-[[package]]
-name = "fabushi-telegram-storage"
-version = "0.1.0"
-dependencies = [
- "chacha20poly1305",
- "fabushi-telegram-core",
- "hmac 0.12.1",
- "rand_core 0.6.4",
- "rusqlite",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror 1.0.69",
- "zeroize",
 ]
 
 [[package]]
@@ -2256,12 +2208,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "libm"
-version = "0.2.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
-
-[[package]]
 name = "libspa"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2429,6 +2375,7 @@ dependencies = [
  "rusqlite",
  "serde",
  "serde_json",
+ "sha2 0.10.9",
  "thiserror 2.0.21",
 ]
 
@@ -2468,6 +2415,8 @@ dependencies = [
  "image",
  "mahayana-host-protocol",
  "thiserror 2.0.21",
+ "uiautomation",
+ "windows-sys 0.61.2",
  "xcap",
 ]
 
@@ -2586,7 +2535,6 @@ dependencies = [
  "mahayana-platform-core",
  "mahayana-runtime",
  "mahayana-social",
- "mahayana-telegram",
  "serde",
  "serde_json",
  "thiserror 2.0.21",
@@ -2609,6 +2557,7 @@ dependencies = [
  "chrono",
  "chrono-tz",
  "ed25519-dalek",
+ "encoding_rs",
  "fabushi-messaging-core",
  "flate2",
  "fs2",
@@ -2621,10 +2570,12 @@ dependencies = [
  "pbjson",
  "pbjson-build",
  "pbjson-types",
+ "percent-encoding",
  "prost",
  "prost-build",
  "prost-types",
  "protoc-bin-vendored",
+ "qrcode",
  "regex",
  "reqwest",
  "rusqlite",
@@ -2638,10 +2589,12 @@ dependencies = [
  "tar",
  "thiserror 2.0.21",
  "tokio",
+ "tungstenite",
  "unicode-normalization",
  "url",
  "uuid",
  "zip",
+ "zstd 0.13.4",
 ]
 
 [[package]]
@@ -2773,6 +2726,7 @@ name = "mahayana-platform-client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "mahayana-auth",
  "mahayana-host-protocol",
  "mahayana-platform-core",
@@ -2860,18 +2814,6 @@ dependencies = [
  "mahayana-platform-client",
  "serde_json",
  "tokio",
-]
-
-[[package]]
-name = "mahayana-telegram"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "fabushi-telegram-core",
- "fabushi-telegram-runtime",
- "mahayana-conversation",
- "mahayana-core",
- "serde_json",
 ]
 
 [[package]]
@@ -3003,6 +2945,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d87ecb2933e8aeadb3e3a02b828fed80a7528047e68b4f424523a0981a3a084"
 
 [[package]]
+name = "multiversion_no_op"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d"
+
+[[package]]
 name = "nix"
 version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3095,23 +3043,6 @@ checksum = "c89e69e7e0f03bea5ef08013795c25018e101932225a656383bd384495ecc367"
 dependencies = [
  "num-integer",
  "num-traits",
-]
-
-[[package]]
-name = "num-bigint-dig"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7f9a86e097b0d187ad0e65667c2f58b9254671e86e7dbb78036b16692eae099"
-dependencies = [
- "libm",
- "num-integer",
- "num-iter",
- "num-traits",
- "once_cell",
- "rand 0.9.5",
- "serde",
- "smallvec",
- "zeroize",
 ]
 
 [[package]]
@@ -3900,6 +3831,12 @@ name = "pxfm"
 version = "0.1.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d55d956fa96f5ec02be2e13af0e20391a5aa83d6a074e3ad368959d0fab299ea"
+
+[[package]]
+name = "qrcode"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d68782463e408eb1e668cf6152704bd856c78c5b6417adaee3203d8f4c1fc9ec"
 
 [[package]]
 name = "quick-xml"
@@ -4696,6 +4633,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea"
 
 [[package]]
+name = "simdutf8"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
+
+[[package]]
 name = "siphasher"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5145,8 +5088,11 @@ dependencies = [
  "httparse",
  "log",
  "rand 0.10.3",
+ "rustls",
+ "rustls-pki-types",
  "sha1 0.11.0",
  "thiserror 2.0.21",
+ "webpki-roots 0.26.11",
 ]
 
 [[package]]
@@ -5179,6 +5125,29 @@ dependencies = [
  "memoffset",
  "tempfile",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "uiautomation"
+version = "0.25.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa2eacf9390a8491bc949b04230f40c12520c6423a2962a6087eea1ef14373af"
+dependencies = [
+ "chrono",
+ "uiautomation_derive",
+ "windows 0.62.2",
+ "windows-core 0.62.2",
+]
+
+[[package]]
+name = "uiautomation_derive"
+version = "0.7.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c893ec96e05c3c81ba46f838f3190549ec185ef377d582ab3d44202b2dfacbd"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.9",
 ]
 
 [[package]]
@@ -5290,6 +5259,7 @@ name = "utf8_iter"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
+
 
 [[package]]
 name = "uuid"
@@ -6372,7 +6342,7 @@ dependencies = [
  "typed-path",
  "zeroize",
  "zopfli",
- "zstd",
+ "zstd 0.14.3",
 ]
 
 [[package]]
@@ -6401,11 +6371,29 @@ dependencies = [
 
 [[package]]
 name = "zstd"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cdb02c3132d251ab1606e9fc913a7da6c6ed08cc263df15edf082e1dc497d157"
+dependencies = [
+ "zstd-safe 7.4.0",
+]
+
+[[package]]
+name = "zstd"
 version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "db3ae9bf90af6e40197bef767eeefc46ad6397420fe873830bd85e5fbbfb3c70"
 dependencies = [
- "zstd-safe",
+ "zstd-safe 8.2.0",
+]
+
+[[package]]
+name = "zstd-safe"
+version = "7.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c8ea04668f5de8d8d51051714ba560c9536519cadcdb8829bba4fe2ad159b03"
+dependencies = [
+ "zstd-sys",
 ]
 
 [[package]]

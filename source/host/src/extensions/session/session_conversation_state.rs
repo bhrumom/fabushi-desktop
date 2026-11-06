@@ -41,6 +41,8 @@ pub struct TranscriptThread {
     pub entries: Vec<Value>,
 }
 
+pub use super::ocrm_pending_conversation_turns::*;
+
 pub use crate::runner::conversation_outline::{
     OutlineItem as ConversationOutlineItem, OutlineTurn as ConversationOutlineTurn,
 };

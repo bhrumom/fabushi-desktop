@@ -218,47 +218,10 @@ func run(stdin io.Reader, stdout, stderr io.Writer) int {
 				emitRequestError(stdout, request, "stream_listen_failed", "stream listen failed")
 				continue
 			}
-			deadline := time.Now().Add(time.Duration(timeoutMS) * time.Millisecond)
-			var accepted net.Conn
-			for accepted == nil {
-				remaining := time.Until(deadline)
-				if remaining <= 0 {
-					break
-				}
-				type acceptResult struct {
-					conn net.Conn
-					err  error
-				}
-				resultCh := make(chan acceptResult, 1)
-				go func() {
-					conn, acceptErr := listener.Accept()
-					resultCh <- acceptResult{conn: conn, err: acceptErr}
-				}()
-				timer := time.NewTimer(remaining)
-				select {
-				case result := <-resultCh:
-					if !timer.Stop() {
-						<-timer.C
-					}
-					if result.err != nil {
-						remaining = 0
-						continue
-					}
-					if !remotePeerMatches(result.conn.RemoteAddr(), expectedPeer) {
-						_ = result.conn.Close()
-						continue
-					}
-					accepted = result.conn
-				case <-timer.C:
-					_ = listener.Close()
-					remaining = 0
-				}
-				if remaining <= 0 {
-					break
-				}
-			}
-			_ = listener.Close()
-			if accepted == nil {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutMS)*time.Millisecond)
+			accepted, acceptErr := acceptPeer(ctx, listener, expectedPeer)
+			cancel()
+			if acceptErr != nil {
 				emitRequestError(stdout, request, "stream_accept_timeout", "stream listener timed out")
 				continue
 			}

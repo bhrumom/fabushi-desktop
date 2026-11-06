@@ -444,6 +444,7 @@ impl ProductionTurnAgentOwner {
                 options,
                 ack_token: None,
                 prompt_action: Default::default(),
+                typed_replay: None,
             },
             on_text_delta,
         )
@@ -465,6 +466,7 @@ impl ProductionTurnAgentOwner {
                 options,
                 ack_token: None,
                 prompt_action: Default::default(),
+                typed_replay: None,
             },
             on_text_delta,
         )
@@ -498,6 +500,7 @@ impl ProductionTurnAgentOwner {
         let turn_quiesced = Arc::new(AtomicBool::new(false));
         let stream_upgrade_quiescing = Arc::clone(&self.upgrade_quiescing);
         let stream_turn_quiesced = Arc::clone(&turn_quiesced);
+        let tool_loop_gate_for_stream = self.shell.tool_loop_gate();
         let result = run_production_turn_shell_lifecycle(
             &mut self.shell,
             &mut self.last_finished,
@@ -519,7 +522,11 @@ impl ProductionTurnAgentOwner {
                 let projection = prepared.prepared;
                 let stream_composition = composition_for_stream
                     .with_projected_mcp_tools(projection.mcp_tools.clone())
-                    .with_projected_mcp_meta_tools(projection.mcp_meta_tools.clone());
+                    .with_projected_mcp_meta_tools(projection.mcp_meta_tools.clone())
+                    .with_tool_loop_gate(
+                        tool_loop_gate_for_stream.clone(),
+                        prepared.started.owner.clone(),
+                    );
                 run_production_generated_agent_stream(
                     stream_composition,
                     checkpoint_sink_for_stream,

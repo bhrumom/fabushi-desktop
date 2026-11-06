@@ -1,0 +1,155 @@
+name: TDRP fixed upstream source inputs
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - scripts/tdrp-collect-fixed-upstream.py
+      - scripts/tdrp-acquire-cppgir.py
+      - scripts/tdrp-scan-fixed-build-inputs.py
+      - scripts/test-tdrp-scan-fixed-build-inputs.py
+      - .github/workflows/tdrp-fixed-upstream-inventory.yml
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: Reuse pinned Git inventory for input export, or explicitly recollect fixed U
+        type: choice
+        options: [input-export, inventory]
+        default: input-export
+permissions:
+  contents: read
+jobs:
+  fixed-upstream-git-inventory:
+    if: github.event_name == 'workflow_dispatch' && inputs.phase == 'inventory'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Collect exact fixed-U root and recursive Git tree identities
+        env:
+          TDRP_TARGET_SHA: ${{ github.sha }}
+          GIT_TERMINAL_PROMPT: '0'
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python scripts/tdrp-collect-fixed-upstream.py
+      - name: Preserve unaccepted Git inventory candidate and raw evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-fixed-upstream-git-${{ github.sha }}
+          path: artifacts/tdrp-authority
+          if-no-files-found: error
+  fixed-upstream-build-inputs:
+    if: github.event_name == 'push' || inputs.phase == 'input-export'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Bind exact input exporter source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/fixed-input-export
+          git rev-parse HEAD > artifacts/fixed-input-export/target-sha.txt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Qualify exact identity, bounds and source-context extraction
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/test-tdrp-scan-fixed-build-inputs.py 2>&1 | tee artifacts/fixed-input-export/exporter-tests.log
+      - name: Fetch the already-produced fixed-U Git inventory artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/fixed-input-download
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13118749668 > artifacts/fixed-input-download/metadata.json
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13118749668/zip > artifacts/fixed-input-download/artifact.zip
+      - name: Verify complete pinned inventory archive and members
+        run: >-
+          python scripts/tdrp-summarize-protocol-artifact.py
+          --metadata artifacts/fixed-input-download/metadata.json
+          --archive artifacts/fixed-input-download/artifact.zip
+          --output-dir artifacts/fixed-input-recovery
+          --repository bhrumom/fabushi-desktop
+          --head-sha 9f77bb2389cba6a65d589eb309d1392501ed308d
+          --artifact-id 13118749668
+          --run-id 41397005716
+          --expected-digest sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60
+      - name: Export exact fixed-U build inputs without executing source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: >-
+          python scripts/tdrp-scan-fixed-build-inputs.py
+          --inventory-dir artifacts/fixed-input-recovery/raw
+          --recovery-index artifacts/fixed-input-recovery/index.json
+          --output-dir artifacts/fixed-input-export/documents
+          --target-sha ${{ github.sha }}
+          --comparison-root projects/telegram-desktop-rust
+      - name: Return complete bounded export documents
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64, gzip, hashlib, json
+          from pathlib import Path
+          root = Path('artifacts/fixed-input-export/documents')
+          names = [
+              'build-time-acquisition-candidates.json',
+              'fixed-u-build-input-contexts.json',
+              'fixed-u-build-input-delta.json',
+              'fixed-u-build-input-report.json',
+          ]
+          prepared = []
+          for name in names:
+              data = (root / name).read_bytes()
+              if len(data) > 16 * 1024 * 1024:
+                  raise SystemExit('Build-input document exceeds bounded transfer')
+              prepared.append((name, data, gzip.compress(data, mtime=0)))
+          if sum(len(packed) for _, _, packed in prepared) > 2 * 1024 * 1024:
+              raise SystemExit('Build-input gzip transfer exceeds 2 MiB')
+          for name, data, packed in prepared:
+              digest = hashlib.sha256(data).hexdigest()
+              print('TDRP_BUILD_INPUT_JSON ' + json.dumps({
+                  'record': 'header', 'file': name, 'bytes': len(data),
+                  'sha256': digest, 'gzip_bytes': len(packed),
+                  'target_sha': '${{ github.sha }}',
+                  'source_acceptance': False, 'acquisition_repeated': False,
+              }))
+              for offset in range(0, len(packed), 3072):
+                  print('TDRP_BUILD_INPUT_JSON ' + json.dumps({
+                      'record': 'chunk', 'file': name, 'offset': offset,
+                      'base64': base64.b64encode(packed[offset:offset+3072]).decode('ascii'),
+                  }))
+              print('TDRP_BUILD_INPUT_JSON ' + json.dumps({
+                  'record': 'end', 'file': name, 'complete': True, 'sha256': digest,
+              }))
+          PY
+      - name: Preserve complete source input and exporter evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-fixed-build-inputs-${{ github.sha }}
+          path: |
+            artifacts/fixed-input-export
+            artifacts/fixed-input-recovery
+          if-no-files-found: error

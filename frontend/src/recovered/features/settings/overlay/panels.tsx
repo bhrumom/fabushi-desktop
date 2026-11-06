@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { CursorUsageSummary, CursorUsageUpgradeAction, DesktopCallMediaPreferences, DesktopTimeZoneState, DesktopUiPreferences } from "../../../contracts/desktop-bridge";
+import type { CursorUsageSummary, CursorUsageUpgradeAction, DesktopCallMediaPreferences, DesktopTimeZoneState, DesktopUiPreferences, ProductNetworkProxyMutation, ProductNetworkProxySettings } from "../../../contracts/desktop-bridge";
 import { egressTunnelStatusDescription, type EgressTunnelStatus, type UpdateStatus, type UpdateTrack } from "./updates";
 // @evidence src/app/dist/renderer/assets/index-BlqerJhg.js#L1
 import { INTERNAL_RELEASE_TRACK_CONFIG_URL, UPDATE_TRACK_LABELS, updateStatusMessage } from "./updates";
@@ -14,6 +14,7 @@ import { SandSwitch } from "../../../ui/sand-form-primitives";
 import { OverlayDialog } from "../../../ui/overlay-primitives";
 import { ROUTER_PROVIDERS, routerProviderById, type RouterProviderId } from "./router";
 import { formatAccessibilityPreferenceCount, settingsCopy, type SettingsAdvancedCopy } from "./localization";
+import { NetworkProxySettingsPanel } from "./network-proxy";
 
 export type AccountState =
   | { kind: "logged-out"; errorMessage?: string }
@@ -38,6 +39,7 @@ export interface GeneralSettingsPanelProps {
     onRequestPermissions(): Promise<unknown>;
   };
   privacyModeEnabled?: boolean | null;
+  networkProxy?: { state: ProductNetworkProxySettings; onMutate(mutation: ProductNetworkProxyMutation): void | Promise<unknown> };
   platform?: SandIconPlatform;
 }
 
@@ -99,7 +101,7 @@ export function ThemePreferencePicker({ value, disabled = false, copy, onChange 
   />;
 }
 
-export function GeneralSettingsPanel({ account, accountPending = false, accountError = null, theme, onAccountAction, onThemeChange, timeZone, localToolPermission, securityKey, autoReview, uiPreferences, callMediaPreferences, privacyModeEnabled, platform }: GeneralSettingsPanelProps) {
+export function GeneralSettingsPanel({ account, accountPending = false, accountError = null, theme, onAccountAction, onThemeChange, timeZone, localToolPermission, securityKey, autoReview, uiPreferences, callMediaPreferences, privacyModeEnabled, networkProxy, platform }: GeneralSettingsPanelProps) {
   const [emailCopied, setEmailCopied] = useState(false);
   const [themePending, setThemePending] = useState(false);
   const signedIn = account.kind === "logged-in";
@@ -166,6 +168,7 @@ export function GeneralSettingsPanel({ account, accountPending = false, accountE
       </SettingsGroup> : null}
       {uiPreferences ? <SettingsGroup title={copy.languageAccessibility}><UiPreferencesSettingsPanel {...uiPreferences} /></SettingsGroup> : null}
       {callMediaPreferences ? <SettingsGroup title={copy.mediaDevices}><CallMediaSettingsPanel copy={copy} {...callMediaPreferences} /></SettingsGroup> : null}
+      {networkProxy ? <SettingsGroup title="Network proxy"><NetworkProxySettingsPanel {...networkProxy} /></SettingsGroup> : null}
       <SettingsGroup title={copy.desktopBehavior}><DesktopBehaviorSettingsPanel copy={copy} /></SettingsGroup>
       {timeZone || localToolPermission || autoReview ? <SettingsGroup title={copy.advanced}>
         {timeZone ? <TimeZoneSettingsPanel {...timeZone} copy={advancedCopy} /> : null}

@@ -85,11 +85,14 @@ if (utilityParentPort == null) {
 
 let child: ChildProcessWithoutNullStreams | undefined;
 let ports: readonly TransferPort[] = [];
+const closedPorts = new Set<TransferPort>();
+let output: ReturnType<typeof createInterface> | undefined;
 let closed = false;
 
 const close = (code = 0): void => {
   if (closed) return;
   closed = true;
+  output?.close();
   for (const port of ports) {
     try { port.close(); } catch {}
   }
@@ -97,6 +100,11 @@ const close = (code = 0): void => {
     try { child.kill(); } catch {}
   }
   process.exitCode = code;
+};
+
+const failCarrier = (edge: string, error: unknown): void => {
+  console.error(`[mahayana-coordinator-carrier] ${edge} failed`, error);
+  close(1);
 };
 
 utilityParentPort.once("message", (event) => {
@@ -125,32 +133,47 @@ utilityParentPort.once("message", (event) => {
 
   transferred.forEach((port, index) => {
     const channel = CHANNELS[index]!;
-    port.on("message", (message) => writeEnvelope(child!, channel, message.data));
+    port.on("message", (message) => {
+      if (closed || closedPorts.has(port)) return;
+      try {
+        writeEnvelope(child!, channel, message.data);
+      } catch (error) {
+        failCarrier(`${channel} stdin forwarding`, error);
+      }
+    });
     port.on("close", () => {
-      if (transferred.every((candidate) => candidate === port || closed)) close(0);
+      closedPorts.add(port);
+      if (closedPorts.size === transferred.length) close(0);
     });
     port.start();
   });
 
-  const output = createInterface({ input: child.stdout });
+  output = createInterface({ input: child.stdout });
   output.on("line", (line) => {
-    if (line.trim().length === 0) return;
+    if (closed || line.trim().length === 0) return;
     let parsed: unknown;
     try {
       parsed = JSON.parse(line);
     } catch {
-      console.error("[mahayana-coordinator-carrier] invalid coordinator stdout", line);
+      console.error("[mahayana-coordinator-carrier] invalid coordinator stdout");
       return;
     }
     if (!isEnvelope(parsed)) {
-      console.error("[mahayana-coordinator-carrier] invalid coordinator envelope", parsed);
+      console.error("[mahayana-coordinator-carrier] invalid coordinator envelope");
       return;
     }
     const index = CHANNELS.indexOf(parsed.channel);
     const port = ports[index];
-    if (port != null) port.postMessage(parsed.frame);
+    if (port != null && !closedPorts.has(port)) {
+      try {
+        port.postMessage(parsed.frame);
+      } catch (error) {
+        failCarrier(`${parsed.channel} stdout forwarding`, error);
+      }
+    }
   });
 
+  child.stdin.on("error", (error) => failCarrier("Coordinator stdin", error));
   child.stderr.on("data", (chunk) => {
     process.stderr.write(chunk);
   });

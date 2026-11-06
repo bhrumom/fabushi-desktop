@@ -341,6 +341,7 @@ pub struct CloudAgentPendingWatch {
     pub parent_agent_id: String,
     pub work_id: String,
     pub title: String,
+    pub marked_at_ms: f64,
     pub quiet_origin: Option<Value>,
 }
 
@@ -355,6 +356,7 @@ pub struct CloudAgentBackgroundCompletion {
     pub parent_agent_id: String,
     pub work_id: String,
     pub title: String,
+    pub marked_at_ms: f64,
     pub status: String,
     pub result: String,
     pub quiet_origin: Option<Value>,
@@ -448,6 +450,7 @@ impl RunnerCloudAgentWatches {
                 parent_agent_id: armed.parent_agent_id.clone(),
                 work_id: armed.work_id.clone(),
                 title: armed.title.clone(),
+                marked_at_ms: armed.started_at_ms as f64,
                 quiet_origin: armed.quiet_origin.clone(),
             });
         }
@@ -462,6 +465,7 @@ impl RunnerCloudAgentWatches {
         let parent_agent_id = armed.parent_agent_id.clone();
         let work_id = armed.work_id.clone();
         let title = armed.title.clone();
+        let started_at_ms = armed.started_at_ms;
         let quiet_origin = armed.quiet_origin.clone();
 
         let _ = std::thread::Builder::new()
@@ -493,6 +497,7 @@ impl RunnerCloudAgentWatches {
                         parent_agent_id: parent_agent_id.clone(),
                         work_id,
                         title,
+                        marked_at_ms: started_at_ms as f64,
                         status: if outcome.status == "error" {
                             "error".into()
                         } else {
@@ -618,6 +623,7 @@ pub struct BackgroundShellPendingWatch {
     pub parent_agent_id: String,
     pub work_id: String,
     pub title: String,
+    pub marked_at_ms: f64,
     pub quiet_origin: Option<Value>,
 }
 
@@ -633,6 +639,7 @@ pub struct BackgroundShellBackgroundCompletion {
     pub parent_agent_id: String,
     pub work_id: String,
     pub title: String,
+    pub marked_at_ms: f64,
     pub status: String,
     pub detail: Option<String>,
     pub output_path: Option<String>,
@@ -748,6 +755,7 @@ impl RunnerBackgroundShellWatches {
                 parent_agent_id: armed.parent_agent_id.clone(),
                 work_id: armed.work_id.clone(),
                 title: armed.title.clone(),
+                marked_at_ms: armed.started_at_ms as f64,
                 quiet_origin: armed.quiet_origin.clone(),
             });
         }
@@ -761,6 +769,7 @@ impl RunnerBackgroundShellWatches {
         let parent_agent_id = armed.parent_agent_id.clone();
         let work_id = armed.work_id.clone();
         let title = armed.title.clone();
+        let started_at_ms = armed.started_at_ms;
         let quiet_origin = armed.quiet_origin.clone();
         let cancelled = Arc::clone(&armed.cancelled);
 
@@ -797,6 +806,7 @@ impl RunnerBackgroundShellWatches {
                         parent_agent_id: parent_agent_id.clone(),
                         work_id,
                         title,
+                        marked_at_ms: started_at_ms as f64,
                         status: outcome.status,
                         detail: outcome.detail,
                         output_path: outcome.output_path,

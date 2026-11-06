@@ -57,6 +57,9 @@ use crate::extensions::browser_ua::{
 use crate::extensions::cloud_agents::extension::{
     CloudAgentsExtension, start_cloud_agents_extension,
 };
+use crate::extensions::cloud_workers::extension::{
+    CloudWorkerProvisioningExtension, start_cloud_worker_provisioning_extension,
+};
 use crate::extensions::content_search::extension::{
     ProductionContentSearchExtension, start_production_content_search_extension,
 };
@@ -107,6 +110,18 @@ use crate::extensions::mcp::production::{
 };
 use crate::extensions::local_exec::extension::{
     HostLocalExecExtension, start_local_exec_extension,
+};
+use crate::extensions::plugins::compat::validate_all_records;
+use crate::extensions::plugin_sdk::channel_entry::{
+    BundledChannelEntryContract, PluginRegistrationMode,
+};
+use crate::extensions::plugins::capability_catalog::{
+    CapabilityProviderEntry, PluginCapabilityCatalog, PluginOrigin,
+    CAPABILITY_FAMILY_WORKER_PROVIDERS,
+};
+use crate::extensions::plugins::installed_index_store::BundledInstallGuard;
+use crate::connectors::channel_delivery::{
+    ChannelDeliveryPort, ChannelDeliveryRouter, HostChannelDelivery,
 };
 use crate::extensions::local_tool_permission::extension::{
     HostLocalToolPermissionExtension, start_local_tool_permission_extension,
@@ -220,6 +235,7 @@ pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::Mcp,
     HostExtensionId::BoxStoreSync,
     HostExtensionId::CloudAgents,
+    HostExtensionId::CloudWorkers,
     HostExtensionId::ActionAudit,
     HostExtensionId::HostUpgrade,
     HostExtensionId::AutoReview,
@@ -476,6 +492,13 @@ pub struct ProductionHostExtensions {
     pub webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
     pub action_audit: ActionAuditExtension,
     pub cloud_agents: CloudAgentsExtension,
+    pub cloud_workers: CloudWorkerProvisioningExtension,
+    /// Canonical plugin/channel capability catalog shared by production registration paths.
+    pub plugin_capability_catalog: Arc<PluginCapabilityCatalog>,
+    /// Canonical channel delivery boundary consumed by Gateway and channel adapters.
+    pub channel_delivery: HostChannelDelivery,
+    /// Provider registration surface behind the canonical channel delivery boundary.
+    channel_delivery_router: ChannelDeliveryRouter,
     pub turn_execution: Arc<Mutex<TurnExecutionRegistry>>,
     session: Mutex<Option<SessionExtension>>,
     auto_review: Mutex<Option<Arc<HostAutoReviewExtension>>>,
@@ -490,6 +513,53 @@ pub struct ProductionHostExtensions {
     automations: Mutex<Option<Arc<ProductionAutomationsLifecycle>>>,
     // Keep the Experiments lifecycle owner last so dependent extensions settle first.
     _statsig_bootstrap: ProductionStatsigBootstrapRuntime,
+}
+
+/// Publishes bundled channel discoverability to the Host-owned catalog.
+///
+/// This is deliberately capability metadata only: it does not create a
+/// transport, credentials, session state, or delivery provider. A channel
+/// adapter must still register a real `ChannelDeliveryPort` before delivery
+/// can succeed.
+fn register_bundled_channel_capabilities(catalog: &PluginCapabilityCatalog) -> Result<(), String> {
+    for channel_id in BundledInstallGuard::IMMUTABLE_BUNDLED_PLUGINS {
+        let label = match *channel_id {
+            "telegram" => "Telegram",
+            "discord" => "Discord",
+            "slack" => "Slack",
+            "whatsapp" => "WhatsApp",
+            "signal" => "Signal",
+            "imessage" => "iMessage",
+            _ => *channel_id,
+        };
+        let entry = BundledChannelEntryContract::new(
+            *channel_id,
+            label,
+            "Bundled channel capability metadata",
+        );
+        catalog.register_bundled_channel_entry(
+            &entry,
+            PluginOrigin::Bundled,
+            None,
+            PluginRegistrationMode::Capabilities,
+        )?;
+    }
+    Ok(())
+}
+
+/// Registers the bundled Crabbox worker-provider contract as capability
+/// metadata only. This mirrors the upstream plugin manifest's
+/// `workerProviders: ["crabbox"]` declaration without creating a provider
+/// process, resolving credentials, enrolling a device, or changing worker
+/// readiness. The Cloud Worker owner remains the sole lifecycle/state owner.
+fn register_bundled_worker_capabilities(catalog: &PluginCapabilityCatalog) {
+    catalog.register_capability(CapabilityProviderEntry {
+        family: CAPABILITY_FAMILY_WORKER_PROVIDERS.into(),
+        provider_id: "crabbox".into(),
+        plugin_id: "crabbox".into(),
+        label: Some("Crabbox Worker Provider".into()),
+        aliases: Vec::new(),
+    });
 }
 
 impl Drop for ProductionHostExtensions {
@@ -510,6 +580,12 @@ pub fn start_production_host_extensions(
     app_data_dir: &Path,
     events: SandHostEventBus,
 ) -> Result<ProductionHostExtensions, String> {
+    validate_all_records().map_err(|errors| {
+        format!(
+            "plugin compatibility registry failed production validation: {}",
+            errors.join("; ")
+        )
+    })?;
     let auth_options = HostAuthServiceOptions::production(|message| {
         eprintln!("mahayana-host-auth {message}");
     })
@@ -594,6 +670,10 @@ pub fn start_production_host_extensions(
         Arc::clone(&auth),
         production_cloud_agent_trace_converter(),
     );
+    let cloud_workers = start_cloud_worker_provisioning_extension(
+        app_data_dir.join("cloud-workers").join("state.json"),
+    )
+    .map_err(|error| format!("failed to start CloudWorkers extension: {error}"))?;
     let notify_bus = start_notify_bus_extension(
         Arc::clone(&auth),
         Arc::clone(&experiments),
@@ -646,6 +726,11 @@ pub fn start_production_host_extensions(
 
     let (_, turn_execution_registry) = turn_execution_extension();
     let turn_execution = Arc::new(Mutex::new(turn_execution_registry));
+    let plugin_capability_catalog = Arc::new(PluginCapabilityCatalog::new());
+    register_bundled_channel_capabilities(&plugin_capability_catalog)?;
+    register_bundled_worker_capabilities(&plugin_capability_catalog);
+    let channel_delivery_router = ChannelDeliveryRouter::new();
+    let channel_delivery = HostChannelDelivery::new(Arc::new(channel_delivery_router.clone()));
 
     pin_structured_log_domain_reporters(telemetry.logs.clone());
 
@@ -672,6 +757,10 @@ pub fn start_production_host_extensions(
         webauthn_proxy,
         action_audit,
         cloud_agents,
+        cloud_workers,
+        plugin_capability_catalog,
+        channel_delivery,
+        channel_delivery_router,
         turn_execution,
         session: Mutex::new(None),
         auto_review: Mutex::new(None),
@@ -690,6 +779,56 @@ pub fn start_production_host_extensions(
 
 
 impl ProductionHostExtensions {
+    /// Registers a provider port only after the channel is present in the
+    /// canonical plugin capability catalog. This keeps plugin discovery and
+    /// delivery registration on one Host-owned boundary.
+    pub fn register_channel_delivery_provider(
+        &self,
+        channel_id: &str,
+        port: Arc<dyn ChannelDeliveryPort>,
+    ) -> Result<(), String> {
+        if self.plugin_capability_catalog.get_channel(channel_id).is_none() {
+            return Err(format!("channel is not registered: {channel_id}"));
+        }
+        self.channel_delivery_router.register(channel_id, port)
+    }
+
+    pub fn replace_channel_delivery_provider(
+        &self,
+        channel_id: &str,
+        port: Arc<dyn ChannelDeliveryPort>,
+    ) -> Result<(), String> {
+        if self.plugin_capability_catalog.get_channel(channel_id).is_none() {
+            return Err(format!("channel is not registered: {channel_id}"));
+        }
+        self.channel_delivery_router.replace(channel_id, port)
+    }
+
+    pub fn unregister_channel_delivery_provider(&self, channel_id: &str) -> Result<bool, String> {
+        if self.plugin_capability_catalog.get_channel(channel_id).is_none() {
+            return Err(format!("channel is not registered: {channel_id}"));
+        }
+        Ok(self.channel_delivery_router.unregister(channel_id))
+    }
+
+    /// Revokes a bundled channel's provider and discovery metadata together.
+    ///
+    /// Provider revocation happens first so no new delivery can be admitted
+    /// after the capability entry is removed. The catalog gate rejects unknown
+    /// channels and prevents this lifecycle operation from becoming a second
+    /// plugin registry.
+    pub fn revoke_bundled_channel(&self, channel_id: &str) -> Result<bool, String> {
+        if self.plugin_capability_catalog.get_channel(channel_id).is_none() {
+            return Err(format!("channel is not registered: {channel_id}"));
+        }
+        let provider_removed = self.channel_delivery_router.unregister(channel_id);
+        let catalog_removed = self
+            .plugin_capability_catalog
+            .unregister_channel(channel_id)
+            .is_some();
+        Ok(provider_removed || catalog_removed)
+    }
+
     pub fn stop_structured_log_domain_reporters(&self) {
         unpin_structured_log_domain_reporters();
     }
@@ -1304,6 +1443,25 @@ impl ProductionHostExtensions {
         Ok(slot.as_ref().map(|extension| extension.api()))
     }
 
+    pub fn state_backstop_is_enabled(&self) -> Result<bool, String> {
+        let slot = self
+            .state_backstop
+            .lock()
+            .map_err(|_| "production StateBackstop runtime lock poisoned".to_string())?;
+        Ok(slot.as_ref().is_some_and(HostStateBackstopExtension::is_enabled))
+    }
+
+    pub fn schedule_state_backstop_snapshot(&self, agent_id: &str) -> Result<(), String> {
+        let slot = self
+            .state_backstop
+            .lock()
+            .map_err(|_| "production StateBackstop runtime lock poisoned".to_string())?;
+        if let Some(extension) = slot.as_ref() {
+            extension.schedule_snapshot(agent_id.to_string());
+        }
+        Ok(())
+    }
+
     pub fn stop_box_store_sync(&self) -> Result<(), String> {
         let state_backstop = self
             .state_backstop
@@ -1335,7 +1493,8 @@ pub struct ProductionHostBoxExtensions {
 }
 
 impl ProductionHostBoxExtensions {
-    pub fn stop(&self) {
+    pub fn stop(&mut self) {
+        self.attachments.stop_lifecycle_worker();
         self.secrets.stop();
         self.forever_box.dispose();
     }
@@ -1344,7 +1503,7 @@ impl ProductionHostBoxExtensions {
 pub fn start_production_host_box_extensions(
     core: &ProductionHostExtensions,
     environment: ProductionBoxEnvironment,
-) -> ProductionHostBoxExtensions {
+) -> Result<ProductionHostBoxExtensions, String> {
     let lifecycle: Arc<dyn ForeverBoxLifecycle> = core.box_lifecycle.clone();
     let forever_box = start_forever_box_extension_with_telemetry(
         environment,
@@ -1359,14 +1518,14 @@ pub fn start_production_host_box_extensions(
         Some(Arc::new(move |diagnostic| {
             let _ = attachment_logs.report_host_extension_diagnostic(&diagnostic);
         })),
-    );
+    )?;
     let secrets = Arc::new(start_secrets_extension(
         Arc::clone(&forever_box),
         production_secrets_log(),
     ));
-    ProductionHostBoxExtensions {
+    Ok(ProductionHostBoxExtensions {
         forever_box,
         attachments,
         secrets,
-    }
+    })
 }

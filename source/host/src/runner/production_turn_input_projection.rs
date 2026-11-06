@@ -5,6 +5,7 @@ use serde_json::Value;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedMcpMetaToolDefinition, RoutedToolDefinition,
 };
+use crate::extensions::session::typed_replay::TypedReplayEntry;
 
 use super::conversation_state::RecentUserMessage;
 use super::production_agent_checkpoint::AgentStateCheckpointSink;
@@ -15,17 +16,19 @@ use super::routed_provider_runtime::RoutedProviderCancellation;
 use super::turn_agent_composition::TurnAgentComposition;
 use super::TurnRunOptions;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ProductionTurnInputProjection {
     pub options: TurnRunOptions,
     pub ack_token: Option<String>,
     pub prompt_action: PromptCollectorTurnAction,
+    pub typed_replay: Option<Vec<TypedReplayEntry>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ProductionTurnActionProjection {
     pub lifecycle_messages: Vec<ProviderMessage>,
     pub provider_messages: Vec<ProviderMessage>,
+    pub typed_replay: Option<Vec<TypedReplayEntry>>,
     pub prompt_action: PromptCollectorTurnAction,
 }
 
@@ -58,6 +61,7 @@ pub fn create_production_turn_agent_input_projection<'a>(
         action: ProductionTurnActionProjection {
             lifecycle_messages: lifecycle_messages.to_vec(),
             provider_messages: provider_messages.to_vec(),
+            typed_replay: turn_input.typed_replay.clone(),
             prompt_action: turn_input.prompt_action.clone(),
         },
         mcp_tools,
@@ -117,6 +121,7 @@ pub fn create_production_turn_input_projection(
         },
         ack_token: None,
         prompt_action,
+        typed_replay: None,
     })
 }
 

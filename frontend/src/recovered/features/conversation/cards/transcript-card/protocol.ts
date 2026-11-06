@@ -2,8 +2,8 @@
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=782731 (transcript-card declaration validation)
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=784036 (card metadata projection)
 
-import { projectTranscriptReactions, type TranscriptReaction } from "./reaction-actions";
-import { projectSendMessageText, type SendMessageTextImage } from "./send-message-text";
+import { projectTranscriptReactions, type TranscriptReaction } from "./reaction-actions.ts";
+import { projectSendMessageText, type SendMessageTextImage } from "./send-message-text.ts";
 
 export const TRANSCRIPT_CARD_ENTRY_KIND = "send-message" as const;
 

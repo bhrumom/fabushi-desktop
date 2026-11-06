@@ -30,6 +30,7 @@ fn redrive_preparation_bumps_attempts_and_builds_hidden_recovery_send() {
     assert_eq!(bumped.redrive_attempts, 1.0);
     let args = build_ack_redrive_send_args(
         "agent-a",
+        "agent:agent-a:main",
         &bumped,
         AckRedriveTrigger::Boot,
         1234,

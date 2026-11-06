@@ -103,10 +103,6 @@ impl ProductionAgentStore {
         }
     }
 
-    pub fn db(&self) -> Arc<SandAgentDb> {
-        Arc::clone(&self.db)
-    }
-
     pub fn subscribe_to_metadata(
         &self,
         key: ProductionAgentMetadataKey,
@@ -308,9 +304,10 @@ impl ProductionAgentStore {
     /// The async owner is the production checkpoint path. The synchronous
     /// wrapper remains for legacy synchronous callers, but Runner settle must
     /// await this method so it never nests a LocalPool executor.
-    /// Shipping direct-user checkpoint boundary. Blob bytes are content
-    /// addressed first; then SandAgentDb advances latestRootBlobId and the
-    /// transcript recovery watermark in one IMMEDIATE SQLite transaction.
+    /// Shipping checkpoint boundary. Blob bytes are content addressed first;
+    /// then SandAgentDb advances latestRootBlobId through the captured-root
+    /// CAS. A concurrent checkpoint or lifecycle transition therefore cannot
+    /// be overwritten by this stale owner.
     pub fn handle_checkpoint_bytes_and_confirm_user_message_blocking(
         &self,
         checkpoint: &[u8],
@@ -372,15 +369,15 @@ impl ProductionAgentStore {
             .set_blob_blocking(&root_blob_id, checkpoint)
             .map_err(|error| error.to_string())?;
 
+        let expected_root = self.latest_root_blob_id();
         let advanced = self
             .db
-            .set_metadata(
-                "latestRootBlobId",
-                Value::String(encode_hex(&root_blob_id)),
-            )
+            .compare_and_set_latest_root_blob_id(&expected_root, &root_blob_id)
             .map_err(|error| error.to_string())?;
         if !advanced {
-            return Err("latestRootBlobId metadata update was not committed".into());
+            return Err(
+                "latestRootBlobId changed before checkpoint commit; stale owner rejected".into(),
+            );
         }
 
         let mut state = self

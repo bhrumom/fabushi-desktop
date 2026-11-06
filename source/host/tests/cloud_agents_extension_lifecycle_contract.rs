@@ -121,7 +121,7 @@ fn cloud_agents_on_stop_is_explicit_idempotent_and_not_owned_by_the_order_table(
 
     assert!(
         !REGISTRY.contains("CloudAgentsExtension"),
-        "the 35-slot registry order table must not become a second CloudAgents lifecycle owner"
+        "the 36-slot registry order table must not become a second CloudAgents lifecycle owner"
     );
 }
 

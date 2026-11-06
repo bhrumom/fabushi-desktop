@@ -1741,7 +1741,9 @@
       "new_owner_adr": null,
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/service.rs",
-        "native/mahayana-messaging/tests/service_contract.rs"
+        "native/mahayana-messaging/tests/service_contract.rs",
+        "native/mahayana-messaging/src/service_tdrp_triggers.rs",
+        "native/mahayana-messaging/src/service_tdrp_commands.rs"
       ],
       "fabushi_target_symbols": [
         "stable_message_id",
@@ -1969,7 +1971,9 @@
         "native/mahayana-messaging/src/message.rs",
         "native/mahayana-messaging/src/protocol.rs",
         "native/mahayana-messaging/src/service.rs",
-        "native/mahayana-messaging/src/engine.rs"
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service_tdrp_triggers.rs",
+        "native/mahayana-messaging/src/service_tdrp_commands.rs"
       ],
       "fabushi_target_symbols": [
         "ForwardPrivacy",
@@ -2227,7 +2231,10 @@
         "native/mahayana-messaging/src/service.rs",
         "source/host/src/extensions/session/production.rs",
         "source/host/src/extensions/session/gateway.rs",
-        "frontend/src/production/ForwardMessageDialog.tsx"
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "native/mahayana-messaging/src/service_tdrp_queries.rs",
+        "native/mahayana-messaging/src/service_tdrp_validation.rs",
+        "source/host/src/extensions/session/tdrp_forward_share.rs"
       ],
       "fabushi_target_symbols": [
         "RecipientSearchRequirements",
@@ -8389,7 +8396,7 @@
         "Recovery and convergence",
         "Assessment",
         "Handoff and commit boundaries",
-        "Test account (portable data) — hard rules",
+        "Test account (portable data) \u2014 hard rules",
         "Design evidence from this task",
         "Telegram overlay mechanics",
         "Telegram build & run discipline",

@@ -224,6 +224,7 @@ fn production_turn_agent_projection_freezes_action_mcp_ack_and_base_state() {
         options: TurnRunOptions::default(),
         ack_token: Some("ack-1".into()),
         prompt_action: Default::default(),
+        typed_replay: None,
     };
 
     let projected = create_production_turn_agent_input_projection(
@@ -319,6 +320,7 @@ fn production_turn_agent_projection_degrades_failed_mcp_discovery_to_empty_snaps
         options: TurnRunOptions::default(),
         ack_token: Some("ack-fallback".into()),
         prompt_action: Default::default(),
+        typed_replay: None,
     };
     let mut emit_update = |_delta: &str, _accumulated: &str| {};
 

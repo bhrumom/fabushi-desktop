@@ -52,6 +52,7 @@ import {
   captureSandSentryWarning,
 } from "./telemetry/sentry.js";
 import { computeUpdateDisabledReason } from "./update/update-gate.js";
+import { configuredUpdateFeedBaseUrl } from "./update/update-feed.js";
 import { createUpdateTelemetryRelay } from "./update/update-telemetry.js";
 import { createUpdateServiceWiring } from "./update/update-wiring.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
@@ -325,7 +326,7 @@ export function createProductionUpdaterInstallerBinding(
         disabledReason: computeUpdateDisabledReason({
           envDisabled: env.SAND_DISABLE_UPDATES === "1",
           isLabBuild: context.resources.metadata.sandLab,
-          hasDevFeedOverride: (env.SAND_UPDATE_FEED_BASE_URL?.length ?? 0) > 0,
+          hasDevFeedOverride: (configuredUpdateFeedBaseUrl(env)?.trim().length ?? 0) > 0,
           isPackaged: context.native.app.isPackaged,
           platform,
         }),
@@ -638,3 +639,4 @@ export function createElectronProductionMediaProtocolBinding(additionalSchemes: 
   };
   return createProductionMediaProtocolBinding({ protocol: electron.protocol }, additionalSchemes);
 }
+

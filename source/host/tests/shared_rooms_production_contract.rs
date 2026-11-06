@@ -119,6 +119,10 @@ fn hosted_room_materializes_filters_members_persists_notice_and_restamps_content
                 == Some("Member is responding.")
     }));
 
+    let room_admission = sessions
+        .read_session_work_admission(&room_agent)
+        .expect("room admission")
+        .expect("room admission record");
     sessions
         .append_agent_transcript_entries(
             &room_agent,
@@ -127,6 +131,7 @@ fn hosted_room_materializes_filters_members_persists_notice_and_restamps_content
                 "id": "t1u",
                 "role": "user",
                 "content": "hello",
+                "sessionKey": room_admission.session_key.clone(),
                 "timestampMs": 1.0
             })],
         )
@@ -144,6 +149,23 @@ fn hosted_room_materializes_filters_members_persists_notice_and_restamps_content
         stamped.get("timestampMs").and_then(serde_json::Value::as_f64),
         Some(42.0)
     );
+
+    sessions
+        .transition_session_work_archive(
+            &room_agent,
+            &room_admission.session_key,
+            &room_admission.session_id,
+            Some(&room_admission.lifecycle_revision),
+            true,
+            Some("contract-test"),
+            Some("restamp archive fence"),
+            43.0,
+        )
+        .expect("archive room session");
+    let archived_error = rooms
+        .restamp_room_entry("room-hosted", "t1u", 44.0)
+        .expect_err("archived bound restamp must reject");
+    assert!(archived_error.contains("session is not admitted"));
 
     let _ = fs::remove_dir_all(root);
 }

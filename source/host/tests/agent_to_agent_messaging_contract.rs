@@ -5,6 +5,9 @@ use std::time::{SystemTime,UNIX_EPOCH};
 use mahayana_host_runtime::agents::agent_messaging::AgentMessageImage;
 use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::agent_session::{
+    SessionCommunicationMode, SessionCommunicationPolicyOverride,
+};
 use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::agent_error_telemetry;
 use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
     AgentWakeRequest, ProductionAgentToAgentMessaging, agent_inbound_failure_report,
@@ -30,11 +33,17 @@ fn direct_delivery_defers_recipient_transcript_until_execution_admission(){
     let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),{
         let wakes=Arc::clone(&wakes);Arc::new(move|wake|wakes.lock().expect("wakes").push(wake.clone()))
     },Some({let interrupts=Arc::clone(&interrupts);Arc::new(move|_,_|{interrupts.fetch_add(1,Ordering::SeqCst);1})}));
-    let ack=service.send_to_agent(&alpha.id,&beta.id,"  please review  ",&[AgentMessageImage{url:"https://example.com/chart.png".into(),alt:Some("chart".into())}],true).expect("send");
+    let alpha_session_key = sessions
+        .read_session_work_admission(&alpha.id)
+        .expect("alpha admission")
+        .expect("alpha admission record")
+        .session_key;
+    let ack=service.send_to_agent_with_session(&alpha.id,Some(&alpha_session_key),&beta.id,"  please review  ",&[AgentMessageImage{url:"https://example.com/chart.png".into(),alt:Some("chart".into())}],true).expect("send");
     assert!(ack.contains("priority"));
     let a=sessions.read_agent_transcript_entries(&alpha.id).expect("alpha transcript");
     let b=sessions.read_agent_transcript_entries(&beta.id).expect("beta transcript before admission");
     assert_eq!(a.len(),1);assert_eq!(a[0]["toAgent"]["id"],beta.id);assert_eq!(a[0]["content"],"please review");
+    assert_eq!(a[0].get("sessionKey").and_then(serde_json::Value::as_str),Some(alpha_session_key.as_str()));
     assert!(b.is_empty(), "recipient entry is deferred until execution admission");
     assert_eq!(sessions.get_agent_conversation_partner_ids(&alpha.id).expect("a partners"),vec![beta.id.clone()]);
     assert!(sessions.get_agent_conversation_partner_ids(&beta.id).expect("b partners before admission").is_empty());
@@ -42,10 +51,248 @@ fn direct_delivery_defers_recipient_transcript_until_execution_admission(){
     let wake=wakes.lock().expect("wakes").last().cloned().expect("wake");
     assert_eq!(wake.agent_id,beta.id);assert!(wake.priority);assert!(wake.prompt.starts_with("[agent]"));
     let inbound = wake.inbound.as_ref().expect("direct inbound envelope");
+    assert_eq!(inbound["replyContext"]["targetId"], a[0]["id"]);
+    assert_eq!(inbound["messageId"], a[0]["id"]);
+    assert!(inbound.get("replyToId").is_none());
     assert!(persist_agent_inbound_message(&sessions, &beta.id, inbound).expect("persist inbound"));
     let b=sessions.read_agent_transcript_entries(&beta.id).expect("beta transcript after admission");
     assert_eq!(b.len(),1);assert_eq!(b[0]["fromAgent"]["id"],alpha.id);assert_eq!(b[0]["images"][0]["url"],"https://example.com/chart.png");
+    let beta_session_key = sessions
+        .read_session_work_admission(&beta.id)
+        .expect("beta admission")
+        .expect("beta admission record")
+        .session_key;
+    assert_eq!(
+        b[0].get("sessionKey").and_then(serde_json::Value::as_str),
+        Some(beta_session_key.as_str())
+    );
     assert_eq!(sessions.get_agent_conversation_partner_ids(&beta.id).expect("b partners after admission"),vec![alpha.id.clone()]);
+    assert!(!persist_agent_inbound_message(&sessions, &beta.id, inbound).expect("duplicate inbound is already admitted"));
+    assert_eq!(sessions.read_agent_transcript_entries(&beta.id).expect("deduped beta transcript").len(), 1);
+    let mut conflicting_inbound = inbound.clone();
+    conflicting_inbound["text"] = serde_json::Value::String("tampered".into());
+    assert!(persist_agent_inbound_message(&sessions, &beta.id, &conflicting_inbound).is_err());
+    let beta_reply = service
+        .send_to_agent_with_session_and_reply(
+            &beta.id,
+            Some(&beta_session_key),
+            &alpha.id,
+            "done",
+            &[],
+            false,
+            a[0]["id"].as_str(),
+        )
+        .expect("reply");
+    assert!(beta_reply.contains("Sent to"));
+    let reply_wake = wakes.lock().expect("wakes").last().cloned().expect("reply wake");
+    let reply_inbound = reply_wake.inbound.as_ref().expect("reply inbound envelope");
+    assert_eq!(reply_inbound["replyToId"], a[0]["id"]);
+    assert!(persist_agent_inbound_message(&sessions, &alpha.id, reply_inbound).expect("persist reply"));
+    let a_after_reply = sessions.read_agent_transcript_entries(&alpha.id).expect("alpha reply transcript");
+    assert_eq!(a_after_reply.len(), 2);
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
+fn direct_delivery_preflights_admitted_target_before_side_effects() {
+    let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
+    assert!(source.contains("self.sessions.assert_session_work_admission(\n                to_agent_id"));
+    assert!(source.contains("Some(&target_admission.session_key)"));
+    let sender_identity = source
+        .split("pub fn send_to_agent_with_session_and_reply(")
+        .nth(1)
+        .expect("direct send owner exists")
+        .split("pub fn persist_agent_inbound_message(")
+        .next()
+        .expect("direct send owner boundary exists");
+    let sender_key = sender_identity
+        .find("let sender_session_key =")
+        .expect("sender admission key is resolved");
+    let source_endpoint = sender_identity
+        .find("let source_endpoint =")
+        .expect("source communication endpoint exists");
+    let planner = sender_identity
+        .find("plan_session_communication(")
+        .expect("communication planner exists");
+    assert!(sender_key < source_endpoint);
+    assert!(source_endpoint < planner);
+}
+
+#[test]
+fn inbound_turn_claim_is_released_when_append_inserts_nothing() {
+    let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
+    let inbound = source
+        .split("pub fn persist_agent_inbound_message(")
+        .nth(1)
+        .expect("inbound owner exists")
+        .split("fn now_ms(")
+        .next()
+        .expect("inbound owner boundary exists");
+    let no_insert = inbound
+        .split("if inserted == 0 {")
+        .nth(1)
+        .expect("no-insert branch exists")
+        .split("return Ok(false);")
+        .next()
+        .expect("no-insert branch boundary exists");
+    assert!(no_insert.contains("pending_conversation_turns().release"));
+    assert!(!no_insert.contains("pending_conversation_turns().complete"));
+}
+
+#[test]
+fn inbound_turn_completion_precedes_partner_bookkeeping() {
+    let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
+    let inbound = source
+        .split("pub fn persist_agent_inbound_message(")
+        .nth(1)
+        .expect("inbound owner exists")
+        .split("fn now_ms(")
+        .next()
+        .expect("inbound owner boundary exists");
+    let completion = inbound
+        .find("pending_conversation_turns().complete")
+        .expect("successful append completes the pending turn");
+    let partner = inbound
+        .find("add_agent_conversation_partner")
+        .expect("partner bookkeeping exists");
+    assert!(completion < partner);
+}
+
+#[test]
+fn sender_partner_bookkeeping_cannot_block_wake_delivery() {
+    let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
+    let sender = source
+        .split("pub fn send_to_agent_with_session_and_reply(")
+        .nth(1)
+        .expect("direct sender owner exists")
+        .split("pub fn persist_agent_inbound_message(")
+        .next()
+        .expect("direct sender owner boundary exists");
+    let partner = sender
+        .find("add_agent_conversation_partner")
+        .expect("sender partner bookkeeping exists");
+    let wake = sender
+        .find("(self.wake_sink)(")
+        .expect("sender wake dispatch exists");
+    assert!(partner < wake);
+    assert!(sender.contains(
+        "let _ = self\n            .sessions\n            .add_agent_conversation_partner(from_agent_id, to_agent_id);"
+    ));
+}
+
+#[test]
+fn persisted_never_policy_rejects_before_transcript_or_wake(){
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
+    let beta=sessions.materialize_new_session(Some(&profile("Beta")),"user",None).expect("beta");
+    let admission=sessions.read_session_work_admission(&alpha.id).expect("admission").expect("alpha admission");
+    sessions.write_session_communication_policy(
+        &alpha.id,&admission.session_id,&admission.lifecycle_revision,
+        &SessionCommunicationPolicyOverride{send:Some(SessionCommunicationMode::Never),receive:None},
+    ).expect("policy write");
+    let wakes=Arc::new(Mutex::new(Vec::<AgentWakeRequest>::new()));
+    let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),{
+        let wakes=Arc::clone(&wakes);Arc::new(move|wake|wakes.lock().expect("wakes").push(wake.clone()))
+    },None);
+    let error=service.send_to_agent_with_session(&alpha.id,None,&beta.id,"blocked",&[],false)
+        .expect_err("never policy must reject");
+    assert!(error.contains("send is disabled"));
+    assert!(sessions.read_agent_transcript_entries(&alpha.id).expect("sender").is_empty());
+    assert!(wakes.lock().expect("wakes").is_empty());
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
+fn persisted_ask_policy_rejects_without_approval_consumer(){
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
+    let beta=sessions.materialize_new_session(Some(&profile("Beta")),"user",None).expect("beta");
+    let admission=sessions.read_session_work_admission(&alpha.id).expect("admission").expect("alpha admission");
+    sessions.write_session_communication_policy(
+        &alpha.id,&admission.session_id,&admission.lifecycle_revision,
+        &SessionCommunicationPolicyOverride{send:Some(SessionCommunicationMode::Ask),receive:None},
+    ).expect("policy write");
+    let wakes=Arc::new(Mutex::new(Vec::<AgentWakeRequest>::new()));
+    let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),{
+        let wakes=Arc::clone(&wakes);Arc::new(move|wake|wakes.lock().expect("wakes").push(wake.clone()))
+    },None);
+    let error=service.send_to_agent_with_session(&alpha.id,None,&beta.id,"approval",&[],false)
+        .expect_err("ask policy must fail closed without approval consumer");
+    assert!(error.contains("requires approval"));
+    assert!(sessions.read_agent_transcript_entries(&alpha.id).expect("sender").is_empty());
+    assert!(wakes.lock().expect("wakes").is_empty());
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
+fn inbound_consumer_binds_source_identity_and_rejects_self_or_unknown(){
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let target=sessions.materialize_new_session(Some(&profile("Target")),"user",None).expect("target");
+    let source=sessions.materialize_new_session(Some(&profile("Canonical Source")),"user",None).expect("source");
+    let inbound=|source:&str| serde_json::json!({
+        "from":{"id":source,"name":"spoofed source name"},
+        "text":"must not be accepted",
+        "timestampMs":100,
+    });
+    assert!(!persist_agent_inbound_message(&sessions,&target.id,&inbound(&target.id)).expect("self inbound"));
+    assert!(!persist_agent_inbound_message(&sessions,&target.id,&inbound("missing-source")).expect("unknown inbound"));
+    let accepted = persist_agent_inbound_message(&sessions,&target.id,&inbound(&source.id)).expect("known inbound");
+    assert!(accepted);
+    let entries=sessions.read_agent_transcript_entries(&target.id).expect("target transcript");
+    assert_eq!(entries[0]["fromAgent"]["name"],"Canonical Source");
+    assert_eq!(sessions.get_agent_conversation_partner_ids(&target.id).expect("target partners"),vec![source.id]);
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
+fn inbound_consumer_rechecks_target_receive_policy_before_persistence(){
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let source=sessions.materialize_new_session(Some(&profile("Source")),"user",None).expect("source");
+    let target=sessions.materialize_new_session(Some(&profile("Target")),"user",None).expect("target");
+    let admission=sessions.read_session_work_admission(&target.id).expect("admission").expect("target admission");
+    sessions.write_session_communication_policy(
+        &target.id,&admission.session_id,&admission.lifecycle_revision,
+        &SessionCommunicationPolicyOverride{send:None,receive:Some(SessionCommunicationMode::Never)},
+    ).expect("policy write");
+    let inbound=serde_json::json!({
+        "from":{"id":source.id,"name":"spoofed"},
+        "text":"blocked by target receive policy",
+        "timestampMs":100,
+    });
+    let error=persist_agent_inbound_message(&sessions,&target.id,&inbound).expect_err("receive policy must reject");
+    assert!(error.contains("receive is disabled"));
+    assert!(sessions.read_agent_transcript_entries(&target.id).expect("target transcript").is_empty());
+    assert!(sessions.get_agent_conversation_partner_ids(&target.id).expect("target partners").is_empty());
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
+fn inbound_policy_recheck_is_target_admission_scoped() {
+    let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
+    assert!(source.contains("if let Some(source_admission) = source_admission.as_ref()"));
+    assert!(source.contains("from_id,\n            Some(&source_admission.session_key)"));
+    assert!(source.contains("if source_admission.is_some() || target_admission.is_some()"));
+    assert!(source.contains(".map(|admission| admission.session_key.clone())"));
+    assert!(source.contains(".unwrap_or_default()"));
+    assert!(source.contains("sessions.assert_session_work_admission(\n                agent_id"));
+}
+
+#[test]
+fn session_bound_sender_append_rejects_an_archived_source_without_writing(){
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
+    let beta=sessions.materialize_new_session(Some(&profile("Beta")),"user",None).expect("beta");
+    let session_key=format!("agent:{}:main",alpha.id);
+    let current=sessions.read_session_work_admission(&alpha.id).expect("admission").expect("main admission");
+    sessions.transition_session_work_archive(
+        &alpha.id,&session_key,&current.session_id,Some(&current.lifecycle_revision),true,
+        Some("human-1"),Some("review"),100.0,
+    ).expect("archive source session");
+    let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),Arc::new(|_|{}),None);
+    let error=service.send_to_agent_with_session(&alpha.id,Some(&session_key),&beta.id,"hello",&[],false)
+        .expect_err("archived source must reject the session-bound append");
+    assert!(error.contains("is archived"));
+    assert!(sessions.read_agent_transcript_entries(&alpha.id).expect("source transcript").is_empty());
     sessions.shutdown();let _=fs::remove_dir_all(root);
 }
 
@@ -336,7 +583,9 @@ fn deletion_fenced_target_uses_frozen_agent_gone_response() {
     let beta = sessions
         .materialize_new_session(Some(&profile("Beta")), "user", None)
         .expect("beta");
-    sessions.begin_agent_delete(&beta.id);
+    sessions
+        .begin_agent_delete(&beta.id)
+        .expect("publish deletion fence");
 
     let service = ProductionAgentToAgentMessaging::new(
         Arc::clone(&sessions),
@@ -348,7 +597,9 @@ fn deletion_fenced_target_uses_frozen_agent_gone_response() {
         .expect("send result");
     assert_eq!(ack, "That agent no longer exists.");
 
-    sessions.end_agent_delete(&beta.id);
+    sessions
+        .end_agent_delete(&beta.id)
+        .expect("clear deletion fence");
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
 }

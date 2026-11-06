@@ -233,13 +233,7 @@ impl SessionRuntime {
             return Ok(false);
         }
 
-        let db_path = sessions.session_db_path(agent_id)?;
-        let blob_path = crate::extensions::session::conversation_blobs_path::conversation_blobs_path(
-            &db_path,
-        );
-        let _ = sessions.close_agent_store_owner(agent_id, true);
-        let _ = sessions.close_agent_db_owner(agent_id, true);
-        sessions.worker_pool().close_store_blocking(&blob_path);
+        let _ = sessions.retire_agent_owners(agent_id, true)?;
         Ok(true)
     }
 
@@ -342,10 +336,7 @@ impl SessionRuntime {
         let Some(active_agent_id) = store.read_active_agent_id() else {
             return Ok(false);
         };
-        let owner = sessions.open_agent_db_owner(&active_agent_id)?;
-        let unread = owner
-            .get_unread_state()
-            .map_err(|error| error.to_string())?;
+        let unread = sessions.read_agent_unread_state(&active_agent_id)?;
         if unread.is_manually_unread || unread.last_activity_at <= unread.last_viewed_at {
             return Ok(false);
         }

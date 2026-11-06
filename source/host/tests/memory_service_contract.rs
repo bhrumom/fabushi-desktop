@@ -4,9 +4,16 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::session_mutations::{
+    capture_profile_mutation_files, profile_mutation_files_match,
+    restore_profile_mutation_files,
+};
 use mahayana_host_runtime::extensions::memory::memory_service::{
-    FileMemoryStore, MemoryKind, MemoryOrigin, MemoryService, MemorySynthesisBridge,
+    FileMemoryStore, MemoryKind, MemoryOrigin, MemoryRecoveryRecord, MemoryService,
+    MemorySynthesisBridge,
+    SynthesisApplyResult,
     agent_memory_has_content, get_agent_memory_dir, get_project_memory_shard_dir,
     get_user_memory_shard_dir, memory_id_for, normalize_memory_content, parse_facts,
 };
@@ -114,6 +121,51 @@ fn file_memory_store_round_trips_recall_dedupe_remove_and_clear() {
 }
 
 #[test]
+fn exact_memory_recovery_preserves_synthesis_metadata() {
+    let root = temp_root("exact-recovery");
+    let agent = root.join("agent");
+    let store = FileMemoryStore::with_synthesis_metadata(get_agent_memory_dir(&agent), true);
+    let record = store
+        .add_memory("A durable preference", 1_000, MemoryKind::Profile)
+        .expect("add memory")
+        .expect("new memory");
+    let captured = store.snapshot_for_recovery(std::slice::from_ref(&record));
+    assert_eq!(captured[0].origin, MemoryOrigin::Explicit);
+
+    store.remove_memory(&record.id).expect("remove memory");
+    store.restore_records_exact(&captured).expect("restore memory");
+
+    let restored = store.prepare_synthesis();
+    assert_eq!(restored.memories.len(), 1);
+    assert_eq!(restored.memories[0].origin, MemoryOrigin::Explicit);
+    assert_eq!(restored.memories[0].content, record.content);
+    assert!(!captured[0].tombstoned);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn profile_mutation_file_snapshots_are_exact_and_allowlisted() {
+    let root = temp_root("profile-file-recovery");
+    let agent = root.join("agent");
+    fs::create_dir_all(&agent).expect("agent dir");
+    fs::write(agent.join("profile.json"), b"old-profile\n").expect("profile");
+    fs::write(agent.join("avatar.png"), [1_u8, 2, 3]).expect("avatar");
+    let before = capture_profile_mutation_files(&agent, true).expect("capture before");
+    fs::write(agent.join("profile.json"), b"new-profile\n").expect("new profile");
+    fs::remove_file(agent.join("avatar.png")).expect("remove avatar");
+    let after = capture_profile_mutation_files(&agent, true).expect("capture after");
+    assert!(profile_mutation_files_match(&agent, &after));
+    assert!(!profile_mutation_files_match(&agent, &before));
+    restore_profile_mutation_files(&agent, &before).expect("restore before");
+    assert!(profile_mutation_files_match(&agent, &before));
+    assert_eq!(fs::read(agent.join("profile.json")).expect("restored profile"), b"old-profile\n");
+    assert_eq!(fs::read(agent.join("avatar.png")).expect("restored avatar"), vec![1, 2, 3]);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn memory_service_creates_real_agent_scoped_store() {
     let root = temp_root("service");
     let service = MemoryService::new(&root);
@@ -139,6 +191,94 @@ fn production_session_workers_can_share_host_memory_extension_owner() {
         std::sync::Arc::clone(&memory),
     );
     assert!(std::sync::Arc::ptr_eq(&workers.memory_service(), &memory));
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn synthesis_apply_fails_closed_until_an_owner_gate_is_bound() {
+    let root = temp_root("synthesis-gate");
+    let service = MemoryService::new(&root);
+    let store = service.store_for_agent("agent-gated");
+    let snapshot = store.prepare_synthesis();
+    assert_eq!(
+        service.apply_synthesis_with_gate("agent-gated", &store, &snapshot, &[], 1),
+        SynthesisApplyResult::Invalid
+    );
+
+    let calls = Arc::new(AtomicUsize::new(0));
+    let observed_calls = Arc::clone(&calls);
+    service.set_synthesis_apply_gate(Some(Arc::new(move |_, _, _, _, _| {
+        observed_calls.fetch_add(1, Ordering::SeqCst);
+        SynthesisApplyResult::Stale
+    })));
+    assert_eq!(
+        service.apply_synthesis_with_gate("agent-gated", &store, &snapshot, &[], 2),
+        SynthesisApplyResult::Stale
+    );
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn bound_synthesis_gate_rejects_a_noncanonical_store_path() {
+    let root = temp_root("synthesis-canonical-store");
+    let memory = Arc::new(MemoryService::new(&root));
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root_and_dependencies(
+        &root,
+        500,
+        Arc::new(|| None),
+        Arc::clone(&memory),
+    ));
+    workers.bind_memory_synthesis_gate();
+
+    let missing = memory.store_for_agent("agent-gated");
+    assert_eq!(
+        memory.apply_synthesis_with_gate(
+            "agent-gated", &missing, &missing.prepare_synthesis(), &[], 1,
+        ),
+        SynthesisApplyResult::Invalid,
+        "a canonical path does not authorize a missing Agent",
+    );
+
+    let sessions = SandAgentSessionStore::new(Arc::clone(&workers));
+    let agent = sessions.create_session(None, "user", None)
+        .expect("create a real admitted Agent for the store-path comparison");
+    workers.assert_agent_work_admission(&agent.id).expect("live Agent admission");
+    let canonical = memory.store_for_agent(&agent.id);
+    let foreign = FileMemoryStore::new(root.join("foreign-memory"));
+    let canonical_snapshot = canonical.prepare_synthesis();
+    let foreign_snapshot = foreign.prepare_synthesis();
+    assert_eq!(
+        memory.apply_synthesis_with_gate(
+            &agent.id,
+            &canonical,
+            &canonical_snapshot,
+            &[],
+            1,
+        ),
+        SynthesisApplyResult::Committed
+    );
+    assert_eq!(
+        memory.apply_synthesis_with_gate(
+            &agent.id,
+            &foreign,
+            &foreign_snapshot,
+            &[],
+            2,
+        ),
+        SynthesisApplyResult::Invalid
+    );
+
+    assert_eq!(
+        memory.apply_synthesis_with_gate(
+            &agent.id, &canonical, &canonical.prepare_synthesis(), &[], 3,
+        ),
+        SynthesisApplyResult::Committed,
+        "foreign-store refusal leaves the same admitted owner usable",
+    );
+
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
 }

@@ -79,6 +79,7 @@ export type WindowChromeOptions =
   | {
       readonly frame: true;
       readonly titleBarStyle: "hiddenInset";
+      readonly titlebarAppearsTransparent: true;
       readonly trafficLightPosition: typeof MAC_TRAFFIC_LIGHT_POSITION;
     }
   | {
@@ -94,7 +95,12 @@ export function windowChromeOptions(input: {
   readonly backgroundColor: string;
 }): WindowChromeOptions {
   if (input.isMac) {
-    return { frame: true, titleBarStyle: "hiddenInset", trafficLightPosition: MAC_TRAFFIC_LIGHT_POSITION };
+    return {
+      frame: true,
+      titleBarStyle: "hiddenInset",
+      titlebarAppearsTransparent: true,
+      trafficLightPosition: MAC_TRAFFIC_LIGHT_POSITION,
+    };
   }
   if (input.isWindows) {
     return {

@@ -3,6 +3,7 @@ import type { RawPortCoordinatorSource } from "../recovered/runtime/coordinator-
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5508686
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5521060
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5532244
+// @evidence origin/codex/canonical-transcript-search (PR #176 commit dd700e394): short-circuit empty/whitespace queries before searchMedia RPC
 
 export const COMMAND_PALETTE_FILE_RESULT_LIMIT = 50;
 
@@ -152,13 +153,18 @@ export function createCommandPaletteFileProvider(
     async setQuery(query) {
       if (disposed || !available) return { status: "unavailable", value: [] };
       cancelRequest();
+      const normalized = query.trim();
+      const previous = previousValue(snapshot);
+      if (normalized.length === 0) {
+        publish({ status: "empty", value: [] });
+        return { status: "empty", value: [] };
+      }
       const currentRequestId = requestId;
       const nextController = new AbortController();
       controller = nextController;
-      const previous = previousValue(snapshot);
       publish({ status: "loading", value: previous });
       try {
-        const raw = await source.searchMedia({ query: query.trim(), limit }, { signal: nextController.signal });
+        const raw = await source.searchMedia({ query: normalized, limit }, { signal: nextController.signal });
         if (disposed || currentRequestId !== requestId || nextController.signal.aborted) return { status: "cancelled", value: previous };
         const files = commandPaletteFilesFromCoordinator(raw);
         const next: CommandPaletteFileSnapshot = files.length === 0 ? { status: "empty", value: [] } : { status: "ready", value: files };

@@ -102,7 +102,12 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
         "SandAgentState::new(sand_root, agent_id.to_string())",
         "avatar_box_file_reader: Option<AvatarBoxFileReader>",
         "state = state.with_box_file_reader(reader)",
-        "sessions.open_agent_db_owner(agent_id)?",
+        "state = state.with_agent_memory_remover(Arc::new(move |memory_id|",
+        "memory_sessions.remove_agent_memory(&memory_agent_id, memory_id)",
+        "state = state.with_agent_profile_writer(Arc::new(move |name, description|",
+        "profile_sessions.update_agent_profile_fields(",
+        "ProductionMultitaskTodoState::new(",
+        "Arc::clone(&sessions),",
     ] {
         assert!(
             OWNER.contains(needle),
@@ -111,7 +116,7 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
     }
     assert!(
         SHIPPING_HOST.contains(".compose_turn_state_surfaces(")
-            && SHIPPING_HOST.contains("&session_workers,")
+            && SHIPPING_HOST.contains("Arc::clone(&session_workers),")
             && SHIPPING_HOST.contains("&agent_id,")
             && SHIPPING_HOST.contains("is_group_member_turn,")
             && SHIPPING_HOST.contains("multitask_enabled,")
@@ -334,6 +339,9 @@ fn shell_terminal_watch_shipping_path_uses_canonical_permission_and_generated_wa
     assert!(composition.contains("decode_conversation_turn_structure_fields"));
     assert!(composition.contains("decode_user_message_identity_fields"));
     assert!(composition.contains("find_confirmed_user_turn_watermark(&turns, None)"));
+    assert!(composition.contains("event.request.session_key"));
+    assert!(composition.contains("append_agent_transcript_entries_if_session_admitted"));
+    assert!(composition.contains("update_agent_transcript_entry_if_session_admitted"));
 }
 
 

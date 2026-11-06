@@ -7,6 +7,7 @@ use serde_json::{Map, Value, json};
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError,
 };
+use crate::extensions::session::typed_replay::TypedReplayEntry;
 use crate::transcript_mirror::conversation_state_binary::{
     ConversationStateRecoveryFields, decode_conversation_state_recovery_fields,
 };
@@ -34,6 +35,7 @@ pub struct GeneratedAgentTurnContext<'a> {
     pub data_dir: &'a Path,
     pub lifecycle_messages: &'a [ProviderMessage],
     pub provider_messages: &'a [ProviderMessage],
+    pub typed_replay: Option<&'a [TypedReplayEntry]>,
     pub prompt_action: &'a PromptCollectorTurnAction,
     pub options: &'a TurnRunOptions,
     pub base_state_bytes: &'a [u8],
@@ -325,6 +327,7 @@ impl<'ctx>
                 .run(
                     context.data_dir,
                     context.provider_messages,
+                    context.typed_replay,
                     &mut forward_delta,
                 )
                 .map_err(GeneratedAgentTurnStreamError::Provider)?;
@@ -526,6 +529,7 @@ pub fn run_production_generated_agent_stream(
         data_dir,
         lifecycle_messages: &action.lifecycle_messages,
         provider_messages: &action.provider_messages,
+        typed_replay: action.typed_replay.as_deref(),
         prompt_action: &action.prompt_action,
         options: &options,
         base_state_bytes: &base_state_bytes,

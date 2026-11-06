@@ -59,6 +59,22 @@ pub fn parse_upgrade_resume_file(raw: Option<&str>) -> Vec<UpgradeResumeMarker> 
         .unwrap_or_default()
 }
 
+pub fn upgrade_resume_marker_identity_is_well_formed(marker: &UpgradeResumeMarker) -> bool {
+    if marker.agent_id.trim().is_empty()
+        || marker
+            .automation_id
+            .as_deref()
+            .is_some_and(|value| value.trim().is_empty())
+        || marker
+            .automation_run_id
+            .as_deref()
+            .is_some_and(|value| value.trim().is_empty())
+    {
+        return false;
+    }
+    marker.automation_run_id.is_none() || marker.automation_id.is_some()
+}
+
 pub fn upsert_resume_marker(
     existing: &[UpgradeResumeMarker],
     marker: UpgradeResumeMarker,
@@ -112,6 +128,29 @@ impl SandUpgradeResumeStore {
             let _ = self.delete_unlocked();
         } else {
             let _ = self.write_unlocked(&remaining);
+        }
+    }
+
+    /// Remove only the marker that was observed by a recovery pass.
+    ///
+    /// A recovery pass may race with a new marker for the same agent.  An
+    /// agent-only clear would delete that newer work, so the whole marker is
+    /// compared while holding the store lock and the new marker is retained.
+    pub fn clear_if_matches(&self, marker: &UpgradeResumeMarker) -> bool {
+        let _guard = self.lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let pending = self.read_pending_unlocked();
+        let remaining = pending
+            .iter()
+            .filter(|entry| *entry != marker)
+            .cloned()
+            .collect::<Vec<_>>();
+        if remaining.len() == pending.len() {
+            return false;
+        }
+        if remaining.is_empty() {
+            self.delete_unlocked().is_ok()
+        } else {
+            self.write_unlocked(&remaining).is_ok()
         }
     }
 

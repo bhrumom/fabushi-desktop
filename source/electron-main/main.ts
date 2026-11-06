@@ -185,8 +185,10 @@ export interface MainBrowserWindowOptions {
   readonly backgroundColor: string;
   readonly frame: boolean;
   readonly titleBarStyle: "hiddenInset" | "hidden" | "default";
+  readonly titlebarAppearsTransparent?: boolean;
   readonly trafficLightPosition?: { readonly x: number; readonly y: number };
   readonly titleBarOverlay?: WindowsTitleBarOverlay;
+  readonly enableLargerThanScreen?: boolean;
   readonly webPreferences: {
     readonly contextIsolation: true;
     readonly nodeIntegration: false;

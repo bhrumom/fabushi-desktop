@@ -14,7 +14,6 @@ pub const PENDING_WAKE_STALE_MAX_AGE_MS: f64 = 48.0 * 60.0 * 60.0 * 1_000.0;
 pub fn is_recreate_wake_carry_disabled() -> bool {
     env::var("SAND_DISABLE_RECREATE_WAKE_CARRY").as_deref() == Ok("1")
 }
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct PendingWakeReport {
     pub conversation_id: String,
@@ -26,7 +25,7 @@ pub struct PendingWakeReport {
     pub is_quiet_origin: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LostSubagentWake {
     pub parent_agent_id: String,
     pub subagent_agent_id: String,
@@ -34,6 +33,7 @@ pub struct LostSubagentWake {
     pub title: String,
     pub result: String,
     pub quiet_origin: Option<QuietWakeOrigin>,
+    pub pending_wake_marker: DurablePendingWakeMarker,
 }
 
 pub trait PendingWakeRuntimePort: Send + Sync {
@@ -63,6 +63,11 @@ pub trait PendingWakeRuntimePort: Send + Sync {
     ) -> Result<(), String>;
 
     fn revive_lost_subagent(&self, wake: LostSubagentWake) -> Result<(), String>;
+
+    fn revive_channel_delivery_failure(
+        &self,
+        marker: &DurablePendingWakeMarker,
+    ) -> Result<(), String>;
 
     fn emit_async_tasks_for_agent(&self, agent_id: &str);
     fn report_pending_wake(&self, report: PendingWakeReport);
@@ -118,10 +123,14 @@ impl PendingWakeRearm {
         let Some(store) = &self.store else {
             return;
         };
-        if !store.clear_one(agent_id, kind, work_id) {
+        let Some(marker) = store.list_pending().into_iter().find(|entry| {
+            entry.agent_id == agent_id && entry.kind == kind && entry.work_id == work_id
+        }) else {
+            return;
+        };
+        if !store.clear_if_matches(&marker) {
             return;
         }
-        let marker = marker_shell(agent_id, kind, work_id);
         self.report(&marker, "settled", None, None);
         self.runtime.emit_async_tasks_for_agent(agent_id);
     }
@@ -135,10 +144,14 @@ impl PendingWakeRearm {
         let Some(store) = &self.store else {
             return;
         };
-        if !store.clear_one(agent_id, kind, work_id) {
+        let Some(marker) = store.list_pending().into_iter().find(|entry| {
+            entry.agent_id == agent_id && entry.kind == kind && entry.work_id == work_id
+        }) else {
+            return;
+        };
+        if !store.clear_if_matches(&marker) {
             return;
         }
-        let marker = marker_shell(agent_id, kind, work_id);
         self.report(&marker, "settled", Some("aborted"), None);
         self.runtime.emit_async_tasks_for_agent(agent_id);
     }
@@ -179,8 +192,9 @@ impl PendingWakeRearm {
             if marker.kind == PendingWakeKind::Shell {
                 marker.interrupted_by_recreate = true;
             }
-            if !store.mark_pending(marker.clone()) {
+            if !store.mark_if_absent_or_matches(&marker) {
                 self.report(&marker, "persist_failed", None, age_ms);
+                continue;
             }
             self.report(&marker, "carried", None, age_ms);
             restored = restored.saturating_add(1);
@@ -199,6 +213,7 @@ impl PendingWakeRearm {
                     }
                 }
                 PendingWakeKind::Subagent => unreachable!("filtered above"),
+                PendingWakeKind::ChannelDelivery => unreachable!("filtered above"),
             }
         }
         restored
@@ -232,9 +247,6 @@ impl PendingWakeRearm {
                 continue;
             }
 
-            if !(marker.kind == PendingWakeKind::Shell && marker.interrupted_by_recreate) {
-                store.clear_one(&marker.agent_id, marker.kind, &marker.work_id);
-            }
             self.rearm_pending_wake(marker, now, None);
         }
     }
@@ -248,7 +260,7 @@ impl PendingWakeRearm {
         let report = |service: &Self, outcome: &str, reason: Option<&str>| {
             if outcome == "rearm_failed" {
                 if let Some(store) = &service.store {
-                    store.mark_pending(marker.clone());
+                    store.mark_if_absent_or_matches(&marker);
                 }
             }
             let effective_reason = reason.or_else(|| {
@@ -275,8 +287,10 @@ impl PendingWakeRearm {
         if group {
             if marker.kind == PendingWakeKind::Shell && marker.interrupted_by_recreate {
                 if let Some(store) = &self.store {
-                    store.clear_one(&marker.agent_id, marker.kind, &marker.work_id);
+                    store.clear_if_matches(&marker);
                 }
+            } else if let Some(store) = &self.store {
+                store.clear_if_matches(&marker);
             }
             report(self, "rearm_skipped", Some("group_session"));
             return;
@@ -295,15 +309,31 @@ impl PendingWakeRearm {
                 marker.quiet_origin.as_ref(),
             ),
             PendingWakeKind::Subagent => self.revive_parent_for_lost_subagent_wake(&marker),
+            PendingWakeKind::ChannelDelivery => {
+                self.runtime.revive_channel_delivery_failure(&marker)
+            }
         };
 
         match result {
-            Ok(()) => report(
-                self,
-                "rearmed",
-                (marker.kind == PendingWakeKind::Subagent)
-                    .then_some("interrupted_completion"),
-            ),
+            Ok(()) => {
+                let clear_after_success = !matches!(
+                    marker.kind,
+                    PendingWakeKind::CloudAgent | PendingWakeKind::Subagent
+                )
+                    && !(marker.kind == PendingWakeKind::Shell
+                        && marker.interrupted_by_recreate);
+                if clear_after_success {
+                    if let Some(store) = &self.store {
+                        store.clear_if_matches(&marker);
+                    }
+                }
+                report(
+                    self,
+                    "rearmed",
+                    (marker.kind == PendingWakeKind::Subagent)
+                        .then_some("interrupted_completion"),
+                );
+            }
             Err(_) => report(self, "rearm_failed", Some("error")),
         }
     }
@@ -316,7 +346,11 @@ impl PendingWakeRearm {
             .runtime
             .cloud_watch_is_armed(&marker.agent_id, &marker.work_id)
         {
-            self.persist_pending_wake(marker.clone());
+            if let Some(store) = &self.store {
+                if !store.mark_if_absent_or_matches(marker) {
+                    return Err("pending cloud wake was replaced during rearm".into());
+                }
+            }
             return Ok(());
         }
 
@@ -339,7 +373,9 @@ impl PendingWakeRearm {
         &self,
         marker: &DurablePendingWakeMarker,
     ) -> Result<(), String> {
-        self.persist_pending_wake(marker.clone());
+        if let Some(store) = &self.store {
+            store.mark_if_absent_or_matches(marker);
+        }
         self.runtime.revive_lost_subagent(LostSubagentWake {
             parent_agent_id: marker.agent_id.clone(),
             subagent_agent_id: marker.work_id.clone(),
@@ -353,6 +389,7 @@ impl PendingWakeRearm {
                 .unwrap_or_else(|| "Background task".into()),
             result: "A host restart interrupted this background task before its result could be delivered; its in-process run did not survive, so its final state is unknown. Check its transcript (Await with this task id) if you need what it got through, and dispatch a fresh background task if the work still matters.".into(),
             quiet_origin: marker.quiet_origin.clone(),
+            pending_wake_marker: marker.clone(),
         })
     }
 
@@ -385,22 +422,5 @@ impl PendingWakeRearm {
         }
         queue.entry(agent_id.to_string()).or_default().extend(items);
         true
-    }
-}
-
-fn marker_shell(
-    agent_id: &str,
-    kind: PendingWakeKind,
-    work_id: &str,
-) -> DurablePendingWakeMarker {
-    DurablePendingWakeMarker {
-        agent_id: agent_id.into(),
-        kind,
-        work_id: work_id.into(),
-        marked_at_ms: 0.0,
-        quiet_origin: None,
-        title: None,
-        subagent_type: None,
-        interrupted_by_recreate: false,
     }
 }

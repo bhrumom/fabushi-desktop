@@ -83,12 +83,14 @@ pub fn listener_connect_resume_prompt(platform: &str) -> String {
 
 pub fn build_hidden_handoff_resume_send_args(
     agent_id: &str,
+    session_key: &str,
     prompt: &str,
     nonce_kind: &str,
     now_ms: u64,
 ) -> Value {
     json!({
         "agentId": agent_id,
+        "sessionKey": session_key,
         "prompt": prompt,
         "appendUserMessage": false,
         "awaitTurn": false,
@@ -211,11 +213,13 @@ pub fn box_handoff_resume_prompt(trigger: &str) -> &'static str {
 
 pub fn build_box_handoff_resume_send_args(
     agent_id: &str,
+    session_key: &str,
     trigger: &str,
     now_ms: u64,
 ) -> Value {
     build_hidden_handoff_resume_send_args(
         agent_id,
+        session_key,
         box_handoff_resume_prompt(trigger),
         "box-handoff-resume",
         now_ms,

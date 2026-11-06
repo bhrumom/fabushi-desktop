@@ -12,7 +12,9 @@ use mahayana_host_runtime::extensions::local_exec::gateway_local_exec_sand_box::
 use mahayana_host_runtime::extensions::local_exec::{
     local_exec_error::SandLocalExecError,
     local_exec_failure_classifier::{
-        LocalExecFailureClass, LocalExecFailureClassification, classify_local_exec_failure,
+        CommandErrorResult, CommandTermination, LocalExecFailureClass,
+        LocalExecFailureClassification, classify_local_exec_failure, format_command_error,
+        format_command_output_for_user,
     },
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService;
@@ -107,6 +109,54 @@ fn failure_classifier_matches_grok_spawn_errno_contract() {
 }
 
 #[test]
+fn command_output_formatting_strips_ansi_cr_redraw_and_bounds_tail() {
+    let output = "old\nline\rnew\n\x1b[31mred\x1b[0m";
+    assert_eq!(format_command_output_for_user(output, 100), "old\nnew\nred");
+    let long = "😀abcdef";
+    assert_eq!(format_command_output_for_user(long, 5), "…\n😀abc");
+}
+
+#[test]
+fn command_error_merges_bounded_streams_and_preserves_termination_reason() {
+    let error = format_command_error(
+        "\u{1b}[31msecret\u{1b}[0m\narg",
+        &CommandErrorResult {
+            code: Some(17),
+            termination: CommandTermination::Exit,
+            signal: None,
+            output_limit_exceeded: false,
+        },
+        "stderr line",
+        "stdout line",
+        5_000,
+    );
+    assert_eq!(
+        error,
+        "secret arg failed (exit code 17):\nstderr: stderr line\nstdout: stdout line"
+    );
+}
+
+#[test]
+fn command_error_uses_timeout_and_signal_without_raw_command_newlines() {
+    let error = format_command_error(
+        "run\npassword",
+        &CommandErrorResult {
+            code: None,
+            termination: CommandTermination::Timeout,
+            signal: Some("SIGTERM".into()),
+            output_limit_exceeded: false,
+        },
+        "",
+        "",
+        2_500,
+    );
+    assert_eq!(
+        error,
+        "run password failed (timed out after 2.5 seconds; signal SIGTERM)"
+    );
+}
+
+#[test]
 fn local_exec_provider_lifecycle_is_persisted_through_host_telemetry() {
     let unique = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -161,7 +211,6 @@ fn local_exec_provider_lifecycle_is_persisted_through_host_telemetry() {
     assert_eq!(records[2]["payload"]["metadata"]["emptied"], "true");
     let _ = fs::remove_file(path);
 }
-
 
 struct AllowLocalExecGate;
 
@@ -219,20 +268,19 @@ fn production_extension_reports_exec_failure_through_host_telemetry() {
     }));
 
     let gate: Arc<dyn GatewayLocalToolGate> = Arc::new(AllowLocalExecGate);
-    let manager = extension
-        .sandbox(gate)
-        .remote_resource_accessor()
-        .manager();
+    let manager = extension.sandbox(gate).remote_resource_accessor().manager();
+    let call_id = format!("failure-call-{unique}");
+    let call_id_for_shell = call_id.clone();
     let shell = thread::spawn(move || {
         manager.execute_shell(
             &GatewayLocalToolScope {
                 agent_id: Some("agent-local-exec".into()),
-                tool_call_id: Some("failure-call".into()),
+                tool_call_id: Some(call_id_for_shell.clone()),
                 action: Some("run-command".into()),
             },
             "tool",
             "/tmp",
-            "failure-call",
+            &call_id_for_shell,
         )
     });
     let frame = receive

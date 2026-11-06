@@ -403,7 +403,7 @@ fn shipping_sand_agent_runner_owns_and_settles_generated_subagent_runtime() {
     assert!(runner.generated_agent_runtime().is_some());
 
     let pending = runner
-        .begin_generated_subagent(
+        .begin_generated_subagent_with_lifecycle(
             "parent-agent",
             "box-a",
             "child-agent",
@@ -411,6 +411,7 @@ fn shipping_sand_agent_runner_owns_and_settles_generated_subagent_runtime() {
             "tool-call-1",
             "research this",
             None,
+            "child-lifecycle-1",
             100,
         )
         .expect("generated subagent begin")
@@ -430,7 +431,8 @@ fn shipping_sand_agent_runner_owns_and_settles_generated_subagent_runtime() {
             200,
         )
         .expect("generated subagent settle");
-    assert!(settled.completion.is_some());
+    let completion = settled.completion.expect("generated subagent completion");
+    assert_eq!(completion.lifecycle_revision, "child-lifecycle-1");
     let runtime = shared.lock().expect("shared runtime after settle");
     assert!(runtime.list_running_subagents(250).is_empty());
     assert!(runtime
@@ -445,7 +447,7 @@ fn shipping_sand_agent_runner_exposes_generated_subagent_control_surface() {
     let runner = runner().with_generated_agent_runtime(Arc::clone(&shared));
 
     runner
-        .begin_generated_subagent(
+        .begin_generated_subagent_with_lifecycle(
             "parent-agent",
             "box-a",
             "child-agent",
@@ -453,6 +455,7 @@ fn shipping_sand_agent_runner_exposes_generated_subagent_control_surface() {
             "tool-call-2",
             "inspect lifecycle",
             None,
+            "child-lifecycle-2",
             100,
         )
         .expect("begin generated subagent")

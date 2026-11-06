@@ -2,7 +2,9 @@ const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 
 #[test]
 fn shipping_host_binds_one_auto_review_controller_per_routed_runner_turn() {
-    assert!(SHIPPING_HOST.contains("auto_review.bind_runner(&agent_id, approvals_resolvable)"));
+    assert!(SHIPPING_HOST.contains(
+        "auto_review.bind_runner_with_session(\n        &agent_id,\n        worker_session_admitted_key.as_deref(),\n        approvals_resolvable,\n    )"
+    ));
     assert!(SHIPPING_HOST.contains("auto_review_service.unbind_runner("));
     assert!(SHIPPING_HOST.contains("spawn_error_auto_review.unbind_runner("));
 }

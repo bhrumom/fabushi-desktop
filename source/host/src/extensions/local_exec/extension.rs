@@ -9,6 +9,7 @@ use crate::extensions::telemetry::local_exec_telemetry::{
     LocalExecFailedReport, LocalExecProviderReport, LocalExecRefusalCause,
     LocalExecRefusedReport,
 };
+use crate::extensions::process::command_custody::CommandProcessCustody;
 
 use super::gateway_local_exec_sand_box::{
     GatewayLocalExecFailureReport, GatewayLocalExecFailureReporter,
@@ -48,6 +49,7 @@ fn failure_class_name(error_class: LocalExecFailureClass) -> &'static str {
 pub struct HostLocalExecExtension {
     bridge: SandLocalExecBridge,
     logs: HostStructuredLogTelemetry,
+    process_custody: Arc<CommandProcessCustody>,
 }
 
 impl HostLocalExecExtension {
@@ -99,6 +101,7 @@ impl HostLocalExecExtension {
                 let _ = logs.report_local_exec_failed(&report);
             });
         GatewayLocalExecSandBox::new(self.bridge(), gate)
+            .with_process_custody(Arc::clone(&self.process_custody))
             .with_failure_reporter(failure_reporter)
     }
 
@@ -189,5 +192,6 @@ pub fn start_local_exec_extension(
             Some(refusal_reporter),
         ),
         logs,
+        process_custody: Arc::new(CommandProcessCustody::new()),
     }
 }

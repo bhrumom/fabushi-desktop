@@ -1,18 +1,41 @@
 import { SAND_PRODUCT_DISPLAY_NAME } from "../../shared/product-name.js";
+import { normalizeFabushiApiBaseUrl } from "../../shared/node/fabushi-service-origin.js";
 import { parseVersion } from "./update-version.js";
 
 export const SAND_UPDATE_PLATFORM = "darwin-arm64";
 export const SAND_UPDATE_PLATFORM_DARWIN_X64 = "darwin-x64";
 export const SAND_UPDATE_PLATFORM_WIN32 = "win32-x64-user";
 export const SAND_UPDATE_PLATFORM_WIN32_ARM64 = "win32-arm64-user";
-export const DEFAULT_UPDATE_BASE_URL = "https://api2.cursor.sh/updates";
 export type UpdateTrack = "stable" | "nightly" | "dogfood";
+
+export type ResolvedUpdateFeedSource =
+  | { readonly baseUrl: string; readonly disabledReason: null }
+  | { readonly baseUrl: null; readonly disabledReason: "update-source-unconfigured" | "update-source-invalid" };
+
+/** Main-process configuration only; an explicit empty primary value does not fall back. */
+export function configuredUpdateFeedBaseUrl(env: Readonly<Record<string, string | undefined>>): string | undefined {
+  return env.FABUSHI_UPDATE_FEED_BASE_URL ?? env.SAND_UPDATE_FEED_BASE_URL;
+}
+
+export function resolveUpdateFeedSource(raw: string | undefined): ResolvedUpdateFeedSource {
+  if (raw === undefined || raw.trim().length === 0) return { baseUrl: null, disabledReason: "update-source-unconfigured" };
+  try {
+    const url = new URL(raw.trim());
+    if (url.username || url.password || url.search || url.hash) throw new Error("Invalid update source");
+    // Reuse the product's origin authority while retaining the explicit feed path.
+    // Do not pass an absent value: the account helper has an unrelated API default.
+    normalizeFabushiApiBaseUrl(url.origin);
+    return { baseUrl: url.toString().replace(/\/+$/, ""), disabledReason: null };
+  } catch {
+    return { baseUrl: null, disabledReason: "update-source-invalid" };
+  }
+}
 
 export function resolveUpdatePlatform(platform: NodeJS.Platform, arch: string): string { if (platform === "win32") return arch === "arm64" ? SAND_UPDATE_PLATFORM_WIN32_ARM64 : SAND_UPDATE_PLATFORM_WIN32; if (platform === "darwin" && arch === "x64") return SAND_UPDATE_PLATFORM_DARWIN_X64; return SAND_UPDATE_PLATFORM; }
 export function updateResponseKind(platform: string): "squirrel" | "iupdate" { return platform.startsWith("darwin") ? "squirrel" : "iupdate"; }
 export function appNameForTrack(track: UpdateTrack): string { return track === "stable" ? "sand" : track === "nightly" ? "sand-nightly" : "sand-dogfood"; }
 
-export class UpdateHttpStatusError extends Error { readonly status: number; constructor(status: number, url: string) { super(`Update server returned HTTP ${status} for ${url}`); this.status = status; this.name = "UpdateHttpStatusError"; } }
+export class UpdateHttpStatusError extends Error { readonly status: number; constructor(status: number, _url?: string) { super(`Update server returned HTTP ${status}`); this.status = status; this.name = "UpdateHttpStatusError"; } }
 export class UpdateResponseFormatError extends Error { constructor(detail: string) { super(`Malformed update response: ${detail}`); this.name = "UpdateResponseFormatError"; } }
 
 export function buildUpdateRequestUrl(baseUrl: string, track: UpdateTrack, currentVersion: string, machineId: string, platform = SAND_UPDATE_PLATFORM): string {
@@ -33,3 +56,4 @@ export function parseUpdateResponse(payload: unknown, kind: "squirrel" | "iupdat
   if (typeof value.name !== "string" || value.name.length === 0) throw new UpdateResponseFormatError("name must be a non-empty string");
   return { version: value.name, url: value.url, name: `${SAND_PRODUCT_DISPLAY_NAME} ${value.name}` };
 }
+

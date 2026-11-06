@@ -21,15 +21,21 @@ pub enum ResolvedChannelAttachment {
 }
 
 pub fn to_local_channel_attachment_path(raw: &str) -> Option<PathBuf> {
-    match Url::parse(raw) {
-        Ok(parsed) => {
-            if parsed.scheme() != "file" {
-                return None;
-            }
-            parsed.to_file_path().ok()
+    let source_info = crate::extensions::attachments::media_reference::classify_media_reference_source(raw, false);
+    if source_info.is_media_store_url {
+        if let Ok(Some(uri)) = crate::extensions::attachments::media_reference::parse_inbound_media_uri(raw) {
+            return Some(crate::host_paths::get_sand_root_dir().join("media").join("inbound").join(uri.id));
         }
-        Err(_) => (!raw.is_empty()).then(|| PathBuf::from(raw)),
+        return None;
     }
+
+    crate::extensions::attachments::media_file_context::resolve_local_media_path(raw)
+}
+
+pub fn is_voice_message_attachment(raw_url: &str) -> bool {
+    let filename = Path::new(raw_url).file_name().and_then(|s| s.to_str());
+    let mime = crate::media_mime::audio_mime_from_path(Path::new(raw_url));
+    crate::extensions::attachments::media_audio_transcode::is_voice_message_compatible_audio(mime, filename)
 }
 
 pub fn url_looks_like_image(raw: &str) -> bool {
@@ -61,7 +67,11 @@ pub fn resolve_channel_attachment(raw_url: Option<&str>) -> Option<ResolvedChann
         return None;
     }
 
-    let bytes = fs::read(&resolved).ok()?;
+    let bytes = crate::extensions::attachments::media_reference::read_outbound_media_file_bounded(
+        &resolved,
+        CHANNEL_ATTACHMENT_MAX_UPLOAD_BYTES as usize,
+    )
+    .ok()?;
     let image_mime = image_mime_from_path(&resolved);
     let mime = image_mime
         .or_else(|| video_mime_from_path(&resolved))

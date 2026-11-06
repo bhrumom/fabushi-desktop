@@ -10,7 +10,7 @@ on:
       - "source/host/tests/network_worker_process_contract.rs"
       - ".github/workflows/fdn-tsnet-worker.yml"
   push:
-    branches: [main]
+    branches: [main, checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
     paths:
       - "docs/specs/fdn-001-tsnet-network-worker.md"
       - "source/fabushi-network-worker/**"
@@ -32,6 +32,8 @@ jobs:
     name: Go worker / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
+    env:
+      GOTOOLCHAIN: local
     strategy:
       fail-fast: false
       matrix:
@@ -61,14 +63,17 @@ jobs:
         with:
           go-version: "1.27.1"
           cache-dependency-path: source/fabushi-network-worker/go.sum
-      - name: Resolve locked module graph
+      - name: Verify tracked module graph
         shell: bash
         run: |
           set -euo pipefail
-          go mod tidy
-          grep -F 'tailscale.com v1.104.1' go.mod
-          go list -m all > module-list.txt
-          grep -F 'tailscale.com v1.104.1' module-list.txt
+          git ls-files --error-unmatch -- go.mod go.sum > /dev/null
+          git diff --exit-code HEAD -- go.mod go.sum
+          grep -Fx 'require tailscale.com v1.104.1' go.mod
+          go list -mod=readonly -m all > module-list.txt
+          grep -Fx 'tailscale.com v1.104.1' module-list.txt
+          go mod verify
+          git diff --exit-code HEAD -- go.mod go.sum
       - name: Record Go dependency lock
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
@@ -89,13 +94,37 @@ jobs:
           test -z "$(gofmt -l .)"
       - name: Unit tests
         shell: bash
-        run: go test ./...
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD > worker-tests-source-sha.txt
+          go version > worker-tests-toolchain.txt
+          go test -mod=readonly -count=1 -v ./... 2>&1 | tee worker-tests.log
+          test "$(grep -Ec '^--- PASS: Test' worker-tests.log)" -eq 18
+          if grep -Eq '^[[:space:]]*--- (FAIL|SKIP):' worker-tests.log; then
+            echo 'worker behavior tests failed or were skipped' >&2
+            exit 1
+          fi
       - name: Vet
         shell: bash
-        run: go vet ./...
+        run: go vet -mod=readonly ./...
       - name: Compile packaged worker
         shell: bash
-        run: go build ./...
+        run: go build -mod=readonly ./...
+      - name: Verify tracked Go inputs unchanged
+        if: always()
+        shell: bash
+        run: git diff --exit-code HEAD -- go.mod go.sum
+      - name: Preserve actual worker behavior evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdn-worker-contracts-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            source/fabushi-network-worker/worker-tests.log
+            source/fabushi-network-worker/worker-tests-source-sha.txt
+            source/fabushi-network-worker/worker-tests-toolchain.txt
+          if-no-files-found: error
+          retention-days: 90
 
   rust-host-supervisor:
     name: Rust Host supervisor
@@ -136,4 +165,8 @@ jobs:
           rustfmt --edition 2024 --check source/host/tests/network_worker_process_contract.rs
       - name: Test Host network worker supervisor
         shell: bash
-        run: cargo test --manifest-path source/host/Cargo.toml --test network_worker_process_contract
+        run: |
+          set -euo pipefail
+          git ls-files --error-unmatch -- source/host/Cargo.toml source/host/Cargo.lock > /dev/null
+          cargo test --locked --manifest-path source/host/Cargo.toml --test network_worker_process_contract
+          git diff --exit-code HEAD -- source/host/Cargo.toml source/host/Cargo.lock

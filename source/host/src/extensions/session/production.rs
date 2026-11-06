@@ -1,7 +1,13 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
+
+pub use super::legacy_telegram_retirement::{
+    LegacyTelegramRetirementError, LegacyTelegramRetirementReport, RetiredTelegramMarker,
+    TelegramKeyClearHook,
+};
+use super::legacy_telegram_retirement::retire_legacy_telegram_data_internal;
 
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
@@ -10,35 +16,53 @@ use crate::agent_isolation::{
     AgentWorkerPool, ProductionAgentStoreWorkerBackend,
     create_production_agent_store_worker_backend,
 };
+use crate::attachment_paths::{OutgoingMediaCustody, get_agent_media_store_roots};
 use crate::agents::agent_profile::SandAgentProfile;
 use crate::storage::agent_paths::get_sand_agents_root_dir;
+use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_file};
 
 use super::agent_db::{
-    AgentDbSerdeSnapshot, SandAgentDb, add_persisted_conversation_partner,
-    append_persisted_transcript_entries, clear_persisted_agent_profile_prompt_snapshot,
-    clear_persisted_memory_prompt_snapshot,
-    clear_persisted_transient_state, delete_persisted_transcript_entry,
-    mark_persisted_activity, mark_persisted_read, mark_persisted_unread,
-    mark_persisted_viewed, read_persisted_agent_profile_prompt_snapshot,
-    read_persisted_automation_spend_guard_state,
-    read_persisted_conversation_partner_ids, read_persisted_introduction_pending,
-    read_persisted_newest_divider_anchor_timestamp_ms,
-    record_persisted_episode_turn, record_persisted_request_id,
-    set_persisted_agent_profile_prompt_snapshot, set_persisted_automation_spend_guard_state,
-    set_persisted_introduction_pending, set_persisted_memory_prompt_snapshot,
-    update_persisted_transcript_entry,
+    AgentDbSerdeSnapshot, CompactionCommit, CompactionCommitOutcome, CronSessionRunRecord,
+    PendingMemoryMutation,
+    PendingProfileMutation, ProfileFileSnapshot, SandAgentDb,
+    ProviderReviewContinuationOutcome, SessionProviderReview,
+    SessionWorkAdmissionRecord,
+    SessionWorkResultCommitOutcome,
+};
+use super::agent_db_serde::UnreadState;
+use super::forward_batch_journal::{
+    HumanForwardBatch, load_forward_batches, read_forward_attachment_bytes,
+    snapshot_forward_attachments, store_forward_batch,
 };
 use super::agent_db_transcript_pages::{
+    HumanTranscriptPage, HumanTranscriptPageQuery,
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
+use super::agent_session::{
+    read_session_model_entry, write_session_model_entry,
+};
+use crate::extensions::inference::model_picker_service::{
+    apply_session_model_selection as apply_model_selection,
+    ApplySessionModelSelectionParams, ApplySessionModelSelectionResult,
+};
+
+pub(crate) fn hide_session_work_receipts(entries: &mut Vec<serde_json::Value>) {
+    entries.retain(|entry| {
+        !matches!(
+            entry.get("kind").and_then(serde_json::Value::as_str),
+            Some("background-result-receipt" | "outgoing-media-settlement")
+        )
+    });
+}
 use super::call_session::{CallSession, CallSessionStore, CallSignal, transition_target};
 use super::agent_db_serde::{
     AwaitingUserResponse, EpisodeTurn, MemoryPromptSnapshot, SandProfile, SpendGuardState,
-    UnreadState,
 };
 use super::session_conversation_state::{
-    ConversationOutlineItem, ResolvedConversationState, SessionConversationState, TranscriptThread,
+    ConversationOutlineItem, PendingConversationTurnRegistry, ResolvedConversationState,
+    SessionConversationState, TranscriptThread,
 };
+use super::session_turns_controller::SessionTurnsController;
 use super::conversation_blobs_path::conversation_blobs_path;
 use super::conversation_size_limits::{
     ConversationGcTarget, ConversationSizeMaintenance, ConversationSizePolicy,
@@ -53,7 +77,10 @@ use super::session_store_factories::{
     automation_store_for_db_path_with_time_zone_resolver, channel_store_for_db_path,
     workflow_store_for_db_path_with_time_zone_resolver,
 };
-use crate::extensions::memory::memory_service::{FileMemoryStore, MemoryService};
+use crate::extensions::memory::memory_service::{
+    FileMemoryStore, MemoryKind, MemoryRecoveryRecord, MemoryService, SynthesisApplyResult,
+};
+use crate::extensions::memory::agent_state::{MemoryTier, StateWriteResult, MEMORY_NOTE_PREFIX};
 use crate::extensions::memory::project_membership::AgentProjectMembership;
 use crate::automations::automation_store::{FileAutomationStore, UserTimeZoneResolver, agent_has_automations};
 use crate::workflows::workflow_store::{FileWorkflowStore, agent_has_workflows};
@@ -67,10 +94,6 @@ use super::session_materialization::{
     is_agent_cap_reached, list_agent_record_ids, list_pruned_placeholder_ids,
     materialize_new_session, open_existing_session, report_materialization_failure,
 };
-use super::pending_card_sweeps::{
-    expire_pending_auto_review_approval_entries,
-    expire_pending_local_tool_permission_ask_entries,
-};
 use super::session_roster::{RosterExtrasCache, list_agents, summarize_agent_by_id};
 use super::session_summaries::AgentSummary;
 use super::session_profile_files::{
@@ -79,11 +102,46 @@ use super::session_profile_files::{
     get_agent_profile_text as read_agent_profile_text, write_agent_profile_update,
 };
 use super::session_mutations::set_agent_avatar_bytes as mutate_agent_avatar_bytes;
+use super::session_mutations::{
+    capture_profile_mutation_files, profile_mutation_files_match,
+    restore_profile_mutation_files,
+};
+use super::typed_replay::{TypedReplayEntry, project_typed_replay_entries};
 use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
 use super::native_messaging::{
-    FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
-    FabushiRemoteHumanCallEvent, FabushiRemoteHumanMessage, fabushi_identity_text,
+    FabushiHumanReactionError, FabushiHumanSendError, FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
+    FabushiRemoteHumanCallEvent, FabushiRemoteHumanMessage, FabushiRemoteHumanReaction,
+    fabushi_identity_text, fabushi_message_identity_text,
 };
+
+#[derive(Debug, thiserror::Error)]
+enum ForwardSourceFailure {
+    #[error("{0}")]
+    Policy(String),
+    #[error("{0}")]
+    Storage(String),
+}
+
+// One invocation keeps its original credential binding and first qualified
+// reaction refusal. This is not another durable message or credential owner.
+pub(crate) struct HumanSyncRecoveryContext {
+    local_human_id: String,
+    credential_fingerprint: String,
+    first_reaction_refusal: Option<String>,
+}
+
+impl HumanSyncRecoveryContext {
+    fn is_continuing(&self) -> bool {
+        self.first_reaction_refusal.is_some()
+    }
+
+    fn finish<T>(self, value: T) -> Result<T, String> {
+        match self.first_reaction_refusal {
+            Some(error) => Err(error),
+            None => Ok(value),
+        }
+    }
+}
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 
@@ -134,6 +192,24 @@ impl ProductionMaterializedSession {
     }
 }
 
+// Use the existing lock registry without retaining one entry forever for each
+// retried nonce. A waiter owns its Arc before locking; under the registry lock,
+// releasing this scope under the registry lock makes final-waiter cleanup
+// atomic with lookup and with another finishing scope's cleanup.
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum HumanCreationStage {
+    BeforeLock,
+    Locked,
+    BeforeInitialize,
+    BeforePublish,
+}
+
+#[cfg(test)]
+pub(crate) type HumanCreationHook = Arc<
+    dyn Fn(HumanCreationStage, &str, Option<&Arc<SandAgentDb>>) + Send + Sync,
+>;
+
 /// Shipping Host owner for the Grok session materialization worker boundary.
 ///
 /// The pool is retained for the Host lifetime so per-agent blob workers are
@@ -141,27 +217,120 @@ impl ProductionMaterializedSession {
 /// recovery/metadata-GC/session materialization modules stay explicitly
 /// non-final until their frozen Grok contracts are ported.
 pub struct ProductionSessionWorkers {
-    agents_root: PathBuf,
-    pool: Arc<ProductionAgentWorkerPool>,
-    conversation_size_maintenance: ConversationSizeMaintenance,
-    conversation_state: SessionConversationState,
-    memory_service: Arc<MemoryService>,
-    mint_queue: SessionMintQueue,
-    db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
-    agent_store_owners: Mutex<BTreeMap<String, Arc<ProductionAgentStore>>>,
-    deleting_agents: Mutex<BTreeSet<String>>,
-    roster_extras_cache: RosterExtrasCache,
-    user_time_zone_resolver: UserTimeZoneResolver,
-    local_human_id: Option<String>,
-    native_messaging: Option<Arc<FabushiNativeMessagingClient>>,
-    native_messaging_required: bool,
-    native_messaging_error: Option<String>,
-    call_session_store: Option<Arc<CallSessionStore>>,
-    call_session_store_error: Option<String>,
-    busy_timeout_ms: u64,
+    pub(crate) agents_root: PathBuf,
+    pub(crate) pool: Arc<ProductionAgentWorkerPool>,
+    pub(crate) conversation_size_maintenance: ConversationSizeMaintenance,
+    pub(crate) conversation_state: SessionConversationState,
+    pub(crate) pending_conversation_turns: PendingConversationTurnRegistry,
+    pub(crate) session_turns_controller: SessionTurnsController,
+    pub(crate) memory_service: Arc<MemoryService>,
+    pub(crate) mint_queue: SessionMintQueue,
+    pub(crate) db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
+    pub(crate) human_message_locks: Mutex<BTreeMap<String, Arc<Mutex<()>>>>,
+    #[cfg(test)]
+    pub(crate) human_creation_hook: Option<HumanCreationHook>,
+    pub(crate) agent_store_owners: Mutex<BTreeMap<String, Arc<ProductionAgentStore>>>,
+    pub(crate) filesystem_mutation_locks: Mutex<BTreeMap<String, Arc<Mutex<()>>>>,
+    pub(crate) deleting_agents: Mutex<BTreeSet<String>>,
+    pub(crate) roster_extras_cache: RosterExtrasCache,
+    pub(crate) user_time_zone_resolver: UserTimeZoneResolver,
+    pub(crate) local_human_id: Option<String>,
+    pub(crate) native_messaging: Option<Arc<FabushiNativeMessagingClient>>,
+    pub(crate) native_messaging_required: bool,
+    pub(crate) native_messaging_error: Option<String>,
+    pub(crate) call_session_store: Option<Arc<CallSessionStore>>,
+    pub(crate) call_session_store_error: Option<String>,
+    pub(crate) provider_review_capabilities: Mutex<BTreeMap<String, ProviderReviewCapabilityState>>,
+    pub(crate) busy_timeout_ms: u64,
+    pub(crate) mini_app_package_verifier: Mutex<Option<MiniAppPackageVerifier>>,
+    pub(crate) miniapp_launch_sessions: Mutex<BTreeMap<String, HostMiniAppLaunchSession>>,
+    pub(crate) miniapp_grants: Mutex<BTreeMap<(String, String), fabushi_messaging_core::MiniAppGrant>>,
+    pub(crate) has_valid_native_credential: Arc<AtomicBool>,
+    pub(crate) account_data_root: Arc<Mutex<Option<PathBuf>>>,
+    pub(crate) telegram_key_clear_callback: Arc<Mutex<Option<TelegramKeyClearHook>>>,
+    pub(crate) media_cache: Arc<Mutex<fabushi_messaging_core::MediaCache>>,
+    pub(crate) miniapp_service_calls: Arc<Mutex<std::collections::HashMap<String, fabushi_messaging_core::MiniAppServiceCallSession>>>,
 }
 
+#[derive(Debug)]
+struct ProviderReviewCapabilityState {
+    agent_id: String,
+    lifecycle_revision: String,
+    review_id: String,
+    next_run_id: String,
+}
+
+/// Host-issued, single-claim provider-review capability. It is deliberately
+/// not serde-serializable; request JSON cannot manufacture one.
+#[derive(Debug)]
+pub struct ProviderReviewAcknowledgment {
+    token: String,
+}
+
+
+#[path = "tdrp_forum_topics.rs"]
+pub mod tdrp_forum_topics;
+pub use tdrp_forum_topics::*;
+#[path = "tdrp_chat_admin_moderation.rs"]
+pub mod tdrp_chat_admin_moderation;
+pub use tdrp_chat_admin_moderation::*;
+#[path = "tdrp_calls_media.rs"]
+pub mod tdrp_calls_media;
+pub use tdrp_calls_media::*;
+#[path = "tdrp_miniapp_bridge.rs"]
+pub mod tdrp_miniapp_bridge;
+pub use tdrp_miniapp_bridge::*;
+#[path = "tdrp_settings_credentials.rs"]
+pub mod tdrp_settings_credentials;
+pub use tdrp_settings_credentials::*;
+#[path = "tdrp_dialog_state.rs"]
+pub mod tdrp_dialog_state;
+pub use tdrp_dialog_state::*;
+#[path = "tdrp_forward_share.rs"]
+pub mod tdrp_forward_share;
+pub use tdrp_forward_share::*;
+#[path = "tdrp_share_link.rs"]
+pub mod tdrp_share_link;
+pub use tdrp_share_link::*;
+#[path = "tdrp_message_retry.rs"]
+pub mod tdrp_message_retry;
+pub use tdrp_message_retry::*;
+#[path = "tdrp_message_mutations.rs"]
+pub mod tdrp_message_mutations;
+pub use tdrp_message_mutations::*;
+#[path = "tdrp_reactions_sync.rs"]
+pub mod tdrp_reactions_sync;
+pub use tdrp_reactions_sync::*;
+
 impl ProductionSessionWorkers {
+    pub fn bind_memory_synthesis_gate(self: &Arc<Self>) {
+        let weak = Arc::downgrade(self);
+        self.memory_service.set_synthesis_apply_gate(Some(Arc::new(
+            move |agent_id, store, snapshot, changes, now_ms| {
+                let Some(owner) = weak.upgrade() else {
+                    return SynthesisApplyResult::Invalid;
+                };
+                owner
+                    .with_agent_filesystem_mutation(agent_id, || {
+                        let canonical_location = owner
+                            .memory_service()
+                            .store_for_agent(agent_id)
+                            .get_location();
+                        if store.get_location() != canonical_location {
+                            return Ok(SynthesisApplyResult::Invalid);
+                        }
+                        owner.assert_agent_work_admission_locked(agent_id)?;
+                        Ok(
+                            store
+                                .apply_synthesis(snapshot, changes, now_ms)
+                                .unwrap_or(SynthesisApplyResult::Invalid),
+                        )
+                    })
+                    .unwrap_or(SynthesisApplyResult::Invalid)
+            },
+        )));
+    }
+
     pub fn production() -> Self {
         Self::production_with_user_time_zone_resolver(Arc::new(|| None))
     }
@@ -293,6 +462,9 @@ impl ProductionSessionWorkers {
                 Ok(store) => (Some(Arc::new(store)), None),
                 Err(error) => (None, Some(error)),
             };
+        let default_has_valid_native = local_human_id.is_some()
+            && native_messaging_error.is_none()
+            && (native_messaging.is_some() || !native_messaging_required);
         Self {
             memory_service,
             agents_root,
@@ -301,9 +473,15 @@ impl ProductionSessionWorkers {
             )),
             conversation_size_maintenance: ConversationSizeMaintenance::default(),
             conversation_state: SessionConversationState::new(busy_timeout_ms),
+            pending_conversation_turns: PendingConversationTurnRegistry::new(),
+            session_turns_controller: SessionTurnsController::new(),
             mint_queue: SessionMintQueue::default(),
             db_owners: Mutex::new(BTreeMap::new()),
+            human_message_locks: Mutex::new(BTreeMap::new()),
+            #[cfg(test)]
+            human_creation_hook: None,
             agent_store_owners: Mutex::new(BTreeMap::new()),
+            filesystem_mutation_locks: Mutex::new(BTreeMap::new()),
             deleting_agents: Mutex::new(BTreeSet::new()),
             roster_extras_cache: RosterExtrasCache::default(),
             user_time_zone_resolver,
@@ -313,8 +491,28 @@ impl ProductionSessionWorkers {
             native_messaging_error,
             call_session_store,
             call_session_store_error,
+            provider_review_capabilities: Mutex::new(BTreeMap::new()),
             busy_timeout_ms,
+            mini_app_package_verifier: Mutex::new(None),
+            miniapp_launch_sessions: Mutex::new(BTreeMap::new()),
+            miniapp_grants: Mutex::new(BTreeMap::new()),
+            has_valid_native_credential: Arc::new(AtomicBool::new(default_has_valid_native)),
+            account_data_root: Arc::new(Mutex::new(None)),
+            telegram_key_clear_callback: Arc::new(Mutex::new(None)),
+            media_cache: Arc::new(Mutex::new(
+                fabushi_messaging_core::MediaCache::new(64 * 1024 * 1024)
+                    .expect("default media cache budget of 64 MiB must be valid"),
+            )),
+            miniapp_service_calls: Arc::new(Mutex::new(std::collections::HashMap::new())),
         }
+    }
+
+    pub fn pending_conversation_turns(&self) -> PendingConversationTurnRegistry {
+        self.pending_conversation_turns.clone()
+    }
+
+    pub fn session_turns_controller(&self) -> &SessionTurnsController {
+        &self.session_turns_controller
     }
 
     pub fn call_session_store_path(&self) -> Result<&Path, String> {
@@ -328,7 +526,7 @@ impl ProductionSessionWorkers {
             })
     }
 
-    fn call_sessions(&self) -> Result<&Arc<CallSessionStore>, String> {
+    pub(crate) fn call_sessions(&self) -> Result<&Arc<CallSessionStore>, String> {
         self.call_session_store.as_ref().ok_or_else(|| {
             self.call_session_store_error
                 .clone()
@@ -336,565 +534,8 @@ impl ProductionSessionWorkers {
         })
     }
 
-    fn local_call_peer(&self, participant_ids: &[String]) -> Result<String, String> {
-        let local = self
-            .local_human_id
-            .as_deref()
-            .ok_or_else(|| "CallSession requires an authenticated Human identity".to_string())?;
-        let mut participants = participant_ids
-            .iter()
-            .map(|value| value.trim())
-            .filter(|value| !value.is_empty())
-            .collect::<Vec<_>>();
-        participants.sort_unstable();
-        participants.dedup();
-        if participants.len() != 2 || !participants.iter().any(|value| *value == local) {
-            return Err("shipping Human calls require exactly the authenticated Human and one peer".into());
-        }
-        participants
-            .into_iter()
-            .find(|value| *value != local)
-            .map(str::to_string)
-            .ok_or_else(|| "shipping Human call peer is unavailable".to_string())
-    }
+    // Call session methods moved to ocrm_production_call_sessions.rs
 
-    fn remote_call_peer(&self, remote: &FabushiRemoteHumanCall) -> Result<String, String> {
-        let local = self
-            .local_human_id
-            .as_deref()
-            .ok_or_else(|| "CallSession requires an authenticated Human identity".to_string())?;
-        let creator = fabushi_identity_text(&remote.creator_user_id)?;
-        let peer = fabushi_identity_text(&remote.peer_user_id)?;
-        if creator == local && peer != local {
-            Ok(peer)
-        } else if peer == local && creator != local {
-            Ok(creator)
-        } else {
-            Err("remote Human call does not belong to the authenticated Human identity".into())
-        }
-    }
-
-    fn validate_remote_call(
-        &self,
-        remote: &FabushiRemoteHumanCall,
-        local: &CallSession,
-    ) -> Result<(), String> {
-        if remote.call_id != local.id {
-            return Err("remote Human call id does not match CallSession owner".into());
-        }
-        let peer = self.remote_call_peer(remote)?;
-        if self.local_call_peer(&local.participant_ids)? != peer {
-            return Err("remote Human call participants do not match CallSession owner".into());
-        }
-        Ok(())
-    }
-
-    fn stable_call_event_id(
-        prefix: &str,
-        generation: u64,
-        payload: &serde_json::Value,
-    ) -> Result<String, String> {
-        let bytes = serde_json::to_vec(payload).map_err(|error| error.to_string())?;
-        let digest = Sha256::digest(bytes);
-        let suffix = digest
-            .iter()
-            .take(16)
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>();
-        Ok(format!("{prefix}:{generation}:{suffix}"))
-    }
-
-    fn apply_remote_call_event(
-        &self,
-        event: &FabushiRemoteHumanCallEvent,
-    ) -> Result<(), String> {
-        let current = self.authorized_call_session(&event.call_id)?;
-        match event.kind.as_str() {
-            "transition" => {
-                let action = event
-                    .payload
-                    .get("action")
-                    .and_then(serde_json::Value::as_str)
-                    .ok_or_else(|| "remote call transition omitted action".to_string())?;
-                let target_state = event
-                    .payload
-                    .get("state")
-                    .and_then(serde_json::Value::as_str)
-                    .ok_or_else(|| "remote call transition omitted state".to_string())?;
-                if current.state == target_state && current.generation == event.generation {
-                    return Ok(());
-                }
-                let terminal_reason = event
-                    .payload
-                    .get("terminalReason")
-                    .and_then(serde_json::Value::as_str);
-                let (projected_state, projected_generation, _, _) =
-                    transition_target(&current, action, terminal_reason)?;
-                if projected_state != target_state || projected_generation != event.generation {
-                    return Err("remote call transition disagrees with canonical Host state machine".into());
-                }
-                self.call_sessions()?
-                    .transition(&event.call_id, current.generation, action, terminal_reason)?;
-            }
-            "signal" => {
-                let kind = event
-                    .payload
-                    .get("signalKind")
-                    .and_then(serde_json::Value::as_str)
-                    .ok_or_else(|| "remote call signal omitted signalKind".to_string())?;
-                let payload = event
-                    .payload
-                    .get("signal")
-                    .ok_or_else(|| "remote call signal omitted signal payload".to_string())?;
-                self.call_sessions()?.append_remote_signal(
-                    &event.call_id,
-                    event.generation,
-                    event.seq,
-                    &event.device_id,
-                    kind,
-                    payload,
-                )?;
-            }
-            "media" => {
-                if current.generation != event.generation {
-                    return Err("remote call media event has stale generation".into());
-                }
-                let capabilities = event
-                    .payload
-                    .get("mediaCapabilities")
-                    .ok_or_else(|| "remote call media event omitted mediaCapabilities".to_string())?;
-                let devices = event
-                    .payload
-                    .get("deviceSelection")
-                    .ok_or_else(|| "remote call media event omitted deviceSelection".to_string())?;
-                if current.media_capabilities == *capabilities && current.device_selection == *devices {
-                    return Ok(());
-                }
-                self.call_sessions()?.update_media(
-                    &event.call_id,
-                    event.generation,
-                    Some(capabilities),
-                    Some(devices),
-                )?;
-            }
-            "participant" => {
-                return Err("remote call participant mutation is unsupported by the current CallSession owner".into());
-            }
-            _ => return Err(format!("unsupported remote call event kind: {}", event.kind)),
-        }
-        Ok(())
-    }
-
-    pub fn sync_call_session_from_remote(&self, call_id: &str) -> Result<CallSession, String> {
-        const PAGE_LIMIT: usize = 200;
-        const MAX_PAGES: usize = 32;
-
-        let local = self.authorized_call_session(call_id)?;
-        let Some(client) = self.shipping_native_messaging()? else {
-            return Ok(local);
-        };
-        let identity = client.identity()?;
-        if identity.user_id != self.local_human_id()? {
-            return Err("Fabushi call credential identity does not match active Human identity".into());
-        }
-
-        let mut cursor = self.call_sessions()?.remote_event_seq(call_id)?;
-        for _ in 0..MAX_PAGES {
-            let (remote, events, next_after_seq) =
-                client.get_human_call(call_id, cursor, PAGE_LIMIT)?;
-            self.validate_remote_call(&remote, &self.authorized_call_session(call_id)?)?;
-            let prior_cursor = cursor;
-            for event in events {
-                if event.seq <= cursor {
-                    continue;
-                }
-                if event.seq != cursor + 1 {
-                    return Err(format!(
-                        "remote Human call event sequence gap: expected {}, received {}",
-                        cursor + 1,
-                        event.seq
-                    ));
-                }
-                self.apply_remote_call_event(&event)?;
-                self.call_sessions()?.set_remote_event_seq(call_id, event.seq)?;
-                cursor = event.seq;
-            }
-            if cursor >= remote.event_seq {
-                return self.authorized_call_session(call_id);
-            }
-            if cursor == prior_cursor || next_after_seq <= cursor {
-                return Err("remote Human call sync made no progress before reaching backend head".into());
-            }
-        }
-        Err("remote Human call sync exceeded the bounded replay window".into())
-    }
-
-    pub fn call_transport_identity(&self) -> Result<serde_json::Value, String> {
-        let local_human_id = self.local_human_id()?.to_string();
-        let client = self
-            .shipping_native_messaging()?
-            .ok_or_else(|| "shipping Human call transport requires native messaging".to_string())?;
-        let identity = client.identity()?;
-        if identity.user_id != local_human_id {
-            return Err("Fabushi call credential identity does not match active Human identity".into());
-        }
-        Ok(serde_json::json!({
-            "userId": identity.user_id,
-            "deviceId": identity.device_id,
-        }))
-    }
-
-    pub fn call_ice_servers(&self) -> Result<serde_json::Value, String> {
-        let local_human_id = self.local_human_id()?.to_string();
-        let client = self
-            .shipping_native_messaging()?
-            .ok_or_else(|| "shipping Human call media transport requires native messaging".to_string())?;
-        let identity = client.identity()?;
-        if identity.user_id != local_human_id {
-            return Err("Fabushi call credential identity does not match active Human identity".into());
-        }
-        let (ice_servers, ttl_seconds) = client.get_human_call_ice_servers()?;
-        Ok(serde_json::json!({
-            "iceServers": ice_servers,
-            "ttlSeconds": ttl_seconds,
-        }))
-    }
-
-    pub fn call_transport_lease(&self, call_id: &str) -> Result<serde_json::Value, String> {
-        let local_human_id = self.local_human_id()?.to_string();
-        let local = self.authorized_call_session(call_id)?;
-        let client = self
-            .shipping_native_messaging()?
-            .ok_or_else(|| "shipping Human call media transport requires native messaging".to_string())?;
-        let identity = client.identity()?;
-        if identity.user_id != local_human_id {
-            return Err("Fabushi call credential identity does not match active Human identity".into());
-        }
-        let cursor = self.call_sessions()?.remote_event_seq(call_id)?;
-        let (remote, _, _) = client.get_human_call(call_id, cursor, 1)?;
-        self.validate_remote_call(&remote, &local)?;
-        if remote.event_seq < cursor {
-            return Err("Fabushi call backend event cursor regressed behind the canonical Host owner".into());
-        }
-        let creator = fabushi_identity_text(&remote.creator_user_id)?;
-        let role = if creator == local_human_id { "creator" } else { "peer" };
-        let claimed_device_id = if role == "creator" {
-            remote.creator_device_id.as_deref()
-        } else {
-            remote.peer_device_id.as_deref()
-        };
-        Ok(serde_json::json!({
-            "userId": local_human_id,
-            "deviceId": identity.device_id,
-            "role": role,
-            "claimedDeviceId": claimed_device_id,
-            "isOwner": claimed_device_id == Some(identity.device_id.as_str()),
-            "claimAvailable": claimed_device_id.is_none(),
-            "creatorDeviceId": remote.creator_device_id,
-            "peerDeviceId": remote.peer_device_id,
-            "state": remote.state,
-            "generation": remote.generation,
-            "eventSeq": remote.event_seq,
-        }))
-    }
-
-    pub fn sync_human_calls(&self) -> Result<Vec<CallSession>, String> {
-        let Some(client) = self.shipping_native_messaging()? else {
-            return Ok(Vec::new());
-        };
-        let local_human_id = self.local_human_id()?.to_string();
-        let identity = client.identity()?;
-        if identity.user_id != local_human_id {
-            return Err("Fabushi call credential identity does not match active Human identity".into());
-        }
-        let remote_calls = client.list_human_calls(200)?;
-        let mut synced = Vec::with_capacity(remote_calls.len());
-        for remote in remote_calls {
-            let peer = self.remote_call_peer(&remote)?;
-            let conversation = self.create_human_conversation(&peer, &peer)?;
-            let scope_id = conversation
-                .get("id")
-                .and_then(serde_json::Value::as_str)
-                .ok_or_else(|| "Human call discovery could not resolve canonical conversation scope".to_string())?;
-            if self.call_sessions()?.get(&remote.call_id)?.is_none() {
-                let creator = fabushi_identity_text(&remote.creator_user_id)?;
-                let participants = vec![local_human_id.clone(), peer.clone()];
-                self.call_sessions()?.create_with_id(
-                    &remote.call_id,
-                    scope_id,
-                    &creator,
-                    &participants,
-                )?;
-            }
-            let call = self.authorized_call_session(&remote.call_id)?;
-            if call.scope_id != scope_id {
-                return Err("remote Human call resolved to a different canonical conversation scope".into());
-            }
-            self.validate_remote_call(&remote, &call)?;
-            synced.push(self.sync_call_session_from_remote(&remote.call_id)?);
-        }
-        Ok(synced)
-    }
-
-    pub fn create_call_session(
-        &self,
-        scope_id: &str,
-        participant_ids: &[String],
-    ) -> Result<CallSession, String> {
-        let creator_id = self
-            .local_human_id
-            .as_deref()
-            .ok_or_else(|| "CallSession creation requires an authenticated Human identity".to_string())?;
-        self.read_human_conversation_transcript(scope_id)?;
-        let Some(client) = self.shipping_native_messaging()? else {
-            return self.call_sessions()?.create(scope_id, creator_id, participant_ids);
-        };
-        let peer = self.local_call_peer(participant_ids)?;
-        let identity = client.identity()?;
-        if identity.user_id != creator_id {
-            return Err("Fabushi call credential identity does not match CallSession creator".into());
-        }
-        let call_id = Uuid::new_v4().to_string();
-        let remote = client.create_human_call(&call_id, &peer)?;
-        if remote.call_id != call_id
-            || fabushi_identity_text(&remote.creator_user_id)? != creator_id
-            || self.remote_call_peer(&remote)? != peer
-            || remote.state != "invited"
-            || remote.generation != 0
-            || remote.event_seq != 0
-        {
-            return Err("Fabushi call backend returned an invalid newly-created call".into());
-        }
-        self.call_sessions()?
-            .create_with_id(&call_id, scope_id, creator_id, participant_ids)
-    }
-
-    fn authorized_call_session(&self, call_id: &str) -> Result<CallSession, String> {
-        let local_human_id = self
-            .local_human_id
-            .as_deref()
-            .ok_or_else(|| "CallSession access requires an authenticated Human identity".to_string())?;
-        let call = self
-            .call_sessions()?
-            .get(call_id)?
-            .ok_or_else(|| "call session not found".to_string())?;
-        if !call.participant_ids.iter().any(|participant| participant == local_human_id) {
-            return Err("call session does not belong to the authenticated Human identity".into());
-        }
-        Ok(call)
-    }
-
-    pub fn get_call_session(&self, call_id: &str) -> Result<Option<CallSession>, String> {
-        match self.authorized_call_session(call_id) {
-            Ok(call) => {
-                if self.shipping_native_messaging()?.is_some() {
-                    self.sync_call_session_from_remote(call_id).map(Some)
-                } else {
-                    Ok(Some(call))
-                }
-            }
-            Err(error) if error == "call session not found" => Ok(None),
-            Err(error) => Err(error),
-        }
-    }
-
-    pub fn list_call_sessions(
-        &self,
-        scope_id: &str,
-        limit: usize,
-    ) -> Result<Vec<CallSession>, String> {
-        let local_human_id = self
-            .local_human_id
-            .as_deref()
-            .ok_or_else(|| "CallSession access requires an authenticated Human identity".to_string())?;
-        self.read_human_conversation_transcript(scope_id)?;
-        if self.shipping_native_messaging()?.is_some() {
-            self.sync_human_calls()?;
-        }
-        Ok(self
-            .call_sessions()?
-            .list_for_scope(scope_id, limit)?
-            .into_iter()
-            .filter(|call| call.participant_ids.iter().any(|participant| participant == local_human_id))
-            .collect())
-    }
-
-    pub fn transition_call_session(
-        &self,
-        call_id: &str,
-        expected_generation: u64,
-        action: &str,
-        terminal_reason: Option<&str>,
-    ) -> Result<CallSession, String> {
-        let current = if self.shipping_native_messaging()?.is_some() {
-            self.sync_call_session_from_remote(call_id)?
-        } else {
-            self.authorized_call_session(call_id)?
-        };
-        let Some(client) = self.shipping_native_messaging()? else {
-            return self.call_sessions()?
-                .transition(call_id, expected_generation, action, terminal_reason);
-        };
-        if current.generation != expected_generation {
-            return Err(format!(
-                "stale call generation: expected {}, current {}",
-                expected_generation, current.generation
-            ));
-        }
-        let (next_state, next_generation, _, normalized_reason) =
-            transition_target(&current, action, terminal_reason)?;
-        let mut payload = serde_json::json!({
-            "action": action,
-            "state": next_state,
-        });
-        if let Some(reason) = normalized_reason {
-            payload["terminalReason"] = serde_json::json!(reason);
-        }
-        let client_event_id = format!("transition:{expected_generation}:{action}");
-        client.append_human_call_event(
-            call_id,
-            &client_event_id,
-            next_generation,
-            "transition",
-            &payload,
-        )?;
-        self.sync_call_session_from_remote(call_id)
-    }
-
-    pub fn update_call_media(
-        &self,
-        call_id: &str,
-        expected_generation: u64,
-        media_capabilities: Option<&serde_json::Value>,
-        device_selection: Option<&serde_json::Value>,
-    ) -> Result<CallSession, String> {
-        let current = if self.shipping_native_messaging()?.is_some() {
-            self.sync_call_session_from_remote(call_id)?
-        } else {
-            self.authorized_call_session(call_id)?
-        };
-        let Some(client) = self.shipping_native_messaging()? else {
-            return self.call_sessions()?.update_media(
-                call_id,
-                expected_generation,
-                media_capabilities,
-                device_selection,
-            );
-        };
-        if current.generation != expected_generation {
-            return Err(format!(
-                "stale call generation: expected {}, current {}",
-                expected_generation, current.generation
-            ));
-        }
-        if matches!(current.state.as_str(), "ended" | "failed") {
-            return Err("terminal call session cannot update media state".into());
-        }
-        if media_capabilities.is_none() && device_selection.is_none() {
-            return Err("call media update requires capabilities or device selection".into());
-        }
-        let capabilities = media_capabilities.unwrap_or(&current.media_capabilities);
-        let devices = device_selection.unwrap_or(&current.device_selection);
-        if !capabilities.is_object() || !devices.is_object() {
-            return Err("call media capabilities and device selection must be objects".into());
-        }
-        let payload = serde_json::json!({
-            "mediaCapabilities": capabilities,
-            "deviceSelection": devices,
-        });
-        let client_event_id = Self::stable_call_event_id("media", expected_generation, &payload)?;
-        client.append_human_call_event(
-            call_id,
-            &client_event_id,
-            expected_generation,
-            "media",
-            &payload,
-        )?;
-        self.sync_call_session_from_remote(call_id)
-    }
-
-    pub fn append_call_signal(
-        &self,
-        call_id: &str,
-        expected_generation: u64,
-        seq: u64,
-        sender_device_id: &str,
-        kind: &str,
-        payload: &serde_json::Value,
-    ) -> Result<CallSignal, String> {
-        let current = if self.shipping_native_messaging()?.is_some() {
-            self.sync_call_session_from_remote(call_id)?
-        } else {
-            self.authorized_call_session(call_id)?
-        };
-        let Some(client) = self.shipping_native_messaging()? else {
-            return self.call_sessions()?.append_signal(
-                call_id,
-                expected_generation,
-                seq,
-                sender_device_id,
-                kind,
-                payload,
-            );
-        };
-        if current.generation != expected_generation {
-            return Err(format!(
-                "stale call generation: expected {}, current {}",
-                expected_generation, current.generation
-            ));
-        }
-        if matches!(current.state.as_str(), "ended" | "failed") {
-            return Err("terminal call session cannot accept signaling".into());
-        }
-        let identity = client.identity()?;
-        if identity.device_id != sender_device_id {
-            return Err("call signal senderDeviceId must match the authenticated Host device".into());
-        }
-        let remote_payload = serde_json::json!({
-            "senderDeviceId": sender_device_id,
-            "signalKind": kind,
-            "signal": payload,
-        });
-        let id_payload = serde_json::json!({
-            "deviceId": identity.device_id,
-            "kind": kind,
-            "signal": payload,
-        });
-        let client_event_id = Self::stable_call_event_id("signal", expected_generation, &id_payload)?;
-        let (_, accepted_event) = client.append_human_call_event(
-            call_id,
-            &client_event_id,
-            expected_generation,
-            "signal",
-            &remote_payload,
-        )?;
-        self.sync_call_session_from_remote(call_id)?;
-        self.call_sessions()?
-            .list_signals(
-                call_id,
-                expected_generation,
-                accepted_event.seq.saturating_sub(1),
-                1,
-            )?
-            .into_iter()
-            .find(|signal| signal.seq == accepted_event.seq)
-            .ok_or_else(|| "remote call signal did not materialize in canonical CallSession owner".to_string())
-    }
-
-    pub fn list_call_signals(
-        &self,
-        call_id: &str,
-        generation: u64,
-        after_seq: u64,
-        limit: usize,
-    ) -> Result<Vec<CallSignal>, String> {
-        self.authorized_call_session(call_id)?;
-        if self.shipping_native_messaging()?.is_some() {
-            self.sync_call_session_from_remote(call_id)?;
-        }
-        self.call_sessions()?
-            .list_signals(call_id, generation, after_seq, limit)
-    }
 
     pub fn worker_pool(&self) -> Arc<ProductionAgentWorkerPool> {
         Arc::clone(&self.pool)
@@ -910,59 +551,6 @@ impl ProductionSessionWorkers {
 
     pub fn agents_root(&self) -> &Path {
         &self.agents_root
-    }
-
-    pub fn session_db_path(&self, agent_id: &str) -> Result<PathBuf, String> {
-        get_agent_db_path(&self.agents_root, agent_id).map_err(|error| error.to_string())
-    }
-
-    pub fn list_agent_record_ids(&self) -> Result<Vec<String>, String> {
-        list_agent_record_ids(&self.agents_root).map_err(|error| error.to_string())
-    }
-
-    pub fn count_owned_agents(&self) -> Result<usize, String> {
-        count_owned_agents(&self.agents_root).map_err(|error| error.to_string())
-    }
-
-    pub fn is_agent_cap_reached(&self) -> Result<bool, String> {
-        is_agent_cap_reached(&self.agents_root).map_err(|error| error.to_string())
-    }
-
-    pub fn reclaim_pruned_placeholders(
-        &self,
-        active_agent_id: Option<&str>,
-    ) -> Result<Vec<String>, String> {
-        let visible_agent_ids = self
-            .list_agent_summaries(active_agent_id)?
-            .into_iter()
-            .map(|summary| summary.id)
-            .collect::<BTreeSet<_>>();
-        let candidates = list_pruned_placeholder_ids(
-            &self.agents_root,
-            active_agent_id,
-            &visible_agent_ids,
-        )
-        .map_err(|error| error.to_string())?;
-        let mut reclaimed = Vec::new();
-        for agent_id in candidates {
-            let db_path = self.session_db_path(&agent_id)?;
-            let blob_path = conversation_blobs_path(&db_path);
-            let _ = self.close_agent_store_owner(&agent_id, false);
-            let _ = self.close_agent_db_owner(&agent_id, false);
-            futures::executor::block_on(self.pool.close_store(&blob_path));
-            match fs::remove_dir_all(self.agents_root.join(&agent_id)) {
-                Ok(()) => reclaimed.push(agent_id),
-                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-                Err(error) => {
-                    report_materialization_failure(
-                        "placeholder_reclaim_failed",
-                        &agent_id,
-                        &format!("io::{:?}", error.kind()),
-                    );
-                }
-            }
-        }
-        Ok(reclaimed)
     }
 
     pub fn is_agent_cap_reached_after_reclaim(
@@ -1032,6 +620,7 @@ impl ProductionSessionWorkers {
             .map_err(|error| error.to_string())
         })?;
         let _ = self.open_agent_db_owner(&record.id)?;
+        self.ensure_main_session_work_admission(&record.id)?;
         Ok(record)
     }
 
@@ -1069,6 +658,7 @@ impl ProductionSessionWorkers {
         })?;
         if let FallbackSession::Created(record) = &result {
             let _ = self.open_agent_db_owner(&record.id)?;
+            self.ensure_main_session_work_admission(&record.id)?;
         }
         Ok(result)
     }
@@ -1078,6 +668,7 @@ impl ProductionSessionWorkers {
         record: MaterializedAgentRecord,
         prepared: PreparedAgentBlobStore,
     ) -> Result<ProductionMaterializedSession, String> {
+        self.ensure_main_session_work_admission(&record.id)?;
         let db = self.open_agent_db_owner(&record.id)?;
         let agent_store = self.open_agent_store_owner(&record.id)?;
         let memory = self
@@ -1146,9 +737,26 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Vec<serde_json::Value>, String> {
-        self.open_agent_db_owner(agent_id)?
+        let mut entries = self
+            .open_agent_db_owner(agent_id)?
             .get_transcript_entries()
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut entries);
+        Ok(entries)
+    }
+
+    /// Preserve the public transcript projection inside an already-held
+    /// filesystem/admission boundary without recursively acquiring its mutex.
+    pub(crate) fn read_agent_transcript_entries_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        let mut entries = self
+            .open_agent_db_owner_locked(agent_id)?
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut entries);
+        Ok(entries)
     }
 
     pub fn read_agent_transcript_page(
@@ -1156,9 +764,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         query: TranscriptPageQuery,
     ) -> Result<TranscriptPage, String> {
-        self.open_agent_db_owner(agent_id)?
+        let mut page = self
+            .open_agent_db_owner(agent_id)?
             .get_transcript_page(query)
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut page.entries);
+        Ok(page)
     }
 
     pub fn read_agent_transcript_window(
@@ -1166,9 +777,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         query: TranscriptWindowQuery,
     ) -> Result<TranscriptWindow<std::collections::BTreeMap<String, usize>>, String> {
-        self.open_agent_db_owner(agent_id)?
+        let mut window = self
+            .open_agent_db_owner(agent_id)?
             .get_transcript_window(query)
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut window.entries);
+        Ok(window)
     }
 
     pub fn read_agent_transcript_tail(
@@ -1176,9 +790,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         query: TranscriptWindowQuery,
     ) -> Result<TranscriptPage, String> {
-        self.open_agent_db_owner(agent_id)?
+        let mut page = self
+            .open_agent_db_owner(agent_id)?
             .get_transcript_tail(query)
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut page.entries);
+        Ok(page)
     }
 
     pub fn read_agent_thread(
@@ -1186,10 +803,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         root_id: &str,
     ) -> Result<TranscriptThread, String> {
-        self.open_agent_db_owner(agent_id)?
+        let mut entries = self
+            .open_agent_db_owner(agent_id)?
             .get_thread_entries(root_id)
-            .map(|entries| TranscriptThread { entries })
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut entries);
+        Ok(TranscriptThread { entries })
     }
 
     pub fn read_agent_outline(
@@ -1302,16 +921,19 @@ impl ProductionSessionWorkers {
         field: &str,
         value: &str,
     ) -> Result<bool, String> {
-        let stored = self
-            .connector_secret_store()
-            .set_secret(agent_id, platform, field, value)
-            .map_err(|error| error.to_string())?;
-        if !stored {
-            return Ok(false);
-        }
-        self.open_channel_store(agent_id)?
-            .write_metadata(platform, "")
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let stored = self
+                .connector_secret_store()
+                .set_secret(agent_id, platform, field, value)
+                .map_err(|error| error.to_string())?;
+            if !stored {
+                return Ok(false);
+            }
+            self.open_channel_store(agent_id)?
+                .write_metadata(platform, "")
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_connector_secret(
@@ -1330,22 +952,44 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         platform: &str,
     ) -> Result<bool, String> {
-        self.connector_secret_store()
-            .remove_agent_platform(agent_id, platform)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            self.connector_secret_store()
+                .remove_agent_platform(agent_id, platform)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn disconnect_channel(&self, agent_id: &str, platform: &str) -> Result<bool, String> {
-        let _ = self
-            .connector_secret_store()
-            .remove_agent_platform(agent_id, platform)
-            .map_err(|error| error.to_string())?;
-        self.open_channel_store(agent_id)?
-            .remove(platform)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let _ = self
+                .connector_secret_store()
+                .remove_agent_platform(agent_id, platform)
+                .map_err(|error| error.to_string())?;
+            self.open_channel_store(agent_id)?
+                .remove(platform)
+                .map_err(|error| error.to_string())
+        })
     }
 
-    fn existing_session_db_path(&self, agent_id: &str) -> Result<PathBuf, String> {
+    pub fn write_agent_settings(
+        &self,
+        agent_id: &str,
+        update: serde_json::Map<String, serde_json::Value>,
+    ) -> Result<(), String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db_path = self.existing_session_db_path(agent_id)?;
+            let agent_dir = db_path
+                .parent()
+                .ok_or_else(|| "agent database has no parent directory".to_string())?;
+            write_sand_settings_file(get_sand_settings_path(agent_dir), &update)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub(crate) fn existing_session_db_path(&self, agent_id: &str) -> Result<PathBuf, String> {
         let db_path = self.session_db_path(agent_id)?;
         if !db_path.is_file() {
             return Err(format!("Agent missing: {agent_id}"));
@@ -1357,23 +1001,329 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Arc<SandAgentDb>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            if self.is_agent_being_deleted(agent_id) {
+                return Err(format!(
+                    "agent {agent_id} deletion cleanup is pending; owner open is not admitted"
+                ));
+            }
+            self.open_agent_db_owner_locked(agent_id)
+        })
+    }
+
+    /// Open or reuse the per-agent SQLite owner while the caller already
+    /// holds the filesystem/deletion serialization boundary. All owner-open
+    /// recovery must run under that boundary, but mutation producers cannot
+    /// reacquire the non-reentrant filesystem mutex.
+    pub(crate) fn open_agent_db_owner_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<Arc<SandAgentDb>, String> {
         let db_path = self.existing_session_db_path(agent_id)?;
         let mut owners = self
             .db_owners
             .lock()
             .map_err(|_| "agent db owner map poisoned".to_string())?;
         if let Some(owner) = owners.get(agent_id) {
+            self.validate_owner_session_identity(agent_id, owner)?;
+            self.recover_pending_profile_mutation(agent_id, owner)?;
+            self.recover_pending_memory_mutation(agent_id, owner)?;
             return Ok(Arc::clone(owner));
         }
         let owner = Arc::new(
             SandAgentDb::open(&db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?,
         );
+        self.validate_owner_session_identity(agent_id, &owner)?;
+        self.recover_pending_media_custody(agent_id, &owner)?;
+        self.recover_pending_profile_mutation(agent_id, &owner)?;
+        self.recover_pending_memory_mutation(agent_id, &owner)?;
         owners.insert(agent_id.to_string(), Arc::clone(&owner));
         Ok(owner)
     }
 
+    fn validate_owner_session_identity(
+        &self,
+        agent_id: &str,
+        owner: &SandAgentDb,
+    ) -> Result<(), String> {
+        let Some(record) = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(());
+        };
+        let metadata_agent_id = owner
+            .get_metadata("agentId")
+            .map_err(|error| error.to_string())?
+            .and_then(|value| value.as_str().map(str::trim).map(ToOwned::to_owned));
+        let expected_session_key = format!("agent:{agent_id}:main");
+        if record.session_id != agent_id
+            || metadata_agent_id.as_deref() != Some(agent_id)
+            || record.session_id != metadata_agent_id.as_deref().unwrap_or_default()
+            || record.session_key != expected_session_key
+            || record.lifecycle_revision.trim().is_empty()
+        {
+            return Err(format!(
+                "agent {agent_id} session admission identity is malformed or rebound"
+            ));
+        }
+        Ok(())
+    }
+
+    /// Reconcile one durable media fence when an agent database is first
+    /// opened after a process interruption. A committed settlement receipt
+    /// retains its media; without one, only paths proven to remain inside the
+    /// agent media roots are rolled back. Any uncertainty leaves the fence in
+    /// place so archive/delete cannot race an unknown outcome.
+    fn recover_pending_media_custody(
+        &self,
+        agent_id: &str,
+        owner: &SandAgentDb,
+    ) -> Result<(), String> {
+        let Some(record) = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(());
+        };
+        let Some(work_id) = record.admitted_media_work_id.as_deref() else {
+            if record.admitted_media_paths.is_empty() {
+                return Ok(());
+            }
+            return Err("media admission has paths without a work identity".into());
+        };
+        let expected_revision = record.lifecycle_revision.clone();
+        let receipt_id = format!("outgoing-media-settlement:{work_id}");
+        if let Some(receipt) = owner
+            .get_transcript_entry_by_id(&receipt_id)
+            .map_err(|error| error.to_string())?
+        {
+            let valid = receipt.get("kind").and_then(serde_json::Value::as_str)
+                == Some("outgoing-media-settlement")
+                && receipt.get("sessionKey").and_then(serde_json::Value::as_str)
+                    == Some(record.session_key.as_str())
+                && receipt.get("mediaWorkId").and_then(serde_json::Value::as_str)
+                    == Some(work_id)
+                && receipt
+                    .get("lifecycleRevision")
+                    .and_then(serde_json::Value::as_str)
+                    == Some(expected_revision.as_str());
+            if !valid {
+                return Err("outgoing media settlement receipt is malformed or rebound".into());
+            }
+            if !Self::clear_media_fence_from_owner(owner, &expected_revision, work_id)? {
+                return Err("could not clear committed outgoing media fence".into());
+            }
+            return Ok(());
+        }
+        if record.admitted_media_paths.is_empty() {
+            return Err("pending outgoing media has no durable materialized paths".into());
+        }
+        let media_roots = get_agent_media_store_roots(self.agents_root.join(agent_id));
+        let mut custody = OutgoingMediaCustody::default();
+        for raw_path in record.admitted_media_paths {
+            let path = PathBuf::from(raw_path);
+            let Some(verified_path) = Self::verify_pending_media_path(&path, &media_roots)? else {
+                continue;
+            };
+            custody.track(verified_path);
+        }
+        let cleanup_errors = custody.rollback();
+        if !cleanup_errors.is_empty() {
+            return Err(format!(
+                "could not roll back pending outgoing media paths: {} cleanup errors",
+                cleanup_errors.len()
+            ));
+        }
+        if !Self::clear_media_fence_from_owner(owner, &expected_revision, work_id)? {
+            return Err("could not clear rolled-back outgoing media fence".into());
+        }
+        Ok(())
+    }
+
+    fn verify_pending_media_path(
+        path: &Path,
+        media_roots: &[PathBuf; 2],
+    ) -> Result<Option<PathBuf>, String> {
+        let metadata = match fs::symlink_metadata(path) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(error) => {
+                return Err(format!(
+                    "could not inspect pending outgoing media path {}: {error}",
+                    path.display()
+                ));
+            }
+        };
+        if metadata.file_type().is_symlink() {
+            return Err(format!(
+                "pending outgoing media path is a symlink: {}",
+                path.display()
+            ));
+        }
+        let canonical_path = fs::canonicalize(path).map_err(|error| {
+            format!(
+                "could not canonicalize pending outgoing media path {}: {error}",
+                path.display()
+            )
+        })?;
+        let inside_media_root = media_roots
+            .iter()
+            .filter_map(|root| {
+                fs::canonicalize(root)
+                    .ok()
+                    .map(|canonical_root| canonical_path.starts_with(canonical_root))
+            })
+            .any(|inside| inside);
+        if !inside_media_root {
+            return Err(format!(
+                "pending outgoing media path is outside the agent media store: {}",
+                path.display()
+            ));
+        }
+        Ok(Some(canonical_path))
+    }
+
+    fn clear_media_fence_from_owner(
+        owner: &SandAgentDb,
+        expected_lifecycle_revision: &str,
+        work_id: &str,
+    ) -> Result<bool, String> {
+        let Some(mut record) = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(false);
+        };
+        if record.lifecycle_revision != expected_lifecycle_revision
+            || record.admitted_media_work_id.as_deref() != Some(work_id)
+        {
+            return Ok(false);
+        }
+        record.admitted_media_work_id = None;
+        record.admitted_media_paths.clear();
+        owner
+            .compare_and_set_session_work_admission(
+                Some(expected_lifecycle_revision),
+                &record,
+            )
+            .map_err(|error| error.to_string())
+    }
+
+    fn recover_pending_memory_mutation(
+        &self,
+        agent_id: &str,
+        owner: &SandAgentDb,
+    ) -> Result<(), String> {
+        let Some(mutation) = owner
+            .read_pending_memory_mutation()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(());
+        };
+        let admission = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "pending memory mutation has no session admission".to_string())?;
+        if mutation.mutation_id.trim().is_empty()
+            || mutation.session_key != admission.session_key
+            || mutation.session_id != admission.session_id
+            || mutation.lifecycle_revision != admission.lifecycle_revision
+            || !matches!(mutation.operation.as_str(), "remove" | "clear")
+        {
+            return Err("pending memory mutation journal is malformed or rebound".into());
+        }
+        let current_snapshot = owner
+            .get_memory_prompt_snapshot()
+            .map_err(|error| error.to_string())?;
+        if current_snapshot != mutation.prior_snapshot {
+            return Err("pending memory mutation snapshot is rebound or outcome-unknown".into());
+        }
+        let store = self.memory_service.store_for_agent(agent_id);
+        Self::restore_memory_records(&store, &mutation.records)?;
+        if !owner
+            .clear_pending_memory_mutation(&mutation)
+            .map_err(|error| error.to_string())?
+        {
+            return Err("pending memory mutation journal could not be cleared".into());
+        }
+        Ok(())
+    }
+
+    fn recover_pending_profile_mutation(
+        &self,
+        agent_id: &str,
+        owner: &SandAgentDb,
+    ) -> Result<(), String> {
+        let Some(mutation) = owner
+            .read_pending_profile_mutation()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(());
+        };
+        let admission = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "pending profile mutation has no session admission".to_string())?;
+        if mutation.mutation_id.trim().is_empty()
+            || !matches!(
+                mutation.operation.as_str(),
+                "profile-update" | "avatar-replace" | "avatar-remove"
+            )
+            || mutation.session_key != admission.session_key
+            || mutation.session_id != admission.session_id
+            || mutation.lifecycle_revision != admission.lifecycle_revision
+            || mutation.before_files.is_empty()
+            || mutation.after_files.is_empty()
+        {
+            return Err("pending profile mutation journal is malformed or rebound".into());
+        }
+        if owner
+            .get_sand_profile()
+            .map_err(|error| error.to_string())?
+            != mutation.previous_profile
+        {
+            return Err("pending profile mutation owner state is rebound or outcome-unknown".into());
+        }
+        let db_path = self.session_db_path(agent_id)?;
+        let agent_dir = db_path
+            .parent()
+            .ok_or_else(|| "agent database has no parent directory".to_string())?;
+        if profile_mutation_files_match(agent_dir, &mutation.before_files) {
+            if !owner
+                .clear_pending_profile_mutation(&mutation)
+                .map_err(|error| error.to_string())?
+            {
+                return Err("could not clear already-before profile mutation journal".into());
+            }
+            return Ok(());
+        }
+        if !profile_mutation_files_match(agent_dir, &mutation.after_files) {
+            return Err("pending profile mutation files do not match before or after state".into());
+        }
+        restore_profile_mutation_files(agent_dir, &mutation.before_files)?;
+        if !owner
+            .clear_pending_profile_mutation(&mutation)
+            .map_err(|error| error.to_string())?
+        {
+            return Err("could not clear rolled-back profile mutation journal".into());
+        }
+        Ok(())
+    }
+
     pub fn close_agent_db_owner(
+        &self,
+        agent_id: &str,
+        checkpoint: bool,
+    ) -> bool {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            Ok(self.close_agent_db_owner_locked(agent_id, checkpoint))
+        })
+        .unwrap_or(false)
+    }
+
+    fn close_agent_db_owner_locked(
         &self,
         agent_id: &str,
         checkpoint: bool,
@@ -1391,7 +1341,51 @@ impl ProductionSessionWorkers {
         }
     }
 
+    /// Retire the exact per-agent owners while holding the same filesystem
+    /// boundary used by deletion. This keeps owner close and blob-worker
+    /// shutdown from interleaving with directory cleanup.
+    pub fn retire_agent_owners(
+        &self,
+        agent_id: &str,
+        flush: bool,
+    ) -> Result<bool, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.retire_agent_owners_locked(agent_id, flush)
+        })
+    }
+
+    /// Close the exact per-agent owners while the caller already holds the
+    /// filesystem/deletion boundary.
+    pub(crate) fn retire_agent_owners_locked(
+        &self,
+        agent_id: &str,
+        flush: bool,
+    ) -> Result<bool, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        let blob_path = conversation_blobs_path(&db_path);
+        let store_closed = self.close_agent_store_owner_locked(agent_id, flush);
+        let db_closed = self.close_agent_db_owner_locked(agent_id, flush);
+        self.pool.close_store_blocking(&blob_path);
+        Ok(store_closed || db_closed)
+    }
+
     pub fn open_agent_store_owner(
+        &self,
+        agent_id: &str,
+    ) -> Result<Arc<ProductionAgentStore>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            if self.is_agent_being_deleted(agent_id) {
+                return Err(format!(
+                    "agent {agent_id} deletion cleanup is pending; owner open is not admitted"
+                ));
+            }
+            self.open_agent_store_owner_locked(agent_id)
+        })
+    }
+
+    /// Open or reuse the AgentStore while the caller already holds the
+    /// per-agent filesystem/deletion boundary.
+    fn open_agent_store_owner_locked(
         &self,
         agent_id: &str,
     ) -> Result<Arc<ProductionAgentStore>, String> {
@@ -1405,7 +1399,7 @@ impl ProductionSessionWorkers {
             return Ok(owner);
         }
 
-        let db = self.open_agent_db_owner(agent_id)?;
+        let db = self.open_agent_db_owner_locked(agent_id)?;
         let blob_store = self.create_agent_blob_store(agent_id)?;
         let candidate = Arc::new(ProductionAgentStore::new(db, blob_store));
         let _ = candidate.try_reset_from_db();
@@ -1422,6 +1416,17 @@ impl ProductionSessionWorkers {
     }
 
     pub fn close_agent_store_owner(
+        &self,
+        agent_id: &str,
+        flush: bool,
+    ) -> bool {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            Ok(self.close_agent_store_owner_locked(agent_id, flush))
+        })
+        .unwrap_or(false)
+    }
+
+    fn close_agent_store_owner_locked(
         &self,
         agent_id: &str,
         flush: bool,
@@ -1459,17 +1464,145 @@ impl ProductionSessionWorkers {
             .unwrap_or_default()
     }
 
-    pub fn begin_agent_delete(&self, agent_id: &str) {
+    /// Serialize per-agent filesystem-backed mutation with the existing
+    /// directory deletion owner. The caller must perform the durable
+    /// admission check while this guard is held.
+    pub fn with_agent_filesystem_mutation<T, F>(
+        &self,
+        agent_id: &str,
+        operation: F,
+    ) -> Result<T, String>
+    where
+        F: FnOnce() -> Result<T, String>,
+    {
+        let lock = self
+            .filesystem_mutation_locks
+            .lock()
+            .map_err(|_| "filesystem mutation lock registry is poisoned".to_string())?
+            .entry(agent_id.to_string())
+            .or_insert_with(|| Arc::new(Mutex::new(())))
+            .clone();
+        let _guard = lock
+            .lock()
+            .map_err(|_| format!("filesystem mutation lock is poisoned for agent {agent_id}"))?;
+        operation()
+    }
+
+    /// Serialize an external per-agent mutation and perform the durable
+    /// admission check while the same boundary is held. The operation must
+    /// not call the public admission facade recursively.
+    pub fn with_agent_admitted_filesystem_mutation<T, F>(
+        &self,
+        agent_id: &str,
+        operation: F,
+    ) -> Result<T, String>
+    where
+        F: FnOnce() -> Result<T, String>,
+    {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            operation()
+        })
+    }
+
+    /// Compose admitted filesystem and database mutations without reopening
+    /// the public Session facade while its non-reentrant mutex is held.
+    /// The callback must use this owner or existing locked helpers only.
+    pub(crate) fn with_agent_admitted_db_mutation<T>(
+        &self,
+        agent_id: &str,
+        operation: impl FnOnce(&SandAgentDb) -> Result<T, String>,
+    ) -> Result<T, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            operation(owner.as_ref())
+        })
+    }
+
+    pub fn begin_agent_delete(&self, agent_id: &str) -> Result<(), String> {
         self.roster_extras_cache.remove(agent_id);
         if let Ok(mut deleting) = self.deleting_agents.lock() {
             deleting.insert(agent_id.to_string());
         }
+        let result = self.with_agent_filesystem_mutation(agent_id, || {
+            let db_path = self.session_db_path(agent_id)?;
+            if !db_path.is_file() {
+                return Ok(());
+            }
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let Some(mut record) = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+            else {
+                return Ok(());
+            };
+            if record.deletion_pending {
+                return Ok(());
+            }
+            let expected_revision = record.lifecycle_revision.clone();
+            record.deletion_pending = true;
+            if owner
+                .transition_session_deletion_pending(
+                    Some(&expected_revision),
+                    false,
+                    &record,
+                )
+                .map_err(|error| error.to_string())?
+            {
+                Ok(())
+            } else {
+                Err(format!(
+                    "agent {agent_id} lifecycle changed while publishing deletion fence"
+                ))
+            }
+        });
+        if result.is_err() {
+            let _ = self
+                .deleting_agents
+                .lock()
+                .map(|mut deleting| deleting.remove(agent_id));
+        }
+        result
     }
 
-    pub fn end_agent_delete(&self, agent_id: &str) {
+    pub fn clear_agent_delete_fast_path(&self, agent_id: &str) {
         if let Ok(mut deleting) = self.deleting_agents.lock() {
             deleting.remove(agent_id);
         }
+    }
+
+    pub fn end_agent_delete(&self, agent_id: &str) -> Result<(), String> {
+        let result = self.with_agent_filesystem_mutation(agent_id, || {
+            self.clear_agent_delete_fast_path(agent_id);
+            let db_path = self.session_db_path(agent_id)?;
+            if !db_path.is_file() {
+                return Ok(());
+            }
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let Some(mut record) = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+            else {
+                return Ok(());
+            };
+            if !record.deletion_pending {
+                return Ok(());
+            }
+            let expected_revision = record.lifecycle_revision.clone();
+            record.deletion_pending = false;
+            if owner
+                .clear_session_deletion_pending(&expected_revision, &record)
+                .map_err(|error| error.to_string())?
+            {
+                Ok(())
+            } else {
+                Err(format!(
+                    "agent {agent_id} lifecycle changed while clearing deletion fence"
+                ))
+            }
+        });
+        result
     }
 
     pub fn is_agent_being_deleted(&self, agent_id: &str) -> bool {
@@ -1479,21 +1612,580 @@ impl ProductionSessionWorkers {
             .unwrap_or(false)
     }
 
+    // Work admission methods moved to ocrm_production_admission.rs
+
+    /// Read one agent-scoped KV projection while retaining the Session owner
+    /// serialization boundary. Tool adapters must not retain a raw
+    /// `SandAgentDb` handle as their production state owner.
+    pub fn read_agent_kv_projection(
+        &self,
+        agent_id: &str,
+        key: &str,
+    ) -> Result<Option<String>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .read_kv(key)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Write one agent-scoped KV projection through the admitted Session
+    /// owner and its per-agent filesystem/deletion boundary.
+    pub fn write_agent_kv_projection(
+        &self,
+        agent_id: &str,
+        key: &str,
+        value: &str,
+    ) -> Result<bool, String> {
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .write_kv(key, value)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Read the purpose projection through the Session owner without exposing
+    /// the general agent database handle to transcript lifecycle producers.
+    pub fn read_agent_purpose(&self, agent_id: &str) -> Result<Option<String>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .get_agent_purpose()
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Read the unread projection through the Session owner without exposing
+    /// the general agent database handle to transcript lifecycle producers.
+    pub fn read_agent_unread_state(&self, agent_id: &str) -> Result<UnreadState, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .get_unread_state()
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Apply a session-scoped model selection while holding the same
+    /// per-agent filesystem/deletion boundary used by every other session
+    /// mutation. The policy evaluator remains the model-picker owner; this
+    /// method owns only admission, serialization, and the owner-local write
+    /// edge.
+    pub fn apply_session_model_selection(
+        &self,
+        agent_id: &str,
+        params: ApplySessionModelSelectionParams<'_>,
+        current_time_ms: u64,
+    ) -> Result<ApplySessionModelSelectionResult, String> {
+        if !params.request.reset_to_default
+            && (params.request.provider.trim().is_empty()
+                || params.request.model.trim().is_empty())
+        {
+            return Err("session model selection requires provider and model".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            let admission = db
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "session model selection requires session admission".to_string())?;
+            if admission.session_id != agent_id
+                || admission.session_key.trim().is_empty()
+                || admission.lifecycle_revision.trim().is_empty()
+            {
+                return Err("session model selection admission identity is malformed".into());
+            }
+            let expected_lifecycle_revision = admission.lifecycle_revision.clone();
+            let mut state = read_session_model_entry(&db, agent_id)?;
+            let result = apply_model_selection(&mut state, params, current_time_ms);
+            if matches!(&result, ApplySessionModelSelectionResult::Applied(_))
+                && !write_session_model_entry(
+                    &db,
+                    agent_id,
+                    &expected_lifecycle_revision,
+                    &state,
+                )?
+            {
+                return Err("SESSION_MODEL_SELECTION_NOT_COMMITTED_OR_STALE".into());
+            }
+            Ok(result)
+        })
+    }
+
+    /// Register one background automation run as a durable per-run session
+    /// projection. The row remains owned by the agent DB; cleanup and archive
+    /// are intentionally separate reaper responsibilities.
+    pub fn begin_cron_session_run(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        started_at_ms: f64,
+    ) -> Result<bool, String> {
+        if agent_id.trim().is_empty()
+            || automation_id.trim().is_empty()
+            || run_id.trim().is_empty()
+        {
+            return Err("cron session run requires agent, automation, and run identities".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            let admission = db
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "cron session run requires session admission".to_string())?;
+            let session_key = format!(
+                "agent:{agent_id}:cron:{automation_id}:{run_id}"
+            );
+            db.begin_cron_session_run(
+                &session_key,
+                automation_id,
+                run_id,
+                &session_key,
+                &admission.lifecycle_revision,
+                started_at_ms,
+            )
+            .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Settle the same per-run projection only against the current session
+    /// identity and lifecycle revision. A changed lifecycle returns false and
+    /// remains visible for the later reconciliation/reaper slice.
+    pub fn finish_cron_session_run(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+    ) -> Result<bool, String> {
+        if agent_id.trim().is_empty()
+            || automation_id.trim().is_empty()
+            || run_id.trim().is_empty()
+        {
+            return Err("cron session settlement requires agent, automation, and run identities".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            let admission = db
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "cron session run requires session admission".to_string())?;
+            let session_key = format!(
+                "agent:{agent_id}:cron:{automation_id}:{run_id}"
+            );
+            db.finish_cron_session_run(
+                &session_key,
+                &session_key,
+                &admission.lifecycle_revision,
+                outcome,
+                finished_at_ms,
+                detail,
+            )
+            .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn finish_cron_session_run_with_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+        active_controller: bool,
+        pending_outgoing_media: bool,
+        unsettled_subagent: bool,
+    ) -> Result<bool, String> {
+        if agent_id.trim().is_empty()
+            || automation_id.trim().is_empty()
+            || run_id.trim().is_empty()
+        {
+            return Err("cron session settlement requires agent, automation, and run identities".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            let admission = db
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "cron session settlement requires session admission".to_string())?;
+            let session_key = format!(
+                "agent:{agent_id}:cron:{automation_id}:{run_id}"
+            );
+            db.finish_cron_session_run_with_fences(
+                &session_key,
+                &session_key,
+                &admission.lifecycle_revision,
+                outcome,
+                finished_at_ms,
+                detail,
+                active_controller,
+                pending_outgoing_media,
+                unsettled_subagent,
+            )
+            .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn publish_cron_session_run_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        active_controller: bool,
+        pending_outgoing_media: bool,
+        unsettled_subagent: bool,
+    ) -> Result<bool, String> {
+        if agent_id.trim().is_empty()
+            || automation_id.trim().is_empty()
+            || run_id.trim().is_empty()
+        {
+            return Err("cron fence publication requires agent, automation, and run identities".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            let admission = db
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "cron fence publication requires session admission".to_string())?;
+            let session_key = format!(
+                "agent:{agent_id}:cron:{automation_id}:{run_id}"
+            );
+            db.publish_cron_session_run_fences(
+                &session_key,
+                &session_key,
+                &admission.lifecycle_revision,
+                active_controller,
+                pending_outgoing_media,
+                unsettled_subagent,
+            )
+            .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn list_cron_session_runs(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<CronSessionRunRecord>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            Ok(self
+                .open_agent_db_owner_locked(agent_id)?
+                .list_cron_session_runs()
+                .map_err(|error| error.to_string())?)
+        })
+    }
+
+    /// Project only rows that are eligible for a future guarded cleanup
+    /// operation. This method never mutates the row or transcript artifacts.
+    pub fn list_expired_cron_session_runs(
+        &self,
+        agent_id: &str,
+        now_ms: f64,
+        retention_ms: Option<u64>,
+    ) -> Result<Vec<CronSessionRunRecord>, String> {
+        let Some(retention_ms) = retention_ms else {
+            return Ok(Vec::new());
+        };
+        if !now_ms.is_finite() || now_ms < 0.0 || retention_ms == 0 {
+            return Ok(Vec::new());
+        }
+        let rows = self.list_cron_session_runs(agent_id)?;
+        let expected_session_key_prefix = format!("agent:{agent_id}:cron:");
+        let now_ms = now_ms.floor();
+        let retention_ms = retention_ms as f64;
+        Ok(rows
+            .into_iter()
+            .filter(|row| {
+                !row.base_session
+                    && !row.automation_id.trim().is_empty()
+                    && !row.run_id.trim().is_empty()
+                    && row.session_key
+                        == format!(
+                            "{}{}:{}",
+                            expected_session_key_prefix,
+                            row.automation_id,
+                            row.run_id
+                        )
+                    && row.session_id == row.session_key
+                    && !row.lifecycle_revision.trim().is_empty()
+                    && row.state == "terminal"
+                    && !row.active_controller
+                    && !row.pending_outgoing_media
+                    && !row.unsettled_subagent
+                    && row.fence_state_known
+                    && row.updated_at_ms.is_finite()
+                    && row.updated_at_ms >= 0.0
+                    && now_ms >= row.updated_at_ms
+                    && now_ms - row.updated_at_ms >= retention_ms
+            })
+            .collect())
+    }
+
+    pub(crate) fn read_session_work_admission_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<SessionWorkAdmissionRecord>, String> {
+        if agent_id.trim().is_empty() {
+            return Err("locked session admission read requires a non-empty agent identity".into());
+        }
+        let record = self
+            .open_agent_db_owner_locked(agent_id)?
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?;
+        let Some(record) = record else {
+            return Ok(None);
+        };
+        let expected_session_key = format!("agent:{agent_id}:main");
+        if record.session_id != agent_id
+            || record.session_key != expected_session_key
+            || record.lifecycle_revision.trim().is_empty()
+        {
+            return Err(format!(
+                "agent {agent_id} session admission identity is malformed"
+            ));
+        }
+        Ok(Some(record))
+    }
+
+    pub fn read_session_communication_policy(
+        &self,
+        agent_id: &str,
+    ) -> Result<
+        Option<super::agent_session::SessionCommunicationPolicyOverride>,
+        String,
+    > {
+        let db = self.open_agent_db_owner(agent_id)?;
+        super::agent_session::read_session_communication_policy(&db, agent_id)
+    }
+
+    pub fn write_session_communication_policy(
+        &self,
+        agent_id: &str,
+        expected_session_id: &str,
+        expected_lifecycle_revision: &str,
+        policy: &super::agent_session::SessionCommunicationPolicyOverride,
+    ) -> Result<(), String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            if !super::agent_session::write_session_communication_policy(
+                &db,
+                expected_session_id,
+                expected_lifecycle_revision,
+                policy,
+            )? {
+                return Err("SESSION_LIFECYCLE_CHANGED".into());
+            }
+            Ok(())
+        })
+    }
+
+    pub fn read_session_provider_review(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<SessionProviderReview>, String> {
+        self.open_agent_db_owner(agent_id)?
+            .read_session_provider_review()
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn record_session_provider_review(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        review: &SessionProviderReview,
+    ) -> Result<SessionProviderReview, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .record_session_provider_review(expected_lifecycle_revision, review)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn issue_provider_review_acknowledgment(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        review_id: &str,
+        next_run_id: &str,
+    ) -> Result<ProviderReviewAcknowledgment, String> {
+        let agent_id = agent_id.trim();
+        let expected_lifecycle_revision = expected_lifecycle_revision.trim();
+        let review_id = review_id.trim();
+        let next_run_id = next_run_id.trim();
+        if agent_id.is_empty()
+            || expected_lifecycle_revision.is_empty()
+            || review_id.is_empty()
+            || next_run_id.is_empty()
+        {
+            return Err("provider review acknowledgment requires bounded identity".into());
+        }
+        self.assert_agent_work_admission(agent_id)?;
+        let record = self
+            .read_session_work_admission(agent_id)?
+            .ok_or_else(|| "session work admission record is unavailable".to_string())?;
+        let review = record
+            .provider_review
+            .clone()
+            .ok_or_else(|| "provider review is unavailable".to_string())?;
+        let continuation_supported = review
+            .continuation_message
+            .as_deref()
+            .is_some_and(|message| !message.trim().is_empty())
+            && review.provider == "openai"
+            && ((review.runtime_id == "codex"
+                && review.native_thread_id.as_deref().is_some_and(|value| !value.trim().is_empty())
+                && review.native_turn_id.as_deref().is_some_and(|value| !value.trim().is_empty()))
+                || (review.runtime_id == "openclaw"
+                    && review.api.as_deref() == Some("openai-chatgpt-responses")));
+        if record.lifecycle_revision != expected_lifecycle_revision
+            || record.session_id != review.session_id
+            || record.provider_review_id.as_deref() != Some(review_id)
+            || record.provider_review_phase.as_deref() != Some("pending")
+            || review.id != review_id
+            || review.run_id == next_run_id
+            || !continuation_supported
+        {
+            return Err("provider review changed or cannot be continued".into());
+        }
+        let token = Uuid::new_v4().to_string();
+        self.provider_review_capabilities
+            .lock()
+            .map_err(|_| "provider review capability owner is poisoned".to_string())?
+            .insert(
+                token.clone(),
+                ProviderReviewCapabilityState {
+                    agent_id: agent_id.to_string(),
+                    lifecycle_revision: expected_lifecycle_revision.to_string(),
+                    review_id: review_id.to_string(),
+                    next_run_id: next_run_id.to_string(),
+                },
+            );
+        Ok(ProviderReviewAcknowledgment { token })
+    }
+
+    pub fn claim_provider_review_acknowledgment(
+        &self,
+        acknowledgment: ProviderReviewAcknowledgment,
+        next_run_id: &str,
+        provider: &str,
+        model: &str,
+        runtime_id: &str,
+        api: Option<&str>,
+    ) -> Result<SessionProviderReview, String> {
+        let state = self
+            .provider_review_capabilities
+            .lock()
+            .map_err(|_| "provider review capability owner is poisoned".to_string())?
+            .remove(&acknowledgment.token)
+            .ok_or_else(|| "provider review acknowledgment is no longer current".to_string())?;
+        self.with_agent_filesystem_mutation(&state.agent_id, || {
+            self.assert_agent_work_admission_locked(&state.agent_id)?;
+            if provider.trim().is_empty()
+                || model.trim().is_empty()
+                || runtime_id.trim().is_empty()
+                || next_run_id.trim() != state.next_run_id
+            {
+                return Err("provider review run or runtime identity is incomplete or changed".into());
+            }
+            let owner = self.open_agent_db_owner_locked(&state.agent_id)?;
+            let Some(mut record) = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+            else {
+                return Err("session work admission record is unavailable".into());
+            };
+            let review = record
+                .provider_review
+                .clone()
+                .ok_or_else(|| "provider review is unavailable".to_string())?;
+            if record.lifecycle_revision != state.lifecycle_revision
+                || record.session_id != review.session_id
+                || record.provider_review_id.as_deref() != Some(state.review_id.as_str())
+                || record.provider_review_phase.as_deref() != Some("pending")
+                || record.admitted_work_id.as_deref() != Some(state.next_run_id.as_str())
+                || record.deletion_pending
+                || review.id != state.review_id
+                || review.provider != provider.trim()
+                || review.model != model.trim()
+                || review.runtime_id != runtime_id.trim()
+                || review.api.as_deref() != api.map(str::trim)
+            {
+                return Err("provider review runtime or lifecycle identity changed".into());
+            }
+            record.provider_review_phase = Some("accepted".into());
+            record.provider_review_continuation_run_id = Some(state.next_run_id.clone());
+            if !owner
+                .compare_and_set_session_work_admission(Some(&state.lifecycle_revision), &record)
+                .map_err(|error| error.to_string())?
+            {
+                return Err("provider review acknowledgment lost its lifecycle race".into());
+            }
+            Ok(review)
+        })
+    }
+
+    pub fn settle_provider_review_continuation(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        continuation_run_id: &str,
+        outcome: ProviderReviewContinuationOutcome,
+    ) -> Result<bool, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .settle_provider_review_continuation(
+                    expected_lifecycle_revision,
+                    continuation_run_id,
+                    outcome,
+                )
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn release_provider_review_continuation(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        continuation_run_id: &str,
+    ) -> Result<bool, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .release_provider_review_continuation(
+                    expected_lifecycle_revision,
+                    continuation_run_id,
+                )
+                .map_err(|error| error.to_string())
+        })
+    }
 
     pub fn set_agent_sand_profile(
         &self,
         agent_id: &str,
         profile: &SandProfile,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .set_sand_profile(profile)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_sand_profile(profile)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn mark_agent_activity(&self, agent_id: &str, at: f64) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .mark_activity(at)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .mark_activity(at)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_unread_state(&self, agent_id: &str) -> Result<UnreadState, String> {
@@ -1508,9 +2200,11 @@ impl ProductionSessionWorkers {
         at: f64,
         preserve_manual_unread: bool,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .mark_viewed(at, preserve_manual_unread)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .mark_viewed(at, preserve_manual_unread)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn set_agent_unread(
@@ -1519,13 +2213,15 @@ impl ProductionSessionWorkers {
         unread: bool,
         at: f64,
     ) -> Result<bool, String> {
-        let owner = self.open_agent_db_owner(agent_id)?;
-        if unread {
-            owner.mark_unread(at)
-        } else {
-            owner.mark_read(at)
-        }
-        .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            if unread {
+                owner.mark_unread(at)
+            } else {
+                owner.mark_read(at)
+            }
+            .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_introduction_pending(&self, agent_id: &str) -> Result<bool, String> {
@@ -1539,9 +2235,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         pending: bool,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .set_introduction_pending(pending)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_introduction_pending(pending)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_automation_spend_guard_state(
@@ -1558,9 +2256,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         state: &SpendGuardState,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .set_automation_spend_guard_state(state)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_automation_spend_guard_state(state)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_conversation_partner_ids(
@@ -1577,9 +2277,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         partner_id: &str,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .add_conversation_partner(partner_id)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .add_conversation_partner(partner_id)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_newest_divider_anchor_timestamp_ms(
@@ -1605,9 +2307,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         state: Option<&AwaitingUserResponse>,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .set_awaiting_user_response(state)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_awaiting_user_response(state)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn set_agent_awaiting_user_response_for_tab(
@@ -1617,9 +2321,11 @@ impl ProductionSessionWorkers {
         state: Option<&AwaitingUserResponse>,
         if_since_before: Option<f64>,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .set_awaiting_user_response_for_tab(tab_id, state, if_since_before)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_awaiting_user_response_for_tab(tab_id, state, if_since_before)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn record_agent_request_id(
@@ -1630,9 +2336,11 @@ impl ProductionSessionWorkers {
         prompt: Option<&str>,
         source: Option<&str>,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .record_request_id(request_id, at, prompt, source)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .record_request_id(request_id, at, prompt, source)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn record_agent_episode_turn(
@@ -1640,9 +2348,30 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         turn: &EpisodeTurn,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .record_episode_turn(turn)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .record_episode_turn(turn)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn get_agent_pending_episode_turns(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<EpisodeTurn>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .get_pending_episode_turns()
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn clear_agent_pending_episode_turns(&self, agent_id: &str) -> Result<bool, String> {
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .clear_pending_episode_turns()
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_memory_prompt_snapshot(
@@ -1659,177 +2388,143 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         snapshot: &serde_json::Value,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .set_memory_prompt_snapshot(snapshot)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_memory_prompt_snapshot(snapshot)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn clear_agent_memory_prompt_snapshot(&self, agent_id: &str) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .clear_memory_prompt_snapshot()
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .clear_memory_prompt_snapshot()
+                .map_err(|error| error.to_string())
+        })
     }
 
-    pub fn get_agent_profile_prompt_snapshot(
-        &self,
-        agent_id: &str,
-    ) -> Result<Option<serde_json::Value>, String> {
-        self.open_agent_db_owner(agent_id)?
-            .get_agent_profile_prompt_snapshot()
-            .map_err(|error| error.to_string())
+    // Memory mutation methods moved to ocrm_production_agent_profile_memories.rs
+
+
+
+    pub fn clear_agent_memories(&self, agent_id: &str) -> Result<(), String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let prior_snapshot = owner
+                .get_memory_prompt_snapshot()
+                .map_err(|error| error.to_string())?;
+            let store = self.memory_service.store_for_agent(agent_id);
+            let previous = store.snapshot_for_recovery(&store.list_memories(usize::MAX));
+            let mutation = Self::prepare_memory_mutation(
+                &owner,
+                "clear",
+                previous,
+                prior_snapshot,
+            )?;
+            if let Err(error) = store.clear_memories() {
+                Self::rollback_memory_mutation(&owner, &store, &mutation)
+                    .map_err(|rollback| format!("memory clear failed: {error}; {rollback}"))?;
+                return Err(error.to_string());
+            }
+            match owner.commit_pending_memory_mutation(&mutation) {
+                Ok(true) => Ok(()),
+                Ok(false) => {
+                    Self::rollback_memory_mutation(&owner, &store, &mutation)
+                        .map_err(|rollback| format!("memory settlement was rejected; {rollback}"))?;
+                    Err("memory settlement was rejected by the session owner".into())
+                }
+                Err(error) => Err(format!(
+                    "memory settlement outcome unknown; journal retained for recovery: {error}"
+                )),
+            }
+        })
     }
 
-    pub fn set_agent_profile_prompt_snapshot(
-        &self,
-        agent_id: &str,
-        snapshot: &serde_json::Value,
-    ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .set_agent_profile_prompt_snapshot(snapshot)
-            .map_err(|error| error.to_string())
-    }
-
-    pub fn clear_agent_profile_prompt_snapshot(&self, agent_id: &str) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .clear_agent_profile_prompt_snapshot()
-            .map_err(|error| error.to_string())
-    }
-
-    pub fn clear_agent_transient_state(&self, agent_id: &str) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .clear_transient_state()
-            .map_err(|error| error.to_string())
-    }
-
-    pub fn append_agent_transcript_entries(
-        &self,
-        agent_id: &str,
-        entries: &[serde_json::Value],
-    ) -> Result<usize, String> {
-        self.open_agent_db_owner(agent_id)?
-            .append_transcript_entries(entries)
-            .map_err(|error| error.to_string())
-    }
-
-    pub fn update_agent_transcript_entry(
-        &self,
-        agent_id: &str,
-        entry_id: &str,
-        next: &serde_json::Value,
-    ) -> Result<Option<serde_json::Value>, String> {
-        self.open_agent_db_owner(agent_id)?
-            .update_transcript_entry(entry_id, next)
-            .map_err(|error| error.to_string())
-    }
-
-    pub fn delete_agent_transcript_entry(
-        &self,
-        agent_id: &str,
-        entry_id: &str,
-    ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .delete_transcript_entry(entry_id)
-            .map_err(|error| error.to_string())
-    }
-
-    pub fn clear_agent_conversation(&self, agent_id: &str) -> Result<bool, String> {
-        let store = self.create_agent_blob_store(agent_id)?;
-        let db_path = self.existing_session_db_path(agent_id)?;
-        futures::executor::block_on(self.pool.clear_blobs(
-            agent_id,
-            &store.blob_db_path,
-            store.legacy_blob_db_path.as_deref(),
-        ))
-        .map_err(|error| error.to_string())?;
-        self.open_agent_db_owner(agent_id)?
-            .clear_conversation()
-            .map_err(|error| error.to_string())
-    }
-
-    pub fn expire_pending_auto_review_approvals(
-        &self,
-        agent_id: &str,
-        only_request_id: Option<&str>,
-    ) -> Result<Vec<String>, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        expire_pending_auto_review_approval_entries(
-            &db_path,
-            self.busy_timeout_ms,
-            only_request_id,
-        )
-        .map_err(|error| error.to_string())
-    }
-
-    pub fn expire_pending_local_tool_permission_asks(
-        &self,
-        agent_id: &str,
-        only_request_id: Option<&str>,
-        if_pending_before_ms: Option<f64>,
-    ) -> Result<Vec<String>, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        expire_pending_local_tool_permission_ask_entries(
-            &db_path,
-            self.busy_timeout_ms,
-            only_request_id,
-            if_pending_before_ms,
-        )
-        .map_err(|error| error.to_string())
-    }
+    // Compaction, snapshot, and transcript replay methods moved to ocrm_production_compaction.rs
 
     pub fn get_agent_profile_text(
         &self,
         agent_id: &str,
     ) -> Result<Option<SandAgentProfile>, String> {
         let db_path = self.session_db_path(agent_id)?;
+        if db_path.is_file() {
+            let _owner = self.open_agent_db_owner(agent_id)?;
+        }
         let agent_dir = db_path
             .parent()
             .ok_or_else(|| "agent database has no parent directory".to_string())?;
         Ok(read_agent_profile_text(agent_dir))
     }
 
-    pub fn update_agent_profile(
+    // Profile and avatar mutation methods moved to ocrm_production_agent_profile_memories.rs
+
+
+
+    pub fn update_agent_profile_fields(
         &self,
         agent_id: &str,
-        update: &AgentProfileUpdate,
-        active_agent_id: Option<&str>,
-    ) -> Result<Option<AgentSummary>, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        let agent_dir = db_path
-            .parent()
-            .ok_or_else(|| "agent database has no parent directory".to_string())?;
-        write_agent_profile_update(agent_dir, update)
-            .map_err(|error| error.to_string())?;
-        self.summarize_agent_by_id(agent_id, active_agent_id)
+        name: Option<&str>,
+        description: Option<&str>,
+    ) -> Result<(), String> {
+        let current = self
+            .get_agent_profile_text(agent_id)?
+            .unwrap_or_else(|| SandAgentProfile {
+                name: String::new(),
+                description: String::new(),
+                title: String::new(),
+                avatar_shape: String::new(),
+                avatar_color: String::new(),
+            });
+        let update = AgentProfileUpdate {
+            name: name.unwrap_or(&current.name).to_string(),
+            description: description.unwrap_or(&current.description).to_string(),
+            title: Some(current.title),
+            avatar_shape: Some(current.avatar_shape),
+            avatar_color: Some(current.avatar_color),
+        };
+        self.update_agent_profile(agent_id, &update, None)?;
+        Ok(())
     }
 
     pub fn get_agent_avatar(
         &self,
         agent_id: &str,
     ) -> Result<AgentAvatarResponse, String> {
-        let db_path = self.session_db_path(agent_id)?;
-        let agent_dir = db_path
-            .parent()
-            .ok_or_else(|| "agent database has no parent directory".to_string())?;
-        Ok(get_profile_avatar(
-            agent_dir,
-            &db_path,
-            self.busy_timeout_ms,
-        ))
+        self.with_agent_filesystem_mutation(agent_id, || {
+            let db_path = self.session_db_path(agent_id)?;
+            if db_path.is_file() {
+                let _owner = self.open_agent_db_owner_locked(agent_id)?;
+            }
+            let agent_dir = db_path
+                .parent()
+                .ok_or_else(|| "agent database has no parent directory".to_string())?;
+            Ok(get_profile_avatar(
+                agent_dir,
+                &db_path,
+                self.busy_timeout_ms,
+            ))
+        })
     }
 
     pub fn get_agent_avatar_png(
         &self,
         agent_id: &str,
     ) -> Result<Option<Vec<u8>>, String> {
-        let db_path = self.session_db_path(agent_id)?;
-        let agent_dir = db_path
-            .parent()
-            .ok_or_else(|| "agent database has no parent directory".to_string())?;
-        Ok(get_profile_avatar_png(
-            agent_dir,
-            &db_path,
-            self.busy_timeout_ms,
-        ))
+        self.with_agent_filesystem_mutation(agent_id, || {
+            let db_path = self.session_db_path(agent_id)?;
+            if db_path.is_file() {
+                let _owner = self.open_agent_db_owner_locked(agent_id)?;
+            }
+            let agent_dir = db_path
+                .parent()
+                .ok_or_else(|| "agent database has no parent directory".to_string())?;
+            Ok(get_profile_avatar_png(
+                agent_dir,
+                &db_path,
+                self.busy_timeout_ms,
+            ))
+        })
     }
 
     pub fn set_agent_avatar_bytes(
@@ -1839,7 +2534,67 @@ impl ProductionSessionWorkers {
         active_agent_id: Option<&str>,
     ) -> Result<Option<AgentSummary>, String> {
         let db_path = self.existing_session_db_path(agent_id)?;
-        mutate_agent_avatar_bytes(&db_path, self.busy_timeout_ms, png_bytes)?;
+        let agent_dir = db_path
+            .parent()
+            .ok_or_else(|| "agent database has no parent directory".to_string())?;
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let before_files = capture_profile_mutation_files(agent_dir, false)?;
+            let previous_profile = owner
+                .get_sand_profile()
+                .map_err(|error| error.to_string())?;
+            let next_profile = png_bytes.is_none().then(|| SandProfile {
+                description: previous_profile.description.clone(),
+                avatar_path: None,
+            });
+            let mutation = Self::prepare_profile_mutation(
+                &owner,
+                if png_bytes.is_some() {
+                    "avatar-replace"
+                } else {
+                    "avatar-remove"
+                },
+                before_files,
+                next_profile,
+            )?;
+            if let Err(error) = mutate_agent_avatar_bytes(
+                &db_path,
+                self.busy_timeout_ms,
+                png_bytes,
+                |_| Ok(()),
+            ) {
+                Self::rollback_profile_mutation(&owner, agent_dir, &mutation)
+                    .map_err(|rollback| format!("avatar mutation failed: {error}; {rollback}"))?;
+                return Err(error);
+            }
+            let mut sealed = mutation.clone();
+            sealed.after_files = capture_profile_mutation_files(agent_dir, false)?;
+            match owner.seal_pending_profile_mutation(&sealed) {
+                Ok(true) => {}
+                Ok(false) => {
+                    Self::rollback_profile_mutation(&owner, agent_dir, &mutation)
+                        .map_err(|rollback| format!("avatar mutation seal rejected; {rollback}"))?;
+                    return Err("avatar mutation seal was rejected by the session owner".into());
+                }
+                Err(error) => {
+                    return Err(format!(
+                        "avatar mutation seal outcome unknown; journal retained for recovery: {error}"
+                    ));
+                }
+            }
+            match owner.commit_pending_profile_mutation(&sealed) {
+                Ok(true) => Ok(()),
+                Ok(false) => {
+                    Self::rollback_profile_mutation(&owner, agent_dir, &sealed)
+                        .map_err(|rollback| format!("avatar settlement was rejected; {rollback}"))?;
+                    Err("avatar settlement was rejected by the session owner".into())
+                }
+                Err(error) => Err(format!(
+                    "avatar settlement outcome unknown; journal retained for recovery: {error}"
+                )),
+            }
+        })?;
         self.summarize_agent_by_id(agent_id, active_agent_id)
     }
 
@@ -1850,7 +2605,7 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "local Human identity is unavailable".to_string())
     }
 
-    fn metadata_has_local_human(&self, metadata: &serde_json::Value) -> Result<bool, String> {
+    pub(crate) fn metadata_has_local_human(&self, metadata: &serde_json::Value) -> Result<bool, String> {
         let local_human_id = self.local_human_id()?;
         Ok(metadata
             .get("participantIds")
@@ -1858,11 +2613,33 @@ impl ProductionSessionWorkers {
             .is_some_and(|ids| ids.iter().any(|id| id.as_str() == Some(local_human_id))))
     }
 
-    fn native_conversation_owner_key(conversation_id: &str) -> String {
+    pub(crate) fn native_conversation_owner_key(conversation_id: &str) -> String {
         format!("conversation:{conversation_id}")
     }
 
-    fn shipping_native_messaging(&self) -> Result<Option<&FabushiNativeMessagingClient>, String> {
+    // Every Human row writer holds the existing conversation mutation lane.
+    // Reconcile activity after the durable row write, and also on replay so a
+    // crash between the two commits cannot leave the roster permanently stale.
+    pub(crate) fn update_human_activity(owner: &SandAgentDb, timestamp_ms: f64) -> Result<(), String> {
+        if owner.is_closed() {
+            return Err("Human conversation owner is closed".into());
+        }
+        if !timestamp_ms.is_finite() {
+            return Err("Human message activity timestamp must be finite".into());
+        }
+        let latest = owner.get_metadata("lastActivityAt")
+            .map_err(|error| error.to_string())?
+            .as_ref().and_then(serde_json::Value::as_f64)
+            .filter(|value| value.is_finite())
+            .unwrap_or(timestamp_ms).max(timestamp_ms);
+        if !owner.set_metadata("lastActivityAt", serde_json::json!(latest))
+            .map_err(|error| error.to_string())?
+        {
+            return Err("Human message activity was not durably updated".into());
+        }
+        Ok(())
+    }
+    pub(crate) fn shipping_native_messaging(&self) -> Result<Option<&FabushiNativeMessagingClient>, String> {
         match (&self.native_messaging, self.native_messaging_required) {
             (Some(client), _) => Ok(Some(client.as_ref())),
             (None, true) => Err(self.native_messaging_error.clone().unwrap_or_else(|| {
@@ -1872,7 +2649,7 @@ impl ProductionSessionWorkers {
         }
     }
 
-    fn peer_human_id_from_metadata(
+    pub(crate) fn peer_human_id_from_metadata(
         &self,
         metadata: &serde_json::Value,
     ) -> Result<String, String> {
@@ -1890,10 +2667,7 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "Human conversation is missing its peer identity".to_string())
     }
 
-    fn materialize_remote_human_attachment(
-        &self,
-        attachment: &FabushiRemoteHumanAttachment,
-    ) -> Result<serde_json::Value, String> {
+    fn validate_human_attachment_resource(attachment: &FabushiRemoteHumanAttachment) -> Result<(), String> {
         let resource_id = attachment.resource_id.trim();
         if resource_id.is_empty()
             || resource_id.len() > 128
@@ -1906,6 +2680,15 @@ impl ProductionSessionWorkers {
         if attachment.size == 0 || attachment.size > 32 * 1024 * 1024 {
             return Err("remote Human attachment size exceeds the supported limit".into());
         }
+        Ok(())
+    }
+
+    fn materialize_remote_human_attachment(
+        &self,
+        attachment: &FabushiRemoteHumanAttachment,
+    ) -> Result<serde_json::Value, String> {
+        Self::validate_human_attachment_resource(attachment)?;
+        let resource_id = attachment.resource_id.trim();
         let mut name = attachment
             .name
             .chars()
@@ -1936,7 +2719,9 @@ impl ProductionSessionWorkers {
             let client = self
                 .shipping_native_messaging()?
                 .ok_or_else(|| "remote Human attachment requires shipping native messaging".to_string())?;
-            let bytes = client.download_direct_message_resource(resource_id, attachment.size)?;
+            let bytes = client.download_direct_message_resource_for_user(
+                resource_id, attachment.size, self.local_human_id()?,
+            )?;
             let temporary_path = resource_root.join(".download.tmp");
             fs::write(&temporary_path, &bytes).map_err(|error| {
                 format!("remote Human attachment could not be staged: {error}")
@@ -1958,22 +2743,159 @@ impl ProductionSessionWorkers {
         }))
     }
 
+    fn validate_remote_human_message(
+        &self,
+        remote: &FabushiRemoteHumanMessage,
+        local_human_id: &str,
+        peer_human_id: &str,
+        existing: &[serde_json::Value],
+    ) -> Result<(), String> {
+        let remote_id = fabushi_message_identity_text(&remote.id)?;
+        let sender_id = fabushi_identity_text(&remote.sender_user_id)?;
+        let recipient_id = fabushi_identity_text(&remote.recipient_user_id)?;
+        if !((sender_id == local_human_id && recipient_id == peer_human_id)
+            || (sender_id == peer_human_id && recipient_id == local_human_id))
+        {
+            return Err("remote Human message does not belong to the selected Human conversation".into());
+        }
+        if let Some(read_at) = remote.read_at.as_deref()
+            .map(str::trim).filter(|value| !value.is_empty())
+        {
+            chrono::DateTime::parse_from_rfc3339(read_at)
+                .map_err(|error| format!("remote Human message read timestamp is invalid: {error}"))?;
+        }
+
+        let canonical_id = format!("human-server-message:{remote_id}");
+        let by_id = existing.iter().find(|row| {
+            row.get("id").and_then(serde_json::Value::as_str) == Some(canonical_id.as_str())
+        });
+        if by_id.is_some_and(|row| {
+            row.get("authorId").and_then(serde_json::Value::as_str) != Some(sender_id.as_str())
+        }) {
+            return Err("remote Human canonical identity conflicts with the persisted sender".into());
+        }
+        if let Some(reactions) = remote.reactions.as_deref() {
+            Self::validate_remote_human_reactions(reactions)?;
+        }
+
+        // Peer request provenance can never acknowledge a local intent. On our own
+        // outgoing echo, both canonical-ID and nonce lookups must pass the same
+        // immutable local-send checks, even when a replay omits/changes the nonce.
+        if sender_id != local_human_id {
+            return Ok(());
+        }
+        let nonce = remote.client_request_id.as_deref()
+            .map(str::trim).filter(|value| !value.is_empty());
+        let by_nonce = nonce.and_then(|nonce| existing.iter().find(|row| {
+            row.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id)
+                && row.get("clientNonce").and_then(serde_json::Value::as_str) == Some(nonce)
+        }));
+        for current in [by_id, by_nonce].into_iter().flatten() {
+            if current.get("authorId").and_then(serde_json::Value::as_str) != Some(local_human_id)
+                || current.get("clientNonce").and_then(serde_json::Value::as_str) != nonce
+                || nonce.is_none()
+                || current.get("content").and_then(serde_json::Value::as_str)
+                    != Some(remote.text.trim())
+            {
+                return Err("remote Human acknowledgement conflicts with the local send identity or text".into());
+            }
+            if let Some(prior_remote) = current.get("remoteMessageId") {
+                if fabushi_identity_text(prior_remote)? != remote_id {
+                    return Err("remote Human acknowledgement changed a settled remote identity".into());
+                }
+            }
+            let expected_reply = if let Some(id) = current.get("remoteReplyToMessageId") {
+                Some(fabushi_identity_text(id)?)
+            } else if let Some(reply_id) = current.get("replyToId")
+                .and_then(serde_json::Value::as_str)
+            {
+                let target = existing.iter().find(|row| {
+                    row.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
+                }).ok_or_else(|| "remote Human acknowledgement reply target disappeared".to_string())?;
+                Some(fabushi_identity_text(target.get("remoteMessageId").ok_or_else(|| {
+                    "remote Human acknowledgement reply has no settled remote identity".to_string()
+                })?)?)
+            } else {
+                None
+            };
+            let actual_reply = remote.reply_to_message_id.as_ref()
+                .map(fabushi_identity_text).transpose()?;
+            if expected_reply != actual_reply {
+                return Err("remote Human acknowledgement changed the dispatched reply".into());
+            }
+
+            let previously_dispatched = current.get("remoteDispatchAttachments")
+                .or_else(|| current.get("attachments"));
+            let mut expected_resources = Vec::new();
+            if let Some(attachments) = previously_dispatched {
+                let attachments = attachments.as_array().ok_or_else(|| {
+                    "persisted Human dispatched resources are not an array".to_string()
+                })?;
+                for attachment in attachments {
+                    expected_resources.push(
+                        attachment.get("resourceId")
+                            .and_then(serde_json::Value::as_str)
+                            .ok_or_else(|| "persisted Human attachment lacks dispatched resource identity".to_string())?
+                            .to_string()
+                    );
+                }
+            }
+            let actual_resources = remote.attachments.iter()
+                .map(|attachment| attachment.resource_id.as_str()).collect::<Vec<_>>();
+            if expected_resources.iter().map(String::as_str).collect::<Vec<_>>() != actual_resources {
+                return Err("remote Human acknowledgement changed dispatched resources".into());
+            }
+        }
+        Ok(())
+    }
+
     fn materialize_remote_human_message(
         &self,
         owner: &SandAgentDb,
         remote: &FabushiRemoteHumanMessage,
     ) -> Result<serde_json::Value, String> {
+        let existing = owner.get_transcript_entries().map_err(|error| error.to_string())?;
+        self.materialize_remote_human_message_with_snapshot(owner, remote, &existing)
+    }
+
+    // The caller owns the conversation mutation lane and updates this snapshot
+    // only after each durable write. Avoid reparsing the entire SQLite transcript
+    // for every row of a bounded history page.
+    fn materialize_remote_human_message_with_snapshot(
+        &self,
+        owner: &SandAgentDb,
+        remote: &FabushiRemoteHumanMessage,
+        existing: &[serde_json::Value],
+    ) -> Result<serde_json::Value, String> {
         let local_human_id = self.local_human_id()?;
-        let remote_id = fabushi_identity_text(&remote.id)?;
+        let remote_id = fabushi_message_identity_text(&remote.id)?;
         let sender_id = fabushi_identity_text(&remote.sender_user_id)?;
         let recipient_id = fabushi_identity_text(&remote.recipient_user_id)?;
-        if sender_id != local_human_id && recipient_id != local_human_id {
-            return Err("remote Human message does not belong to the local Fabushi account".into());
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
         }
+        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+        self.validate_remote_human_message(remote, local_human_id, &peer_human_id, existing)?;
         let timestamp_ms = chrono::DateTime::parse_from_rfc3339(&remote.created_at)
             .map_err(|error| format!("remote Human message timestamp is invalid: {error}"))?
             .timestamp_millis() as f64;
         let entry_id = format!("human-server-message:{remote_id}");
+        if sender_id == local_human_id {
+            // Validate only this message's existing local provenance. A corrupt
+            // intent is retained; it cannot be overwritten by a remote snapshot
+            // that carries no evidence of the original queue observation.
+            let local_origin = existing.iter().find(|candidate|
+                candidate.get("id").and_then(serde_json::Value::as_str) == Some(entry_id.as_str())
+                    && candidate.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id))
+                .or_else(|| remote.client_request_id.as_deref().map(str::trim)
+                    .filter(|nonce| !nonce.is_empty()).and_then(|nonce| existing.iter().find(|candidate|
+                        candidate.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id)
+                            && candidate.get("clientNonce").and_then(serde_json::Value::as_str) == Some(nonce))));
+            if let Some(current) = local_origin {
+                Self::validate_human_queue_origin(current)?;
+            }
+        }
         let mut entry = serde_json::json!({
             "id": entry_id,
             "kind": "message",
@@ -2003,7 +2925,11 @@ impl ProductionSessionWorkers {
             .map(str::trim)
             .filter(|value| !value.is_empty())
         {
-            object.insert("clientNonce".into(), serde_json::json!(client_nonce));
+            if sender_id == local_human_id {
+                object.insert("clientNonce".into(), serde_json::json!(client_nonce));
+            } else {
+                object.insert("remoteClientRequestId".into(), serde_json::json!(client_nonce));
+            }
         }
         if let Some(read_at) = remote
             .read_at
@@ -2041,51 +2967,41 @@ impl ProductionSessionWorkers {
         } else {
             sender_id.as_str()
         };
-        let mut projected_reactions = Vec::new();
-        for reaction in &remote.reactions {
-            if reaction.reacted_by_me {
-                projected_reactions.push(serde_json::json!({
-                    "emoji": reaction.emoji,
-                    "by": "me",
-                }));
-            }
-            let peer_reaction_count = reaction
-                .count
-                .saturating_sub(if reaction.reacted_by_me { 1 } else { 0 });
-            for _ in 0..peer_reaction_count {
-                projected_reactions.push(serde_json::json!({
-                    "emoji": reaction.emoji,
-                    "by": peer_human_id,
-                }));
-            }
+        if let Some(reactions) = remote.reactions.as_deref() {
+            let projected_reactions =
+                Self::project_remote_human_reactions(reactions, peer_human_id);
+            object.insert("remoteReactions".into(), serde_json::to_value(reactions)
+                .map_err(|error| format!("remote Human reactions could not be projected: {error}"))?);
+            object.insert("reactions".into(), serde_json::Value::Array(projected_reactions));
         }
-        object.insert(
-            "remoteReactions".into(),
-            serde_json::to_value(&remote.reactions).map_err(|error| {
-                format!("remote Human reactions could not be projected: {error}")
-            })?,
-        );
-        object.insert(
-            "reactions".into(),
-            serde_json::Value::Array(projected_reactions),
-        );
-        let existing = owner
-            .get_transcript_entries()
-            .map_err(|error| error.to_string())?;
         if let Some(current) = existing.iter().find(|candidate| {
             candidate.get("id").and_then(serde_json::Value::as_str)
                 == entry.get("id").and_then(serde_json::Value::as_str)
         }) {
-            if let Some(context) = current.get("forwardContext").cloned() {
-                entry
-                    .as_object_mut()
-                    .ok_or_else(|| "remote Human message projection failed".to_string())?
-                    .insert("forwardContext".into(), context);
+            // A remote refresh must not erase local identity or delivery context.
+            if let (Some(next), Some(prior)) = (entry.as_object_mut(), current.as_object()) {
+                for (key, value) in prior {
+                    if !next.contains_key(key) {
+                        next.insert(key.clone(), value.clone());
+                    }
+                }
+            }
+            if let Some(read_at) = current.get("readAt").and_then(serde_json::Value::as_str) {
+                let prior = chrono::DateTime::parse_from_rfc3339(read_at).ok();
+                let newer = remote.read_at.as_deref()
+                    .map(str::trim).filter(|value| !value.is_empty())
+                    .and_then(|value| chrono::DateTime::parse_from_rfc3339(value).ok())
+                    .is_some_and(|incoming| prior.is_none_or(|prior| incoming > prior));
+                if !newer {
+                    entry.as_object_mut().expect("entry is an object")
+                        .insert("readAt".into(), serde_json::json!(read_at));
+                }
             }
             if current == &entry {
+                Self::update_human_activity(owner, timestamp_ms)?;
                 return Ok(current.clone());
             }
-            return owner
+            let refreshed = owner
                 .update_transcript_entry(
                     entry
                         .get("id")
@@ -2094,11 +3010,14 @@ impl ProductionSessionWorkers {
                     &entry,
                 )
                 .map_err(|error| error.to_string())?
-                .ok_or_else(|| "remote Human message could not be durably refreshed".to_string());
+                .ok_or_else(|| "remote Human message could not be durably refreshed".to_string())?;
+            Self::update_human_activity(owner, timestamp_ms)?;
+            return Ok(refreshed);
         }
         if let Some(client_nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) {
             if let Some(current) = existing.iter().find(|candidate| {
-                candidate.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
+                candidate.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id)
+                    && candidate.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
             }) {
                 if let Some(context) = current.get("forwardContext").cloned() {
                     entry
@@ -2119,10 +3038,22 @@ impl ProductionSessionWorkers {
                 ) {
                     return Err("local Human message already uses the server clientRequestId without a retryable settlement state".into());
                 }
-                return owner
+                let origin = Self::validate_human_queue_origin(current)?;
+                let object = entry.as_object_mut().expect("remote Human message is an object");
+                if let Some(origin) = origin {
+                    object.insert("queuedOffline".into(), serde_json::json!(origin));
+                }
+                if let Some(composed) = current.get("composedAtMs").filter(|value|
+                    value.as_f64().is_some_and(f64::is_finite))
+                {
+                    object.insert("composedAtMs".into(), composed.clone());
+                }
+                let settled = owner
                     .settle_transcript_entry_identity(current_id, &entry)
                     .map_err(|error| error.to_string())?
-                    .ok_or_else(|| "local Human message disappeared before remote identity settlement".to_string());
+                    .ok_or_else(|| "local Human message disappeared before remote identity settlement".to_string())?;
+                Self::update_human_activity(owner, timestamp_ms)?;
+                return Ok(settled);
             }
         }
         if !owner
@@ -2135,881 +3066,267 @@ impl ProductionSessionWorkers {
                 .into_iter()
                 .find(|candidate| candidate.get("id") == entry.get("id"))
                 .ok_or_else(|| "remote Human message was not durably materialized".to_string())?;
+            let timestamp = replay.get("timestampMs").and_then(serde_json::Value::as_f64)
+                .unwrap_or(timestamp_ms);
+            Self::update_human_activity(owner, timestamp)?;
             return Ok(replay);
         }
-        let _ = owner
-            .set_metadata("lastActivityAt", serde_json::json!(timestamp_ms))
-            .map_err(|error| error.to_string())?;
+        Self::update_human_activity(owner, timestamp_ms)?;
         Ok(entry)
     }
 
-    pub fn sync_human_conversation(
-        &self,
-        conversation_id: &str,
-    ) -> Result<Vec<serde_json::Value>, String> {
-        const PAGE_LIMIT: usize = 200;
-        const MAX_GAP_PAGES: usize = 32;
+    pub(crate) fn human_message_lock(&self, conversation_id: &str) -> Result<Arc<Mutex<()>>, String> {
+        let mut locks = self.human_message_locks.lock()
+            .map_err(|_| "Human conversation mutation lock registry poisoned".to_string())?;
+        Ok(Arc::clone(locks.entry(conversation_id.to_string())
+            .or_insert_with(|| Arc::new(Mutex::new(())))))
+    }
 
-        let owner = self.open_human_conversation_db_owner(conversation_id)?;
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-        if !self.metadata_has_local_human(&metadata)? {
-            return Err("local Human identity is not a conversation participant".into());
-        }
-        let Some(client) = self.shipping_native_messaging()? else {
-            return owner.get_transcript_entries().map_err(|error| error.to_string());
+    pub(crate) fn acquire_human_send_settlement_guard<'a>(
+        client: &FabushiNativeMessagingClient,
+        serial: &'a Mutex<()>,
+        held_conversation_guard: Option<&std::sync::MutexGuard<'_, ()>>,
+        request_credential_fingerprint: &str,
+        response: &Result<FabushiRemoteHumanMessage, FabushiHumanSendError>,
+    ) -> Result<Option<std::sync::MutexGuard<'a, ()>>, String> {
+        let guard = if held_conversation_guard.is_none() {
+            Some(serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?)
+        } else {
+            None
         };
-        let local_human_id = self.local_human_id()?.to_string();
-        let pending = owner
-            .get_transcript_entries()
-            .map_err(|error| error.to_string())?
-            .into_iter()
-            .filter(|entry| {
-                entry.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id.as_str())
-                    && entry.get("remoteMessageId").is_none()
-                    && matches!(
-                        entry.get("delivery").and_then(serde_json::Value::as_str),
-                        Some("pending" | "dispatching")
-                    )
-                    && entry.get("clientNonce").and_then(serde_json::Value::as_str).is_some()
-            })
-            .collect::<Vec<_>>();
-        for entry in pending {
-            let Some(client_nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) else { continue; };
-            let text = entry.get("content").and_then(serde_json::Value::as_str).unwrap_or_default();
-            let reply_to_id = entry.get("replyToId").and_then(serde_json::Value::as_str);
-            let composed_at_ms = entry.get("composedAtMs").and_then(serde_json::Value::as_f64);
-            let attachments = entry.get("attachments").and_then(serde_json::Value::as_array).cloned().unwrap_or_default();
-            let _ = self.append_human_message(conversation_id, text, client_nonce, composed_at_ms, reply_to_id, &attachments);
+        // A completed HTTP/credential rejection already has a causal refusal.
+        // It cannot enter transport recovery or be replaced by a later lease
+        // error while waiting for this conversation's mutation lane.
+        if let Err(FabushiHumanSendError::Rejected(error)) = response {
+            return Err(error.clone());
         }
-        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
-        let existing = owner
-            .get_transcript_entries()
-            .map_err(|error| error.to_string())?;
-        let known_remote_ids = existing
-            .iter()
-            .filter_map(|entry| entry.get("remoteMessageId").and_then(serde_json::Value::as_str))
-            .map(str::to_string)
-            .collect::<BTreeSet<_>>();
-
-        // The shipping endpoint selects newest rows but returns each page
-        // oldest-first. Walk bounded older pages until one known server message
-        // proves overlap, or the server reaches the end of history. This closes
-        // reconnect and fresh-device gaps without introducing a second message
-        // store or treating renderer state as truth.
-        let mut before: Option<String> = None;
-        let mut unseen_pages: Vec<Vec<FabushiRemoteHumanMessage>> = Vec::new();
-        let mut pages_read = 0usize;
-        loop {
-            let page = client.list_direct_messages(
-                &peer_human_id,
-                before.as_deref(),
-                PAGE_LIMIT,
-            )?;
-            if page.is_empty() {
-                break;
-            }
-            pages_read += 1;
-
-            let mut overlap_at = None;
-            for (index, remote) in page.iter().enumerate().rev() {
-                let remote_id = fabushi_identity_text(&remote.id)?;
-                if known_remote_ids.contains(&remote_id) {
-                    overlap_at = Some(index);
-                    break;
-                }
-            }
-            let unseen_start = overlap_at.map_or(0, |index| index + 1);
-            if unseen_start < page.len() {
-                unseen_pages.push(page[unseen_start..].to_vec());
-            }
-
-            if overlap_at.is_some() || page.len() < PAGE_LIMIT {
-                break;
-            }
-            if pages_read >= MAX_GAP_PAGES {
-                return Err(format!(
-                    "Fabushi Human message reconnect gap exceeded the bounded recovery window of {} messages",
-                    PAGE_LIMIT * MAX_GAP_PAGES
-                ));
-            }
-
-            let next_before = page
-                .first()
-                .map(|message| message.created_at.trim())
-                .filter(|value| !value.is_empty())
-                .ok_or_else(|| {
-                    "Fabushi Human message sync page omitted its oldest timestamp".to_string()
-                })?
-                .to_string();
-            if before.as_deref() == Some(next_before.as_str()) {
-                return Err(
-                    "Fabushi Human message sync cursor did not advance; refusing an unbounded retry"
-                        .into(),
-                );
-            }
-            before = Some(next_before);
+        // Successful and ambiguous transport outcomes may settle only while
+        // every private credential field still matches the dispatch snapshot.
+        if client.request_credential_fingerprint()? != request_credential_fingerprint {
+            return Err("Fabushi native messaging credential changed before Human settlement".into());
         }
+        Ok(guard)
+    }
 
-        // Page windows arrive newest-window first while rows inside each page are
-        // oldest-first. Reverse only the page windows so canonical
-        // Session/Transcript replay remains deterministic after restart.
-        for page in unseen_pages.into_iter().rev() {
-            for remote in page {
-                self.materialize_remote_human_message(&owner, &remote)?;
-            }
+    pub(crate) fn update_human_replay_snapshot(
+        snapshot: &mut Vec<serde_json::Value>,
+        settled: serde_json::Value,
+    ) {
+        let prior = snapshot.iter().position(|entry| {
+            entry.get("id") == settled.get("id")
+                || (settled.get("clientNonce").is_some()
+                    && entry.get("clientNonce") == settled.get("clientNonce")
+                    && entry.get("authorId") == settled.get("authorId"))
+        });
+        if let Some(index) = prior {
+            snapshot[index] = settled;
+        } else {
+            snapshot.push(settled);
         }
-        owner.get_transcript_entries().map_err(|error| error.to_string())
     }
 
     pub fn sync_human_conversations(&self) -> Result<Vec<serde_json::Value>, String> {
         let Some(client) = self.shipping_native_messaging()? else {
             return self.list_human_conversations();
         };
+        let local_human_id = self.local_human_id()?;
         let identity = client.identity()?;
-        if identity.user_id != self.local_human_id()? {
+        if identity.user_id != local_human_id {
             return Err(format!(
                 "Fabushi native messaging credential user {} does not match active Human identity {}",
                 identity.user_id,
-                self.local_human_id()?
+                local_human_id
             ));
         }
-        for friend in client.list_friends()? {
+        let mut recovery = self.capture_human_sync_recovery(client)?;
+        self.resume_human_forward_batches()?;
+        self.check_human_sync_binding(client, &recovery)?;
+        let friends = client.list_friends_for_user(local_human_id)?;
+        self.check_human_sync_continuation(Some(&recovery))?;
+        let mut synced_conversations = BTreeSet::new();
+        for friend in friends {
+            // Conversation discovery itself can create a durable store.
+            self.check_human_sync_continuation(Some(&recovery))?;
             let peer_human_id = fabushi_identity_text(&friend.user_id)?;
+            let expected_id = Self::human_direct_conversation_id(local_human_id, &peer_human_id);
+            // Duplicate roster rows cannot grant another reaction attempt or
+            // another 32-page history budget for the same canonical scope.
+            if !synced_conversations.insert(expected_id) { continue; }
             let title = friend.display_name.trim();
-            let conversation = self.create_human_conversation(
+            let conversation = self.create_human_conversation_with_recovery(
                 &peer_human_id,
                 if title.is_empty() { &friend.username } else { title },
+                Some(&recovery),
             )?;
             let conversation_id = conversation
                 .get("id")
                 .and_then(serde_json::Value::as_str)
                 .ok_or_else(|| "synced Human conversation omitted its id".to_string())?;
-            self.sync_human_conversation(conversation_id)?;
+            // The top-level roster invocation already recovered the outbox.
+            // A failed target gets one attempt per invocation, not per friend.
+            self.sync_human_conversation_history(conversation_id, Some(&mut recovery))?;
         }
-        self.sync_human_calls()?;
-        self.list_human_conversations()
+        self.check_human_sync_continuation(Some(&recovery))?;
+        self.sync_human_calls_with_recovery(Some(&recovery))?;
+        self.check_human_sync_continuation(Some(&recovery))?;
+        recovery.finish(self.list_human_conversations()?)
     }
 
-    pub fn create_human_conversation(
-        &self,
-        peer_human_id: &str,
-        title: &str,
-    ) -> Result<serde_json::Value, String> {
-        let local_human_id = self.local_human_id()?;
-        let peer_human_id = peer_human_id.trim();
-        let title = title.trim();
-        if peer_human_id.is_empty() {
-            return Err("human conversation requires peerHumanId".into());
-        }
-        if local_human_id == peer_human_id {
-            return Err("human conversation participants must be distinct".into());
-        }
-        let mut participant_ids = [local_human_id.to_string(), peer_human_id.to_string()];
-        participant_ids.sort();
+    fn human_direct_conversation_id(first: &str, second: &str) -> String {
+        let mut participants = [first, second];
+        participants.sort();
         let mut digest = Sha256::new();
-        for participant_id in &participant_ids {
-            digest.update((participant_id.len() as u64).to_be_bytes());
-            digest.update(participant_id.as_bytes());
+        for participant in participants {
+            digest.update((participant.len() as u64).to_be_bytes());
+            digest.update(participant.as_bytes());
         }
-        let conversation_id = format!("human-direct-{:x}", digest.finalize());
-        let db_path = get_native_conversation_db_path(&self.agents_root, &conversation_id)
-            .map_err(|error| error.to_string())?;
-        if db_path.is_file() {
-            let owner = self.open_human_conversation_db_owner(&conversation_id)?;
-            let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-            if !self.metadata_has_local_human(&metadata)? {
-                return Err("existing Human conversation does not contain the local identity".into());
-            }
-            let existing_participants = metadata
-                .get("participantIds")
-                .and_then(serde_json::Value::as_array)
-                .ok_or_else(|| "existing Human conversation participants are invalid".to_string())?;
-            if !existing_participants
-                .iter()
-                .any(|value| value.as_str() == Some(peer_human_id))
-            {
-                return Err("existing Human conversation does not contain the requested peer".into());
-            }
-            let existing_title = metadata
-                .get("title")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or(peer_human_id);
-            return Ok(serde_json::json!({
-                "id": conversation_id,
-                "kind": "human",
-                "title": existing_title,
-                "participantIds": metadata.get("participantIds").cloned().unwrap_or_else(|| serde_json::json!([])),
-            }));
-        }
-        let conversation_dir = db_path
-            .parent()
-            .ok_or_else(|| "native conversation database has no parent".to_string())?;
-        fs::create_dir_all(conversation_dir).map_err(|error| error.to_string())?;
-        let owner = Arc::new(
-            SandAgentDb::open_conversation_store(&db_path, self.busy_timeout_ms)
-                .map_err(|error| error.to_string())?,
-        );
-        let display_title = if title.is_empty() { peer_human_id } else { title };
-        let created_at = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as f64;
-        let metadata = serde_json::json!({
-            "conversationKind": "human",
-            "conversationId": conversation_id,
-            "title": display_title,
-            "participantIds": [local_human_id, peer_human_id],
-            "createdAt": created_at,
-            "lastActivityAt": 0.0,
-        });
-        if !owner
-            .initialize_metadata_if_missing(metadata)
-            .map_err(|error| error.to_string())?
-        {
-            owner.close(false);
-            let _ = fs::remove_dir_all(conversation_dir);
-            return Err("failed to initialize native Human conversation metadata".into());
-        }
-        self.db_owners
-            .lock()
-            .map_err(|_| "conversation db owner map poisoned".to_string())?
-            .insert(Self::native_conversation_owner_key(&conversation_id), Arc::clone(&owner));
-        Ok(serde_json::json!({
-            "id": conversation_id,
-            "kind": "human",
-            "title": display_title,
-            "participantIds": [local_human_id, peer_human_id],
-        }))
+        format!("human-direct-{:x}", digest.finalize())
     }
 
-    pub fn open_human_conversation_db_owner(
+    pub(crate) fn sync_call_session_from_remote_with_recovery(
         &self,
-        conversation_id: &str,
-    ) -> Result<Arc<SandAgentDb>, String> {
-        let db_path = get_native_conversation_db_path(&self.agents_root, conversation_id)
-            .map_err(|error| error.to_string())?;
-        if !db_path.is_file() {
-            return Err(format!("Human conversation missing: {conversation_id}"));
+        call_id: &str,
+        recovery: Option<&HumanSyncRecoveryContext>,
+    ) -> Result<CallSession, String> {
+        const PAGE_LIMIT: usize = 200;
+        const MAX_PAGES: usize = 32;
+
+        self.check_human_sync_continuation(recovery)?;
+        let local = self.authorized_call_session(call_id)?;
+        let Some(client) = self.shipping_native_messaging()? else {
+            return Ok(local);
+        };
+        let identity = client.identity()?;
+        if identity.user_id != self.local_human_id()? {
+            return Err("Fabushi call credential identity does not match active Human identity".into());
         }
-        let key = Self::native_conversation_owner_key(conversation_id);
-        let mut owners = self
-            .db_owners
-            .lock()
-            .map_err(|_| "conversation db owner map poisoned".to_string())?;
-        if let Some(owner) = owners.get(&key) {
-            return Ok(Arc::clone(owner));
+
+        let continuation_owner = if recovery.is_some_and(HumanSyncRecoveryContext::is_continuing) {
+            let owner = self.open_human_conversation_db_owner(&local.scope_id)?;
+            let metadata = Self::read_human_conversation_metadata(&owner, &local.scope_id, true)?;
+            if self.peer_human_id_from_metadata(&metadata)? != self.local_call_peer(&local.participant_ids)? {
+                return Err("remote Human call participants do not match CallSession owner".into());
+            }
+            Some((owner, metadata))
+        } else { None };
+        let check_continuation = || -> Result<(), String> {
+            self.check_human_sync_continuation(recovery)?;
+            if let Some((owner, metadata)) = &continuation_owner {
+                self.revalidate_human_recovery_owner(&local.scope_id, owner, metadata)?;
+                let current = self.authorized_call_session(call_id)?;
+                if current.scope_id != local.scope_id {
+                    return Err("remote Human call resolved to a different canonical conversation scope".into());
+                }
+                if current.participant_ids != local.participant_ids {
+                    return Err("remote Human call participants do not match CallSession owner".into());
+                }
+            }
+            Ok(())
+        };
+        check_continuation()?;
+        let mut cursor = self.call_sessions()?.remote_event_seq(call_id)?;
+        for _ in 0..MAX_PAGES {
+            check_continuation()?;
+            let (remote, events, next_after_seq) =
+                client.get_human_call(call_id, cursor, PAGE_LIMIT)?;
+            check_continuation()?;
+            self.validate_remote_call(&remote, &self.authorized_call_session(call_id)?)?;
+            let prior_cursor = cursor;
+            for event in events {
+                if continuation_owner.is_some() && event.call_id != call_id {
+                    return Err("remote Human call event does not match requested CallSession owner".into());
+                }
+                if event.seq <= cursor {
+                    continue;
+                }
+                if event.seq != cursor + 1 {
+                    return Err(format!(
+                        "remote Human call event sequence gap: expected {}, received {}",
+                        cursor + 1,
+                        event.seq
+                    ));
+                }
+                check_continuation()?;
+                self.apply_remote_call_event(&event)?;
+                check_continuation()?;
+                self.call_sessions()?.set_remote_event_seq(call_id, event.seq)?;
+                cursor = event.seq;
+            }
+            if cursor >= remote.event_seq {
+                check_continuation()?;
+                return self.authorized_call_session(call_id);
+            }
+            if cursor == prior_cursor || next_after_seq <= cursor {
+                return Err("remote Human call sync made no progress before reaching backend head".into());
+            }
         }
-        let owner = Arc::new(
-            SandAgentDb::open_conversation_store(&db_path, self.busy_timeout_ms)
-                .map_err(|error| error.to_string())?,
-        );
-        if owner
-            .get_metadata("conversationKind")
-            .map_err(|error| error.to_string())?
-            .and_then(|value| value.as_str().map(ToOwned::to_owned))
-            .as_deref()
-            != Some("human")
-        {
-            owner.close(false);
-            return Err(format!("Conversation is not a Human conversation: {conversation_id}"));
-        }
-        owners.insert(key, Arc::clone(&owner));
-        Ok(owner)
+        Err("remote Human call sync exceeded the bounded replay window".into())
     }
 
-    pub fn list_human_conversations(&self) -> Result<Vec<serde_json::Value>, String> {
-        let root = get_native_conversations_root(&self.agents_root);
-        let entries = match fs::read_dir(&root) {
-            Ok(entries) => entries.filter_map(Result::ok).collect::<Vec<_>>(),
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
-            Err(error) => return Err(error.to_string()),
+    pub(crate) fn sync_human_calls_with_recovery(
+        &self,
+        recovery: Option<&HumanSyncRecoveryContext>,
+    ) -> Result<Vec<CallSession>, String> {
+        self.check_human_sync_continuation(recovery)?;
+        let Some(client) = self.shipping_native_messaging()? else {
+            return Ok(Vec::new());
         };
-        let mut conversations = Vec::new();
-        for entry in entries {
-            if !entry.file_type().map(|kind| kind.is_dir()).unwrap_or(false) {
-                continue;
-            }
-            let id = entry.file_name().to_string_lossy().into_owned();
-            let Ok(owner) = self.open_human_conversation_db_owner(&id) else {
-                continue;
+        let local_human_id = self.local_human_id()?.to_string();
+        let identity = client.identity()?;
+        if identity.user_id != local_human_id {
+            return Err("Fabushi call credential identity does not match active Human identity".into());
+        }
+        self.check_human_sync_continuation(recovery)?;
+        let remote_calls = client.list_human_calls(200)?;
+        self.check_human_sync_continuation(recovery)?;
+        let mut synced = Vec::with_capacity(remote_calls.len());
+        for remote in remote_calls {
+            self.check_human_sync_continuation(recovery)?;
+            let peer = self.remote_call_peer(&remote)?;
+            let conversation = self.create_human_conversation_with_recovery(&peer, &peer, recovery)?;
+            self.check_human_sync_continuation(recovery)?;
+            let scope_id = conversation
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "Human call discovery could not resolve canonical conversation scope".to_string())?;
+            let continuation_owner = if recovery.is_some_and(HumanSyncRecoveryContext::is_continuing) {
+                let owner = self.open_human_conversation_db_owner(scope_id)?;
+                let metadata = Self::read_human_conversation_metadata(&owner, scope_id, true)?;
+                if self.peer_human_id_from_metadata(&metadata)? != peer {
+                    return Err("remote Human call participants do not match CallSession owner".into());
+                }
+                Some((owner, metadata))
+            } else { None };
+            let check_continuation = || -> Result<(), String> {
+                self.check_human_sync_continuation(recovery)?;
+                if let Some((owner, metadata)) = &continuation_owner {
+                    self.revalidate_human_recovery_owner(scope_id, owner, metadata)?;
+                }
+                Ok(())
             };
-            let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-            if !self.metadata_has_local_human(&metadata)? {
-                continue;
+            check_continuation()?;
+            if self.call_sessions()?.get(&remote.call_id)?.is_none() {
+                let creator = fabushi_identity_text(&remote.creator_user_id)?;
+                let participants = vec![local_human_id.clone(), peer.clone()];
+                check_continuation()?;
+                self.call_sessions()?.create_with_id(
+                    &remote.call_id,
+                    scope_id,
+                    &creator,
+                    &participants,
+                )?;
             }
-            let title = metadata
-                .get("title")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or("Human conversation");
-            let participant_ids = metadata
-                .get("participantIds")
-                .cloned()
-                .unwrap_or_else(|| serde_json::json!([]));
-            let updated_at = metadata
-                .get("lastActivityAt")
-                .and_then(serde_json::Value::as_f64)
-                .unwrap_or_default();
-            conversations.push(serde_json::json!({
-                "id": id,
-                "kind": "human",
-                "title": title,
-                "participantIds": participant_ids,
-                "updatedAt": updated_at,
-            }));
-        }
-        conversations.sort_by(|left, right| {
-            left.get("id")
-                .and_then(serde_json::Value::as_str)
-                .cmp(&right.get("id").and_then(serde_json::Value::as_str))
-        });
-        Ok(conversations)
-    }
-
-    pub fn search_human_recipients(
-        &self,
-        source_conversation_id: &str,
-        source_entry_id: &str,
-        query: &str,
-        limit: usize,
-    ) -> Result<Vec<serde_json::Value>, String> {
-        let source_owner = self.open_human_conversation_db_owner(source_conversation_id)?;
-        let source_metadata = source_owner.read_metadata().map_err(|error| error.to_string())?;
-        if !self.metadata_has_local_human(&source_metadata)? {
-            return Err("local Human identity is not a participant in the source conversation".into());
-        }
-        let source_entry_id = source_entry_id.trim();
-        if source_entry_id.is_empty() {
-            return Err("recipient search requires sourceEntryId".into());
-        }
-        let source_entry = source_owner
-            .get_transcript_entries()
-            .map_err(|error| error.to_string())?
-            .into_iter()
-            .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(source_entry_id))
-            .ok_or_else(|| "recipient search source message is missing".to_string())?;
-        if source_entry.get("kind").and_then(serde_json::Value::as_str) != Some("message")
-            || source_entry.get("delivery").and_then(serde_json::Value::as_str) != Some("sent")
-        {
-            return Err("recipient search source must be a settled canonical message".into());
-        }
-        let requirements = fabushi_messaging_core::RecipientSearchRequirements {
-            require_media: source_entry
-                .get("attachments")
-                .and_then(serde_json::Value::as_array)
-                .is_some_and(|attachments| !attachments.is_empty()),
-            source_protected_content: source_entry
-                .get("protectedContent")
-                .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false),
-            ..fabushi_messaging_core::RecipientSearchRequirements::default()
-        };
-        let local_human_id = self.local_human_id()?;
-        let normalized_query = query.trim().to_lowercase();
-        let mut recipients = self
-            .list_human_conversations()?
-            .into_iter()
-            .filter(|conversation| {
-                let sender_is_participant = conversation
-                    .get("participantIds")
-                    .and_then(serde_json::Value::as_array)
-                    .is_some_and(|ids| {
-                        ids.iter().any(|id| id.as_str() == Some(local_human_id))
-                    });
-                if !fabushi_messaging_core::recipient_search_authorized(
-                    fabushi_messaging_core::RecipientAuthorizationInput::direct_default(
-                        sender_is_participant,
-                    ),
-                    requirements,
-                ) {
-                    return false;
-                }
-                if normalized_query.is_empty() {
-                    return true;
-                }
-                let title_matches = conversation
-                    .get("title")
-                    .and_then(serde_json::Value::as_str)
-                    .is_some_and(|title| title.to_lowercase().contains(&normalized_query));
-                let participant_matches = conversation
-                    .get("participantIds")
-                    .and_then(serde_json::Value::as_array)
-                    .is_some_and(|ids| {
-                        ids.iter().any(|id| {
-                            id.as_str()
-                                .is_some_and(|id| id.to_lowercase().contains(&normalized_query))
-                        })
-                    });
-                title_matches || participant_matches
-            })
-            .collect::<Vec<_>>();
-
-        recipients.sort_by(|left, right| {
-            let left_updated = left
-                .get("updatedAt")
-                .and_then(serde_json::Value::as_f64)
-                .unwrap_or_default();
-            let right_updated = right
-                .get("updatedAt")
-                .and_then(serde_json::Value::as_f64)
-                .unwrap_or_default();
-            right_updated
-                .partial_cmp(&left_updated)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| {
-                    left.get("title")
-                        .and_then(serde_json::Value::as_str)
-                        .cmp(&right.get("title").and_then(serde_json::Value::as_str))
-                })
-                .then_with(|| {
-                    left.get("id")
-                        .and_then(serde_json::Value::as_str)
-                        .cmp(&right.get("id").and_then(serde_json::Value::as_str))
-                })
-        });
-        recipients.truncate(limit.clamp(1, 100));
-        Ok(recipients)
-    }
-
-    pub fn forward_human_message(
-        &self,
-        source_conversation_id: &str,
-        source_entry_id: &str,
-        destination_conversation_ids: &[String],
-        client_nonce: &str,
-        drop_sender_names: bool,
-        drop_captions: bool,
-    ) -> Result<serde_json::Value, String> {
-        let client_nonce = client_nonce.trim();
-        if client_nonce.is_empty() || client_nonce.len() > 200 {
-            return Err("forwardHumanMessage requires a valid clientNonce".into());
-        }
-        if destination_conversation_ids.is_empty() {
-            return Err("forwardHumanMessage requires at least one destination".into());
-        }
-
-        let mut seen_destinations = BTreeSet::new();
-        let mut destinations = Vec::new();
-        for destination in destination_conversation_ids {
-            let destination = destination.trim();
-            if destination.is_empty() {
-                return Err("forwardHumanMessage destination id must not be empty".into());
+            check_continuation()?;
+            let call = self.authorized_call_session(&remote.call_id)?;
+            if call.scope_id != scope_id {
+                return Err("remote Human call resolved to a different canonical conversation scope".into());
             }
-            if seen_destinations.insert(destination.to_string()) {
-                destinations.push(destination.to_string());
-            }
+            self.validate_remote_call(&remote, &call)?;
+            synced.push(self.sync_call_session_from_remote_with_recovery(&remote.call_id, recovery)?);
+            check_continuation()?;
         }
-        if destinations.len() > 32 {
-            return Err("forwardHumanMessage supports at most 32 unique destinations".into());
-        }
-
-        let source_owner = self.open_human_conversation_db_owner(source_conversation_id)?;
-        let source_metadata = source_owner.read_metadata().map_err(|error| error.to_string())?;
-        if !self.metadata_has_local_human(&source_metadata)? {
-            return Err("local Human identity is not a participant in the source conversation".into());
-        }
-        let source_entry_id = source_entry_id.trim();
-        let source_entry = source_owner
-            .get_transcript_entries()
-            .map_err(|error| error.to_string())?
-            .into_iter()
-            .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(source_entry_id))
-            .ok_or_else(|| "forwardHumanMessage source message is missing".to_string())?;
-        if source_entry.get("kind").and_then(serde_json::Value::as_str) != Some("message")
-            || source_entry.get("delivery").and_then(serde_json::Value::as_str) != Some("sent")
-        {
-            return Err("forwardHumanMessage source must be a settled canonical message".into());
-        }
-        if source_entry
-            .get("protectedContent")
-            .and_then(serde_json::Value::as_bool)
-            .unwrap_or(false)
-        {
-            return Err("forwardHumanMessage source is protected and cannot be forwarded".into());
-        }
-
-        let source_text = source_entry
-            .get("content")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or_default();
-        let attachments = source_entry
-            .get("attachments")
-            .and_then(serde_json::Value::as_array)
-            .cloned()
-            .unwrap_or_default();
-        if source_text.trim().is_empty() && attachments.is_empty() {
-            return Err("forwardHumanMessage source has no forwardable content".into());
-        }
-
-        let privacy = fabushi_messaging_core::ForwardPrivacy {
-            drop_sender_names,
-            drop_captions,
-        }
-        .normalized();
-        let drop_sender_names = privacy.drop_sender_names;
-        let drop_captions = privacy.drop_captions;
-        let forwarded_text = if drop_captions && !attachments.is_empty() {
-            ""
-        } else {
-            source_text
-        };
-        let mut forward_context = serde_json::json!({
-            "requestId": client_nonce,
-            "sourceConversationId": source_conversation_id,
-            "sourceEntryId": source_entry_id,
-            "privacy": {
-                "dropSenderNames": drop_sender_names,
-                "dropCaptions": drop_captions,
-            },
-        });
-        if !drop_sender_names {
-            let mut origin = serde_json::Map::new();
-            if let Some(author_id) = source_entry.get("authorId").cloned() {
-                origin.insert("authorId".into(), author_id);
-            }
-            if let Some(author_name) = source_entry.get("authorName").cloned() {
-                origin.insert("authorName".into(), author_name);
-            }
-            if !origin.is_empty() {
-                forward_context
-                    .as_object_mut()
-                    .expect("forward context is an object")
-                    .insert("origin".into(), serde_json::Value::Object(origin));
-            }
-        }
-
-        let mut settlement = Vec::with_capacity(destinations.len());
-        for destination_conversation_id in destinations {
-            let mut digest = Sha256::new();
-            digest.update(client_nonce.as_bytes());
-            digest.update([0]);
-            digest.update(destination_conversation_id.as_bytes());
-            let destination_nonce = format!("human-forward-{:x}", digest.finalize());
-
-            match self.append_human_message_with_context(
-                &destination_conversation_id,
-                forwarded_text,
-                &destination_nonce,
-                None,
-                None,
-                &attachments,
-                Some(&forward_context),
-            ) {
-                Ok(entry) => settlement.push(serde_json::json!({
-                    "conversationId": destination_conversation_id,
-                    "clientNonce": destination_nonce,
-                    "status": "sent",
-                    "entry": entry,
-                })),
-                Err(error) => settlement.push(serde_json::json!({
-                    "conversationId": destination_conversation_id,
-                    "clientNonce": destination_nonce,
-                    "status": "failed",
-                    "error": error,
-                })),
-            }
-        }
-
-        Ok(serde_json::json!({
-            "requestId": client_nonce,
-            "privacy": {
-                "dropSenderNames": drop_sender_names,
-                "dropCaptions": drop_captions,
-            },
-            "destinations": settlement,
-        }))
-    }
-
-    pub fn append_human_message(
-        &self,
-        conversation_id: &str,
-        text: &str,
-        client_nonce: &str,
-        composed_at_ms: Option<f64>,
-        reply_to_id: Option<&str>,
-        attachments: &[serde_json::Value],
-    ) -> Result<serde_json::Value, String> {
-        self.append_human_message_with_context(
-            conversation_id,
-            text,
-            client_nonce,
-            composed_at_ms,
-            reply_to_id,
-            attachments,
-            None,
-        )
-    }
-
-    fn append_human_message_with_context(
-        &self,
-        conversation_id: &str,
-        text: &str,
-        client_nonce: &str,
-        composed_at_ms: Option<f64>,
-        reply_to_id: Option<&str>,
-        attachments: &[serde_json::Value],
-        forward_context: Option<&serde_json::Value>,
-    ) -> Result<serde_json::Value, String> {
-        let sender_id = self.local_human_id()?;
-        let text = text.trim();
-        let client_nonce = client_nonce.trim();
-        if client_nonce.is_empty() {
-            return Err("sendHumanMessage requires clientNonce".into());
-        }
-        if text.is_empty() && attachments.is_empty() {
-            return Err("sendHumanMessage requires text or attachments".into());
-        }
-        if client_nonce.len() > 200 {
-            return Err("sendHumanMessage clientNonce is too long".into());
-        }
-        let owner = self.open_human_conversation_db_owner(conversation_id)?;
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-        let is_participant = metadata
-            .get("participantIds")
-            .and_then(serde_json::Value::as_array)
-            .is_some_and(|ids| ids.iter().any(|id| id.as_str() == Some(sender_id)));
-        if !is_participant {
-            return Err("local Human identity is not a conversation participant".into());
-        }
-        let existing = owner
-            .get_transcript_entries()
-            .map_err(|error| error.to_string())?;
-        let normalized_reply = reply_to_id
-            .map(str::trim)
-            .filter(|value| !value.is_empty());
-        if let Some(reply_id) = normalized_reply {
-            if !existing.iter().any(|entry| {
-                entry.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
-            }) {
-                return Err("sendHumanMessage reply target is not in this Human conversation".into());
-            }
-        }
-        let normalized_attachments = attachments
-            .iter()
-            .map(|attachment| {
-                let object = attachment
-                    .as_object()
-                    .ok_or_else(|| "sendHumanMessage attachment must be an object".to_string())?;
-                let path = object
-                    .get("path")
-                    .and_then(serde_json::Value::as_str)
-                    .map(str::trim)
-                    .filter(|value| !value.is_empty())
-                    .ok_or_else(|| "sendHumanMessage attachment requires path".to_string())?;
-                let name = object
-                    .get("name")
-                    .and_then(serde_json::Value::as_str)
-                    .map(str::trim)
-                    .filter(|value| !value.is_empty())
-                    .ok_or_else(|| "sendHumanMessage attachment requires name".to_string())?;
-                Ok(serde_json::json!({ "path": path, "name": name }))
-            })
-            .collect::<Result<Vec<_>, String>>()?;
-        let timestamp_ms = composed_at_ms.unwrap_or_else(|| {
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis() as f64
-        });
-        let mut existing_pending: Option<serde_json::Value> = None;
-        if let Some(entry) = existing.iter().find(|entry| {
-            entry.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
-        }) {
-            let same_sender = entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id);
-            let same_text = entry.get("content").and_then(serde_json::Value::as_str) == Some(text);
-            let same_reply = entry.get("replyToId").and_then(serde_json::Value::as_str) == normalized_reply;
-            let same_attachments = match entry.get("attachments").and_then(serde_json::Value::as_array) {
-                Some(values) => values.len() == normalized_attachments.len()
-                    && values.iter().zip(normalized_attachments.iter()).all(|(current, requested)| {
-                        current.get("name") == requested.get("name")
-                            && (current.get("path") == requested.get("path") || current.get("resourceId").is_some())
-                    }),
-                None => normalized_attachments.is_empty(),
-            };
-            let same_forward_context = entry.get("forwardContext") == forward_context;
-            if !(same_sender && same_text && same_reply && same_attachments && same_forward_context) {
-                return Err("sendHumanMessage clientNonce already identifies different content or forward context".into());
-            }
-            if entry.get("remoteMessageId").is_some()
-                || entry.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
-            {
-                return Ok(entry.clone());
-            }
-            if !matches!(
-                entry.get("delivery").and_then(serde_json::Value::as_str),
-                Some("pending" | "dispatching")
-            ) {
-                return Err("sendHumanMessage clientNonce is not in a retryable settlement state".into());
-            }
-            existing_pending = Some(entry.clone());
-        }
-
-        if let Some(client) = self.shipping_native_messaging()? {
-            let local_entry_id = format!("human-message:{client_nonce}");
-            let mut pending_entry = existing_pending.unwrap_or_else(|| {
-                let mut entry = serde_json::json!({
-                    "id": local_entry_id.clone(),
-                    "kind": "message",
-                    "role": "user",
-                    "authorKind": "human",
-                    "authorId": sender_id,
-                    "content": text,
-                    "clientNonce": client_nonce,
-                    "composedAtMs": composed_at_ms,
-                    "timestampMs": timestamp_ms,
-                    "delivery": "pending",
-                });
-                let object = entry.as_object_mut().expect("Human pending message must be an object");
-                if let Some(reply_id) = normalized_reply { object.insert("replyToId".into(), serde_json::json!(reply_id)); }
-                if !normalized_attachments.is_empty() { object.insert("attachments".into(), serde_json::Value::Array(normalized_attachments.clone())); }
-                if let Some(context) = forward_context { object.insert("forwardContext".into(), context.clone()); }
-                entry
-            });
-            if !existing.iter().any(|entry| entry.get("id") == pending_entry.get("id"))
-                && !owner.append_transcript_entry(&pending_entry).map_err(|error| error.to_string())?
-            {
-                return Err("Human pending send could not be durably recorded before dispatch".into());
-            }
-
-            let dispatch_result = (|| -> Result<serde_json::Value, String> {
-                let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
-                let remote_reply_to_id = normalized_reply
-                    .map(|reply_id| {
-                        owner
-                            .get_transcript_entries()
-                            .map_err(|error| error.to_string())?
-                            .into_iter()
-                            .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(reply_id))
-                            .and_then(|entry| entry.get("remoteMessageId").cloned())
-                            .map(|value| fabushi_identity_text(&value))
-                            .transpose()?
-                            .ok_or_else(|| "Fabushi Human reply target has no canonical remote message identity".to_string())
-                    })
-                    .transpose()?;
-
-                let mut uploaded = pending_entry
-                    .get("remoteDispatchAttachments")
-                    .cloned()
-                    .map(serde_json::from_value::<Vec<FabushiRemoteHumanAttachment>>)
-                    .transpose()
-                    .map_err(|error| format!("persisted Human dispatch attachments are invalid: {error}"))?
-                    .filter(|values| {
-                        values.len() == normalized_attachments.len()
-                            && values.iter().zip(normalized_attachments.iter()).all(|(remote, local)| {
-                                local.get("name").and_then(serde_json::Value::as_str) == Some(remote.name.as_str())
-                            })
-                    })
-                    .unwrap_or_default();
-                if uploaded.is_empty() && !normalized_attachments.is_empty() {
-                    uploaded = Vec::with_capacity(normalized_attachments.len());
-                    for attachment in &normalized_attachments {
-                        let path = attachment.get("path").and_then(serde_json::Value::as_str)
-                            .ok_or_else(|| "sendHumanMessage attachment requires path".to_string())?;
-                        let name = attachment.get("name").and_then(serde_json::Value::as_str)
-                            .ok_or_else(|| "sendHumanMessage attachment requires name".to_string())?;
-                        uploaded.push(client.upload_direct_message_resource(std::path::Path::new(path), name)?);
-                    }
-                }
-                if let Some(object) = pending_entry.as_object_mut() {
-                    object.insert("delivery".into(), serde_json::json!("dispatching"));
-                    object.remove("lastDispatchError");
-                    object.remove("lastDispatchFailedAtMs");
-                    if !uploaded.is_empty() {
-                        object.insert("remoteDispatchAttachments".into(), serde_json::to_value(&uploaded)
-                            .map_err(|error| format!("Human dispatch attachments could not be persisted: {error}"))?);
-                    }
-                }
-                owner.update_transcript_entry(&local_entry_id, &pending_entry)
-                    .map_err(|error| error.to_string())?
-                    .ok_or_else(|| "Human pending send disappeared before dispatch".to_string())?;
-
-                let remote = client.send_direct_message(&peer_human_id, text, client_nonce, remote_reply_to_id.as_deref(), &uploaded)?;
-                let remote_sender = fabushi_identity_text(&remote.sender_user_id)?;
-                let remote_recipient = fabushi_identity_text(&remote.recipient_user_id)?;
-                let remote_reply_matches = match (&remote_reply_to_id, &remote.reply_to_message_id) {
-                    (None, None) => true,
-                    (Some(expected), Some(actual)) => fabushi_identity_text(actual).is_ok_and(|actual| actual == *expected),
-                    _ => false,
-                };
-                let remote_resources = remote.attachments.iter().map(|attachment| attachment.resource_id.as_str()).collect::<Vec<_>>();
-                let uploaded_resources = uploaded.iter().map(|attachment| attachment.resource_id.as_str()).collect::<Vec<_>>();
-                if remote_sender != sender_id
-                    || remote_recipient != peer_human_id
-                    || remote.text.trim() != text
-                    || remote.client_request_id.as_deref() != Some(client_nonce)
-                    || !remote_reply_matches
-                    || remote_resources != uploaded_resources
-                {
-                    return Err("Fabushi Human message backend returned mismatched persisted content".into());
-                }
-                self.materialize_remote_human_message(&owner, &remote)
-            })();
-
-            if let Err(error) = dispatch_result.as_ref() {
-                if let Ok(entries) = owner.get_transcript_entries() {
-                    if let Some(mut pending) = entries.into_iter().find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(local_entry_id.as_str())) {
-                        if let Some(object) = pending.as_object_mut() {
-                            object.insert("delivery".into(), serde_json::json!("pending"));
-                            object.insert("lastDispatchError".into(), serde_json::json!(error));
-                            object.insert("lastDispatchFailedAtMs".into(), serde_json::json!(
-                                std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as f64
-                            ));
-                        }
-                        let _ = owner.update_transcript_entry(&local_entry_id, &pending);
-                    }
-                }
-            }
-            return dispatch_result;
-        }
-
-        let mut entry = serde_json::json!({
-            "id": format!("human-message:{client_nonce}"),
-            "kind": "message",
-            "role": "user",
-            "authorKind": "human",
-            "authorId": sender_id,
-            "content": text,
-            "clientNonce": client_nonce,
-            "composedAtMs": composed_at_ms,
-            "timestampMs": timestamp_ms,
-            "delivery": "sent",
-        });
-        let object = entry
-            .as_object_mut()
-            .ok_or_else(|| "native Human message projection failed".to_string())?;
-        if let Some(reply_id) = normalized_reply {
-            object.insert("replyToId".into(), serde_json::json!(reply_id));
-        }
-        if !normalized_attachments.is_empty() {
-            object.insert(
-                "attachments".into(),
-                serde_json::Value::Array(normalized_attachments.clone()),
-            );
-        }
-        if let Some(context) = forward_context {
-            object.insert("forwardContext".into(), context.clone());
-        }
-        if !owner
-            .append_transcript_entry(&entry)
-            .map_err(|error| error.to_string())?
-        {
-            let replay = owner
-                .get_transcript_entries()
-                .map_err(|error| error.to_string())?
-                .into_iter()
-                .find(|candidate| candidate.get("id") == entry.get("id"))
-                .ok_or_else(|| "native Human message was not durably appended".to_string())?;
-            if replay == entry {
-                return Ok(replay);
-            }
-            return Err("sendHumanMessage clientNonce already identifies different content".into());
-        }
-        if !owner
-            .set_metadata("lastActivityAt", serde_json::json!(timestamp_ms))
-            .map_err(|error| error.to_string())?
-        {
-            return Err("native Human message activity metadata was not durably updated".into());
-        }
-        Ok(entry)
+        self.check_human_sync_continuation(recovery)?;
+        Ok(synced)
     }
 
     pub fn append_human_agent_message(
@@ -3017,6 +3334,7 @@ impl ProductionSessionWorkers {
         conversation_id: &str,
         agent_id: &str,
         stream_id: &str,
+        session_key: Option<&str>,
         content: &str,
         completed_at_ms: f64,
     ) -> Result<serde_json::Value, String> {
@@ -3024,6 +3342,16 @@ impl ProductionSessionWorkers {
         let conversation_id = conversation_id.trim();
         let agent_id = agent_id.trim();
         let stream_id = stream_id.trim();
+        let session_key = match session_key {
+            Some(value) => {
+                let value = value.trim();
+                if value.is_empty() {
+                    return Err("Human handoff Agent result session key must be non-empty".into());
+                }
+                Some(value)
+            }
+            None => None,
+        };
         let content = content.trim();
         if conversation_id.is_empty()
             || agent_id.is_empty()
@@ -3035,6 +3363,11 @@ impl ProductionSessionWorkers {
                     .into(),
             );
         }
+        if !completed_at_ms.is_finite() {
+            return Err("Human handoff Agent activity timestamp must be finite".into());
+        }
+        let serial = self.human_message_lock(conversation_id)?;
+        let _exclusive = serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?;
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
         let is_participant = metadata
@@ -3059,12 +3392,40 @@ impl ProductionSessionWorkers {
             let same_stream =
                 entry.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
             if same_agent && same_content && same_stream {
+                if let Some(expected_session_key) = session_key {
+                    if let Some(actual_session_key) = entry
+                        .get("sessionKey")
+                        .and_then(serde_json::Value::as_str)
+                    {
+                        if actual_session_key != expected_session_key {
+                            return Err(
+                                "Human handoff stream already identifies a different session key"
+                                    .into(),
+                            );
+                        }
+                    } else {
+                        let mut enriched = entry.clone();
+                        enriched["sessionKey"] = serde_json::Value::String(
+                            expected_session_key.to_string(),
+                        );
+                        return owner
+                            .update_transcript_entry(&entry_id, &enriched)
+                            .map_err(|error| error.to_string())?
+                            .ok_or_else(|| {
+                                "Human handoff Agent result disappeared during provenance settlement"
+                                    .to_string()
+                            });
+                    }
+                }
+                let timestamp = entry.get("timestampMs").and_then(serde_json::Value::as_f64)
+                    .unwrap_or(completed_at_ms);
+                Self::update_human_activity(&owner, timestamp)?;
                 return Ok(entry.clone());
             }
             return Err("Human handoff stream already identifies different Agent content".into());
         }
 
-        let entry = serde_json::json!({
+        let mut entry = serde_json::json!({
             "id": entry_id,
             "kind": "message",
             "role": "assistant",
@@ -3076,6 +3437,9 @@ impl ProductionSessionWorkers {
             "timestampMs": completed_at_ms,
             "delivery": "sent",
         });
+        if let Some(session_key) = session_key {
+            entry["sessionKey"] = serde_json::Value::String(session_key.to_string());
+        }
         if !owner
             .append_transcript_entry(&entry)
             .map_err(|error| error.to_string())?
@@ -3093,101 +3457,40 @@ impl ProductionSessionWorkers {
             let same_stream =
                 replay.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
             if same_agent && same_content && same_stream {
+                if let Some(expected_session_key) = session_key {
+                    if let Some(actual_session_key) = replay
+                        .get("sessionKey")
+                        .and_then(serde_json::Value::as_str)
+                    {
+                        if actual_session_key != expected_session_key {
+                            return Err(
+                                "Human handoff stream already identifies a different session key"
+                                    .into(),
+                            );
+                        }
+                    } else {
+                        let mut enriched = replay.clone();
+                        enriched["sessionKey"] = serde_json::Value::String(
+                            expected_session_key.to_string(),
+                        );
+                        return owner
+                            .update_transcript_entry(&entry_id, &enriched)
+                            .map_err(|error| error.to_string())?
+                            .ok_or_else(|| {
+                                "Human handoff Agent result disappeared during replay provenance settlement"
+                                    .to_string()
+                            });
+                    }
+                }
+                let timestamp = replay.get("timestampMs").and_then(serde_json::Value::as_f64)
+                    .unwrap_or(completed_at_ms);
+                Self::update_human_activity(&owner, timestamp)?;
                 return Ok(replay);
             }
             return Err("Human handoff stream already identifies different Agent content".into());
         }
-        if !owner
-            .set_metadata("lastActivityAt", serde_json::json!(completed_at_ms))
-            .map_err(|error| error.to_string())?
-        {
-            return Err("Human handoff Agent activity metadata was not durably updated".into());
-        }
+        Self::update_human_activity(&owner, completed_at_ms)?;
         Ok(entry)
-    }
-
-    pub fn toggle_human_message_reaction(
-        &self,
-        conversation_id: &str,
-        entry_id: &str,
-        emoji: &str,
-    ) -> Result<serde_json::Value, String> {
-        let emoji = emoji.trim();
-        if emoji.is_empty() {
-            return Err("reactHumanMessage requires emoji".into());
-        }
-        let owner = self.open_human_conversation_db_owner(conversation_id)?;
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-        if !self.metadata_has_local_human(&metadata)? {
-            return Err("local Human identity is not a conversation participant".into());
-        }
-        let entries = owner
-            .get_transcript_entries()
-            .map_err(|error| error.to_string())?;
-        let current = entries
-            .iter()
-            .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(entry_id))
-            .cloned()
-            .ok_or_else(|| "Human reaction target is not in this conversation".to_string())?;
-        let remote_message_id = current
-            .get("remoteMessageId")
-            .map(fabushi_identity_text)
-            .transpose()?
-            .ok_or_else(|| "Human reaction target has no canonical remote message identity".to_string())?;
-        let currently_active = current
-            .get("remoteReactions")
-            .and_then(serde_json::Value::as_array)
-            .is_some_and(|reactions| {
-                reactions.iter().any(|reaction| {
-                    reaction.get("emoji").and_then(serde_json::Value::as_str) == Some(emoji)
-                        && reaction
-                            .get("reactedByMe")
-                            .and_then(serde_json::Value::as_bool)
-                            == Some(true)
-                })
-            });
-        let client = self
-            .shipping_native_messaging()?
-            .ok_or_else(|| "Fabushi Human reactions require the shipping messaging backend".to_string())?;
-        let remote_reactions =
-            client.set_direct_message_reaction(&remote_message_id, emoji, !currently_active)?;
-        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
-        let mut projected_reactions = Vec::new();
-        for reaction in &remote_reactions {
-            if reaction.reacted_by_me {
-                projected_reactions.push(serde_json::json!({
-                    "emoji": reaction.emoji,
-                    "by": "me",
-                }));
-            }
-            let peer_reaction_count = reaction
-                .count
-                .saturating_sub(if reaction.reacted_by_me { 1 } else { 0 });
-            for _ in 0..peer_reaction_count {
-                projected_reactions.push(serde_json::json!({
-                    "emoji": reaction.emoji,
-                    "by": peer_human_id,
-                }));
-            }
-        }
-        let mut next = current;
-        let object = next
-            .as_object_mut()
-            .ok_or_else(|| "Human reaction target is not a message object".to_string())?;
-        object.insert(
-            "remoteReactions".into(),
-            serde_json::to_value(&remote_reactions).map_err(|error| {
-                format!("remote Human reactions could not be projected: {error}")
-            })?,
-        );
-        object.insert(
-            "reactions".into(),
-            serde_json::Value::Array(projected_reactions),
-        );
-        owner
-            .update_transcript_entry(entry_id, &next)
-            .map_err(|error| error.to_string())?
-            .ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())
     }
 
     pub fn search_human_messages(
@@ -3204,26 +3507,33 @@ impl ProductionSessionWorkers {
         let limit = limit.clamp(1, 200);
         let mut matches = Vec::new();
         for entry in transcript.into_iter().rev() {
-            let content_match = entry
-                .get("content")
-                .and_then(serde_json::Value::as_str)
-                .is_some_and(|value| value.to_lowercase().contains(&query));
-            let author_match = entry
+            let mut fields = Vec::new();
+            if let Some(author_name) = entry
                 .get("authorName")
                 .and_then(serde_json::Value::as_str)
-                .is_some_and(|value| value.to_lowercase().contains(&query));
-            let attachment_match = entry
+            {
+                fields.push(author_name);
+            }
+            if let Some(origin_author) = Self::human_entry_visible_forward_origin_author(&entry) {
+                fields.push(origin_author);
+            }
+            if let Some(content) = entry.get("content").and_then(serde_json::Value::as_str) {
+                fields.push(content);
+            }
+            if let Some(attachments) = entry
                 .get("attachments")
                 .and_then(serde_json::Value::as_array)
-                .is_some_and(|attachments| {
-                    attachments.iter().any(|attachment| {
-                        attachment
-                            .get("name")
-                            .and_then(serde_json::Value::as_str)
-                            .is_some_and(|value| value.to_lowercase().contains(&query))
-                    })
-                });
-            if content_match || author_match || attachment_match {
+            {
+                for attachment in attachments {
+                    if let Some(name) = attachment
+                        .get("name")
+                        .and_then(serde_json::Value::as_str)
+                    {
+                        fields.push(name);
+                    }
+                }
+            }
+            if fabushi_messaging_core::query_matches_fields(&query, &fields) {
                 matches.push(entry);
                 if matches.len() >= limit {
                     break;
@@ -3233,32 +3543,80 @@ impl ProductionSessionWorkers {
         Ok(matches)
     }
 
+    // Post-commit projection may run while the writer still owns the Human
+    // conversation mutation lane. Read only its already registered SQLite
+    // owner; a notification must never open/create a store or replay history.
+    pub(crate) fn read_human_transcript_mutation_entries(
+        &self,
+        conversation_id: &str,
+        origin_db_path: &str,
+        entry_ids: &[String],
+    ) -> Result<Vec<serde_json::Value>, String> {
+        if origin_db_path.is_empty() {
+            return Err("Human transcript mutation has no qualified origin".into());
+        }
+        let expected_path = get_native_conversation_db_path(&self.agents_root, conversation_id)
+            .map_err(|error| error.to_string())?;
+        let key = Self::native_conversation_owner_key(conversation_id);
+        let owner = {
+            let owners = self.db_owners.lock()
+                .map_err(|_| "conversation db owner map poisoned".to_string())?;
+            owners.get(&key).cloned()
+        }.ok_or_else(|| "Human transcript mutation has no registered owner".to_string())?;
+        // Both paths originate in this Session, never in the notification.
+        let expected_origin =
+            crate::transcript_mutation_events::transcript_mutation_origin(&expected_path)
+                .ok_or_else(|| "Human transcript owner origin is unavailable".to_string())?;
+        if origin_db_path != expected_origin.as_str()
+            || crate::transcript_mutation_events::transcript_mutation_origin(owner.db_path())
+                .as_deref() != Some(expected_origin.as_str())
+        {
+            return Err("Human transcript mutation belongs to a different database".into());
+        }
+        let metadata = Self::read_human_conversation_metadata(&owner, conversation_id, true)?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let mut seen = BTreeSet::new();
+        let mut current = Vec::new();
+        for entry_id in entry_ids {
+            if entry_id.is_empty() || entry_id.trim() != entry_id.as_str() {
+                return Err("Human transcript mutation has an invalid entry identity".into());
+            }
+            if !seen.insert(entry_id.as_str()) {
+                continue;
+            }
+            let Some(entry) = owner.get_transcript_entry_by_id(entry_id)
+                .map_err(|error| error.to_string())? else {
+                continue;
+            };
+            if entry.get("id").and_then(serde_json::Value::as_str) != Some(entry_id.as_str()) {
+                return Err("Human transcript entry conflicts with its persisted identity".into());
+            }
+            current.push(entry);
+        }
+        Ok(current)
+    }
+
     pub fn read_human_conversation_transcript(
         &self,
         conversation_id: &str,
     ) -> Result<Vec<serde_json::Value>, String> {
-        let owner = self.open_human_conversation_db_owner(conversation_id)?;
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-        if !self.metadata_has_local_human(&metadata)? {
-            return Err("local Human identity is not a conversation participant".into());
-        }
-        owner
-            .get_transcript_entries()
-            .map_err(|error| error.to_string())
+        self.read_human_conversation_transcript_for_topic(conversation_id, None)
     }
 
     pub fn read_human_conversation_transcript_tail(
         &self,
         conversation_id: &str,
-        query: TranscriptWindowQuery,
-    ) -> Result<TranscriptPage, String> {
+        query: impl Into<HumanTranscriptPageQuery>,
+    ) -> Result<HumanTranscriptPage, String> {
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
         if !self.metadata_has_local_human(&metadata)? {
             return Err("local Human identity is not a conversation participant".into());
         }
         owner
-            .get_transcript_tail(query)
+            .get_human_transcript_tail(query.into())
             .map_err(|error| error.to_string())
     }
 
@@ -3267,12 +3625,21 @@ impl ProductionSessionWorkers {
         active_agent_id: Option<&str>,
     ) -> Result<Vec<AgentSummary>, String> {
         let is_deleting = |agent_id: &str| self.is_agent_being_deleted(agent_id);
+        let open_agent_owner = |agent_id: &str| self.open_agent_db_owner_locked(agent_id);
+        let with_agent_mutation: &dyn for<'a> Fn(
+            &'a str,
+            Box<dyn FnOnce() -> Result<Option<AgentSummary>, String> + 'a>,
+        ) -> Result<Option<AgentSummary>, String> = &|agent_id, operation| {
+            self.with_agent_filesystem_mutation(agent_id, operation)
+        };
         list_agents(
             &self.agents_root,
             self.busy_timeout_ms,
             active_agent_id,
             &is_deleting,
             &self.roster_extras_cache,
+            &open_agent_owner,
+            with_agent_mutation,
         )
     }
 
@@ -3281,7 +3648,23 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         active_agent_id: Option<&str>,
     ) -> Result<Option<AgentSummary>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.summarize_agent_by_id_locked(agent_id, active_agent_id)
+        })
+    }
+
+    fn summarize_agent_by_id_locked(
+        &self,
+        agent_id: &str,
+        active_agent_id: Option<&str>,
+    ) -> Result<Option<AgentSummary>, String> {
         let is_deleting = |candidate: &str| self.is_agent_being_deleted(candidate);
+        let owner = self
+            .session_db_path(agent_id)
+            .ok()
+            .filter(|path| path.is_file())
+            .map(|_| self.open_agent_db_owner_locked(agent_id))
+            .transpose()?;
         summarize_agent_by_id(
             &self.agents_root,
             self.busy_timeout_ms,
@@ -3289,6 +3672,7 @@ impl ProductionSessionWorkers {
             active_agent_id,
             &is_deleting,
             &self.roster_extras_cache,
+            owner.as_deref(),
         )
     }
 
@@ -3315,6 +3699,15 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Option<PreparedAgentBlobStore>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.prepare_existing_agent_locked(agent_id)
+        })
+    }
+
+    fn prepare_existing_agent_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<PreparedAgentBlobStore>, String> {
         let Some(materialized) = open_existing_session(
             &self.agents_root,
             self.busy_timeout_ms,
@@ -3324,7 +3717,7 @@ impl ProductionSessionWorkers {
         else {
             return Ok(None);
         };
-        let db_owner = self.open_agent_db_owner(agent_id)?;
+        let db_owner = self.open_agent_db_owner_locked(agent_id)?;
         let store = self.create_agent_blob_store(agent_id)?;
         let session_db_path = materialized.db_path.clone();
 
@@ -3334,12 +3727,14 @@ impl ProductionSessionWorkers {
             &session_db_path,
             &store.blob_db_path,
             self.busy_timeout_ms,
+            db_owner.as_ref(),
         )?;
         if recovered_root {
             let _ = sync_recovered_profile_name(
                 &session_db_path,
                 self.busy_timeout_ms,
                 &materialized.profile.name,
+                db_owner.as_ref(),
             )?;
         }
         let recovery_turns = if recovered_root {
@@ -3366,6 +3761,7 @@ impl ProductionSessionWorkers {
                 &session_db_path,
                 self.busy_timeout_ms,
                 &recovery_turns,
+                db_owner.as_ref(),
             )?;
         }
         let recovery_outline = recovery_turns
@@ -3376,6 +3772,7 @@ impl ProductionSessionWorkers {
             &session_db_path,
             self.busy_timeout_ms,
             &recovery_outline,
+            db_owner.as_ref(),
         )?;
         let persisted_root_blob_id = db_owner
             .get_latest_root_blob_id()
@@ -3410,6 +3807,7 @@ impl ProductionSessionWorkers {
             &session_db_path,
             &store.blob_db_path,
             self.busy_timeout_ms,
+            db_owner.as_ref(),
         )?;
         let _ = retire_legacy_store_blobs_once(
             Arc::clone(&self.pool),
@@ -3417,6 +3815,7 @@ impl ProductionSessionWorkers {
             &session_db_path,
             &store.blob_db_path,
             self.busy_timeout_ms,
+            db_owner.as_ref(),
         )?;
 
         let prepared = PreparedAgentBlobStore {
@@ -3509,6 +3908,10 @@ impl ProductionSessionWorkers {
 
 
 #[cfg(test)]
+#[path = "human_creation_tests.rs"]
+mod human_creation_tests;
+
+#[cfg(test)]
 mod sharebox_shipping_tests {
     use super::*;
 
@@ -3574,13 +3977,8 @@ mod sharebox_shipping_tests {
 
         let changed = workers
             .forward_human_message(&source, source_entry_id, &[alpha.clone()], "forward-request-1", false, false)
-            .unwrap();
-        assert_eq!(
-            changed.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
-            Some("failed"),
-        );
-        assert!(changed.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
-            .is_some_and(|error| error.contains("forward context")));
+            .expect_err("privacy reuse cannot change a persisted batch");
+        assert!(changed.contains("different privacy"));
 
         workers.shutdown();
 
@@ -3593,7 +3991,293 @@ mod sharebox_shipping_tests {
             Some("sent"),
         );
         assert_eq!(restarted.read_human_conversation_transcript(&alpha).unwrap().len(), 1);
+
+        // Destination permission & typed-share policy enforcement across searchHumanRecipients and forwardHumanMessage
+        let gamma = conversation_id(&restarted.create_human_conversation("human-gamma", "Gamma Blocked").unwrap());
+        let gamma_owner = restarted.open_human_conversation_db_owner(&gamma).unwrap();
+        assert!(gamma_owner.set_metadata("permissions", serde_json::json!({ "canSendMessages": false })).unwrap());
+
+        let delta = conversation_id(&restarted.create_human_conversation("human-delta", "Delta NoOther").unwrap());
+        let delta_owner = restarted.open_human_conversation_db_owner(&delta).unwrap();
+        assert!(delta_owner.set_metadata("permissions", serde_json::json!({ "canSendOther": false })).unwrap());
+
+        let source_owner = restarted.open_human_conversation_db_owner(&source).unwrap();
+        assert!(source_owner.append_transcript_entry(&serde_json::json!({
+            "id": "human-server-message:901",
+            "kind": "message",
+            "role": "user",
+            "authorKind": "human",
+            "authorId": "human-source",
+            "content": "shared link with send-other requirement",
+            "requireSendOther": true,
+            "delivery": "sent",
+            "timestampMs": 25.0,
+            "remoteMessageId": "901",
+            "remoteCreatedAt": "1970-01-01T00:00:25Z"
+        })).unwrap());
+
+        let ordinary_recipients = restarted
+            .search_human_recipients(&source, source_entry_id, "", 50)
+            .unwrap();
+        assert!(
+            ordinary_recipients.iter().all(|item| item.get("id").and_then(serde_json::Value::as_str) != Some(gamma.as_str())),
+            "canSendMessages=false destination must be excluded before exposure",
+        );
+        assert!(
+            ordinary_recipients.iter().any(|item| item.get("id").and_then(serde_json::Value::as_str) == Some(delta.as_str())),
+            "canSendOther=false destination remains eligible for ordinary text forwards",
+        );
+
+        let other_recipients = restarted
+            .search_human_recipients(&source, "human-server-message:901", "", 50)
+            .unwrap();
+        assert!(
+            other_recipients.iter().all(|item| item.get("id").and_then(serde_json::Value::as_str) != Some(gamma.as_str())),
+            "canSendMessages=false destination must remain excluded",
+        );
+        assert!(
+            other_recipients.iter().all(|item| item.get("id").and_then(serde_json::Value::as_str) != Some(delta.as_str())),
+            "canSendOther=false destination must be excluded when requireSendOther=true",
+        );
+        assert!(
+            other_recipients.iter().any(|item| item.get("id").and_then(serde_json::Value::as_str) == Some(beta.as_str())),
+            "unrestricted destination remains eligible when requireSendOther=true",
+        );
+
+        let policy_settlement = restarted
+            .forward_human_message(
+                &source,
+                "human-server-message:901",
+                &[beta.clone(), gamma.clone(), delta.clone()],
+                "forward-request-policy-1",
+                false,
+                false,
+            )
+            .unwrap();
+        let policy_dests = policy_settlement.get("destinations").and_then(serde_json::Value::as_array).unwrap();
+        assert_eq!(policy_dests.len(), 3);
+        let status_for = |conv_id: &str| {
+            policy_dests
+                .iter()
+                .find(|item| item.get("conversationId").and_then(serde_json::Value::as_str) == Some(conv_id))
+                .unwrap()
+        };
+        assert_eq!(status_for(&beta).get("status").and_then(serde_json::Value::as_str), Some("sent"));
+        assert_eq!(status_for(&gamma).get("status").and_then(serde_json::Value::as_str), Some("failed"));
+        let gamma_err = status_for(&gamma).get("error").and_then(serde_json::Value::as_str).unwrap_or_default();
+        assert!(gamma_err.contains("rejected the source message policy"));
+        assert!(gamma_err.contains("MessageSendPermissionDenied"));
+        assert_eq!(status_for(&delta).get("status").and_then(serde_json::Value::as_str), Some("failed"));
+        let delta_err = status_for(&delta).get("error").and_then(serde_json::Value::as_str).unwrap_or_default();
+        assert!(delta_err.contains("rejected the source message policy"));
+        assert!(delta_err.contains("OtherSendPermissionDenied"));
+        assert_eq!(restarted.read_human_conversation_transcript(&beta).unwrap().len(), 1);
+        assert_eq!(restarted.read_human_conversation_transcript(&gamma).unwrap().len(), 0);
+        assert_eq!(restarted.read_human_conversation_transcript(&delta).unwrap().len(), 0);
+
+        // Source-eligibility forward-options clamp (CanHideForwardAuthor / NormalizeForwardOptions):
+        // when the source entry requires preserving forward attribution (forcedForwardInfo=true),
+        // requested drop_sender_names/drop_captions are clamped to PreserveInfo and origin is retained.
+        assert!(source_owner.append_transcript_entry(&serde_json::json!({
+            "id": "human-server-message:902",
+            "kind": "message",
+            "role": "user",
+            "authorKind": "human",
+            "authorId": "human-source",
+            "authorName": "Forced Source Author",
+            "content": "mandatory attribution message",
+            "forcedForwardInfo": true,
+            "delivery": "sent",
+            "timestampMs": 30.0,
+            "remoteMessageId": "902",
+            "remoteCreatedAt": "1970-01-01T00:00:30Z"
+        })).unwrap());
+        let clamped = restarted
+            .forward_human_message(
+                &source,
+                "human-server-message:902",
+                &[beta.clone()],
+                "forward-request-forced-preserve-1",
+                true,
+                true,
+            )
+            .unwrap();
+        assert_eq!(
+            clamped.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("sent"),
+        );
+        let beta_entries = restarted.read_human_conversation_transcript(&beta).unwrap();
+        assert_eq!(beta_entries.len(), 2);
+        let forced_forwarded = &beta_entries[1];
+        let forced_context = forced_forwarded.get("forwardContext").unwrap();
+        assert_eq!(
+            forced_context.pointer("/privacy/dropSenderNames").and_then(serde_json::Value::as_bool),
+            Some(false),
+        );
+        assert_eq!(
+            forced_context.pointer("/privacy/dropCaptions").and_then(serde_json::Value::as_bool),
+            Some(false),
+        );
+        assert_eq!(
+            forced_context.pointer("/privacy/forcedPreserveInfo").and_then(serde_json::Value::as_bool),
+            Some(true),
+        );
+        assert_eq!(
+            forced_context.pointer("/origin/authorName").and_then(serde_json::Value::as_str),
+            Some("Forced Source Author"),
+        );
+        let clamped_replay = restarted
+            .forward_human_message(
+                &source,
+                "human-server-message:902",
+                &[beta.clone()],
+                "forward-request-forced-preserve-1",
+                true,
+                true,
+            )
+            .unwrap();
+        assert_eq!(
+            clamped_replay.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("sent"),
+        );
+        assert_eq!(restarted.read_human_conversation_transcript(&beta).unwrap().len(), 2);
+
+        // Temporal recipient policy refresh (TEMP-TDRP-SHARE-RECIPIENT-POLICY-REFRESH-001):
+        // A legacy persisted ConversationPermissions snapshot missing can_send_other/can_send_inline/can_send_games
+        // fails closed for content-derived sticker/inline/game source entries until authoritative policy refresh
+        // updates the canonical permissions in SandAgentDb, and the refreshed policy survives restart.
+        let epsilon = conversation_id(
+            &restarted
+                .create_human_conversation("human-epsilon", "Epsilon LegacyPolicy")
+                .unwrap(),
+        );
+        let epsilon_owner = restarted.open_human_conversation_db_owner(&epsilon).unwrap();
+        assert!(epsilon_owner
+            .set_metadata(
+                "permissions",
+                serde_json::json!({
+                    "canSendMessages": true,
+                    "canSendMedia": true,
+                    "canSendPolls": true,
+                    "canAddMembers": true,
+                    "canPinMessages": true,
+                    "canManageTopics": true,
+                    "canManageCalls": true
+                }),
+            )
+            .unwrap());
+
+        assert!(source_owner
+            .append_transcript_entry(&serde_json::json!({
+                "id": "human-server-message:903",
+                "kind": "message",
+                "role": "user",
+                "authorKind": "human",
+                "authorId": "human-source",
+                "content": "inline game message",
+                "game": { "shortName": "chess" },
+                "viaBotId": "bot-inline-1",
+                "delivery": "sent",
+                "timestampMs": 35.0,
+                "remoteMessageId": "903",
+                "remoteCreatedAt": "1970-01-01T00:00:35Z"
+            }))
+            .unwrap());
+
+        let before_refresh = restarted
+            .search_human_recipients(&source, "human-server-message:903", "", 50)
+            .unwrap();
+        assert!(
+            before_refresh
+                .iter()
+                .all(|item| item.get("id").and_then(serde_json::Value::as_str) != Some(epsilon.as_str())),
+            "legacy permissions missing can_send_other/can_send_inline/can_send_games must fail closed before policy refresh",
+        );
+
+        restarted
+            .refresh_human_conversation_recipient_policy(
+                &epsilon,
+                fabushi_messaging_core::ConversationPermissions::default(),
+                None,
+            )
+            .unwrap();
+
+        let after_refresh = restarted
+            .search_human_recipients(&source, "human-server-message:903", "", 50)
+            .unwrap();
+        assert!(
+            after_refresh
+                .iter()
+                .any(|item| item.get("id").and_then(serde_json::Value::as_str) == Some(epsilon.as_str())),
+            "authoritative policy refresh must expose the destination for inline/game/send-other forwards",
+        );
+
+        // Secret-content vs standard-destination compatibility fails closed before exposure and at forward boundary
+        let secret_dest = conversation_id(
+            &restarted
+                .create_human_conversation("human-secret", "Secret Peer")
+                .unwrap(),
+        );
+        let secret_dest_owner = restarted.open_human_conversation_db_owner(&secret_dest).unwrap();
+        assert!(secret_dest_owner
+            .set_metadata("secret", serde_json::json!(true))
+            .unwrap());
+        let standard_for_secret_check = restarted
+            .search_human_recipients(&source, source_entry_id, "", 50)
+            .unwrap();
+        assert!(
+            standard_for_secret_check
+                .iter()
+                .all(|item| item.get("id").and_then(serde_json::Value::as_str) != Some(secret_dest.as_str())),
+            "secret destination must be excluded for standard non-secret source messages",
+        );
+
         restarted.shutdown();
+
+        let restarted_after_policy = test_workers(&root);
+        let after_restart_refresh = restarted_after_policy
+            .search_human_recipients(&source, "human-server-message:903", "", 50)
+            .unwrap();
+        assert!(
+            after_restart_refresh
+                .iter()
+                .any(|item| item.get("id").and_then(serde_json::Value::as_str) == Some(epsilon.as_str())),
+            "refreshed recipient policy must survive restart",
+        );
+        let refreshed_settlement = restarted_after_policy
+            .forward_human_message(
+                &source,
+                "human-server-message:903",
+                &[epsilon.clone(), secret_dest.clone()],
+                "forward-request-refreshed-policy-1",
+                false,
+                false,
+            )
+            .unwrap();
+        let refreshed_dests = refreshed_settlement
+            .get("destinations")
+            .and_then(serde_json::Value::as_array)
+            .unwrap();
+        assert_eq!(refreshed_dests[0].get("status").and_then(serde_json::Value::as_str), Some("sent"));
+        assert_eq!(refreshed_dests[1].get("status").and_then(serde_json::Value::as_str), Some("failed"));
+        assert_eq!(
+            restarted_after_policy
+                .read_human_conversation_transcript(&epsilon)
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            restarted_after_policy
+                .read_human_conversation_transcript(&secret_dest)
+                .unwrap()
+                .len(),
+            0
+        );
+
+        restarted_after_policy.shutdown();
         let _ = fs::remove_dir_all(root);
     }
 }
+
+

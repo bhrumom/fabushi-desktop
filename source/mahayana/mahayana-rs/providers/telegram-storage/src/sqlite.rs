@@ -1,26 +1,14 @@
-use crate::EncryptedPayload;
-use crate::StorageCipher;
-use crate::StorageError;
-use crate::StorageKey;
-use fabushi_telegram_core::ChatId;
-use fabushi_telegram_core::Event;
-use fabushi_telegram_core::FormattedText;
-use fabushi_telegram_core::Message;
-use fabushi_telegram_core::MessageContent;
-use fabushi_telegram_core::MessageId;
-use fabushi_telegram_core::TelegramState;
-use rusqlite::params;
-use rusqlite::params_from_iter;
-use rusqlite::types::Value;
-use rusqlite::Connection;
-use rusqlite::OptionalExtension;
-use rusqlite::TransactionBehavior;
-use serde::Deserialize;
-use serde::Serialize;
-use std::collections::BTreeSet;
-use std::path::Path;
+use crate::{EncryptedPayload, StorageCipher, StorageError, StorageKey};
+use fabushi_telegram_core::{
+    ChatId, Event, FormattedText, Message, MessageContent, MessageId, TelegramState,
+};
+use rusqlite::{
+    params, params_from_iter, types::Value, Connection, OptionalExtension, TransactionBehavior,
+};
+use serde::{Deserialize, Serialize};
+use std::{collections::BTreeSet, path::Path};
 
-const SCHEMA_VERSION: i64 = 2;
+const SCHEMA_VERSION: i64 = 4;
 const SNAPSHOT_ID: i64 = 1;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -72,6 +60,83 @@ impl EncryptedSqliteStore {
         };
         store.migrate()?;
         Ok(store)
+    }
+
+    pub fn load_private_metadata(&self, key: &str) -> Result<Option<Vec<u8>>, StorageError> {
+        let payload = self
+            .connection
+            .query_row(
+                "SELECT payload FROM private_metadata WHERE key = ?1",
+                [key],
+                |row| row.get::<_, Vec<u8>>(0),
+            )
+            .optional()?;
+        let Some(payload) = payload else {
+            return Ok(None);
+        };
+        let plaintext = self.cipher.decrypt(
+            &EncryptedPayload(payload),
+            private_metadata_associated_data(key).as_bytes(),
+        )?;
+        Ok(Some(plaintext))
+    }
+
+    pub fn save_private_metadata(
+        &mut self,
+        key: &str,
+        plaintext: &[u8],
+        updated_at_unix_ms: i64,
+    ) -> Result<(), StorageError> {
+        let payload = self
+            .cipher
+            .encrypt(plaintext, private_metadata_associated_data(key).as_bytes())?;
+        self.connection.execute(
+            "INSERT INTO private_metadata (key, payload, updated_at_unix_ms)
+             VALUES (?1, ?2, ?3)
+             ON CONFLICT(key) DO UPDATE SET
+               payload = excluded.payload,
+               updated_at_unix_ms = excluded.updated_at_unix_ms",
+            params![key, payload.0, updated_at_unix_ms],
+        )?;
+        Ok(())
+    }
+
+    pub fn load_secure_value(&self, key: &str) -> Result<Option<Vec<u8>>, StorageError> {
+        let payload = self
+            .connection
+            .query_row(
+                "SELECT payload FROM secure_value WHERE key = ?1",
+                [key],
+                |row| row.get::<_, Vec<u8>>(0),
+            )
+            .optional()?;
+        payload
+            .map(|payload| {
+                self.cipher.decrypt(
+                    &EncryptedPayload(payload),
+                    secure_value_associated_data(key).as_bytes(),
+                )
+            })
+            .transpose()
+    }
+
+    pub fn save_secure_value(&mut self, key: &str, value: &[u8]) -> Result<(), StorageError> {
+        let payload = self
+            .cipher
+            .encrypt(value, secure_value_associated_data(key).as_bytes())?;
+        self.connection.execute(
+            "INSERT INTO secure_value (key, payload) VALUES (?1, ?2)
+             ON CONFLICT(key) DO UPDATE SET payload = excluded.payload",
+            params![key, payload.0],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_secure_value(&mut self, key: &str) -> Result<bool, StorageError> {
+        Ok(self
+            .connection
+            .execute("DELETE FROM secure_value WHERE key = ?1", [key])?
+            > 0)
     }
 
     pub fn load_snapshot(&self) -> Result<Option<StateSnapshot>, StorageError> {
@@ -501,22 +566,33 @@ impl EncryptedSqliteStore {
                    FOREIGN KEY (chat_id, message_id)
                      REFERENCES message_index(chat_id, message_id) ON DELETE CASCADE
                  ) WITHOUT ROWID;
-                 PRAGMA user_version = 2;",
+                 CREATE TABLE private_metadata (
+                   key TEXT PRIMARY KEY,
+                   payload BLOB NOT NULL,
+                   updated_at_unix_ms INTEGER NOT NULL
+                 ) WITHOUT ROWID;
+                 CREATE TABLE secure_value (
+                   key TEXT PRIMARY KEY,
+                   payload BLOB NOT NULL
+                 ) WITHOUT ROWID;
+                 PRAGMA user_version = 4;",
             )?;
             transaction.commit()?;
-        } else if current == 1 {
+            return Ok(());
+        }
+        if current == 1 {
             let transaction = self.connection.transaction()?;
             transaction.execute_batch(
-                "CREATE TABLE message_index (
+                "CREATE TABLE IF NOT EXISTS message_index (
                    chat_id INTEGER NOT NULL,
                    message_id INTEGER NOT NULL,
                    date_unix_ms INTEGER NOT NULL,
                    payload BLOB NOT NULL,
                    PRIMARY KEY (chat_id, message_id)
                  );
-                 CREATE INDEX message_index_chronology
+                 CREATE INDEX IF NOT EXISTS message_index_chronology
                    ON message_index (chat_id, date_unix_ms DESC, message_id DESC);
-                 CREATE TABLE message_search_token (
+                 CREATE TABLE IF NOT EXISTS message_search_token (
                    token BLOB NOT NULL,
                    chat_id INTEGER NOT NULL,
                    message_id INTEGER NOT NULL,
@@ -524,7 +600,33 @@ impl EncryptedSqliteStore {
                    FOREIGN KEY (chat_id, message_id)
                      REFERENCES message_index(chat_id, message_id) ON DELETE CASCADE
                  ) WITHOUT ROWID;
-                 PRAGMA user_version = 2;",
+                 CREATE TABLE IF NOT EXISTS private_metadata (
+                   key TEXT PRIMARY KEY,
+                   payload BLOB NOT NULL,
+                   updated_at_unix_ms INTEGER NOT NULL
+                 ) WITHOUT ROWID;
+                 CREATE TABLE IF NOT EXISTS secure_value (
+                   key TEXT PRIMARY KEY,
+                   payload BLOB NOT NULL
+                 ) WITHOUT ROWID;
+                 PRAGMA user_version = 4;",
+            )?;
+            transaction.commit()?;
+            return Ok(());
+        }
+        if current == 2 || current == 3 {
+            let transaction = self.connection.transaction()?;
+            transaction.execute_batch(
+                "CREATE TABLE IF NOT EXISTS private_metadata (
+                   key TEXT PRIMARY KEY,
+                   payload BLOB NOT NULL,
+                   updated_at_unix_ms INTEGER NOT NULL
+                 ) WITHOUT ROWID;
+                 CREATE TABLE IF NOT EXISTS secure_value (
+                   key TEXT PRIMARY KEY,
+                   payload BLOB NOT NULL
+                 ) WITHOUT ROWID;
+                 PRAGMA user_version = 4;",
             )?;
             transaction.commit()?;
         }
@@ -674,6 +776,14 @@ fn is_cjk(character: char) -> bool {
     )
 }
 
+fn private_metadata_associated_data(key: &str) -> String {
+    format!("fabushi.telegram.private-metadata.v1:{key}")
+}
+
+fn secure_value_associated_data(key: &str) -> String {
+    format!("fabushi.telegram.secure-value.v1:{key}")
+}
+
 fn snapshot_associated_data(revision: u64) -> String {
     format!("fabushi.telegram.snapshot.v1:{revision}")
 }
@@ -706,6 +816,6 @@ mod tests {
             .connection()
             .pragma_query_value(None, "user_version", |row| row.get(0))
             .unwrap();
-        assert_eq!(version, 2);
+        assert_eq!(version, 4);
     }
 }

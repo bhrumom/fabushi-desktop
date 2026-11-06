@@ -103,7 +103,7 @@ fn shipping_host_owns_task_child_runner_and_live_parent_projection() {
         "subagent_task_review,",
         "worker_host_runner_composition.compose_production_runner(",
         "Arc::clone(&worker_generated_agent_runtime)",
-        "runner.begin_generated_subagent(",
+        "runner.begin_generated_subagent",
         "worker_transcript_runtime.begin_live_subagent(parent_agent_id)",
         "worker_completion_revivals.handle_background_subagent_completion",
         "worker_transcript_runtime.end_live_subagent(parent_agent_id)",

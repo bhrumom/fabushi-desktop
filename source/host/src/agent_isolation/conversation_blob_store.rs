@@ -209,7 +209,12 @@ impl ConversationBlobStoreDb {
             Ok(())
         })();
         match delete_result {
-            Ok(()) => self.connection.execute_batch("COMMIT")?,
+            Ok(()) => {
+                if let Err(error) = self.connection.execute_batch("COMMIT") {
+                    let _ = self.connection.execute_batch("ROLLBACK");
+                    return Err(error.into());
+                }
+            }
             Err(error) => {
                 let _ = self.connection.execute_batch("ROLLBACK");
                 return Err(error.into());
@@ -309,7 +314,12 @@ impl ConversationBlobStoreDb {
                 Ok(())
             })();
             match delete_result {
-                Ok(()) => self.connection.execute_batch("COMMIT")?,
+                Ok(()) => {
+                    if let Err(error) = self.connection.execute_batch("COMMIT") {
+                        let _ = self.connection.execute_batch("ROLLBACK");
+                        return Err(error.into());
+                    }
+                }
                 Err(error) => {
                     let _ = self.connection.execute_batch("ROLLBACK");
                     return Err(error.into());

@@ -1,0 +1,1039 @@
+/* OpenClaw Desktop UI Theme and Layout Styles */
+
+:root {
+  /* Canonical Fabushi Design Tokens (FDS) */
+  --fabushi-bg-canvas: var(--cursor-bg-editor, #ffffff);
+  --fabushi-bg-surface: var(--cursor-bg-chrome, #f7f7f8);
+  --fabushi-bg-sidebar: var(--cursor-bg-chrome, #f0f0f2);
+  --fabushi-border: var(--sand-border-weak, rgba(0, 0, 0, 0.08));
+  --fabushi-border-strong: var(--sand-border-focus, rgba(0, 0, 0, 0.16));
+  --fabushi-text-primary: var(--cursor-text-primary, #1d1d1f);
+  --fabushi-text-secondary: var(--cursor-text-secondary, #555558);
+  --fabushi-text-muted: #8e887e;
+  --fabushi-accent-primary: #1084fe;
+  --fabushi-accent-coral: var(--sand-fill-accent, #d9534f);
+  --fabushi-accent-blue: #0071e3;
+  --fabushi-accent-gold: #f5b041;
+  --fabushi-card-bg: var(--cursor-bg-elevated, #ffffff);
+  --fabushi-card-border: var(--sand-border-weak, rgba(0, 0, 0, 0.08));
+  --fabushi-card-hover: var(--cursor-bg-secondary, rgba(0, 0, 0, 0.03));
+  --fabushi-composer-bg: var(--cursor-bg-elevated, #ffffff);
+  --fabushi-composer-border: var(--sand-border-weak, rgba(0, 0, 0, 0.12));
+  --fabushi-shadow-sm: var(--cursor-box-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04));
+  --fabushi-shadow-md: var(--cursor-box-shadow-md, 0 4px 14px rgba(0, 0, 0, 0.06));
+
+  /* Status Colors (Light) */
+  --fabushi-status-pending: #8e887e;
+  --fabushi-status-pending-bg: rgba(142, 136, 126, 0.14);
+  --fabushi-status-running: #0071e3;
+  --fabushi-status-running-bg: rgba(0, 113, 227, 0.12);
+  --fabushi-status-waiting-auth: #d97706;
+  --fabushi-status-waiting-auth-bg: rgba(217, 119, 6, 0.14);
+  --fabushi-status-waiting-connection: #d97706;
+  --fabushi-status-waiting-connection-bg: rgba(217, 119, 6, 0.14);
+  --fabushi-status-completed: #16a34a;
+  --fabushi-status-completed-bg: rgba(22, 163, 74, 0.12);
+  --fabushi-status-failed: #dc2626;
+  --fabushi-status-failed-bg: rgba(220, 38, 38, 0.12);
+  --fabushi-status-cancelled: #6b7280;
+  --fabushi-status-cancelled-bg: rgba(107, 114, 128, 0.14);
+
+  /* A11y & Focus */
+  --fabushi-focus-ring: #0071e3;
+  --fabushi-touch-target-min: 44px;
+
+  /* Aliased OpenClaw Variables (Zero uncontained parallel design system) */
+  --oc-bg-canvas: var(--fabushi-bg-canvas);
+  --oc-bg-surface: var(--fabushi-bg-surface);
+  --oc-bg-sidebar: var(--fabushi-bg-sidebar);
+  --oc-border: var(--fabushi-border);
+  --oc-border-strong: var(--fabushi-border-strong);
+  --oc-text-primary: var(--fabushi-text-primary);
+  --oc-text-secondary: var(--fabushi-text-secondary);
+  --oc-text-muted: var(--fabushi-text-muted);
+  --oc-accent-coral: var(--fabushi-accent-coral);
+  --oc-accent-blue: var(--fabushi-accent-blue);
+  --oc-gold: var(--fabushi-accent-gold);
+  --oc-card-bg: var(--fabushi-card-bg);
+  --oc-card-border: var(--fabushi-card-border);
+  --oc-card-hover: var(--fabushi-card-hover);
+  --oc-composer-bg: var(--fabushi-composer-bg);
+  --oc-composer-border: var(--fabushi-composer-border);
+  --oc-shadow-sm: var(--fabushi-shadow-sm);
+  --oc-shadow-md: var(--fabushi-shadow-md);
+}
+
+[data-theme="dark"] {
+  /* Canonical Fabushi Design Tokens — Dark Theme */
+  --fabushi-bg-canvas: var(--cursor-bg-editor, #1c1c1e);
+  --fabushi-bg-surface: var(--cursor-bg-chrome, #252528);
+  --fabushi-bg-sidebar: var(--cursor-bg-chrome, #18181a);
+  --fabushi-border: var(--sand-border-weak, rgba(255, 255, 255, 0.09));
+  --fabushi-border-strong: var(--sand-border-focus, rgba(255, 255, 255, 0.16));
+  --fabushi-text-primary: var(--cursor-text-primary, #f5f5f7);
+  --fabushi-text-secondary: var(--cursor-text-secondary, #a1a1a6);
+  --fabushi-text-muted: #86868b;
+  --fabushi-accent-primary: #388bfd;
+  --fabushi-accent-coral: var(--sand-fill-accent, #e56a66);
+  --fabushi-accent-blue: #2997ff;
+  --fabushi-accent-gold: #f5b041;
+  --fabushi-card-bg: var(--cursor-bg-elevated, #222225);
+  --fabushi-card-border: var(--sand-border-weak, rgba(255, 255, 255, 0.08));
+  --fabushi-card-hover: var(--cursor-bg-secondary, rgba(255, 255, 255, 0.04));
+  --fabushi-composer-bg: var(--cursor-bg-elevated, #222225);
+  --fabushi-composer-border: var(--sand-border-weak, rgba(255, 255, 255, 0.14));
+  --fabushi-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --fabushi-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+
+  /* Status Colors — Dark */
+  --fabushi-status-pending: #a1a1a6;
+  --fabushi-status-pending-bg: rgba(161, 161, 166, 0.16);
+  --fabushi-status-running: #2997ff;
+  --fabushi-status-running-bg: rgba(41, 151, 255, 0.16);
+  --fabushi-status-waiting-auth: #fbbf24;
+  --fabushi-status-waiting-auth-bg: rgba(251, 191, 36, 0.16);
+  --fabushi-status-waiting-connection: #fbbf24;
+  --fabushi-status-waiting-connection-bg: rgba(251, 191, 36, 0.16);
+  --fabushi-status-completed: #22c55e;
+  --fabushi-status-completed-bg: rgba(34, 197, 94, 0.16);
+  --fabushi-status-failed: #f87171;
+  --fabushi-status-failed-bg: rgba(248, 113, 113, 0.16);
+  --fabushi-status-cancelled: #9ca3af;
+  --fabushi-status-cancelled-bg: rgba(156, 163, 175, 0.16);
+
+  /* A11y & Focus — Dark */
+  --fabushi-focus-ring: #2997ff;
+
+  /* Aliased OpenClaw Variables (Zero uncontained parallel design system) */
+  --oc-bg-canvas: var(--fabushi-bg-canvas);
+  --oc-bg-surface: var(--fabushi-bg-surface);
+  --oc-bg-sidebar: var(--fabushi-bg-sidebar);
+  --oc-border: var(--fabushi-border);
+  --oc-border-strong: var(--fabushi-border-strong);
+  --oc-text-primary: var(--fabushi-text-primary);
+  --oc-text-secondary: var(--fabushi-text-secondary);
+  --oc-text-muted: var(--fabushi-text-muted);
+  --oc-accent-coral: var(--fabushi-accent-coral);
+  --oc-accent-blue: var(--fabushi-accent-blue);
+  --oc-gold: var(--fabushi-accent-gold);
+  --oc-card-bg: var(--fabushi-card-bg);
+  --oc-card-border: var(--fabushi-card-border);
+  --oc-card-hover: var(--fabushi-card-hover);
+  --oc-composer-bg: var(--fabushi-composer-bg);
+  --oc-composer-border: var(--fabushi-composer-border);
+  --oc-shadow-sm: var(--fabushi-shadow-sm);
+  --oc-shadow-md: var(--fabushi-shadow-md);
+}
+
+/* 1. Left Navigation Rail */
+.oc-nav-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 58px;
+  height: 100%;
+  background: var(--oc-bg-sidebar);
+  border-right: 1px solid var(--oc-border);
+  padding: 12px 0;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.oc-nav-rail__top,
+.oc-nav-rail__bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.oc-nav-rail__top {
+  flex: 1;
+}
+
+.oc-nav-rail__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--oc-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.oc-nav-rail__btn:hover {
+  background: var(--oc-card-hover);
+  color: var(--oc-text-primary);
+}
+
+.oc-nav-rail__btn--active {
+  background: var(--oc-card-bg);
+  color: var(--oc-text-primary);
+  box-shadow: var(--oc-shadow-sm);
+}
+
+.oc-nav-rail__btn--active::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  width: 3px;
+  height: 18px;
+  background: var(--oc-accent-coral);
+  border-radius: 0 3px 3px 0;
+}
+
+.oc-nav-rail__avatar-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.oc-nav-rail__status-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background: #27ae60;
+  border: 1.5px solid var(--oc-bg-sidebar);
+  border-radius: 50%;
+}
+
+/* 2. Top Header & Breadcrumbs */
+.oc-top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  min-height: 52px;
+  margin-right: var(--sand-window-controls-inset, 0px);
+  padding: 0 16px;
+  border-bottom: 1px solid var(--oc-border);
+  background: var(--oc-bg-canvas);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.oc-top-header__leading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.oc-top-header__nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--oc-text-secondary);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.oc-top-header__nav-btn:hover:not(:disabled) {
+  background: var(--oc-card-hover);
+  color: var(--oc-text-primary);
+}
+
+.oc-top-header__nav-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.oc-top-header__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--oc-text-secondary);
+  margin-left: 4px;
+}
+
+.oc-top-header__breadcrumb-title {
+  color: var(--oc-text-primary);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.oc-top-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.oc-top-header__action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--oc-border);
+  background: transparent;
+  color: var(--oc-text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.oc-top-header__action-btn:hover {
+  background: var(--oc-card-hover);
+  border-color: var(--oc-border-strong);
+}
+
+.oc-top-header__action-btn--active {
+  background: var(--oc-card-hover);
+  border-color: var(--oc-accent-coral);
+  color: var(--oc-accent-coral);
+}
+
+/* 3. Welcome Hero State */
+.oc-welcome-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+  max-width: 620px;
+  width: 100%;
+  padding: 40px 20px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.oc-welcome-hero__avatar {
+  margin-bottom: 16px;
+  filter: drop-shadow(0 4px 12px rgba(212, 160, 23, 0.25));
+}
+
+.oc-welcome-hero__title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--oc-text-primary);
+  letter-spacing: -0.015em;
+}
+
+.oc-welcome-hero__subtitle {
+  margin: 6px 0 28px 0;
+  font-size: 13.5px;
+  color: var(--oc-text-muted);
+}
+
+.oc-welcome-hero__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.oc-prompt-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--oc-card-border);
+  background: var(--oc-card-bg);
+  box-shadow: var(--oc-shadow-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.oc-prompt-card:hover {
+  border-color: var(--oc-border-strong);
+  background: var(--oc-card-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--oc-shadow-md);
+}
+
+.oc-prompt-card__title {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--oc-text-primary);
+  margin-bottom: 4px;
+}
+
+.oc-prompt-card__desc {
+  font-size: 12px;
+  color: var(--oc-text-muted);
+  line-height: 1.4;
+}
+
+/* 4. OpenClaw Clean Composer */
+.oc-clean-composer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto 16px auto;
+  border-radius: 20px;
+  border: 1px solid var(--oc-composer-border);
+  background: var(--oc-composer-bg);
+  box-shadow: var(--oc-shadow-md);
+  padding: 10px 14px 10px 14px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.oc-clean-composer:focus-within {
+  border-color: rgba(0, 113, 227, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 113, 227, 0.08);
+}
+
+.oc-clean-composer__textarea {
+  width: 100%;
+  min-height: 38px;
+  max-height: 180px;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--oc-text-primary);
+  box-sizing: border-box;
+  padding: 4px 2px;
+}
+
+.oc-clean-composer__textarea::placeholder {
+  color: var(--oc-text-muted);
+}
+
+.oc-clean-composer__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding-top: 4px;
+}
+
+.oc-clean-composer__left-tools,
+.oc-clean-composer__right-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.oc-clean-composer__tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--oc-text-secondary);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.oc-clean-composer__tool-btn:hover {
+  background: var(--oc-card-hover);
+  color: var(--oc-text-primary);
+}
+
+.oc-pill-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  height: 28px;
+  border-radius: 14px;
+  border: 1px solid var(--oc-border);
+  background: var(--oc-bg-surface);
+  color: var(--oc-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.12s ease;
+}
+
+.oc-pill-select:hover {
+  border-color: var(--oc-border-strong);
+  color: var(--oc-text-primary);
+}
+
+.oc-clean-composer__send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--oc-text-primary);
+  color: var(--oc-bg-canvas);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.oc-clean-composer__send-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.oc-clean-composer__send-btn:not(:disabled):hover {
+  transform: scale(1.05);
+  background: #000000;
+}
+
+/* 5. Right Split Panel: Ask OpenClaw / Copilot Drawer */
+.oc-copilot-drawer {
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  min-width: 340px;
+  height: 100%;
+  border-left: 1px solid var(--oc-border);
+  background: var(--oc-bg-canvas);
+  box-sizing: border-box;
+}
+
+.oc-copilot-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--oc-border);
+  background: var(--oc-bg-surface);
+}
+
+.oc-copilot-drawer__tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.oc-copilot-drawer__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--oc-text-secondary);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.oc-copilot-drawer__tab--active {
+  background: var(--oc-card-bg);
+  color: var(--oc-text-primary);
+  box-shadow: var(--oc-shadow-sm);
+}
+
+.oc-copilot-drawer__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--oc-text-muted);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.oc-copilot-drawer__close:hover {
+  background: var(--oc-card-hover);
+  color: var(--oc-text-primary);
+}
+
+.oc-copilot-drawer__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  gap: 14px;
+}
+
+.oc-copilot-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.oc-copilot-msg--user {
+  align-self: flex-end;
+  background: var(--oc-bg-surface);
+  border: 1px solid var(--oc-border);
+  padding: 8px 12px;
+  border-radius: 14px 14px 2px 14px;
+  max-width: 85%;
+  color: var(--oc-text-primary);
+}
+
+.oc-copilot-msg--assistant {
+  align-self: flex-start;
+  color: var(--oc-text-secondary);
+  max-width: 95%;
+}
+
+.oc-copilot-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--oc-text-muted);
+  font-size: 11px;
+  margin: 6px 0;
+}
+
+.oc-copilot-divider::before,
+.oc-copilot-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--oc-border);
+}
+
+.oc-copilot-status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--oc-card-border);
+  background: var(--oc-bg-surface);
+}
+
+.oc-copilot-status-card__headline {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--oc-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.oc-copilot-status-card__sub {
+  font-size: 11.5px;
+  color: var(--oc-text-muted);
+}
+
+.oc-copilot-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.oc-action-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--oc-border);
+  background: var(--oc-card-bg);
+  color: var(--oc-accent-coral);
+  font-size: 11.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.oc-action-pill:hover {
+  background: rgba(217, 83, 79, 0.08);
+  border-color: var(--oc-accent-coral);
+}
+
+.oc-copilot-drawer__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--oc-border);
+  background: var(--oc-bg-surface);
+}
+
+.oc-copilot-drawer__input {
+  flex: 1;
+  height: 32px;
+  border-radius: 16px;
+  border: 1px solid var(--oc-border);
+  background: var(--oc-bg-canvas);
+  padding: 0 12px;
+  font-size: 12.5px;
+  color: var(--oc-text-primary);
+  outline: none;
+}
+
+.oc-copilot-drawer__input:focus {
+  border-color: var(--oc-accent-coral);
+}
+
+.oc-copilot-drawer__send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--oc-accent-coral);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   6. Accessibility & Focus Outlines (WCAG AA Compliance)
+   ========================================================================== */
+:focus-visible {
+  outline: 2px solid var(--fabushi-focus-ring);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--fabushi-focus-ring);
+  outline-offset: 1px;
+}
+
+/* Touch targets for WCAG AA compliance (min 44x44px for primary interactive targets) */
+.oc-nav-rail__btn,
+.oc-top-header__nav-btn,
+.oc-clean-composer__tool-btn {
+  min-width: 32px;
+  min-height: 32px;
+}
+
+/* ==========================================================================
+   7. Responsive Multi-Tier Layout Breakpoints (UFX-R10 & Blueprint 01/02)
+   - Upstream Alignment: Telegram Desktop `window/window_adaptive.cpp` (ThreeColumn / Normal / OneColumn)
+   - Tier 1: ≥1200px — 3-Column Layout (Rail + Sidebar + Main Workspace + Docked Drawer)
+   - Tier 2: 900–1199px — 2-Column Layout (Rail + Sidebar + Main Workspace, Mutually Exclusive Overlay Drawers)
+   - Tier 3: <900px — Single-Column Mobile/Compact Layout (Stacked Navigation, Full-Width Drawers)
+   ========================================================================== */
+
+.fabushi-shell-grid {
+  display: grid;
+  grid-template-columns: 52px var(--fabushi-sidebar-width, 280px) minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  background-color: var(--fabushi-bg-canvas);
+  color: var(--fabushi-text-primary);
+  position: relative;
+}
+
+.fabushi-tier-wide.fabushi-shell-grid {
+  grid-template-columns: 52px var(--fabushi-sidebar-width, 280px) minmax(0, 1fr);
+}
+
+.fabushi-tier-standard.fabushi-shell-grid {
+  grid-template-columns: 52px clamp(260px, var(--fabushi-sidebar-width, 280px), 340px) minmax(0, 1fr);
+}
+
+.fabushi-tier-compact.fabushi-shell-grid {
+  grid-template-columns: 48px minmax(0, 1fr);
+}
+
+/* Unified Conversation Header & Stage (Blueprint 02 §4.3) */
+.fabushi-conversation-stage {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  background-color: var(--fabushi-bg-canvas);
+  color: var(--fabushi-text-primary);
+  overflow: hidden;
+}
+
+.fabushi-conversation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  min-height: 52px;
+  margin-right: var(--sand-window-controls-inset, 0px);
+  padding: 0 16px;
+  background-color: var(--fabushi-bg-surface);
+  border-bottom: 1px solid var(--fabushi-border);
+  box-shadow: var(--fabushi-shadow-sm);
+  position: relative;
+  z-index: 5000;
+  box-sizing: border-box;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.fabushi-conversation-header :is(button, a, input, select, [role="button"]) {
+  position: relative;
+  z-index: 5001;
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.fabushi-header-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 32px;
+  height: 30px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--fabushi-border);
+  background: transparent;
+  color: var(--fabushi-text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.fabushi-header-action-btn:hover {
+  background-color: var(--fabushi-card-hover);
+  border-color: var(--fabushi-border-strong);
+  color: var(--fabushi-text-primary);
+}
+
+.fabushi-header-action-btn--active {
+  background-color: rgba(16, 132, 254, 0.12);
+  color: var(--fabushi-accent-primary);
+  border-color: var(--fabushi-accent-primary);
+}
+
+.fabushi-context-inspector {
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  min-width: 340px;
+  max-width: 420px;
+  height: 100%;
+  border-left: 1px solid var(--fabushi-border);
+  background-color: var(--fabushi-bg-canvas);
+  box-sizing: border-box;
+}
+
+/* Tier 1: ≥1200px: 3-column layout */
+@media (min-width: 1200px) {
+  .oc-copilot-drawer,
+  .fabushi-context-inspector {
+    position: relative;
+    width: 360px;
+    min-width: 340px;
+    max-width: 420px;
+    flex-shrink: 0;
+    box-shadow: none;
+    z-index: 1;
+  }
+
+  .sand-async-tasks-panel {
+    max-width: 420px;
+  }
+}
+
+/* Tier 2: 900–1199px: 2-column layout with mutually exclusive drawer overlays */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .fabushi-shell-grid {
+    grid-template-columns: 52px clamp(260px, var(--fabushi-sidebar-width, 280px), 340px) minmax(0, 1fr);
+  }
+
+  .oc-copilot-drawer,
+  .fabushi-context-inspector {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 360px;
+    max-width: 90vw;
+    box-shadow: var(--fabushi-shadow-md);
+    z-index: 25;
+    background: var(--fabushi-bg-canvas);
+  }
+
+  .sand-async-tasks-panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 360px;
+    max-width: 90vw;
+    box-shadow: var(--fabushi-shadow-md);
+    z-index: 30;
+  }
+
+  .oc-clean-composer {
+    max-width: 100%;
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+}
+
+/* Tier 3: <900px: single-column compact layout */
+@media (max-width: 899px) {
+  .fabushi-shell-grid {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .oc-copilot-drawer,
+  .fabushi-context-inspector {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    z-index: 100;
+    background: var(--fabushi-bg-canvas);
+    box-shadow: none;
+  }
+
+  .sand-async-tasks-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    z-index: 105;
+  }
+
+  .oc-welcome-hero {
+    padding: 24px 12px;
+  }
+
+  .oc-welcome-hero__grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .oc-clean-composer {
+    max-width: 100%;
+    border-radius: 12px;
+    margin: 0 8px 8px 8px;
+    padding: 8px 10px;
+  }
+
+  .oc-nav-rail,
+  .fabushi-primary-nav-rail {
+    width: 48px !important;
+    min-width: 48px !important;
+  }
+
+  .oc-top-header,
+  .fabushi-conversation-header {
+    padding: 0 8px;
+    height: 48px;
+    min-height: 48px;
+  }
+
+  .oc-top-header__action-btn,
+  .fabushi-header-action-btn {
+    min-height: 44px; /* WCAG touch target */
+  }
+}
+
+/* ==========================================================================
+   8. Authentic Task Status Projection Styles (UFX-R06)
+   ========================================================================== */
+.sand-async-task {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.12s ease;
+}
+
+.sand-async-task:hover {
+  background: var(--fabushi-card-hover);
+}
+
+.sand-async-task__status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.sand-async-task[data-status="pending"] .sand-async-task__status,
+.sand-async-task__status[data-status="pending"] {
+  background: var(--fabushi-status-pending-bg);
+  color: var(--fabushi-status-pending);
+}
+
+.sand-async-task[data-status="running"] .sand-async-task__status,
+.sand-async-task__status[data-status="running"] {
+  background: var(--fabushi-status-running-bg);
+  color: var(--fabushi-status-running);
+}
+
+.sand-async-task[data-status="waiting_auth"] .sand-async-task__status,
+.sand-async-task__status[data-status="waiting_auth"] {
+  background: var(--fabushi-status-waiting-auth-bg);
+  color: var(--fabushi-status-waiting-auth);
+}
+
+.sand-async-task[data-status="waiting_connection"] .sand-async-task__status,
+.sand-async-task__status[data-status="waiting_connection"] {
+  background: var(--fabushi-status-waiting-connection-bg);
+  color: var(--fabushi-status-waiting-connection);
+}
+
+.sand-async-task[data-status="completed"] .sand-async-task__status,
+.sand-async-task__status[data-status="completed"] {
+  background: var(--fabushi-status-completed-bg);
+  color: var(--fabushi-status-completed);
+}
+
+.sand-async-task[data-status="failed"] .sand-async-task__status,
+.sand-async-task__status[data-status="failed"] {
+  background: var(--fabushi-status-failed-bg);
+  color: var(--fabushi-status-failed);
+}
+
+.sand-async-task[data-status="cancelled"] .sand-async-task__status,
+.sand-async-task__status[data-status="cancelled"] {
+  background: var(--fabushi-status-cancelled-bg);
+  color: var(--fabushi-status-cancelled);
+}
+
+.sand-async-task__error {
+  display: block;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--fabushi-status-failed);
+  word-break: break-word;
+}

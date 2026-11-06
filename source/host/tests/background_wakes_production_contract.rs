@@ -38,6 +38,7 @@ fn channel_outbound_projection_matches_frozen_text_attachment_and_widget_fences(
         build_channel_outbound_message(&json!({
             "type":"text",
             "content":"caption",
+            "deliveryOperationId":"transcript-entry-1",
             "images":[
                 {"url":"https://example.test/first.png"},
                 {"url":"https://example.test/second.png"}
@@ -46,6 +47,7 @@ fn channel_outbound_projection_matches_frozen_text_attachment_and_widget_fences(
         Some(ChannelOutboundMessage::Attachment {
             url: "https://example.test/first.png".into(),
             caption: Some("caption".into()),
+            operation_id: Some("transcript-entry-1".into()),
         })
     );
     assert_eq!(
@@ -57,6 +59,7 @@ fn channel_outbound_projection_matches_frozen_text_attachment_and_widget_fences(
         Some(ChannelOutboundMessage::Attachment {
             url: "file:///workspace/report.pdf".into(),
             caption: Some("report".into()),
+            operation_id: None,
         })
     );
     assert_eq!(
@@ -67,6 +70,7 @@ fn channel_outbound_projection_matches_frozen_text_attachment_and_widget_fences(
         })),
         Some(ChannelOutboundMessage::Text {
             text: "fallback text".into(),
+            operation_id: None,
         })
     );
     assert!(build_channel_outbound_message(&json!({
@@ -85,7 +89,7 @@ fn host_channel_delivery_defaults_fail_closed_and_allows_one_explicit_provider_p
             .deliver(
                 "agent-a",
                 "slack:C1",
-                &ChannelOutboundMessage::Text { text: "hello".into() },
+                &ChannelOutboundMessage::Text { text: "hello".into(), operation_id: None },
             )
             .expect_err("unregistered delivery"),
         "No channel delivery mechanism is registered."
@@ -97,7 +101,7 @@ fn host_channel_delivery_defaults_fail_closed_and_allows_one_explicit_provider_p
         .deliver(
             "agent-a",
             "slack:C1",
-            &ChannelOutboundMessage::Text { text: "hello".into() },
+            &ChannelOutboundMessage::Text { text: "hello".into(), operation_id: None },
         )
         .expect("registered delivery");
     let deliveries = port.deliveries.lock().expect("deliveries");
@@ -182,9 +186,41 @@ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_conte
         .map(|offset| dispatch + offset)
         .expect("Host channel owner");
     assert!(send_sink < dispatch && dispatch < gateway);
+    let persisted_entry = SHIPPING_HOST[send_sink..]
+        .find("append_generated_send_message_entry(")
+        .map(|offset| send_sink + offset)
+        .expect("transcript entry persistence");
+    assert!(persisted_entry < dispatch, "delivery dispatch must follow transcript persistence");
+    assert!(SHIPPING_HOST.contains("deliveryOperationId"));
+    assert!(SHIPPING_HOST.contains("delivery_operation_id: Option<String>"));
+    assert!(SHIPPING_HOST.contains(
+        "for cleanup_error in custody.rollback()"
+    ));
+    assert!(SHIPPING_HOST.contains(
+        "outgoing_media_cleanup_failed agent={} tool={} error={cleanup_error}"
+    ));
 
     assert!(SHIPPING_HOST.contains("queue_channel_delivery_failure("));
+    assert!(SHIPPING_HOST.contains("\"markedAtMs\": marked_at_ms"));
+    assert!(SHIPPING_HOST.contains("fn channel_failure_marker_from_failure("));
     assert!(SHIPPING_HOST.contains("run_channel_failure_revival_worker"));
+    assert!(SHIPPING_HOST.contains("clear_durable_channel_failure_markers"));
+    assert!(SHIPPING_HOST.contains("store.clear_if_matches(&marker)"));
+    assert!(SHIPPING_HOST.contains("channel_failure_marker_identity_incomplete"));
+    assert!(SHIPPING_HOST.contains(
+        "Some(_) => {\n                stale.push(failure.clone());\n                false\n            }\n            None => true"
+    ));
+    assert!(SHIPPING_HOST.contains(
+        "return Err(\"channel failure session provenance is unavailable\".into());"
+    ));
+    assert!(SHIPPING_HOST.contains(
+        "Ok(None) => {\n                clear_durable_channel_failure_markers(&deps, &agent_id, &failures);\n                continue;\n            }"
+    ));
+    assert!(SHIPPING_HOST.contains(
+        "!execution.aborted\n                    && !execution.quiesced_for_upgrade\n                    && execution.sent_message_count > 0"
+    ));
+    assert!(SHIPPING_HOST.contains("requeue_channel_failures(&wakes, &agent_id, failures)"));
+    assert!(SHIPPING_HOST.contains("tray.title = \"Delivery-failure follow-up failed\".into();\n                deps.trays.push_error(tray);\n                requeue_channel_failures(&wakes, &agent_id, failures);\n                break;"));
     assert!(SHIPPING_HOST.contains("tray.title = \"Message not delivered\""));
     assert!(SHIPPING_HOST.contains("tray.title = \"Delivery-failure follow-up failed\""));
     assert!(SHIPPING_HOST.contains("summary.is_group || summary.remote_room.is_some()"));

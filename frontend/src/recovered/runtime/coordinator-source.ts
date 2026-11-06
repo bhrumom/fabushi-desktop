@@ -3,7 +3,11 @@
 
 import {
   COORDINATOR_METHOD_TABLE,
+  parseCloudWorkerCapabilitiesProjection,
+  parseCloudWorkerDoctorProjection,
+  parseCloudWorkerStatusProjection,
   parseCoordinatorAgentThreadResponse,
+  parseCoordinatorHumanTranscriptPageResponse,
   parseCoordinatorTranscriptWindowResponse,
   type CoordinatorMethod
 } from "../../../../source/shared/rpc/coordinator";
@@ -203,6 +207,7 @@ const REPLY_CONVERTERS: Record<ReplyKind, (value: unknown) => ConvertedReply> = 
     return value;
   },
   "transcript-window": (value) => parseCoordinatorTranscriptWindowResponse(value) ?? MALFORMED_REPLY,
+  "human-transcript-page": (value) => parseCoordinatorHumanTranscriptPageResponse(value) ?? MALFORMED_REPLY,
   "agent-thread": (value) => parseCoordinatorAgentThreadResponse(value) ?? MALFORMED_REPLY,
   "acceptance-lookup": (value) => isSourceRecord(value) && typeof value.outcome === "string" ? value : MALFORMED_REPLY,
   "connect-url": (value) => isSourceRecord(value) && typeof value.url === "string" ? value : MALFORMED_REPLY,
@@ -222,7 +227,10 @@ const REPLY_CONVERTERS: Record<ReplyKind, (value: unknown) => ConvertedReply> = 
     ? null
     : isSourceRecord(value) && typeof value.agentId === "string" && typeof value.state === "string"
       ? value
-      : MALFORMED_REPLY
+      : MALFORMED_REPLY,
+  "cloud-worker-status": (value) => parseCloudWorkerStatusProjection(value) ?? MALFORMED_REPLY,
+  "cloud-worker-capabilities": (value) => parseCloudWorkerCapabilitiesProjection(value) ?? MALFORMED_REPLY,
+  "cloud-worker-doctor": (value) => parseCloudWorkerDoctorProjection(value) ?? MALFORMED_REPLY
 };
 
 interface AbortSignalLike {
@@ -515,8 +523,20 @@ export function createStableCoordinatorSource(initial: RawPortCoordinatorSource)
 }
 
 const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
-  getAgentTranscriptWindow: "transcript", getAgentThread: "transcript", getAgentTranscriptTail: "transcript", openAgentTail: "transcript", getConversationOutline: "transcript",
-  sendPrompt: "send", interruptAgent: "send", promptAcceptanceStatus: "send", reactToMessage: "send",
+  "feature.auth.telegramStatus": "auth",
+  "feature.auth.telegramSendCode": "auth",
+  "feature.auth.telegramSignIn": "auth",
+  "feature.auth.telegramPassword": "auth",
+  "feature.auth.telegramRegistration": "auth",
+  "feature.auth.telegramResendCode": "auth",
+  "feature.auth.telegramCancelCode": "auth",
+  "feature.auth.telegramRequestPasswordRecovery": "auth",
+  "feature.auth.telegramCheckRecoveryPassword": "auth",
+  "feature.auth.telegramSendVerifyEmailCode": "auth",
+  "feature.auth.telegramVerifyEmail": "auth",
+  "feature.auth.telegramRefreshPasswordChallenge": "auth",
+  getAgentTranscriptWindow: "transcript", getAgentThread: "transcript", getAgentTranscriptTail: "transcript", getHumanConversationTranscriptTail: "transcript", openAgentTail: "transcript", getConversationOutline: "transcript",
+  sendPrompt: "send", interruptAgent: "send", promptAcceptanceStatus: "send", reactToMessage: "send", retryHumanMessage: "send",
   listRoutedMcpTools: "plugins", executeRoutedMcpTool: "plugins",
   respondToWidget: "widgets", dismissWidget: "widgets", submitSecret: "widgets",
   resolveAutoReviewApproval: "approvals", resolveLocalToolPermission: "approvals",
@@ -546,7 +566,8 @@ const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
   getSharingState: "sharing", createRoomFromAgent: "sharing", createRoomInvite: "sharing",
   joinSharedRoom: "sharing", respondToRoomJoinRequest: "sharing", createSharedRoom: "sharing",
   addOwnAgentToSharedRoom: "sharing", removeOwnAgentFromSharedRoom: "sharing",
-  setSharedRoomTyping: "sharing", leaveSharedRoom: "sharing"
+  setSharedRoomTyping: "sharing", leaveSharedRoom: "sharing",
+  "cloudWorkers.status": "cloud_workers", "cloudWorkers.capabilities": "cloud_workers", "cloudWorkers.doctor": "cloud_workers"
 };
 
 export function createCoordinatorFailureTelemetryTracker(
@@ -627,3 +648,4 @@ export function withCoordinatorSourceTelemetry(
     subscribeTransportState: (listener: CoordinatorTransportListener) => source.subscribeTransportState(listener)
   }) as RawPortCoordinatorSource;
 }
+

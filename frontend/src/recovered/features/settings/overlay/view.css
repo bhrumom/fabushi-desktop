@@ -76,3 +76,16 @@
   .sand-settings-nav { padding-inline: 6px; }
   .sand-settings-panel__body { padding: 16px; }
 }
+
+.sand-network-proxy-settings { display: grid; gap: 10px; }
+.sand-network-proxy-toggles { display: grid; gap: 8px; }
+.sand-network-proxy-toggles > label, .sand-network-proxy-preferred > label { display: flex; width: 100%; justify-content: space-between; gap: 16px; }
+.sand-network-proxy-list { display: grid; gap: 10px; }
+.sand-network-proxy-endpoint { display: grid; gap: 10px; padding: 13px; background: var(--cursor-bg-secondary, #292929); border: 1px solid var(--cursor-border-secondary, #393939); border-radius: 9px; }
+.sand-network-proxy-endpoint__header, .sand-network-proxy-endpoint__actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sand-network-proxy-endpoint__header > span { color: var(--cursor-text-secondary, #aaa); font-size: 11px; }
+.sand-network-proxy-endpoint__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sand-network-proxy-endpoint__fields > label { display: grid; gap: 4px; color: var(--cursor-text-secondary, #aaa); font-size: 11px; }
+.sand-network-proxy-endpoint__fields input, .sand-settings-row > input { min-width: 0; padding: 6px 9px; color: inherit; background: var(--cursor-bg-secondary, #292929); border: 1px solid var(--cursor-border-secondary, #494949); border-radius: 6px; font: inherit; }
+.sand-network-proxy-preferred { padding: 8px 13px; }
+@media (max-width: 700px) { .sand-network-proxy-endpoint__fields { grid-template-columns: 1fr; } }

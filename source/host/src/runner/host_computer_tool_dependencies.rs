@@ -1,9 +1,14 @@
-use std::sync::Arc;
+use std::collections::HashSet;
+use std::sync::{Arc, Mutex};
 
 use prost::{Enumeration, Message, Oneof};
 use serde_json::Value;
 
 use crate::extensions::inference::provider_session::ProviderSessionError;
+use crate::extensions::cloud_workers::{
+    CloudWorkerLeaseScope, CloudWorkerLeasedCapability,
+};
+use crate::extensions::cloud_workers::extension::CloudWorkerProvisioningExtension;
 
 use super::box_tool_access::RunnerBoxResourcePort;
 
@@ -519,6 +524,82 @@ pub struct ProductionComputerToolExecutor {
     action_report: Option<ComputerActionReportCallback>,
     post_action: Option<ComputerPostActionCallback>,
     bind_unmapped_characters: bool,
+}
+
+const MAX_CLOUD_WORKER_COMPUTER_REPLAY_KEYS: usize = 1024;
+
+/// Fenced consumer adapter for an already enrolled Cloud Worker capability.
+///
+/// This adapter owns no Computer grant, device enrollment, sensitive-result
+/// storage or Computer side effect. It revalidates the ephemeral worker
+/// capability and delegates the action to exactly one existing
+/// `ComputerToolExecutor`.
+pub struct CloudWorkerScopedComputerToolExecutor {
+    extension: Arc<CloudWorkerProvisioningExtension>,
+    capability: CloudWorkerLeasedCapability,
+    expected_scope: CloudWorkerLeaseScope,
+    delegate: Arc<dyn ComputerToolExecutor>,
+    replay_keys: Mutex<HashSet<String>>,
+}
+
+impl CloudWorkerScopedComputerToolExecutor {
+    pub fn new(
+        extension: Arc<CloudWorkerProvisioningExtension>,
+        capability: CloudWorkerLeasedCapability,
+        expected_scope: CloudWorkerLeaseScope,
+        delegate: Arc<dyn ComputerToolExecutor>,
+    ) -> Self {
+        Self {
+            extension,
+            capability,
+            expected_scope,
+            delegate,
+            replay_keys: Mutex::new(HashSet::new()),
+        }
+    }
+
+    fn validate(&self, tool_call_id: &str) -> Result<(), ProviderSessionError> {
+        if self.capability.scope() != &self.expected_scope {
+            return Err(ProviderSessionError::Tool(
+                "cloud-worker Computer capability scope does not match the consumer scope".into(),
+            ));
+        }
+        if tool_call_id.trim().is_empty() {
+            return Err(ProviderSessionError::Tool(
+                "cloud-worker Computer operation requires a replay key".into(),
+            ));
+        }
+        self.extension
+            .validate_current_capability(&self.capability)
+            .map_err(|error| ProviderSessionError::Tool(format!(
+                "cloud-worker Computer capability rejected before delegation: {error}"
+            )))?;
+        let replay_key = tool_call_id.trim();
+        let mut replay_keys = self.replay_keys.lock().map_err(|_| {
+            ProviderSessionError::Tool(
+                "cloud-worker Computer replay-key guard is unavailable".into(),
+            )
+        })?;
+        if replay_keys.len() >= MAX_CLOUD_WORKER_COMPUTER_REPLAY_KEYS
+            || !replay_keys.insert(replay_key.to_string())
+        {
+            return Err(ProviderSessionError::Tool(
+                "cloud-worker Computer replay key was already used or capacity is exhausted".into(),
+            ));
+        }
+        Ok(())
+    }
+}
+
+impl ComputerToolExecutor for CloudWorkerScopedComputerToolExecutor {
+    fn execute(
+        &self,
+        args: &ComputerActionArgs,
+        tool_call_id: &str,
+    ) -> Result<ComputerUseResult, ProviderSessionError> {
+        self.validate(tool_call_id)?;
+        self.delegate.execute(args, tool_call_id)
+    }
 }
 
 impl ProductionComputerToolExecutor {

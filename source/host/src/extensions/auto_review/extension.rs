@@ -75,6 +75,16 @@ impl HostAutoReviewExtension {
         self.service.bind_runner(agent_id, approvals_resolvable)
     }
 
+    pub fn bind_runner_with_session(
+        &self,
+        agent_id: &str,
+        session_key: Option<&str>,
+        approvals_resolvable: bool,
+    ) -> Arc<SandAutoReviewController> {
+        self.service
+            .bind_runner_with_session(agent_id, session_key, approvals_resolvable)
+    }
+
     pub fn stop(&self) {
         self.service.stop();
     }

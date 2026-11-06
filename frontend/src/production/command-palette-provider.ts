@@ -1,6 +1,7 @@
 import type { RawPortCoordinatorSource } from "../recovered/runtime/coordinator-source";
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L523
+// @evidence origin/codex/canonical-transcript-search (PR #176 commit dd700e394): deduplicate routines per agentId:automationId
 
 export interface CommandPaletteRoutine {
   readonly agentId: string;
@@ -63,24 +64,35 @@ function routineFromCoordinator(value: unknown): CommandPaletteRoutine | null {
 }
 
 export function commandPaletteRoutinesFromCoordinator(value: unknown): CommandPaletteRoutine[] {
-  return Array.isArray(value) ? value.flatMap((candidate) => {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  const routines: CommandPaletteRoutine[] = [];
+  for (const candidate of value) {
     const routine = routineFromCoordinator(candidate);
-    return routine == null ? [] : [routine];
-  }) : [];
+    if (routine == null) continue;
+    const identity = `${routine.agentId}:${routine.automation.id}`;
+    if (seen.has(identity)) continue;
+    seen.add(identity);
+    routines.push(routine);
+  }
+  return routines;
 }
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L523
+// @evidence origin/codex/canonical-transcript-search (PR #176 commit dd700e394): deduplicate routines per agentId:automationId
 export function commandPaletteRoutineSearchText(routine: CommandPaletteRoutine): string[] {
   return [routine.automation.name, routine.automation.triggerDescription];
 }
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L523
+// @evidence origin/codex/canonical-transcript-search (PR #176 commit dd700e394): deduplicate routines per agentId:automationId
 export function commandPaletteRoutineRecency(routine: CommandPaletteRoutine): number | null {
   const timestamp = routine.automation.lastRunAt ?? routine.automation.createdAt;
   return timestamp > 0 ? timestamp : null;
 }
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L523
+// @evidence origin/codex/canonical-transcript-search (PR #176 commit dd700e394): deduplicate routines per agentId:automationId
 export function activateCommandPaletteRoutine(routine: CommandPaletteRoutine, onOpenRoutine: (agentId: string) => void): void {
   onOpenRoutine(routine.agentId);
 }

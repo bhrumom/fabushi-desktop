@@ -339,12 +339,8 @@ button, textarea, input { font: inherit; }
  * The header owns its own drag surface; interactive controls carve no-drag holes.
  */
 .sand-cover-drag {
-  /* The recovered StyleX drag utility carries higher selector specificity and
-   * writes left: 0. This adaptation must win geometrically so the fixed drag
-   * carrier starts after the live Fabushi sidebar rather than covering its
-   * real header controls.
-   */
   left: var(--fabushi-sidebar-width, 0px) !important;
+  background: transparent !important;
 }
 .sand-agents-sidebar__header {
   -webkit-app-region: drag;
@@ -369,7 +365,7 @@ button, textarea, input { font: inherit; }
   app-region: drag;
 }
 
-.sand-chat-header :is(button, a, input, [role="button"]) {
+.sand-chat-header :is(button, a, input, select, [role="button"]) {
   position: relative;
   z-index: 5001;
   pointer-events: auto;
@@ -567,8 +563,10 @@ html[data-sand-high-contrast="true"] :is(button,input,textarea,select,[role="but
 .fabushi-forward-dialog header p,
 .fabushi-forward-dialog footer > span { color: var(--fabushi-text-secondary, var(--cursor-text-secondary)); font-size: 12px; }
 .fabushi-forward-dialog__body { display: grid; gap: 14px; min-height: 0; padding: 8px 20px 18px; }
-.fabushi-forward-dialog__search { display: grid; gap: 6px; font-size: 12px; font-weight: 600; }
-.fabushi-forward-dialog__search input {
+.fabushi-forward-dialog__search,
+.fabushi-forward-dialog__comment { display: grid; gap: 6px; font-size: 12px; font-weight: 600; }
+.fabushi-forward-dialog__search input,
+.fabushi-forward-dialog__comment input {
   width: 100%;
   min-height: 34px;
   padding: 7px 10px;
@@ -578,7 +576,8 @@ html[data-sand-high-contrast="true"] :is(button,input,textarea,select,[role="but
   border-radius: var(--fabushi-radius-control, var(--cursor-radius-base));
   outline: none;
 }
-.fabushi-forward-dialog__search input:focus-visible {
+.fabushi-forward-dialog__search input:focus-visible,
+.fabushi-forward-dialog__comment input:focus-visible {
   border-color: var(--fabushi-border-focus, var(--cursor-stroke-accent));
   box-shadow: 0 0 0 2px var(--fabushi-focus-ring, color-mix(in srgb, var(--cursor-bg-accent) 25%, transparent));
 }
@@ -621,4 +620,79 @@ html[data-sand-high-contrast="true"] :is(button,input,textarea,select,[role="but
   .fabushi-forward-dialog__body { padding-inline: 14px; }
   .fabushi-forward-dialog footer { flex-wrap: wrap; }
   .fabushi-forward-dialog footer > span { flex: 1 0 100%; }
+}
+
+/* Forum Topic Switcher & Pinned Banner & Composer Guard (Slice W3-B) */
+.sand-forum-topic-switcher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--fabushi-border-default, rgba(255, 255, 255, 0.08));
+  background: var(--fabushi-surface-subtle, rgba(0, 0, 0, 0.05));
+}
+.sand-topic-chip {
+  padding: 4px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--fabushi-border-default, rgba(255, 255, 255, 0.1));
+  background: transparent;
+  color: var(--fabushi-text-secondary, rgba(255, 255, 255, 0.7));
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sand-topic-chip.active,
+.sand-topic-chip[aria-selected="true"] {
+  background: var(--fabushi-accent, #3390ec);
+  color: #fff;
+  border-color: transparent;
+}
+.sand-conversation-pinned-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: var(--fabushi-surface-subtle, rgba(51, 144, 236, 0.08));
+  border-bottom: 1px solid var(--fabushi-border-default, rgba(255, 255, 255, 0.08));
+  cursor: pointer;
+  font-size: 13px;
+}
+.sand-pinned-title {
+  font-weight: 600;
+  color: var(--fabushi-accent, #3390ec);
+}
+.sand-pinned-preview {
+  color: var(--fabushi-text-secondary, rgba(255, 255, 255, 0.7));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 480px;
+}
+.sand-community-composer-guard-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  margin: 4px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  text-align: center;
+  background: var(--fabushi-surface-subtle, rgba(0, 0, 0, 0.2));
+  color: var(--fabushi-text-secondary, rgba(255, 255, 255, 0.7));
+}
+.sand-community-composer-guard-banner[data-banner-kind="channel-readonly"] {
+  background: rgba(120, 120, 120, 0.15);
+}
+.sand-community-composer-guard-banner[data-banner-kind="topic-closed"] {
+  background: rgba(220, 100, 50, 0.15);
+  color: #e07a5f;
+}
+.sand-community-composer-guard-banner[data-banner-kind="member-restricted"] {
+  background: rgba(220, 50, 50, 0.15);
+  color: #e63946;
+}
+.sand-community-composer-guard-banner[data-banner-kind="slow-mode-cooldown"] {
+  background: rgba(51, 144, 236, 0.15);
+  color: #3390ec;
 }

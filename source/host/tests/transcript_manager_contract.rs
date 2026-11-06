@@ -423,6 +423,18 @@ fn manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation() 
         .expect("snapshot read")
         .is_none());
 
+    sessions
+        .begin_agent_delete(&agent.id)
+        .expect("publish memory deletion fence");
+    let blocked = manager
+        .dispatch_memory_gateway_call("clearAgentMemories", &json!({"id":agent.id}))
+        .expect("handled")
+        .expect_err("memory gateway must honor deletion fence");
+    assert!(blocked.contains("new session work is not admitted"));
+    sessions
+        .end_agent_delete(&agent.id)
+        .expect("clear memory deletion fence");
+
     manager.dispose();
     let _ = fs::remove_dir_all(root);
 }
@@ -557,6 +569,13 @@ impl PendingWakeRuntimePort for ManagerPendingWakeRuntime {
         Ok(())
     }
 
+    fn revive_channel_delivery_failure(
+        &self,
+        _marker: &DurablePendingWakeMarker,
+    ) -> Result<(), String> {
+        Ok(())
+    }
+
     fn emit_async_tasks_for_agent(&self, _agent_id: &str) {}
 
     fn report_pending_wake(&self, report: PendingWakeReport) {
@@ -587,6 +606,10 @@ fn manager_owns_pending_wake_rearm_and_replays_durable_wakes() {
         title: Some("Pending shell".into()),
         subagent_type: None,
         interrupted_by_recreate: false,
+        delivery_operation_id: None,
+        address_token: None,
+        failure_reason: None,
+        session_key: None,
     });
 
     let runtime = Arc::new(ManagerPendingWakeRuntime::default());

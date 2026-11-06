@@ -33,6 +33,10 @@ pub mod automation_lifecycle_telemetry;
 pub mod bot_block_telemetry;
 pub mod conversation_gc_telemetry;
 pub mod local_exec_telemetry;
+
+pub mod openclaw_logging_core;
+pub mod openclaw_secret_redactor;
+pub mod openclaw_diagnostic_telemetry;
 pub mod queue_telemetry_mappers;
 
 pub mod sand_error_tags;

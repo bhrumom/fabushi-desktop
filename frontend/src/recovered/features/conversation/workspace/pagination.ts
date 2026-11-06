@@ -1,30 +1,36 @@
 import type { ConversationTranscriptEntry } from "./model";
+import { mergeOlderTranscriptEntries, reconcileTranscriptMutation } from "../../../../production/transcript-projection.ts";
+export { mergeOlderTranscriptEntries } from "../../../../production/transcript-projection.ts";
 
 /**
  * Cursor and viewport state for the shipped transcript older-history flow.
  * The coordinator returns entries in chronological order and uses
- * `nextBeforeSeq` as the exclusive older-page cursor.
+ * `nextBeforeSeq` as the exclusive older-page cursor. Human pages also carry
+ * an opaque `nextBeforeCursor` for a stable walk across message updates.
  *
  * @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5692943 (cursor/page merge helpers)
  * @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5705748 (loadOlder request fencing and error state)
  * @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5312453 (root hasOlder/isLoadingOlder/loadOlder handoff)
+ * @evidence origin/codex/canonical-transcript-search (PR #176 commit dd700e394) & Telegram Desktop `Telegram/SourceFiles/data/data_history_messages.cpp`
  */
 
 export type TranscriptHistoryCursor =
   | { kind: "unprobed" }
-  | { kind: "more"; beforeSeq: number }
+  | { kind: "more"; beforeSeq: number; beforeCursor?: string }
   | { kind: "exhausted" }
   | { kind: "unavailable" };
 
 export interface TranscriptHistoryPage {
   entries: readonly ConversationTranscriptEntry[];
   nextBeforeSeq?: number;
+  nextBeforeCursor?: string;
 }
 
 export interface TranscriptHistoryRequest {
   id: string;
   limit: number;
   beforeSeq: number;
+  beforeCursor?: string;
 }
 
 export type TranscriptHistoryFetcher = (request: TranscriptHistoryRequest) => Promise<TranscriptHistoryPage>;
@@ -55,6 +61,7 @@ export interface TranscriptPaginationRootHandoff {
   subscribe(listener: () => void): () => void;
   setScope(accountSlot: string | null, agentId: string | null): void;
   installInitialPage(page: TranscriptHistoryPage): boolean;
+  ingestEntryUpdate(accountSlot: string | null, agentId: string, entry: ConversationTranscriptEntry, previousId?: string): void;
   loadOlder(): Promise<void>;
   bindViewport(viewport: TranscriptViewport | null): void;
   onEntriesCommitted(): boolean;
@@ -67,15 +74,23 @@ export interface TranscriptPaginationControllerOptions {
   pageLimit?: number;
   accountSlot?: string | null;
   agentId?: string | null;
+  /** Commit accepted older rows to the root's existing conversation cache. */
+  onPageApplied?(scope: { accountSlot: string | null; agentId: string }, page: TranscriptHistoryPage): void;
 }
 
 const DEFAULT_PAGE_LIMIT = 200;
 
 const EMPTY_CURSOR: TranscriptHistoryCursor = { kind: "unprobed" };
 
-function cursorFromNextBeforeSeq(nextBeforeSeq: number | undefined): TranscriptHistoryCursor {
+function cursorFromPage({ nextBeforeSeq, nextBeforeCursor }: TranscriptHistoryPage): TranscriptHistoryCursor {
   return typeof nextBeforeSeq === "number" && Number.isFinite(nextBeforeSeq)
-    ? { kind: "more", beforeSeq: nextBeforeSeq }
+    ? {
+      kind: "more",
+      beforeSeq: nextBeforeSeq,
+      ...(typeof nextBeforeCursor === "string" && nextBeforeCursor.length > 0
+        ? { beforeCursor: nextBeforeCursor }
+        : {}),
+    }
     : { kind: "exhausted" };
 }
 
@@ -97,14 +112,6 @@ function uniqueEntries(entries: readonly ConversationTranscriptEntry[], excluded
   return result;
 }
 
-export function mergeOlderTranscriptEntries(
-  currentEntries: readonly ConversationTranscriptEntry[],
-  olderEntries: readonly ConversationTranscriptEntry[]
-): ConversationTranscriptEntry[] {
-  const currentIds = new Set(currentEntries.map((entry) => entry.id));
-  return [...uniqueEntries(olderEntries, currentIds), ...uniqueEntries(currentEntries)];
-}
-
 export function createTranscriptPaginationController(
   options: TranscriptPaginationControllerOptions
 ): TranscriptPaginationRootHandoff {
@@ -121,8 +128,9 @@ export function createTranscriptPaginationController(
   let pageGeneration = 0;
   let requestGeneration = 0;
   let inFlight: Promise<void> | null = null;
+  const updatesDuringRequest: { entry: ConversationTranscriptEntry; previousId?: string }[] = [];
   let viewport: TranscriptViewport | null = null;
-  let pendingAnchor: { generation: number; pageGeneration: number; scrollTop: number; scrollHeight: number } | null = null;
+  let pendingAnchor: { generation: number; pageGeneration: number; scrollTop: number; scrollHeight: number; ready: boolean } | null = null;
   let disposed = false;
 
   const buildSnapshot = (): TranscriptPaginationSnapshot => ({
@@ -143,10 +151,16 @@ export function createTranscriptPaginationController(
     for (const listener of [...listeners]) listener();
   };
 
-  const isCurrentRequest = (requestId: number, requestPageGeneration: number, requestAgentId: string | null): boolean => (
+  const isCurrentRequest = (
+    requestId: number,
+    requestPageGeneration: number,
+    requestAccountSlot: string | null,
+    requestAgentId: string | null,
+  ): boolean => (
     !disposed
     && requestId === requestGeneration
     && requestPageGeneration === pageGeneration
+    && requestAccountSlot === accountSlot
     && requestAgentId === agentId
   );
 
@@ -155,6 +169,7 @@ export function createTranscriptPaginationController(
     cursor = EMPTY_CURSOR;
     olderFailure = null;
     pendingAnchor = null;
+    updatesDuringRequest.length = 0;
   };
 
   return {
@@ -183,12 +198,24 @@ export function createTranscriptPaginationController(
       pageGeneration += 1;
       requestGeneration += 1;
       inFlight = null;
+      updatesDuringRequest.length = 0;
       entries = uniqueEntries(page.entries);
-      cursor = cursorFromNextBeforeSeq(page.nextBeforeSeq);
+      cursor = cursorFromPage(page);
       olderFailure = null;
       pendingAnchor = null;
       emit();
       return true;
+    },
+
+    ingestEntryUpdate(updateAccountSlot, ownerId, entry, previousId) {
+      if (disposed || updateAccountSlot !== accountSlot || ownerId !== agentId) return;
+      // A failed page can be retried with an older snapshot. Keep the latest
+      // committed overlay for that read until a successful page consumes it.
+      if (inFlight != null || updatesDuringRequest.length > 0) updatesDuringRequest.push({ entry, previousId });
+      const next = reconcileTranscriptMutation(entries, entry, { previousId });
+      if (next === entries) return;
+      entries = next;
+      emit();
     },
 
     loadOlder() {
@@ -198,30 +225,54 @@ export function createTranscriptPaginationController(
       const requestId = ++requestGeneration;
       const requestPageGeneration = pageGeneration;
       const requestAgentId = agentId;
+      const requestAccountSlot = accountSlot;
       const beforeSeq = cursor.beforeSeq;
+      const beforeCursor = cursor.beforeCursor;
       if (viewport != null && Number.isFinite(viewport.scrollTop) && Number.isFinite(viewport.scrollHeight)) {
         pendingAnchor = {
           generation,
           pageGeneration,
           scrollTop: viewport.scrollTop,
-          scrollHeight: viewport.scrollHeight
+          scrollHeight: viewport.scrollHeight,
+          ready: false
         };
       } else pendingAnchor = null;
       olderFailure = null;
 
       const request = (async () => {
+        // Defer invocation until inFlight is assigned, including synchronous
+        // fetch failures; a rejected read must remain retryable.
+        await Promise.resolve();
         try {
-          const page = await options.fetchPage({ id: requestAgentId, limit: pageLimit, beforeSeq });
-          if (!isCurrentRequest(requestId, requestPageGeneration, requestAgentId)) return;
-          entries = mergeOlderTranscriptEntries(entries, page.entries);
-          cursor = cursorFromNextBeforeSeq(page.nextBeforeSeq);
+          if (!isCurrentRequest(requestId, requestPageGeneration, requestAccountSlot, requestAgentId)) return;
+          const page = await options.fetchPage({
+            id: requestAgentId,
+            limit: pageLimit,
+            beforeSeq,
+            ...(beforeCursor === undefined ? {} : { beforeCursor }),
+          });
+          if (!isCurrentRequest(requestId, requestPageGeneration, requestAccountSlot, requestAgentId)) return;
+          let refreshedPage = page.entries;
+          for (const update of updatesDuringRequest) {
+            refreshedPage = reconcileTranscriptMutation(refreshedPage, update.entry, { previousId: update.previousId });
+          }
+          entries = mergeOlderTranscriptEntries(entries, refreshedPage);
+          if (pendingAnchor != null) pendingAnchor.ready = true;
+          cursor = cursorFromPage(page);
           olderFailure = null;
+          options.onPageApplied?.({ accountSlot: requestAccountSlot, agentId: requestAgentId }, {
+            entries,
+            nextBeforeSeq: page.nextBeforeSeq,
+            ...(page.nextBeforeCursor === undefined ? {} : { nextBeforeCursor: page.nextBeforeCursor }),
+          });
+          updatesDuringRequest.length = 0;
           emit();
         } catch (error) {
-          if (!isCurrentRequest(requestId, requestPageGeneration, requestAgentId)) return;
+          if (!isCurrentRequest(requestId, requestPageGeneration, requestAccountSlot, requestAgentId)) return;
           if (isCapabilityUnavailableFailure(error)) {
             cursor = { kind: "unavailable" };
             olderFailure = null;
+            updatesDuringRequest.length = 0;
           } else olderFailure = error;
           pendingAnchor = null;
           emit();
@@ -244,7 +295,7 @@ export function createTranscriptPaginationController(
     },
 
     onEntriesCommitted() {
-      if (disposed || pendingAnchor == null || viewport == null) return false;
+      if (disposed || pendingAnchor == null || !pendingAnchor.ready || viewport == null) return false;
       const anchor = pendingAnchor;
       pendingAnchor = null;
       if (anchor.generation !== generation || anchor.pageGeneration !== pageGeneration) return false;
@@ -276,3 +327,4 @@ export function createTranscriptPaginationController(
     }
   };
 }
+

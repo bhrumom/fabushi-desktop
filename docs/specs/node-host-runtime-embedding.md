@@ -1,0 +1,254 @@
+# Node-host runtime embedding and Gateway session owner
+
+Status: active implementation specification, not full OCRM-M13 acceptance  
+Owner: Fabushi host-runtime owner  
+Last updated: 2026-10-31
+Related project: `projects/openclaw-rust` / OCRM-001  
+Related task: P0 source-baseline-and-owner-audit; node-host runtime frontier
+
+## 1. Context / problem
+
+The pinned OpenClaw source contains a complete node-host runtime boundary: connection challenge/signing, negotiated command manifest, invocation/input/cancel/result correlation, reconnect classification, shutdown drain, and live connection state. Fabushi currently has pairing approval and local node RPC projection, but no shipping Rust node-host client/runtime or live remote-node registry. Treating pairing approval as a live connection, or adding a second transport/state owner inside the RPC handlers, would produce false equivalence.
+
+The upstream Rust crate `crates/openclaw-node-host` is useful protocol evidence, but importing or copying it wholesale would create a second runtime boundary unless every responsibility is explicitly assigned to existing Fabushi owners.
+
+## 2. Goal
+
+Define and implement a Fabushi-native node-host runtime embedding that preserves the upstream observable node session contract while using existing host, credential, policy, worker, Computer, and transport owners. The result must expose live connection/activity facts only from the runtime transport owner and must be accepted only with exact-head GitHub Actions and real device/transport evidence.
+
+## 3. Non-goals / out of scope
+
+- Do not create a second Gateway client, node registry, pairing store, Computer state owner, or generic Agent loop.
+- Do not infer `connected`, `active`, or executable commands from pairing approval.
+- Do not import the upstream crate as an unreviewed standalone runtime or claim its tests prove Fabushi integration.
+- Do not route remote `system.run` through the local-only execution owner.
+- Do not implement desktop Computer side effects in the protocol dispatcher; use an approved existing owner or a separately approved adapter.
+- Do not run local builds, tests, generators, schema tools, formatters, or linters for OCRM verification.
+
+## 4. Requirements
+
+- R1: Each connection attempt produces a challenge-bound node connect envelope with protocol, identity, command manifest, capability surface, and authentication owned by the existing credential/policy boundaries.
+- R2: Device identity keys and issued device tokens remain owned by the existing secure credential/persistence owner; logs and diagnostics never expose secrets.
+- R3: The session parser accepts the canonical `paramsJSON` wire field, preserves original JSON when required for result/provenance handling, rejects direct or ambiguous `params`, and bounds input sizes.
+- R4: Invocation, ordered input, cancellation, and final result remain correlated by the original invocation id and node id; the session owner admits a terminal result before a single best-effort `node.invoke.result` send, and lost result transport is not replayed on a replacement connection.
+- R5: Command manifest and Computer capability advertising are regenerated from current availability and never advertise unavailable commands; invocation admission also rejects commands absent from the current live manifest.
+- R6: Reconnect classifies retryable transport/runtime failures separately from terminal configuration, identity, protocol, pairing, or authentication pauses; backoff and retry-after are bounded.
+- R7: Shutdown and replacement close the old session, cancel/drain owned invocation work, and prevent predecessor callbacks from mutating successor state.
+- R8: A live node registry/transport owner is the sole authority for remote `connected`, `active`, manifest, and invoke routing facts; pairing remains approval/identity only.
+- R9: Node-host Computer dispatch validates opaque generation and delegates side effects to an approved Computer executor with permission, currentness, and result-schema fencing.
+- R10: Any sidecar or worker bridge is introduced only when an existing worker/supervisor owner requires it, with bounded framed protocol, authenticated channel binding, and no new durable product state.
+- R11: Node-worker managed-identity transport is captured by the existing dedicated node owner, redacted at the secret boundary, and supplied only to admitted worker execution; callers and generic launch descriptors cannot inject or persist it.
+- R12: Platform trust settings and managed workspace process environments are restored after generic sanitization under the same workspace/generation lease; release or replacement fences both process use and plugin invocation callbacks.
+- R13: The Host credential owner persists one installation-local Ed25519 NodeHost identity, derives the stable device id from its raw public key, and signs challenge payloads without exposing private key material to transport/RPC callers.
+- R14: NodeHost client-token reads are performed through the credential owner, keyed by device id, normalized role, and optional Gateway origin scope; pairing rows and unrelated account/network bearer credentials are not direct transport inputs.
+
+## 5. Current state
+
+- `DevicePairingOwner` provides durable identity and approval, not live transport.
+- `source/host/app/src/main.rs` owns local node registration/invocation and currently reports approved remote nodes as paired but disconnected with no remote commands.
+- `source/host/src/extensions/node_host/` contains protocol slices for connection, Computer dispatch, and runtime manifest, but the runtime has no shipping caller or live remote transport.
+- Existing `NativeDesktopRemoteExecutor` and `execute_with_lease_fenced` own native Computer behavior; they are not generic node-host invoke executors.
+- The current Host secret store now has a narrow local NodeHost identity/signing slice; `DevicePairingOwner` still stores remote pairing/public-key and inbound role-token state, and no origin-scoped client-token owner is wired.
+- `gateway_frames.rs` now provides a bounded, strict `req`/`res`/`event` envelope parser/encoder and a generation-fenced pending-request registry; it remains transport-neutral and is not a WebSocket client or production connection owner.
+- `gateway_transport.rs` now owns the blocking OpenClaw Gateway client socket, challenge-first handshake, supported protocol-window validation, device proof construction, hello validation, leaf-certificate SHA-256 fingerprint pinning, token persistence handoff, request correlation, event queue, bounded 30-second stream I/O, a controlled session inbound pump that routes only admitted events, adapters that admit a validated hello and inbound invoke request/input/cancel events into `NodeHostRuntimeState`, and a single best-effort `node.invoke.result` sender. No application startup caller or side-effect executor binding has been added yet.
+- `reconnect.rs` now provides a transport-owner-independent classification and bounded exponential backoff policy. It is not a reconnect task or timer owner; no production caller currently consumes it.
+- `gateway_lifecycle.rs` now composes the explicit transport config, one current Gateway session, reconnect policy, and replacement close/drain boundary. It is caller-facing but still transport-worker neutral: it owns no endpoint discovery, background timer, startup registration, or side-effect executor.
+- `invocation_router.rs` now binds the session owner's existing request admission to one live `NodeHostInvocationRuntime` per node/id and routes later input/cancel frames to that object. `gateway_transport.rs` exposes a session-to-router routed inbound seam; it owns no side effects or result delivery, and no production startup caller currently consumes it.
+- The invocation router also exposes a generation-bound drain seam for session replacement/close; it does not terminate external side effects, which remain with the injected executor owner.
+- `NodeHostRuntimeState` now exposes a generation-fenced manifest projection update, and the Gateway session can publish a `NodeHostManifest` through it; the real plugin/availability producer is still not wired.
+- `NodeHostRuntimeState::admit_request` now checks the current session manifest before creating an invocation record, so an unknown or retired command cannot reach a side-effect owner through the canonical admission path.
+- The Host startup producer now derives the local `sand-local-node` manifest through `NodeHostManifest::build` from the only production invoke branch currently owned by `HostLocalExecExtension` (`system.run`), then stores that projection in the canonical runtime session. This does not add remote transport, worker/plugin availability, or commands without a producer.
+- The optional-publication owner is now bound to `NodeHostGatewaySession`: it retains only generation-bound pending state and classifies published, legacy-unsupported, rejected, and bounded-retryable outcomes. Session currentness and close retire the state, while the owner still does not own a timer, socket, plugin registry, or durable product state; those remain with future connection and availability owners.
+- The current live candidate's `runtime-manifest.ts` additionally gates `system.run` for the macOS app exec host, gates device apps on installed-app sharing, groups builtin capabilities, and carries optional `pathEnv`/`computerUse`; `connection.ts` separately owns generation-fenced optional plugin-tools/skills/runner publications with bounded retry. The Rust manifest seam does not yet claim those publication owners.
+- The implementation oracle remains the prior candidate `ad8d12f126d29b0db204187adf5092db80294e70`, tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`; it is not accepted as the current project-wide source lock. The current discovery candidate is used only for the targeted contract delta below until P0 exact-subject closure is accepted.
+- Read-only live discovery has since advanced to OpenClaw `main` commit `89734994c6c9d3572e2927be0cdae8d7da1998ca`, tree `bcb3914c8418e2f92927dd3e60c635fc4345a858`. This candidate requires the P0 GitHub Actions rebaseline before source-dependent acceptance or lock/inventory reuse; `5f6f15f` and earlier candidates remain historical discovery only.
+- The upstream pointer subsequently advanced again to `68fbe4ac429cdac7a54541df40367d66defd0161`, tree `a3c122b99571c0c33ff6a02ca4c4e32f05f9433d`. This identity update is discovery-only; no behavior or closure conclusion is inferred for this newer commit until its exact-source Actions rebaseline is available.
+- A targeted full read of that exact candidate revalidated `src/node-host/{runtime-manifest.ts,connection.ts,client.ts,invoke-types.ts}` and `src/infra/node-commands.ts`. It confirms that the Rust manifest constants are still an older `node.*` surface, while the current source owns `system.run.prepare/system.run/system.which`, `fs.listDir`, `device.apps`, versioned MCP/Claude and worker command families, private-command filtering, grouped capabilities, `pathEnv`/`computerUse`, and generation-fenced inventory publication. These facts are source mapping only until the candidate receives P0 Actions authority.
+- The same exact candidate's `config-shared.ts` and `gateway-cloudflare-access.ts` require origin-bound Cloudflare Access `clientId`/`clientSecret` values as `SecretInput`, resolved through a secret materializer and redaction registry. Fabushi currently has no equivalent NodeHost SecretInput owner; Box secret application is a different boundary, so the transport remains fail-closed rather than accepting plaintext or arbitrary environment injection.
+- The upstream pointer has since advanced to `2c157ed06dff5032da1093cbb6745efeff2b6f33` / `3fb582f6a1299daa74446ef001cb7cb4fd3c2270`; the preceding SecretInput and command observations are superseded for current-source navigation until the new exact subject is re-read and accepted by P0 authority.
+- A fresh tree read of `2c157ed0…` revalidated that all seven targeted NodeHost/command blobs retain the exact identities recorded in the preceding dossier sections. Their behavior mapping may therefore be reused by blob identity for this discovery candidate only; recursive inventory, dependency closure, and Actions acceptance remain unproven.
+- The current command catalog uses exact protocol names: `system.run.prepare`, `system.run`, `system.which`, `fs.listDir`, `terminal.upload`, `mcp.tools.call.v1`, `device.apps`, `system.execApprovals.get`, `system.execApprovals.set`, `agent.cli.claude.run.v1`, and `worker.desktop.stream.v1` where their respective producers are admitted. The Rust manifest builder must not retain the obsolete `node.*` aliases or advertise a name without a positive availability entry; `system.notify` and worker/private command families remain outside this Rust builder until their existing owners are wired.
+- The Claude manifest branch also has two distinct current capability values: `node.claude_skills` and `claude-cli-native-auth-v1`. Rust must publish both only when the exact Claude command is positively available and the feature is enabled; this is capability projection, not proof that a Claude producer or native-auth owner is wired.
+- A targeted read-only compare from the prior c325 candidate to this live candidate reports 14 commits and 15 changed paths under `src/node-host/` or `crates/openclaw-node-host/`. The changed source adds managed-identity transport custody, platform trust restoration, workspace lease admission/currentness, and invocation-bound process-environment fencing. Existing Rust mapping is therefore not complete for this candidate and must not reuse c325 semantics without targeted re-read.
+- The current Host redaction helper is pure formatting (`mask_token`, query/header/PEM redaction); it has no value-registration lifecycle. `HostSecretsExtension` is specifically the Box environment synchronization boundary and cannot resolve arbitrary origin-bound `SecretInput` values. The NodeHost credential owner must therefore be an explicit injected resolver/materializer contract, not an extension of Box secret application or an environment fallback.
+- `secret_materializer.rs` now defines the transport-neutral paired/origin-scoped SecretInput contract, and `gateway_transport.rs` can consume an injected short-lived lease to add the two Cloudflare Access WebSocket upgrade headers. The returned lease carries its origin scope and is rechecked before socket creation. No concrete resolver, persistence, environment lookup, production caller, or live acceptance was added; configured Access without an injected resolver remains a configuration error.
+- `worker_environment.rs` now captures paired managed-identity transport only with an injected secret registrar, filters the inherited environment to the node-worker allowlist, restores admitted platform trust/home/identity values after sanitization, and rejects caller-supplied identity replacement. It remains a pure environment seam; workspace custody, process launch, owner epochs, cache policy, and production worker composition remain open.
+- `worker_workspace.rs` now provides the narrow workspace-lease owner for canonical root containment and exact environment/session/ownerEpoch replacement fencing. `NodeWorkerLaunchBinding` can hand its complete workspace identity to this owner, while a launch without owner-supplied identity or with the zero bootstrap epoch is rejected. It is a state/path-admission boundary only; filesystem preparation, process launch, retention, cleanup, transfer, and production worker composition remain separate required owners.
+- `worker_supervisor_runtime.rs` now owns the in-memory launch lifecycle for validated bindings, requires `planHash == expectedBundleHash`, reuses the workspace lease, fences duplicate/stale identities, and exposes only typed pending/running/terminal/outcome-unknown receipts. It does not replace the durable supervisor database or physical process/container owner.
+
+## 6. Target state
+
+One Fabushi-owned node-host runtime composes the canonical Gateway/transport owner, credential owner, command manifest owner, invocation runtime, and existing side-effect owners. Pairing and RPC handlers project facts from this runtime; they do not maintain parallel connection state. On disconnect or replacement, old invocation tails and callbacks are fenced before the successor is admitted. Remote commands remain empty/unavailable until the live transport owner positively supplies them.
+
+## 7. Architecture and ownership boundaries
+
+- **Credential/identity owner:** secure key/token persistence, device id, challenge signing, redaction.
+- **Gateway transport/session owner:** websocket lifecycle, protocol negotiation, event delivery, request deadlines, live session registry, connection generation.
+- **Node invocation runtime owner:** admission, bounded concurrency, cancellation, ordered duplex input/output, result settlement, and disconnect drain.
+- **Manifest owner:** current command/capability registration and availability changes; it does not own transport truth.
+- **Policy/side-effect owners:** local exec, Computer, PTY, desktop stream, portal stream, and worker/Claude handlers retain their existing authorization and process lifecycles.
+- **Gateway RPC projection:** reads live registry facts and pairing facts; it owns no node session, heartbeat, or replay state.
+- **Node-worker environment/workspace owner:** captures provider identity transport and platform trust before sanitization, restores only admitted values into the worker environment, and binds workspace leases, process output redaction, and plugin invocation callbacks to the same current generation.
+
+The Host transport boundary currently has no production NodeHost client owner.
+`source/host/src/gateway_server.rs` owns the inbound Fabushi messaging
+WebSocket server, while `native/mahayana-messaging` owns that separate
+messaging protocol; neither may be widened implicitly into the OpenClaw
+NodeHost client. The required owner is therefore a narrowly scoped extension
+of the existing Host transport boundary, recorded in
+`projects/openclaw-rust/decisions/2026-10-30-node-host-transport-owner.md`.
+It must be the sole owner of the WebSocket/TLS client, challenge/hello
+admission, request correlation, transport generation, and disconnect cleanup.
+The protocol slices and RPC projection remain consumers of that owner and may
+not create sockets, infer presence, or retain parallel generation state.
+
+The Rust `NodeHostSessionRegistry` is the Host-side projection boundary for the
+transport/session owner. Its `connect`, `set_active`, and generation-fenced
+`disconnect` operations are the only path that can create or retire a live
+session snapshot. `DevicePairingOwner`, `node.register`, and RPC projection
+may not call those operations or infer `connected` from approval. Until a real
+transport caller exists, approved remote devices therefore remain
+`paired=true, connected=false, active=false, commands=[]`.
+
+Candidate connection policy is a separate, transport-neutral seam. A
+candidate router may advance only after a pre-hello close where no connect
+request was sent and no winner has been selected. A successful hello promotes
+the current candidate and permanently disables fallback for that connection;
+stopping the router makes all later candidate callbacks inert. The eventual
+Gateway client remains the owner of sockets, TLS, edge-auth headers, and
+drain/cleanup.
+
+The upstream crate may be used as a contract reference or narrowly embedded primitive only after source-to-owner mapping proves it does not introduce a second owner.
+
+## 8. Interfaces / contracts / data flow
+
+The implementation must preserve these externally relevant contracts:
+
+1. challenge → signed connect envelope → negotiated protocol/session;
+2. session manifest/capabilities → live registry projection;
+3. `node.invoke.request` (`id`, `nodeId`, `command`, `paramsJSON`) → bounded parsed invocation;
+4. `node.invoke.input` sequence and `node.invoke.cancel` → owning invocation;
+5. one terminal `node.invoke.result` success/error envelope bound to original ids, sent through the current Gateway session at most once;
+6. connection generation → cancellation/drain fence for predecessor callbacks;
+7. typed lifecycle events → observability and fail-closed RPC presence.
+
+Optional plugin-tools, skills, and runner-inventory publication is a separate
+generation-bound state contract. A publication may be admitted only for the
+current connection generation, and completion from a retired generation must
+be ignored. The owner records `pending`, `published`, `unsupported`,
+`rejected`, or bounded `retryable` outcomes; retry delay is a decision value
+for the connection owner, not a timer or retry loop. Payload selection and
+availability production remain outside this state owner.
+
+Direct `params` and ambiguous `params` + `paramsJSON` are invalid. A disconnected or retired session cannot advertise commands or settle a result on a successor session.
+
+Gateway endpoint configuration carries non-sensitive TLS fingerprint and
+WebSocket context-path metadata. Cloudflare Access client id/secret values
+remain SecretInput material owned and redacted by the existing secrets/config
+owner; they must not enter the live-session registry or RPC projection.
+
+The pending NodeHost credential owner contract is intentionally narrow: it
+accepts paired, origin-scoped opaque references; resolves them only at connect
+time; registers the resolved values with the canonical redaction lifecycle
+before any diagnostic boundary; returns them only to the transport request
+builder; and drops them after request construction/connection teardown. It may
+not persist plaintext, expose values through session state, inspect Box secret
+state, read arbitrary process environment variables, or log raw headers. Until
+an owner provides this contract and a real caller supplies it, Cloudflare
+Access is an explicit configuration error and no Access header is sent.
+
+## 9. Constraints and non-functional requirements
+
+- Security: TLS/endpoint scope, identity/token secrecy, command authorization, and Computer lease/currentness are fail-closed.
+- Reliability: bounded retry/backoff, explicit terminal pause, no mutation replay after outcome-unknown transport loss.
+- Compatibility: support the pinned OpenClaw node protocol range only where the existing Gateway client proves the negotiated version and schema.
+- Resource safety: bounded messages, input/output buffers, in-flight invocations, worker lifetime, and shutdown grace.
+- Evidence: all executable OCRM checks run in GitHub Actions against the exact accepted head; local inspection is read/edit/Git/API only.
+
+## 10. Failure modes and edge cases
+
+- stale/rejected device token, pairing-required, auth rate limit, protocol mismatch, TLS pin/configuration error;
+- transport loss during invoke result, reconnect, manifest refresh, or shutdown; a result-send failure is retained as outcome-unknown and is never retried on a replacement session;
+- event lag, malformed frame, oversized `paramsJSON`, invalid sequence, duplicate invocation, and unknown command;
+- stale Computer generation, missing executor, permission denial, lease loss, and invalid result schema;
+- old session callback arriving after successor activation;
+- worker/sidecar crash, held process cleanup, and cancellation that signals before physical work drains.
+
+Each case must retain typed failure evidence and must not be converted into a clean success or inferred live presence.
+
+## 11. Implementation strategy
+
+1. Complete per-file source closure for `src/node-host/` and `crates/openclaw-node-host` against the pinned upstream revision, recording exact refs and rejected duplicate-owner candidates.
+2. Reconcile the mapping with current Fabushi Host, Coordinator, credential, worker, Computer, and transport owners; repair this spec before source changes if ownership changes.
+3. Establish the single Host transport owner described by the ADR, with an
+   injected credential/challenge signer, a bounded request/event pump, and a
+   terminal-result sender that completes the local invocation before one
+   best-effort Gateway delivery;
+   start with live transport and generation fencing, then invocation/manifest
+   composition, then side-effect adapters. Do not wire it to production
+   startup until the current upstream challenge/hello and device-auth
+   contract has an exact-source closure.
+   Keep optional-publication state in the transport-neutral generation-fenced
+   owner so a later connection owner can consume its disposition without
+   creating a second registry or retry scheduler.
+   Compose that transport with the lifecycle owner so replacement closes the
+   old session before a new explicit config is admitted and retry decisions are
+   returned to the eventual scheduler rather than hidden in the Host runtime.
+4. Add contract tests and Actions workflow coverage without fabricating provider/device success.
+5. Verify exact-head Actions, packaged runtime, and real device/transport cells; update the parity ledger only from those receipts.
+
+## 12. Verification / test strategy
+
+- V1: source closure ledger records each in-scope upstream file as read, mapped, omitted with reason, or unresolved; no bulk-read claim substitutes for file evidence.
+- V2: Rust/host contract tests cover connect envelope, strict invocation parsing, input/cancel/result correlation, lifecycle pause/backoff/drain, generation fencing, manifest gating, and redaction.
+- V2a: the optional-publication owner accepts only the current generation,
+  preserves the latest payload per publication kind, rejects stale completion,
+  and classifies unsupported/rejected/retryable outcomes without owning I/O or
+  timers.
+- V2b: the SecretInput seam rejects empty/control references, refuses a
+  materialized lease whose normalized origin/path differs from the configured
+  Gateway, and keeps materialized client id/secret values out of `Debug`
+  output; these are contract oracles, not proof of a concrete provider.
+- V3: Actions run the focused tests and relevant regression suites on the exact changed head; local execution is not used as OCRM acceptance evidence.
+- V4: packaged host connects to the real Gateway/device cell, advertises only available commands, completes a real invoke, and demonstrates reconnect/cancellation behavior.
+- V5: negative real-device/provider cells prove stale token, unavailable command, stale generation, transport loss, and predecessor-result rejection fail closed.
+
+## 13. Acceptance criteria / Definition of Done
+
+- AC1: every applicable OCRM node-host source file is individually read and mapped to one existing owner or explicitly unresolved with evidence.
+- AC2: the shipping runtime has one live node transport/registry owner and pairing/RPC code contains no inferred connection state.
+- AC3: exact-head Actions pass all selected contract/regression checks with retained run ids and logs.
+- AC4: packaged and real transport/device acceptance proves connect, manifest, invoke, cancel/reconnect, and result settlement.
+- AC5: no fake Computer/system-run/stream success remains; side effects route through approved owners with currentness and permission fencing.
+- AC6: parity ledger, dossier, and this spec agree on implementation, wiring, verification, and acceptance state; OCRM-M13 is not marked complete while any required evidence is absent.
+
+## 14. Release / migration / rollback
+
+Ship behind the existing host/runtime feature and deployment gates. Do not enable remote commands before live transport acceptance. Roll back by disabling the new runtime composition and retaining fail-closed paired-but-disconnected projections; never restore synthetic success payloads.
+
+## 15. Observability / evidence
+
+Retain redacted lifecycle events, connection generation, negotiated protocol, manifest digest/contents where safe, invocation ids/node ids, result transport outcome, exact source revision, Actions run ids, packaged artifact identity, and real device/provider receipts. Secrets, tokens, raw auth headers, and private payloads are excluded.
+
+## 16. References / provenance
+
+- User requirement: full OpenClaw→Fabushi Rust-native equivalence with exact source closure, existing-owner integration, production wiring, and OCRM acceptance.
+- `projects/openclaw-rust/SOURCE_OF_TRUTH.md`
+- `docs/specs/openclaw-rust-equivalence-migration.md`
+- `projects/openclaw-rust/module-map.md` OCRM-M13
+- `docs/specs/node-rpc-remote-presence.md`
+- `docs/specs/node-host-computer-dispatch-owner.md`
+- prior implementation oracle `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`, especially `src/node-host/{runtime,client,invoke}.ts` and `crates/openclaw-node-host/src/{node,lifecycle,reconnect,identity,duplex}.rs`; the live candidate is recorded in the OCRM rebaseline decision and must be re-read after Actions authority is established.
+
+## 17. Spec compliance record
+
+| Requirement / AC | Status | Evidence / reason |
+| --- | --- | --- |
+| R1–R3, R8–R10 | pending | Runtime embedding is not yet implemented and wired. |
+| R4 | in progress | Strict request/input/cancel/result owners, manifest-gated invocation admission, a controlled inbound pump, a session-to-router routed inbound seam, and a one-shot best-effort Gateway result sender exist; side-effect execution, reconnect, and acceptance remain open. |
+| R6 | in progress | Error classification, bounded backoff, and an explicit-config lifecycle owner exist; no background scheduler, retry-after source, production caller, or exact-head/runtime acceptance exists. |
+| R7 | in progress | Canonical runtime state, invocation-router drain, and lifecycle replacement close now fence predecessor state; production startup/shutdown caller and external side-effect cancellation remain open. |
+| R5 | in progress | A generation-fenced live manifest projection and optional-publication state seam exist; the real plugin/availability producer, refresh caller, transport publication, and remote acceptance remain open. |
+| R11–R14 | in progress | Worker admission boundaries, managed-identity/platform-trust environment seam, local identity/signing, origin-scoped token storage, challenge/hello transport, TLS fingerprint verification, and the injected SecretInput-to-WebSocket-header seam are implemented; concrete secret registrar/resolver, workspace/process caller, worker/manifest composition, and acceptance remain open. |
+| AC1 | in progress | Node-host Rust crate closure is being read in exact pinned chunks; inventory remains incomplete. |
+| AC2–AC6 | pending | No live remote transport/device acceptance or exact-head acceptance receipt yet. |

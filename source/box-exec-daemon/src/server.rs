@@ -16,8 +16,7 @@ use prost::{Message as ProstMessage, Oneof};
 pub const BOX_EXEC_DAEMON_HOST: &str = "127.0.0.1";
 pub const BOX_EXEC_DAEMON_PORT: u16 = 1337;
 pub const BOX_EXEC_DAEMON_AUTH_TOKEN: &str = "local";
-pub const BOX_TERMINAL_VIRTUAL_PREFIX: &str =
-    "/root/.cursor/projects/workspace/terminals/";
+pub const BOX_TERMINAL_VIRTUAL_PREFIX: &str = "/root/.cursor/projects/workspace/terminals/";
 const TIMEOUT_BEHAVIOR_BACKGROUND: i32 = 2;
 const SHELL_BACKGROUND_REASON_TIMEOUT: i32 = 1;
 
@@ -480,7 +479,10 @@ pub struct ExecServerMessage {
     pub id: u32,
     #[prost(string, tag = "15")]
     pub exec_id: String,
-    #[prost(oneof = "exec_server_message::Message", tags = "2, 3, 7, 29, 14, 16, 23, 52")]
+    #[prost(
+        oneof = "exec_server_message::Message",
+        tags = "2, 3, 7, 29, 14, 16, 23, 52"
+    )]
     pub message: Option<exec_server_message::Message>,
 }
 pub mod exec_server_message {
@@ -514,7 +516,10 @@ pub struct ExecClientMessage {
     pub exec_id: String,
     #[prost(int32, optional, tag = "39")]
     pub local_execution_time_ms: Option<i32>,
-    #[prost(oneof = "exec_client_message::Message", tags = "2, 3, 7, 29, 14, 16, 23, 55")]
+    #[prost(
+        oneof = "exec_client_message::Message",
+        tags = "2, 3, 7, 29, 14, 16, 23, 55"
+    )]
     pub message: Option<exec_client_message::Message>,
 }
 pub mod exec_client_message {
@@ -693,9 +698,7 @@ impl BoxExecRuntime {
         };
         if let Some(terminal_name) = logical.strip_prefix(BOX_TERMINAL_VIRTUAL_PREFIX) {
             let stem = terminal_name.strip_suffix(".txt").unwrap_or("");
-            if stem.is_empty()
-                || !stem.as_bytes().iter().all(u8::is_ascii_digit)
-            {
+            if stem.is_empty() || !stem.as_bytes().iter().all(u8::is_ascii_digit) {
                 return Err(format!("Rejected terminal virtual path: {requested}"));
             }
             return Ok(self.terminals_directory.join(terminal_name).clean());
@@ -719,11 +722,7 @@ impl BoxExecRuntime {
         }
     }
 
-    fn assert_real_path_allowed(
-        &self,
-        target: &Path,
-        requested: &str,
-    ) -> Result<(), String> {
+    fn assert_real_path_allowed(&self, target: &Path, requested: &str) -> Result<(), String> {
         if path_within(&self.workspace_root, target)
             || path_within(&self.terminals_directory, target)
         {
@@ -737,15 +736,36 @@ impl BoxExecRuntime {
 
     pub fn write(&self, args: &WriteArgs) -> WriteResult {
         if args.file_bytes.len() > 8 * 1024 * 1024 {
-            return WriteResult { result: Some(write_result::Result::Rejected(WriteFailure {path:args.path.clone(),reason:"Write exceeds 8MiB limit".into()})) };
+            return WriteResult {
+                result: Some(write_result::Result::Rejected(WriteFailure {
+                    path: args.path.clone(),
+                    reason: "Write exceeds 8MiB limit".into(),
+                })),
+            };
         }
-        let target=match self.resolve_path(&args.path) {
-            Ok(target)=>target,
-            Err(_)=>return WriteResult {result:Some(write_result::Result::Rejected(WriteFailure {path:args.path.clone(),reason:"Write path outside workspace".into()}))},
+        let target = match self.resolve_path(&args.path) {
+            Ok(target) => target,
+            Err(_) => {
+                return WriteResult {
+                    result: Some(write_result::Result::Rejected(WriteFailure {
+                        path: args.path.clone(),
+                        reason: "Write path outside workspace".into(),
+                    })),
+                };
+            }
         };
-        match crate::workspace_write::write(&self.workspace_root,&target,&args.file_bytes) {
-            Ok(())=>WriteResult {result:Some(write_result::Result::Success(WriteSuccess {path:args.path.clone()}))},
-            Err(reason)=>WriteResult {result:Some(write_result::Result::Rejected(WriteFailure {path:args.path.clone(),reason}))},
+        match crate::workspace_write::write(&self.workspace_root, &target, &args.file_bytes) {
+            Ok(()) => WriteResult {
+                result: Some(write_result::Result::Success(WriteSuccess {
+                    path: args.path.clone(),
+                })),
+            },
+            Err(reason) => WriteResult {
+                result: Some(write_result::Result::Rejected(WriteFailure {
+                    path: args.path.clone(),
+                    reason,
+                })),
+            },
         }
     }
 
@@ -754,18 +774,16 @@ impl BoxExecRuntime {
             let target = self
                 .resolve_path(&args.path)
                 .map_err(ReadFailure::Rejected)?;
-            let direct = fs::symlink_metadata(&target).map_err(|error| {
-                ReadFailure::Io(error, args.path.clone())
-            })?;
+            let direct = fs::symlink_metadata(&target)
+                .map_err(|error| ReadFailure::Io(error, args.path.clone()))?;
             if direct.file_type().is_symlink() {
                 return Err(ReadFailure::Rejected(format!(
                     "Symbolic-link reads are not permitted: {}",
                     args.path
                 )));
             }
-            let canonical = fs::canonicalize(&target).map_err(|error| {
-                ReadFailure::Io(error, args.path.clone())
-            })?;
+            let canonical = fs::canonicalize(&target)
+                .map_err(|error| ReadFailure::Io(error, args.path.clone()))?;
             self.assert_real_path_allowed(&canonical, &args.path)
                 .map_err(ReadFailure::Rejected)?;
             let info = fs::metadata(&canonical)
@@ -776,8 +794,11 @@ impl BoxExecRuntime {
                     "Path is not a regular file".into(),
                 ));
             }
-            if info.len()>8*1024*1024 {
-                return Err(ReadFailure::Invalid(args.path.clone(),"Read exceeds 8MiB limit".into()));
+            if info.len() > 8 * 1024 * 1024 {
+                return Err(ReadFailure::Invalid(
+                    args.path.clone(),
+                    "Read exceeds 8MiB limit".into(),
+                ));
             }
             let encoding = args.encoding_hint.as_deref().unwrap_or("utf8");
             if !matches!(encoding, "utf8" | "utf-8" | "latin1") {
@@ -786,16 +807,31 @@ impl BoxExecRuntime {
                     format!("Unsupported encoding hint: {encoding}"),
                 ));
             }
-            let data = fs::read(&canonical)
-                .map_err(|error| ReadFailure::Io(error, args.path.clone()))?;
-            if args.encoding_hint.is_none() && (data.contains(&0) || std::str::from_utf8(&data).is_err()) {
+            let data =
+                fs::read(&canonical).map_err(|error| ReadFailure::Io(error, args.path.clone()))?;
+            if args.encoding_hint.is_none()
+                && (data.contains(&0) || std::str::from_utf8(&data).is_err())
+            {
                 if args.offset.is_some() || args.limit.is_some() {
-                    return Err(ReadFailure::Invalid(args.path.clone(),"Line ranges unsupported for binary reads".into()));
+                    return Err(ReadFailure::Invalid(
+                        args.path.clone(),
+                        "Line ranges unsupported for binary reads".into(),
+                    ));
                 }
-                return Ok(ReadSuccess {path:args.path.clone(),file_size:data.len() as i64,output:Some(read_success::Output::Data(data)),total_lines:0,truncated:false,output_blob_id:None,range_applied:false});
+                return Ok(ReadSuccess {
+                    path: args.path.clone(),
+                    file_size: data.len() as i64,
+                    output: Some(read_success::Output::Data(data)),
+                    total_lines: 0,
+                    truncated: false,
+                    output_blob_id: None,
+                    range_applied: false,
+                });
             }
             let text = if encoding == "latin1" {
-                data.iter().map(|byte| char::from(*byte)).collect::<String>()
+                data.iter()
+                    .map(|byte| char::from(*byte))
+                    .collect::<String>()
             } else {
                 String::from_utf8_lossy(&data).into_owned()
             };
@@ -841,18 +877,16 @@ impl BoxExecRuntime {
             Err(ReadFailure::Io(error, path)) => {
                 use std::io::ErrorKind;
                 let result = match error.kind() {
-                    ErrorKind::NotFound => read_result::Result::FileNotFound(
-                        ReadFileNotFound { path },
-                    ),
-                    ErrorKind::PermissionDenied => read_result::Result::PermissionDenied(
-                        ReadPermissionDenied { path },
-                    ),
-                    ErrorKind::InvalidInput => read_result::Result::InvalidFile(
-                        ReadInvalidFile {
-                            path,
-                            reason: error.to_string(),
-                        },
-                    ),
+                    ErrorKind::NotFound => {
+                        read_result::Result::FileNotFound(ReadFileNotFound { path })
+                    }
+                    ErrorKind::PermissionDenied => {
+                        read_result::Result::PermissionDenied(ReadPermissionDenied { path })
+                    }
+                    ErrorKind::InvalidInput => read_result::Result::InvalidFile(ReadInvalidFile {
+                        path,
+                        reason: error.to_string(),
+                    }),
                     _ => read_result::Result::Error(ReadError {
                         path,
                         error: error.to_string(),
@@ -870,11 +904,7 @@ impl BoxExecRuntime {
         self.shell_with_abort(args, &abort)
     }
 
-    fn shell_with_abort(
-        &self,
-        args: &ShellArgs,
-        abort: &AtomicBool,
-    ) -> ShellResult {
+    fn shell_with_abort(&self, args: &ShellArgs, abort: &AtomicBool) -> ShellResult {
         let cwd = match self.resolve_path(&args.working_directory) {
             Ok(cwd) => cwd,
             Err(error) => {
@@ -1050,11 +1080,7 @@ impl BoxExecRuntime {
                 }
             }
             if stream_error.is_some() {
-                status = child
-                    .as_mut()
-                    .expect("stream child")
-                    .wait()
-                    .ok();
+                status = child.as_mut().expect("stream child").wait().ok();
                 break;
             }
             match child
@@ -1255,9 +1281,7 @@ impl BoxExecRuntime {
                 return Err("shell stream stdin was unavailable during background handoff".into());
             }
         };
-        let terminal_path = self
-            .terminals_directory
-            .join(format!("{shell_id}.txt"));
+        let terminal_path = self.terminals_directory.join(format!("{shell_id}.txt"));
         let background_args = BackgroundShellSpawnArgs {
             command: args.command.clone(),
             working_directory: args.working_directory.clone(),
@@ -1279,7 +1303,8 @@ impl BoxExecRuntime {
                 .map_err(|error| error.to_string())?;
             terminal
                 .write_all(
-                    terminal_frontmatter(&background_args, Some(pid), started_at.clone()).as_bytes(),
+                    terminal_frontmatter(&background_args, Some(pid), started_at.clone())
+                        .as_bytes(),
                 )
                 .map_err(|error| error.to_string())?;
             terminal
@@ -1337,7 +1362,9 @@ impl BoxExecRuntime {
                 .unwrap_or_else(|poisoned| poisoned.into_inner())
                 .remove(&pid);
             let _ = fs::remove_file(&terminal_path);
-            return Err(format!("background shell id {shell_id} is already registered"));
+            return Err(format!(
+                "background shell id {shell_id} is already registered"
+            ));
         }
         self.foreground_pids
             .lock()
@@ -1369,9 +1396,7 @@ impl BoxExecRuntime {
             };
             let _ = stdout_worker.join();
             let _ = stderr_worker.join();
-            let code = status
-                .and_then(|status| status.code())
-                .unwrap_or(1);
+            let code = status.and_then(|status| status.code()).unwrap_or(1);
             if let Ok(mut writer) = footer_writer.lock() {
                 let _ = writer.write_all(terminal_footer(code, started_at_ms).as_bytes());
                 let _ = writer.flush();
@@ -1391,18 +1416,12 @@ impl BoxExecRuntime {
         })
     }
 
-    pub fn spawn_background(
-        &self,
-        args: &BackgroundShellSpawnArgs,
-    ) -> BackgroundShellSpawnResult {
+    pub fn spawn_background(&self, args: &BackgroundShellSpawnArgs) -> BackgroundShellSpawnResult {
         let result = (|| -> Result<BackgroundShellSpawnSuccess, String> {
             let cwd = self.resolve_path(&args.working_directory)?;
-            fs::create_dir_all(&self.terminals_directory)
-                .map_err(|error| error.to_string())?;
+            fs::create_dir_all(&self.terminals_directory).map_err(|error| error.to_string())?;
             let shell_id = self.next_shell_id.fetch_add(1, Ordering::Relaxed);
-            let terminal_path = self
-                .terminals_directory
-                .join(format!("{shell_id}.txt"));
+            let terminal_path = self.terminals_directory.join(format!("{shell_id}.txt"));
             let started_at = Utc::now();
             let started_ms = started_at.timestamp_millis();
             let mut child = self.spawn_shell(&args.command, &cwd)?;
@@ -1449,14 +1468,9 @@ impl BoxExecRuntime {
                 let status = child.wait();
                 let _ = stdout_worker.join();
                 let _ = stderr_worker.join();
-                let code = status
-                    .ok()
-                    .and_then(|status| status.code())
-                    .unwrap_or(1);
+                let code = status.ok().and_then(|status| status.code()).unwrap_or(1);
                 if let Ok(mut writer) = footer_writer.lock() {
-                    let _ = writer.write_all(
-                        terminal_footer(code, started_ms).as_bytes(),
-                    );
+                    let _ = writer.write_all(terminal_footer(code, started_ms).as_bytes());
                     let _ = writer.flush();
                 }
                 if let Ok(mut processes) = processes.lock() {
@@ -1543,7 +1557,12 @@ impl BoxExecRuntime {
         let exec_id = request.exec_id.clone();
         match request.message {
             Some(exec_server_message::Message::WriteArgs(args)) => {
-                emit(client_message(id,&exec_id,exec_client_message::Message::WriteResult(self.write(&args)),None))?;
+                emit(client_message(
+                    id,
+                    &exec_id,
+                    exec_client_message::Message::WriteResult(self.write(&args)),
+                    None,
+                ))?;
             }
             Some(exec_server_message::Message::ReadArgs(args)) => {
                 emit(client_message(
@@ -1582,9 +1601,7 @@ impl BoxExecRuntime {
                 ))?;
             }
             Some(exec_server_message::Message::ShellStreamArgs(args)) => {
-                if let Err(error) =
-                    self.shell_stream_live(id, &exec_id, &args, abort, &mut emit)
-                {
+                if let Err(error) = self.shell_stream_live(id, &exec_id, &args, abort, &mut emit) {
                     if abort.load(Ordering::Acquire) {
                         return Err(error);
                     }
@@ -1605,9 +1622,7 @@ impl BoxExecRuntime {
                 emit(client_message(
                     id,
                     &exec_id,
-                    exec_client_message::Message::WriteShellStdinResult(
-                        self.write_stdin(&args),
-                    ),
+                    exec_client_message::Message::WriteShellStdinResult(self.write_stdin(&args)),
                     None,
                 ))?;
             }
@@ -1644,7 +1659,10 @@ impl BoxExecRuntime {
             .background
             .lock()
             .map(|processes| {
-                processes.values().map(|process| process.pid).collect::<Vec<_>>()
+                processes
+                    .values()
+                    .map(|process| process.pid)
+                    .collect::<Vec<_>>()
             })
             .unwrap_or_default();
         for pid in background {
@@ -1707,17 +1725,15 @@ impl BoxExecRuntime {
                 break status;
             }
             if !kill_requested
-                && timeout_ms.is_some_and(|timeout| {
-                    started.elapsed() >= Duration::from_millis(timeout)
-                })
+                && timeout_ms
+                    .is_some_and(|timeout| started.elapsed() >= Duration::from_millis(timeout))
             {
                 timed_out = true;
                 kill_process_group(pid);
                 kill_requested = true;
             }
             if !kill_requested
-                && (abort.load(Ordering::Acquire)
-                    || self.stopping.load(Ordering::Acquire))
+                && (abort.load(Ordering::Acquire) || self.stopping.load(Ordering::Acquire))
             {
                 kill_process_group(pid);
                 kill_requested = true;
@@ -1728,12 +1744,8 @@ impl BoxExecRuntime {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .remove(&pid);
-        let stdout = stdout_worker
-            .join()
-            .unwrap_or_else(|_| Vec::new());
-        let stderr = stderr_worker
-            .join()
-            .unwrap_or_else(|_| Vec::new());
+        let stdout = stdout_worker.join().unwrap_or_else(|_| Vec::new());
+        let stderr = stderr_worker.join().unwrap_or_else(|_| Vec::new());
         let signal = status_signal(&status);
         Ok(ProcessOutcome {
             code: status.code().unwrap_or(1),
@@ -1742,11 +1754,9 @@ impl BoxExecRuntime {
             stderr: String::from_utf8_lossy(&stderr).into_owned(),
             elapsed_ms: started.elapsed().as_millis().min(u64::MAX as u128) as u64,
             timed_out,
-            aborted: abort.load(Ordering::Acquire)
-                || self.stopping.load(Ordering::Acquire),
+            aborted: abort.load(Ordering::Acquire) || self.stopping.load(Ordering::Acquire),
         })
     }
-
 }
 
 enum ReadFailure {
@@ -1792,9 +1802,7 @@ impl BoxExecDaemonHandle {
     }
 }
 
-pub fn start_box_exec_daemon(
-    options: BoxExecDaemonOptions,
-) -> Result<BoxExecDaemonHandle, String> {
+pub fn start_box_exec_daemon(options: BoxExecDaemonOptions) -> Result<BoxExecDaemonHandle, String> {
     let host = options
         .host
         .unwrap_or_else(|| BOX_EXEC_DAEMON_HOST.to_string());
@@ -1808,8 +1816,7 @@ pub fn start_box_exec_daemon(
         .unwrap_or_else(|| std::env::temp_dir().join("sand-box-terminals"))
         .clean();
     fs::create_dir_all(&requested_workspace_root).map_err(|error| error.to_string())?;
-    fs::create_dir_all(&requested_terminals_directory)
-        .map_err(|error| error.to_string())?;
+    fs::create_dir_all(&requested_terminals_directory).map_err(|error| error.to_string())?;
     let workspace_root =
         fs::canonicalize(&requested_workspace_root).map_err(|error| error.to_string())?;
     let terminals_directory =
@@ -1823,8 +1830,7 @@ pub fn start_box_exec_daemon(
             workspace_root.display()
         ));
     }
-    let listener =
-        TcpListener::bind((host.as_str(), port)).map_err(|error| error.to_string())?;
+    let listener = TcpListener::bind((host.as_str(), port)).map_err(|error| error.to_string())?;
     listener
         .set_nonblocking(true)
         .map_err(|error| error.to_string())?;
@@ -1905,10 +1911,7 @@ fn serve_connection(
             b"Method Not Allowed",
             &[],
         )
-    } else if request
-        .headers
-        .get("authorization")
-        .map(String::as_str)
+    } else if request.headers.get("authorization").map(String::as_str)
         != Some(format!("Bearer {auth_token}").as_str())
     {
         write_http_response(
@@ -1920,50 +1923,54 @@ fn serve_connection(
         )
     } else {
         match request.path.as_str() {
-        "/agent.v1.ControlService/Ping" => {
-            let _ = PingRequest::decode(request.body.as_slice())
-                .map_err(|error| error.to_string())?;
-            write_proto_response(&mut stream, &PingResponse {})
-        }
-        "/agent.v1.ControlService/GetCapabilities" => {
-            let _ = GetCapabilitiesRequest::decode(request.body.as_slice())
-                .map_err(|error| error.to_string())?;
-            write_proto_response(
-                &mut stream,
-                &GetCapabilitiesResponse {
-                    computer_use_supported: Some(false),
-                    install_plugin_artifact_supported: Some(false),
-                },
-            )
-        }
-        "/agent.v1.ControlService/UpdateEnvironmentVariables" => {
-            let request =
-                UpdateEnvironmentVariablesRequest::decode(request.body.as_slice())
+            "/agent.v1.ControlService/Ping" => {
+                let _ = PingRequest::decode(request.body.as_slice())
                     .map_err(|error| error.to_string())?;
-            write_proto_response(
-                &mut stream,
-                &runtime.apply_environment(&request),
-            )
-        }
-        "/agent.v1.ControlService/LoadMcpServers" => {
-            let _ = LoadMcpServersRequest::decode(request.body.as_slice())
-                .map_err(|error| error.to_string())?;
-            write_proto_response(
-                &mut stream,
-                &LoadMcpServersResponse {
-                    loaded_server_names: Vec::new(),
-                },
-            )
-        }
-        "/agent.v1.ExecService/Exec" => {
-            let payload=match exec_request_body(&request) {
-                Ok(payload)=>payload,
-                Err(reason)=>return write_http_response(&mut stream,400,"text/plain",reason.as_bytes(),&[]),
-            };
-            let request = ExecServerMessage::decode(payload)
-                .map_err(|error| error.to_string())?;
-            write_connect_stream(&mut stream, runtime, request)
-        }
+                write_proto_response(&mut stream, &PingResponse {})
+            }
+            "/agent.v1.ControlService/GetCapabilities" => {
+                let _ = GetCapabilitiesRequest::decode(request.body.as_slice())
+                    .map_err(|error| error.to_string())?;
+                write_proto_response(
+                    &mut stream,
+                    &GetCapabilitiesResponse {
+                        computer_use_supported: Some(false),
+                        install_plugin_artifact_supported: Some(false),
+                    },
+                )
+            }
+            "/agent.v1.ControlService/UpdateEnvironmentVariables" => {
+                let request = UpdateEnvironmentVariablesRequest::decode(request.body.as_slice())
+                    .map_err(|error| error.to_string())?;
+                write_proto_response(&mut stream, &runtime.apply_environment(&request))
+            }
+            "/agent.v1.ControlService/LoadMcpServers" => {
+                let _ = LoadMcpServersRequest::decode(request.body.as_slice())
+                    .map_err(|error| error.to_string())?;
+                write_proto_response(
+                    &mut stream,
+                    &LoadMcpServersResponse {
+                        loaded_server_names: Vec::new(),
+                    },
+                )
+            }
+            "/agent.v1.ExecService/Exec" => {
+                let payload = match exec_request_body(&request) {
+                    Ok(payload) => payload,
+                    Err(reason) => {
+                        return write_http_response(
+                            &mut stream,
+                            400,
+                            "text/plain",
+                            reason.as_bytes(),
+                            &[],
+                        );
+                    }
+                };
+                let request =
+                    ExecServerMessage::decode(payload).map_err(|error| error.to_string())?;
+                write_connect_stream(&mut stream, runtime, request)
+            }
             _ => write_http_response(
                 &mut stream,
                 404,
@@ -1991,16 +1998,27 @@ struct HttpRequest {
 }
 
 fn exec_request_body(request: &HttpRequest) -> Result<&[u8], &'static str> {
-    let content_type=request.headers.get("content-type").map(|value|value.split(';').next().unwrap_or("").trim());
+    let content_type = request
+        .headers
+        .get("content-type")
+        .map(|value| value.split(';').next().unwrap_or("").trim());
     match content_type {
-        Some("application/proto")=>Ok(&request.body),
-        Some("application/connect+proto")=> {
-            if request.body.len()<5 || request.body[0]!=0 {return Err("invalid Connect data envelope");}
-            let size=u32::from_be_bytes(request.body[1..5].try_into().map_err(|_|"invalid Connect length")?) as usize;
-            if size==0 || size>16*1024*1024 || size!=request.body.len()-5 {return Err("invalid Connect data length");}
+        Some("application/proto") => Ok(&request.body),
+        Some("application/connect+proto") => {
+            if request.body.len() < 5 || request.body[0] != 0 {
+                return Err("invalid Connect data envelope");
+            }
+            let size = u32::from_be_bytes(
+                request.body[1..5]
+                    .try_into()
+                    .map_err(|_| "invalid Connect length")?,
+            ) as usize;
+            if size == 0 || size > 16 * 1024 * 1024 || size != request.body.len() - 5 {
+                return Err("invalid Connect data length");
+            }
             Ok(&request.body[5..])
         }
-        _=>Err("unsupported Exec content type"),
+        _ => Err("unsupported Exec content type"),
     }
 }
 
@@ -2032,17 +2050,16 @@ fn read_http_request(stream: &mut TcpStream) -> Result<HttpRequest, String> {
     let mut headers = HashMap::new();
     for line in lines {
         if let Some((name, value)) = line.split_once(':') {
-            headers.insert(
-                name.trim().to_ascii_lowercase(),
-                value.trim().to_string(),
-            );
+            headers.insert(name.trim().to_ascii_lowercase(), value.trim().to_string());
         }
     }
     let content_length = headers
         .get("content-length")
         .and_then(|value| value.parse::<usize>().ok())
         .unwrap_or_default();
-    if content_length>16*1024*1024 {return Err("HTTP request body exceeds 16MiB".into());}
+    if content_length > 16 * 1024 * 1024 {
+        return Err("HTTP request body exceeds 16MiB".into());
+    }
     let expected = header_end.saturating_add(content_length);
     while data.len() < expected {
         let count = stream.read(&mut chunk).map_err(|error| error.to_string())?;
@@ -2090,24 +2107,16 @@ fn write_connect_stream(
 
     let abort = Arc::new(AtomicBool::new(false));
     let monitor_done = Arc::new(AtomicBool::new(false));
-    let monitor = spawn_disconnect_monitor(
-        stream,
-        Arc::clone(&abort),
-        Arc::clone(&monitor_done),
-    );
+    let monitor = spawn_disconnect_monitor(stream, Arc::clone(&abort), Arc::clone(&monitor_done));
     let emitter_abort = Arc::clone(&abort);
-    let execution = runtime.execute_with_emitter(
-        request,
-        abort.as_ref(),
-        |message| {
-            let payload = message.encode_to_vec();
-            if let Err(error) = write_connect_chunk(stream, 0, &payload) {
-                emitter_abort.store(true, Ordering::Release);
-                return Err(error);
-            }
-            Ok(())
-        },
-    );
+    let execution = runtime.execute_with_emitter(request, abort.as_ref(), |message| {
+        let payload = message.encode_to_vec();
+        if let Err(error) = write_connect_chunk(stream, 0, &payload) {
+            emitter_abort.store(true, Ordering::Release);
+            return Err(error);
+        }
+        Ok(())
+    });
 
     let finish = if execution.is_ok() && !abort.load(Ordering::Acquire) {
         write_connect_chunk(stream, 0x02, b"{}")
@@ -2127,15 +2136,10 @@ fn write_connect_stream(
     finish
 }
 
-fn write_connect_chunk(
-    stream: &mut TcpStream,
-    flags: u8,
-    payload: &[u8],
-) -> Result<(), String> {
+fn write_connect_chunk(stream: &mut TcpStream, flags: u8, payload: &[u8]) -> Result<(), String> {
     let mut envelope = Vec::with_capacity(payload.len().saturating_add(5));
     push_connect_envelope(flags, payload, &mut envelope);
-    write!(stream, "{:X}\r\n", envelope.len())
-        .map_err(|error| error.to_string())?;
+    write!(stream, "{:X}\r\n", envelope.len()).map_err(|error| error.to_string())?;
     stream
         .write_all(&envelope)
         .map_err(|error| error.to_string())?;
@@ -2266,9 +2270,7 @@ fn terminal_frontmatter(
     pid: Option<u32>,
     started_at: chrono::DateTime<Utc>,
 ) -> String {
-    let pid_line = pid
-        .map(|pid| format!("pid: {pid}\n"))
-        .unwrap_or_default();
+    let pid_line = pid.map(|pid| format!("pid: {pid}\n")).unwrap_or_default();
     format!(
         "---\n{pid_line}cwd: {}\ncommand: {}\nstatus: running\nstarted_at: {}\nrunning_for_ms: 0\n---\n",
         serde_json::to_string(&args.working_directory).unwrap_or_else(|_| "\"\"".into()),
@@ -2286,10 +2288,7 @@ fn terminal_footer(exit_code: i32, started_at_ms: i64) -> String {
     )
 }
 
-fn spawn_output_copy<R>(
-    mut reader: R,
-    writer: Arc<Mutex<File>>,
-) -> JoinHandle<()>
+fn spawn_output_copy<R>(mut reader: R, writer: Arc<Mutex<File>>) -> JoinHandle<()>
 where
     R: Read + Send + 'static,
 {
@@ -2411,67 +2410,226 @@ mod tests {
 
     #[test]
     fn binary_read_preserves_bytes_and_rejects_ranges_and_oversize() {
-        let (_root,runtime)=runtime();let bytes=b"\x89PNG\r\n\x1a\n\x00\xff";
-        fs::write(runtime.workspace_root.join("image.png"),bytes).unwrap();
-        let args=ReadArgs {path:"/workspace/image.png".into(),tool_call_id:"binary".into(),offset:None,limit:None,encoding_hint:None};
-        let result=runtime.read(&args);let Some(read_result::Result::Success(result))=result.result else {panic!("binary read rejected")};
-        assert_eq!(result.output,Some(read_success::Output::Data(bytes.to_vec())));
-        assert!(!result.truncated);assert_eq!(result.file_size,bytes.len() as i64);
-        assert!(matches!(runtime.read(&ReadArgs {limit:Some(1),..args.clone()}).result,Some(read_result::Result::InvalidFile(_))));
-        let file=File::create(runtime.workspace_root.join("large")).unwrap();file.set_len(8*1024*1024+1).unwrap();
-        assert!(matches!(runtime.read(&ReadArgs {path:"/workspace/large".into(),..args}).result,Some(read_result::Result::InvalidFile(_))));
+        let (_root, runtime) = runtime();
+        let bytes = b"\x89PNG\r\n\x1a\n\x00\xff";
+        fs::write(runtime.workspace_root.join("image.png"), bytes).unwrap();
+        let args = ReadArgs {
+            path: "/workspace/image.png".into(),
+            tool_call_id: "binary".into(),
+            offset: None,
+            limit: None,
+            encoding_hint: None,
+        };
+        let result = runtime.read(&args);
+        let Some(read_result::Result::Success(result)) = result.result else {
+            panic!("binary read rejected")
+        };
+        assert_eq!(
+            result.output,
+            Some(read_success::Output::Data(bytes.to_vec()))
+        );
+        assert!(!result.truncated);
+        assert_eq!(result.file_size, bytes.len() as i64);
+        assert!(matches!(
+            runtime
+                .read(&ReadArgs {
+                    limit: Some(1),
+                    ..args.clone()
+                })
+                .result,
+            Some(read_result::Result::InvalidFile(_))
+        ));
+        let file = File::create(runtime.workspace_root.join("large")).unwrap();
+        file.set_len(8 * 1024 * 1024 + 1).unwrap();
+        assert!(matches!(
+            runtime
+                .read(&ReadArgs {
+                    path: "/workspace/large".into(),
+                    ..args
+                })
+                .result,
+            Some(read_result::Result::InvalidFile(_))
+        ));
     }
 
     #[test]
     fn exec_connect_envelope_is_exact_and_bare_proto_stays_compatible() {
-        let payload=ExecServerMessage {id:7,exec_id:"wire".into(),message:Some(exec_server_message::Message::ReadArgs(ReadArgs {path:"/workspace/a".into(),tool_call_id:"t".into(),offset:None,limit:None,encoding_hint:None}))}.encode_to_vec();
-        let request=|body:Vec<u8>,content:&str|HttpRequest {method:"POST".into(),path:"/agent.v1.ExecService/Exec".into(),headers:HashMap::from([("content-type".into(),content.into())]),body};
-        assert_eq!(exec_request_body(&request(payload.clone(),"application/proto")).unwrap(),payload);
-        let mut framed=vec![0];framed.extend_from_slice(&(payload.len() as u32).to_be_bytes());framed.extend_from_slice(&payload);
-        assert_eq!(exec_request_body(&request(framed.clone(),"application/connect+proto")).unwrap(),payload);
-        let mut wrong_flag=framed.clone();wrong_flag[0]=1;
-        let mut trailing=framed.clone();trailing.push(0);
-        let mut bad_length=framed.clone();bad_length[4]=0;
-        for body in [vec![],vec![0,0,0,0,0],wrong_flag,trailing,bad_length] {
-            assert!(exec_request_body(&request(body,"application/connect+proto")).is_err());
+        let payload = ExecServerMessage {
+            id: 7,
+            exec_id: "wire".into(),
+            message: Some(exec_server_message::Message::ReadArgs(ReadArgs {
+                path: "/workspace/a".into(),
+                tool_call_id: "t".into(),
+                offset: None,
+                limit: None,
+                encoding_hint: None,
+            })),
         }
-        assert!(exec_request_body(&request(payload,"application/json")).is_err());
+        .encode_to_vec();
+        let request = |body: Vec<u8>, content: &str| HttpRequest {
+            method: "POST".into(),
+            path: "/agent.v1.ExecService/Exec".into(),
+            headers: HashMap::from([("content-type".into(), content.into())]),
+            body,
+        };
+        assert_eq!(
+            exec_request_body(&request(payload.clone(), "application/proto")).unwrap(),
+            payload
+        );
+        let mut framed = vec![0];
+        framed.extend_from_slice(&(payload.len() as u32).to_be_bytes());
+        framed.extend_from_slice(&payload);
+        assert_eq!(
+            exec_request_body(&request(framed.clone(), "application/connect+proto")).unwrap(),
+            payload
+        );
+        let mut wrong_flag = framed.clone();
+        wrong_flag[0] = 1;
+        let mut trailing = framed.clone();
+        trailing.push(0);
+        let mut bad_length = framed.clone();
+        bad_length[4] = 0;
+        for body in [
+            vec![],
+            vec![0, 0, 0, 0, 0],
+            wrong_flag,
+            trailing,
+            bad_length,
+        ] {
+            assert!(exec_request_body(&request(body, "application/connect+proto")).is_err());
+        }
+        assert!(exec_request_body(&request(payload, "application/json")).is_err());
     }
 
     #[test]
     fn frozen_write_tags_dispatch_actual_atomic_bytes_and_replace() {
-        let (_root,runtime)=runtime();
-        let args=WriteArgs {path:"/workspace/wire.txt".into(),tool_call_id:"tool".into(),file_bytes:b"wire".to_vec()};
-        let encoded=args.encode_to_vec();assert!(encoded.windows(2).any(|bytes|bytes==[0x1a,4]));assert!(encoded.windows(2).any(|bytes|bytes==[0x2a,4]));
-        let request=ExecServerMessage {id:9,exec_id:"write".into(),message:Some(exec_server_message::Message::WriteArgs(args.clone()))};
-        let output=runtime.execute(request);
-        assert!(matches!(&output[0].element,Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {message:Some(exec_client_message::Message::WriteResult(WriteResult {result:Some(write_result::Result::Success(_))})),..}))));
-        assert_eq!(fs::read(runtime.workspace_root.join("wire.txt")).unwrap(),b"wire");
-        assert!(matches!(runtime.write(&WriteArgs {file_bytes:b"replace".to_vec(),..args}).result,Some(write_result::Result::Success(_))));
-        assert_eq!(fs::read(runtime.workspace_root.join("wire.txt")).unwrap(),b"replace");
-        assert!(!fs::read_dir(&runtime.workspace_root).unwrap().any(|entry|entry.unwrap().file_name().to_string_lossy().starts_with(".fabushi-write-")));
+        let (_root, runtime) = runtime();
+        let args = WriteArgs {
+            path: "/workspace/wire.txt".into(),
+            tool_call_id: "tool".into(),
+            file_bytes: b"wire".to_vec(),
+        };
+        let encoded = args.encode_to_vec();
+        assert!(encoded.windows(2).any(|bytes| bytes == [0x1a, 4]));
+        assert!(encoded.windows(2).any(|bytes| bytes == [0x2a, 4]));
+        let request = ExecServerMessage {
+            id: 9,
+            exec_id: "write".into(),
+            message: Some(exec_server_message::Message::WriteArgs(args.clone())),
+        };
+        let output = runtime.execute(request);
+        assert!(matches!(
+            &output[0].element,
+            Some(exec_stream_element::Element::ExecClientMessage(
+                ExecClientMessage {
+                    message: Some(exec_client_message::Message::WriteResult(WriteResult {
+                        result: Some(write_result::Result::Success(_))
+                    })),
+                    ..
+                }
+            ))
+        ));
+        assert_eq!(
+            fs::read(runtime.workspace_root.join("wire.txt")).unwrap(),
+            b"wire"
+        );
+        assert!(matches!(
+            runtime
+                .write(&WriteArgs {
+                    file_bytes: b"replace".to_vec(),
+                    ..args
+                })
+                .result,
+            Some(write_result::Result::Success(_))
+        ));
+        assert_eq!(
+            fs::read(runtime.workspace_root.join("wire.txt")).unwrap(),
+            b"replace"
+        );
+        assert!(
+            !fs::read_dir(&runtime.workspace_root)
+                .unwrap()
+                .any(|entry| entry
+                    .unwrap()
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with(".fabushi-write-"))
+        );
     }
 
     #[test]
     fn write_rejects_escape_symlink_parent_target_and_oversize_without_side_effects() {
-        let (root,runtime)=runtime();let outside=root.path().join("outside");fs::create_dir(&outside).unwrap();fs::write(outside.join("protected"),b"original").unwrap();
-        symlink(&outside,runtime.workspace_root.join("linked-parent")).unwrap();
-        symlink(outside.join("protected"),runtime.workspace_root.join("linked-file")).unwrap();
-        for (path,bytes) in [("/workspace/linked-parent/protected",b"overwrite".to_vec()),("/workspace/linked-file",b"overwrite".to_vec()),("/workspace/../outside/protected",b"overwrite".to_vec()),("/workspace/large",vec![0;8*1024*1024+1])] {
-            assert!(matches!(runtime.write(&WriteArgs {path:path.into(),tool_call_id:"deny".into(),file_bytes:bytes}).result,Some(write_result::Result::Rejected(_))));
+        let (root, runtime) = runtime();
+        let outside = root.path().join("outside");
+        fs::create_dir(&outside).unwrap();
+        fs::write(outside.join("protected"), b"original").unwrap();
+        symlink(&outside, runtime.workspace_root.join("linked-parent")).unwrap();
+        symlink(
+            outside.join("protected"),
+            runtime.workspace_root.join("linked-file"),
+        )
+        .unwrap();
+        for (path, bytes) in [
+            ("/workspace/linked-parent/protected", b"overwrite".to_vec()),
+            ("/workspace/linked-file", b"overwrite".to_vec()),
+            ("/workspace/../outside/protected", b"overwrite".to_vec()),
+            ("/workspace/large", vec![0; 8 * 1024 * 1024 + 1]),
+        ] {
+            assert!(matches!(
+                runtime
+                    .write(&WriteArgs {
+                        path: path.into(),
+                        tool_call_id: "deny".into(),
+                        file_bytes: bytes
+                    })
+                    .result,
+                Some(write_result::Result::Rejected(_))
+            ));
         }
-        assert_eq!(fs::read(outside.join("protected")).unwrap(),b"original");assert!(!runtime.workspace_root.join("large").exists());
-        assert!(!fs::read_dir(&runtime.workspace_root).unwrap().any(|entry|entry.unwrap().file_name().to_string_lossy().starts_with(".fabushi-write-")));
+        assert_eq!(fs::read(outside.join("protected")).unwrap(), b"original");
+        assert!(!runtime.workspace_root.join("large").exists());
+        assert!(
+            !fs::read_dir(&runtime.workspace_root)
+                .unwrap()
+                .any(|entry| entry
+                    .unwrap()
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with(".fabushi-write-"))
+        );
     }
 
     #[test]
     fn write_parent_symlink_replacement_cannot_redirect_to_outside_file() {
-        let (root,runtime)=runtime();let outside=root.path().join("outside");fs::create_dir(&outside).unwrap();fs::write(outside.join("protected"),b"original").unwrap();
-        let parent=runtime.workspace_root.join("parent");let held=runtime.workspace_root.join("held");fs::create_dir(&parent).unwrap();
-        let attack_parent=parent.clone();let attack_held=held.clone();let attack_outside=outside.clone();
-        let attacker=std::thread::spawn(move || {for _ in 0..100 {if fs::rename(&attack_parent,&attack_held).is_ok() {let _=symlink(&attack_outside,&attack_parent);std::thread::yield_now();let _=fs::remove_file(&attack_parent);let _=fs::rename(&attack_held,&attack_parent);}}});
-        for _ in 0..100 {let _=runtime.write(&WriteArgs {path:"/workspace/parent/protected".into(),tool_call_id:"race".into(),file_bytes:b"inside".to_vec()});}
-        attacker.join().unwrap();assert_eq!(fs::read(outside.join("protected")).unwrap(),b"original");
+        let (root, runtime) = runtime();
+        let outside = root.path().join("outside");
+        fs::create_dir(&outside).unwrap();
+        fs::write(outside.join("protected"), b"original").unwrap();
+        let parent = runtime.workspace_root.join("parent");
+        let held = runtime.workspace_root.join("held");
+        fs::create_dir(&parent).unwrap();
+        let attack_parent = parent.clone();
+        let attack_held = held.clone();
+        let attack_outside = outside.clone();
+        let attacker = std::thread::spawn(move || {
+            for _ in 0..100 {
+                if fs::rename(&attack_parent, &attack_held).is_ok() {
+                    let _ = symlink(&attack_outside, &attack_parent);
+                    std::thread::yield_now();
+                    let _ = fs::remove_file(&attack_parent);
+                    let _ = fs::rename(&attack_held, &attack_parent);
+                }
+            }
+        });
+        for _ in 0..100 {
+            let _ = runtime.write(&WriteArgs {
+                path: "/workspace/parent/protected".into(),
+                tool_call_id: "race".into(),
+                file_bytes: b"inside".to_vec(),
+            });
+        }
+        attacker.join().unwrap();
+        assert_eq!(fs::read(outside.join("protected")).unwrap(), b"original");
     }
 
     #[test]
@@ -2489,17 +2647,13 @@ mod tests {
         assert!(runtime.resolve_path("/tmp/escape").is_err());
         assert_eq!(
             runtime
-                .resolve_path(
-                    "/root/.cursor/projects/workspace/terminals/12.txt"
-                )
+                .resolve_path("/root/.cursor/projects/workspace/terminals/12.txt")
                 .expect("terminal"),
             runtime.terminals_directory.join("12.txt")
         );
         assert!(
             runtime
-                .resolve_path(
-                    "/root/.cursor/projects/workspace/terminals/../../x"
-                )
+                .resolve_path("/root/.cursor/projects/workspace/terminals/../../x")
                 .is_err()
         );
     }
@@ -2573,9 +2727,7 @@ mod tests {
             working_directory: "/workspace".into(),
             tool_call_id: String::new(),
         });
-        let Some(background_shell_spawn_result::Result::Success(spawned)) =
-            spawned.result
-        else {
+        let Some(background_shell_spawn_result::Result::Success(spawned)) = spawned.result else {
             panic!("expected background shell");
         };
         let stdin = runtime.write_stdin(&WriteShellStdinArgs {
@@ -2595,7 +2747,10 @@ mod tests {
             if content.contains("got:hello") && content.contains("ended_at:") {
                 break;
             }
-            assert!(Instant::now() < deadline, "background terminal did not settle");
+            assert!(
+                Instant::now() < deadline,
+                "background terminal did not settle"
+            );
             thread::sleep(Duration::from_millis(10));
         }
     }
@@ -2626,8 +2781,7 @@ mod tests {
                 if let Some(exec_stream_element::Element::ExecClientMessage(message)) =
                     element.element
                 {
-                    if let Some(exec_client_message::Message::ShellStream(stream)) =
-                        message.message
+                    if let Some(exec_client_message::Message::ShellStream(stream)) = message.message
                     {
                         match stream.event {
                             Some(shell_stream::Event::Stdout(stdout))
@@ -2643,7 +2797,10 @@ mod tests {
                 Ok(())
             })
             .expect("stream execution");
-        assert!(saw_first_before_done, "stdout was buffered until after child completion");
+        assert!(
+            saw_first_before_done,
+            "stdout was buffered until after child completion"
+        );
         assert!(saw_exit);
     }
 
@@ -2671,8 +2828,7 @@ mod tests {
                 if let Some(exec_stream_element::Element::ExecClientMessage(message)) =
                     element.element
                 {
-                    if let Some(exec_client_message::Message::ShellStream(stream)) =
-                        message.message
+                    if let Some(exec_client_message::Message::ShellStream(stream)) = message.message
                     {
                         if let Some(shell_stream::Event::Backgrounded(event)) = stream.event {
                             backgrounded = Some(event);
@@ -2686,7 +2842,10 @@ mod tests {
         assert_ne!(backgrounded.shell_id, 0);
         assert_eq!(backgrounded.ms_to_wait, Some(50));
         assert_eq!(backgrounded.reason, Some(SHELL_BACKGROUND_REASON_TIMEOUT));
-        assert_eq!(backgrounded.command, "printf 'pre\\n'; printf 'start\\n' >> run-count.txt; sleep 0.20; printf 'post\\n'; printf 'end\\n' >> run-count.txt");
+        assert_eq!(
+            backgrounded.command,
+            "printf 'pre\\n'; printf 'start\\n' >> run-count.txt; sleep 0.20; printf 'post\\n'; printf 'end\\n' >> run-count.txt"
+        );
 
         let terminal = runtime
             .terminals_directory
@@ -2694,9 +2853,7 @@ mod tests {
         let deadline = Instant::now() + Duration::from_secs(3);
         loop {
             let content = fs::read_to_string(&terminal).unwrap_or_default();
-            if content.contains("pre")
-                && content.contains("post")
-                && content.contains("ended_at:")
+            if content.contains("pre") && content.contains("post") && content.contains("ended_at:")
             {
                 break;
             }
@@ -2707,8 +2864,7 @@ mod tests {
             thread::sleep(Duration::from_millis(10));
         }
         assert_eq!(
-            fs::read_to_string(runtime.workspace_root.join("run-count.txt"))
-                .expect("run-count"),
+            fs::read_to_string(runtime.workspace_root.join("run-count.txt")).expect("run-count"),
             "start\nend\n",
             "timed backgrounding must transfer the same child instead of restarting it"
         );
@@ -2733,6 +2889,20 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn disconnect_aborts_foreground_shell_process_group() {
+        fn is_alive(target: libc::pid_t) -> Result<bool, String> {
+            if unsafe { libc::kill(target, 0) } == 0 {
+                return Ok(true);
+            }
+            let error = std::io::Error::last_os_error();
+            if error.raw_os_error() == Some(libc::ESRCH) {
+                return Ok(false);
+            }
+            if target < 0 && error.raw_os_error() == Some(libc::EPERM) {
+                return Ok(true);
+            }
+            Err(format!("process probe for {target} failed: {error}"))
+        }
+
         let root = tempfile::tempdir().expect("root");
         let workspace = root.path().join("workspace");
         fs::create_dir_all(&workspace).expect("workspace");
@@ -2749,7 +2919,15 @@ mod tests {
             id: 77,
             exec_id: "abort-wire".into(),
             message: Some(exec_server_message::Message::ShellArgs(ShellArgs {
-                command: "echo $ > abort-pid.txt; sleep 10".into(),
+                // The trap only reaps the child. Killing the leader alone must
+                // leave the child alive and fail the disconnect observation.
+                command: r#"sleep 30 &
+child=$!
+trap 'wait "$child"' TERM
+printf '%s %s\n' "$$" "$child" > abort-pids.tmp
+mv abort-pids.tmp abort-pids.txt
+wait "$child""#
+                    .into(),
                 working_directory: "/workspace".into(),
                 timeout: 0,
                 tool_call_id: "abort-tool".into(),
@@ -2760,47 +2938,87 @@ mod tests {
             })),
         };
         let body = request.encode_to_vec();
-        let mut stream = TcpStream::connect(("127.0.0.1", handle.port)).expect("connect");
-        write!(
-            stream,
-            "POST /agent.v1.ExecService/Exec HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer secret\r\nContent-Type: application/proto\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-            body.len()
-        )
-        .expect("headers");
-        stream.write_all(&body).expect("body");
-        stream.flush().expect("flush");
+        let cancellation_result = (|| -> Result<(), String> {
+            let mut stream = TcpStream::connect(("127.0.0.1", handle.port))
+                .map_err(|error| format!("connect: {error}"))?;
+            write!(
+                stream,
+                "POST /agent.v1.ExecService/Exec HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer secret\r\nContent-Type: application/proto\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            )
+            .map_err(|error| format!("headers: {error}"))?;
+            stream
+                .write_all(&body)
+                .map_err(|error| format!("body: {error}"))?;
+            stream.flush().map_err(|error| format!("flush: {error}"))?;
 
-        let pid_path = workspace.join("abort-pid.txt");
-        let deadline = Instant::now() + Duration::from_secs(2);
-        while !pid_path.exists() {
-            assert!(Instant::now() < deadline, "foreground shell never started");
-            thread::sleep(Duration::from_millis(10));
-        }
-        let pid = fs::read_to_string(&pid_path)
-            .expect("pid")
-            .trim()
-            .to_string();
-        drop(stream);
-
-        let deadline = Instant::now() + Duration::from_secs(3);
-        let mut exited = false;
-        while Instant::now() < deadline {
-            let alive = Command::new("kill")
-                .args(["-0", &pid])
-                .status()
-                .map(|status| status.success())
-                .unwrap_or(false);
-            if !alive {
-                exited = true;
-                break;
+            let pid_path = workspace.join("abort-pids.txt");
+            let deadline = Instant::now() + Duration::from_secs(2);
+            while !pid_path.exists() {
+                if Instant::now() >= deadline {
+                    return Err("foreground shell and child never became ready".into());
+                }
+                thread::sleep(Duration::from_millis(10));
             }
-            thread::sleep(Duration::from_millis(20));
-        }
-        if !exited {
-            let _ = handle.stop();
-        }
-        assert!(exited, "client disconnect did not abort foreground process group");
-        handle.stop().expect("stop");
+            let ready = fs::read_to_string(&pid_path)
+                .map_err(|error| format!("read ready process IDs: {error}"))?;
+            let ids = ready.split_whitespace().collect::<Vec<_>>();
+            if ids.len() != 2 {
+                return Err(format!("expected exactly two ready process IDs: {ready:?}"));
+            }
+            let leader = ids[0]
+                .parse::<libc::pid_t>()
+                .map_err(|error| format!("invalid leader PID: {error}"))?;
+            let child = ids[1]
+                .parse::<libc::pid_t>()
+                .map_err(|error| format!("invalid child PID: {error}"))?;
+            if leader <= 1 || child <= 1 || leader == child {
+                return Err(format!("invalid leader/child PID pair: {leader}/{child}"));
+            }
+            for pid in [leader, child] {
+                if !is_alive(pid)? {
+                    return Err(format!("process {pid} exited before client disconnect"));
+                }
+                let group = unsafe { libc::getpgid(pid) };
+                if group == -1 {
+                    return Err(format!(
+                        "getpgid({pid}) failed: {}",
+                        std::io::Error::last_os_error()
+                    ));
+                }
+                if group != leader {
+                    return Err(format!(
+                        "process {pid} belongs to group {group}, expected leader {leader}"
+                    ));
+                }
+            }
+            if !is_alive(-leader)? {
+                return Err("foreground group exited before client disconnect".into());
+            }
+            drop(stream);
+
+            let deadline = Instant::now() + Duration::from_secs(3);
+            loop {
+                let leader_alive = is_alive(leader)?;
+                let child_alive = is_alive(child)?;
+                let group_alive = is_alive(-leader)?;
+                if Instant::now() >= deadline {
+                    return Err(format!(
+                        "disconnect did not settle group {leader}: leader={leader_alive}, child={child_alive}, group={group_alive}"
+                    ));
+                }
+                if !leader_alive && !child_alive && !group_alive {
+                    return Ok(());
+                }
+                thread::sleep(Duration::from_millis(20));
+            }
+        })();
+
+        // Capture the disconnect outcome before cleanup; shutdown must not
+        // turn a failed observation into a passing cancellation test.
+        let cleanup_result = handle.stop();
+        cancellation_result.expect("client disconnect must abort the foreground process group");
+        cleanup_result.expect("stop");
     }
 
     #[test]
@@ -2847,26 +3065,22 @@ mod tests {
         assert!(
             std::str::from_utf8(&response)
                 .ok()
-                .is_some_and(|value| value.to_ascii_lowercase().contains("transfer-encoding: chunked")),
+                .is_some_and(|value| value
+                    .to_ascii_lowercase()
+                    .contains("transfer-encoding: chunked")),
             "Exec response must be a live chunked Connect stream"
         );
         let body = http_body(&response);
         assert!(body.len() > 5);
         assert_eq!(body[0], 0);
-        let length =
-            u32::from_be_bytes([body[1], body[2], body[3], body[4]]) as usize;
-        let element =
-            ExecStreamElement::decode(&body[5..5 + length]).expect("stream element");
-        let Some(exec_stream_element::Element::ExecClientMessage(message)) =
-            element.element
-        else {
+        let length = u32::from_be_bytes([body[1], body[2], body[3], body[4]]) as usize;
+        let element = ExecStreamElement::decode(&body[5..5 + length]).expect("stream element");
+        let Some(exec_stream_element::Element::ExecClientMessage(message)) = element.element else {
             panic!("expected client message");
         };
         assert_eq!(message.id, 7);
         assert_eq!(message.exec_id, "wire-exec");
-        let Some(exec_client_message::Message::ReadResult(read)) =
-            message.message
-        else {
+        let Some(exec_client_message::Message::ReadResult(read)) = message.message else {
             panic!("expected read result");
         };
         let Some(read_result::Result::Success(read)) = read.result else {
@@ -2877,24 +3091,13 @@ mod tests {
             Some(read_success::Output::Content("wire".into()))
         );
 
-        let unauthorized = http_call(
-            handle.port,
-            "/agent.v1.ControlService/Ping",
-            "wrong",
-            &[],
-        );
+        let unauthorized = http_call(handle.port, "/agent.v1.ControlService/Ping", "wrong", &[]);
         assert!(unauthorized.starts_with(b"HTTP/1.1 401 Unauthorized\r\n"));
         handle.stop().expect("stop");
     }
 
-    fn http_call(
-        port: u16,
-        path: &str,
-        token: &str,
-        body: &[u8],
-    ) -> Vec<u8> {
-        let mut stream =
-            TcpStream::connect(("127.0.0.1", port)).expect("connect");
+    fn http_call(port: u16, path: &str, token: &str, body: &[u8]) -> Vec<u8> {
+        let mut stream = TcpStream::connect(("127.0.0.1", port)).expect("connect");
         write!(
             stream,
             "POST {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer {token}\r\nContent-Type: application/proto\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
@@ -2930,9 +3133,7 @@ mod tests {
     }
 
     fn http_response_complete(response: &[u8]) -> bool {
-        let Some(header_index) = response
-            .windows(4)
-            .position(|window| window == b"\r\n\r\n")
+        let Some(header_index) = response.windows(4).position(|window| window == b"\r\n\r\n")
         else {
             return false;
         };

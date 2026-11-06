@@ -27,7 +27,9 @@ export type DesktopUpdateTrack = "stable" | "nightly" | "dogfood";
 export type DesktopUpdateState =
   | {
       type: "disabled";
-      reason: "not-packaged" | "lab-build" | "unsupported-platform" | "disabled-by-env";
+      reason: "not-packaged" | "lab-build" | "unsupported-platform" | "disabled-by-env"
+        | "update-source-unconfigured" | "update-source-invalid"
+        | "windows-publisher-unconfigured" | "windows-publisher-invalid";
     }
   | {
       type: "idle";
@@ -160,6 +162,26 @@ export interface ClientPersistenceEntry {
   value: string;
 }
 
+export type ProductNetworkProxyMode = "system" | "enabled" | "disabled";
+export type ProductNetworkProxyType = "socks5" | "http" | "mtproto" | "web";
+export interface ProductNetworkProxyEndpoint { type: ProductNetworkProxyType; host: string; port: number; user: string; password: string; }
+export interface ProductNetworkProxySettings {
+  mode: ProductNetworkProxyMode; selected: ProductNetworkProxyEndpoint | null; list: ProductNetworkProxyEndpoint[];
+  tryIpv6: boolean; useProxyForCalls: boolean; checkIpWarningShown: boolean;
+  rotation: { enabled: boolean; timeoutSeconds: number; preferredIndices: number[] };
+}
+export interface ProductSettingsSnapshot { version: number; network: { proxy: ProductNetworkProxySettings }; }
+export type ProductNetworkProxyMutation =
+  | { type: "setMode"; mode: ProductNetworkProxyMode } | { type: "setSelected"; proxy: ProductNetworkProxyEndpoint | null }
+  | { type: "setSelectedAndMode"; proxy: ProductNetworkProxyEndpoint | null; mode: ProductNetworkProxyMode }
+  | { type: "setList"; list: ProductNetworkProxyEndpoint[] } | { type: "add"; proxy: ProductNetworkProxyEndpoint }
+  | { type: "insert"; index: number; proxy: ProductNetworkProxyEndpoint } | { type: "remove"; proxy: ProductNetworkProxyEndpoint }
+  | { type: "replace"; was: ProductNetworkProxyEndpoint; proxy: ProductNetworkProxyEndpoint } | { type: "setTryIpv6"; enabled: boolean }
+  | { type: "setUseProxyForCalls"; enabled: boolean } | { type: "setCheckIpWarningShown"; shown: boolean }
+  | { type: "setRotationEnabled"; enabled: boolean } | { type: "setRotationTimeout"; seconds: number }
+  | { type: "setRotationPreferredIndices"; indices: number[] } | { type: "promoteRotationPreferredIndex"; index: number };
+export interface ProductNetworkProxyMutationResult { settings: ProductSettingsSnapshot; publication: unknown | null; }
+
 export interface DesktopTimeZoneState {
   detectedTimeZone: string | null;
   overrideTimeZone: string | null;
@@ -285,6 +307,7 @@ export const DESKTOP_BRIDGE_TOP_LEVEL_KEYS = [
   "onboarding",
   "telemetry",
   "timeZone",
+  "networkProxy",
   "autoReviewInstructions",
   "localToolPermission",
   "theme",
@@ -548,6 +571,10 @@ export interface DesktopBridge {
     get(): Promise<DesktopTimeZoneState>;
     setOverride(timeZone: string | null): Promise<DesktopTimeZoneState>;
   };
+  readonly networkProxy: {
+    get(): Promise<ProductSettingsSnapshot>;
+    mutate(mutation: ProductNetworkProxyMutation): Promise<ProductNetworkProxyMutationResult>;
+  };
   readonly uiPreferences: {
     get(): Promise<DesktopUiPreferences>;
     set(preferences: DesktopUiPreferences): Promise<DesktopUiPreferences>;
@@ -606,6 +633,7 @@ export function hasDesktopBridge(value: unknown): value is DesktopBridge {
     candidate.mcp !== null &&
     typeof candidate.cursorAccount === "object" &&
     candidate.cursorAccount !== null &&
+    typeof candidate.networkProxy === "object" && candidate.networkProxy !== null &&
     typeof candidate.update === "object" &&
     candidate.update !== null
   );
@@ -617,3 +645,5 @@ export function requireDesktopBridge(value: unknown): DesktopBridge {
   }
   return value;
 }
+
+

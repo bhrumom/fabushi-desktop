@@ -13,6 +13,8 @@ export const MAIN_METHOD_TABLE = {
   setTitleBarOverlayTone: { args: "object" },
   getThemeState: { args: "none" },
   setThemePreference: { args: "object" },
+  getNetworkProxySettings: { args: "none" },
+  mutateNetworkProxySettings: { args: "object" },
   getEgressTunnelEnabled: { args: "none" },
   setEgressTunnelEnabled: { args: "object" },
   getEgressTunnelStatus: { args: "none" },

@@ -23,6 +23,10 @@ pub enum GatewayCommandError {
     UnknownMethod(String),
     #[error("{0}")]
     BadRequest(String),
+    #[error("unauthorized: {0}")]
+    Unauthorized(String),
+    #[error("forbidden: {0}")]
+    Forbidden(String),
     #[error("{0}")]
     Conflict(String),
     #[error("{0}")]
@@ -34,6 +38,8 @@ impl GatewayCommandError {
         match self {
             Self::UnknownMethod(_) => 404,
             Self::BadRequest(_) => 400,
+            Self::Unauthorized(_) => 401,
+            Self::Forbidden(_) => 403,
             Self::Conflict(_) => 409,
             Self::Internal(_) => 500,
         }

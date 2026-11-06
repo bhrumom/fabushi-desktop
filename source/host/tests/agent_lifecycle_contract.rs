@@ -7,6 +7,7 @@ use mahayana_host_runtime::extensions::session::production::ProductionSessionWor
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
     AgentDeletionRuntimeDeps, AgentLifecycleGatewayError, ProductionAgentLifecycle,
     dispatch_production_agent_lifecycle_gateway_call,
+    dispatch_production_agent_lifecycle_gateway_call_with_runtime,
     dispatch_production_agent_lifecycle_gateway_call_with_runtimes,
 };
 use mahayana_host_runtime::extensions::transcript::production_runtime::ProductionTranscriptRuntime;
@@ -527,6 +528,196 @@ fn shipping_gateway_contract_validates_delete_arguments_and_uses_lifecycle_owner
     let _ = fs::remove_dir_all(root);
 }
 
+#[test]
+fn guarded_delete_rejects_stale_revision_before_destructive_hooks() {
+    let root = temp_root("stale-revision");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store.create_session(None, "user", None).expect("agent");
+    let summary = production
+        .summarize_agent_by_id(&record.id, None)
+        .expect("summary")
+        .expect("summary present");
+
+    let result = dispatch_production_agent_lifecycle_gateway_call(
+        &production,
+        "deleteAgent",
+        &json!({
+            "id": record.id.clone(),
+            "expectedSessionId": record.id.clone(),
+            "expectedLifecycleRevision": "stale-revision",
+        }),
+    )
+    .expect("handled");
+    assert_eq!(
+        result,
+        Err(AgentLifecycleGatewayError::BadRequest(
+            "SESSION_LIFECYCLE_CHANGED".into()
+        ))
+    );
+    assert!(store.agent_exists(&record.id));
+    assert!(!summary.lifecycle_revision.is_empty());
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn guarded_delete_rechecks_revision_after_drain_mutation() {
+    let root = temp_root("drain-revision");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store.create_session(None, "user", None).expect("agent");
+    let summary = production
+        .summarize_agent_by_id(&record.id, None)
+        .expect("summary")
+        .expect("summary present");
+    let agent_id = record.id.clone();
+    let mutation_owner = Arc::clone(&production);
+    let runtime = AgentDeletionRuntimeDeps {
+        drain_runner: Some(Arc::new(move |_| {
+            mutation_owner
+                .open_agent_db_owner(&agent_id)
+                .and_then(|owner| {
+                    owner
+                        .set_metadata("drainMutation", json!(true))
+                        .map(|_| ())
+                        .map_err(|error| error.to_string())
+                })
+        })),
+        ..AgentDeletionRuntimeDeps::default()
+    };
+
+    let result = dispatch_production_agent_lifecycle_gateway_call_with_runtime(
+        &production,
+        &runtime,
+        "deleteAgent",
+        &json!({
+            "id": record.id.clone(),
+            "expectedSessionId": record.id.clone(),
+            "expectedLifecycleRevision": summary.lifecycle_revision,
+        }),
+    )
+    .expect("handled");
+    assert_eq!(
+        result,
+        Err(AgentLifecycleGatewayError::BadRequest(
+            "SESSION_LIFECYCLE_CHANGED".into()
+        ))
+    );
+    assert!(store.agent_exists(&record.id));
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn guarded_delete_rejects_stale_updated_at_before_destructive_hooks() {
+    let root = temp_root("stale-updated-at");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store.create_session(None, "user", None).expect("agent");
+    let summary = production
+        .summarize_agent_by_id(&record.id, None)
+        .expect("summary")
+        .expect("summary present");
+
+    let result = dispatch_production_agent_lifecycle_gateway_call(
+        &production,
+        "deleteAgent",
+        &json!({
+            "id": record.id.clone(),
+            "expectedSessionId": record.id.clone(),
+            "expectedLifecycleRevision": summary.lifecycle_revision,
+            "expectedSessionUpdatedAt": summary.updated_at + 1.0,
+        }),
+    )
+    .expect("handled");
+    assert_eq!(
+        result,
+        Err(AgentLifecycleGatewayError::BadRequest(
+            "SESSION_LIFECYCLE_CHANGED".into()
+        ))
+    );
+    assert!(store.agent_exists(&record.id));
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn guarded_delete_allows_matching_identity_revision_and_updated_at() {
+    let root = temp_root("guarded-success");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store.create_session(None, "user", None).expect("agent");
+    let summary = production
+        .summarize_agent_by_id(&record.id, None)
+        .expect("summary")
+        .expect("summary present");
+
+    let result = dispatch_production_agent_lifecycle_gateway_call(
+        &production,
+        "deleteAgent",
+        &json!({
+            "id": record.id.clone(),
+            "expectedSessionId": record.id.clone(),
+            "expectedLifecycleRevision": summary.lifecycle_revision,
+            "expectedSessionUpdatedAt": summary.updated_at,
+        }),
+    )
+    .expect("handled")
+    .expect("guarded delete");
+    assert_eq!(result["transcript"], json!([]));
+    assert!(!store.agent_exists(&record.id));
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn guarded_delete_rejects_declared_invalid_updated_at() {
+    let root = temp_root("invalid-updated-at");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store.create_session(None, "user", None).expect("agent");
+
+    let result = dispatch_production_agent_lifecycle_gateway_call(
+        &production,
+        "deleteAgent",
+        &json!({
+            "id": record.id.clone(),
+            "expectedSessionUpdatedAt": "not-a-number",
+        }),
+    )
+    .expect("handled");
+    assert_eq!(
+        result,
+        Err(AgentLifecycleGatewayError::BadRequest(
+            "expectedSessionUpdatedAt must be a finite number".into()
+        ))
+    );
+    assert!(store.agent_exists(&record.id));
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
 
 #[test]
 fn lifecycle_roster_owner_covers_unread_notifications_hidden_and_avatar_mutations() {
@@ -660,4 +851,78 @@ fn shipping_gateway_orders_lifecycle_owner_before_generic_session_gateway() {
             "{method} must be owned by the production lifecycle dispatcher"
         );
     }
+}
+
+#[test]
+fn generated_subagent_cleanup_keeps_the_gateway_lifecycle_owner_and_captured_revision() {
+    let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let main = fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
+    let openclaw_sessions =
+        fs::read_to_string(manifest_dir.join("app/src/ocrm_handlers/openclaw_sessions.rs"))
+            .unwrap_or_default();
+    let launch = main
+        .find("let child_lifecycle_revision = self")
+        .expect("subagent launch must capture lifecycle revision");
+    let request = main
+        .find("\"lifecycleRevision\": child_lifecycle_revision")
+        .expect("subagent request must carry lifecycle revision");
+    let completion = main
+        .find("let cleanup_revision = completion.lifecycle_revision.clone()")
+        .expect("completion must retain lifecycle revision");
+    let owner = main
+        .find("fn delete_generated_subagent(")
+        .expect("cleanup must have one Gateway-owned entrypoint");
+    let guarded_delete_offset = main
+        .get(owner..)
+        .and_then(|source| source.find("\"expectedLifecycleRevision\": lifecycle_revision"))
+        .or_else(|| {
+            openclaw_sessions
+                .find("fn delete_generated_subagent(")
+                .and_then(|offset| openclaw_sessions.get(offset..))
+                .and_then(|source| source.find("\"expectedLifecycleRevision\": lifecycle_revision"))
+        })
+        .expect("cleanup must pass the captured revision to the lifecycle owner");
+    assert!(launch < request);
+    assert!(completion != launch && guarded_delete_offset > 0);
+    assert!(main.contains("generated_subagent_cleanup_gateway"));
+}
+
+#[test]
+fn deletion_owner_publishes_and_clears_the_durable_session_admission_fence() {
+    let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let production = format!(
+        "{}\n{}",
+        fs::read_to_string(manifest_dir.join("src/extensions/session/production.rs"))
+            .expect("session production source"),
+        fs::read_to_string(
+            manifest_dir.join("src/extensions/session/ocrm_production_compaction.rs")
+        )
+        .unwrap_or_default()
+    );
+    let agent_db = fs::read_to_string(manifest_dir.join("src/extensions/session/agent_db.rs"))
+        .expect("session database source");
+    let agent_session = fs::read_to_string(manifest_dir.join("src/extensions/session/agent_session.rs"))
+        .expect("session facade source");
+    assert!(agent_db.contains("pub deletion_pending: bool"));
+    assert!(production.contains("record.deletion_pending = true"));
+    assert!(production.contains("record.deletion_pending = false"));
+    assert!(production.contains("pub fn mark_agent_activity"));
+    assert!(production.contains("pub fn mark_agent_activity")
+        && production.contains("self.assert_agent_work_admission(agent_id)?;"));
+    assert!(production.contains("pub fn set_agent_awaiting_user_response"));
+    assert!(production.contains("pub fn set_agent_awaiting_user_response_for_tab"));
+    assert!(production.contains("pub fn set_agent_introduction_pending"));
+    assert!(production.contains("pub fn set_agent_automation_spend_guard_state"));
+    assert!(production.contains("pub fn set_agent_memory_prompt_snapshot"));
+    assert!(production.contains("pub fn set_agent_profile_prompt_snapshot"));
+    assert!(production.contains("pub fn mark_agent_viewed"));
+    assert!(production.contains("pub fn set_agent_unread"));
+    assert!(production.contains("pub fn add_agent_conversation_partner"));
+    assert!(agent_db.contains("admission.deletion_pending"));
+    assert!(production.contains("publishing deletion fence"));
+    assert!(production.contains("clearing deletion fence"));
+    assert!(agent_session.contains("self.production.begin_agent_delete(agent_id)?"));
+    assert!(agent_session.contains("self.production.clear_agent_delete_fast_path(agent_id)"));
+    assert!(agent_session.contains("Ok(()) => self.production.end_agent_delete(agent_id)"));
+    assert!(agent_session.contains("Err(error) => {"));
 }

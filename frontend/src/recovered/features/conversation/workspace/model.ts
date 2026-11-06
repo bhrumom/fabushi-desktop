@@ -25,6 +25,20 @@ export interface DraftAttachment {
   mimeType?: string;
 }
 
+/** Observable resource identity shared by transcript viewer lifetime owners. */
+export function transcriptAttachmentIdentity(
+  attachment: DraftAttachment & { readonly sourceKind?: string; readonly id?: string },
+): string {
+  return JSON.stringify([
+    attachment.path,
+    attachment.name,
+    attachment.mimeType ?? null,
+    attachment.size ?? null,
+    attachment.sourceKind ?? null,
+    attachment.id ?? null,
+  ]);
+}
+
 export interface ComposerDraft {
   prompt: string;
   attachments: DraftAttachment[];
@@ -234,7 +248,22 @@ export interface TranscriptMessage {
   attachments?: DraftAttachment[];
   delivery?: TranscriptDelivery;
   clientNonce?: string;
+  /** Host-owned identity used to correlate Human settlement without crossing authors. */
+  authorKind?: "human";
+  authorId?: string;
+  authorName?: string;
+  forwardedFromAuthorName?: string;
+  /** When true, source-eligibility rules require preserving sender attribution and captions on forward. */
+  forcedForwardInfo?: boolean;
+  remoteMessageId?: string;
+  /** Validated RFC3339/ISO read timestamp on canonical settled Human messages. */
+  readAt?: string;
+  /** Topic identifier when message belongs to a forum topic or thread channel. */
+  topicId?: string;
+  /** General composition time; it does not by itself prove offline origin. */
   composedAtMs?: number;
+  /** Explicit Host-owned Human origin, independent of a busy online queue. */
+  queuedOffline?: boolean;
   isStreaming?: boolean;
   replyToId?: string;
   // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5083971
@@ -247,6 +276,47 @@ export interface TranscriptMessage {
   adjacency?: SendMessageTextAdjacency;
   /** Exact send-message:text projection retained for its mounted transcript seam. */
   sendMessageText?: import("../cards/transcript-card/send-message-text").SendMessageTextProjection;
+}
+
+const RFC3339_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/i;
+
+export function isValidHumanReadAtTimestamp(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const trimmed = value.trim();
+  if (!RFC3339_TIMESTAMP_PATTERN.test(trimmed)) return false;
+  return Number.isFinite(Date.parse(trimmed));
+}
+
+export function shouldShowHumanForwardedNotice(
+  entry: TranscriptMessage,
+): entry is TranscriptMessage & { forwardedFromAuthorName: string } {
+  return entry.authorKind === "human"
+    && typeof entry.forwardedFromAuthorName === "string"
+    && entry.forwardedFromAuthorName.trim().length > 0;
+}
+
+export function shouldShowHumanReadReceipt(
+  entry: TranscriptMessage,
+): entry is TranscriptMessage & { readAt: string } {
+  return entry.authorKind === "human"
+    && entry.role === "user"
+    && entry.delivery === "sent"
+    && typeof entry.authorId === "string" && entry.authorId.trim().length > 0
+    && typeof entry.remoteMessageId === "string" && /^[1-9][0-9]*$/.test(entry.remoteMessageId)
+    && entry.id === `human-server-message:${entry.remoteMessageId}`
+    && isValidHumanReadAtTimestamp(entry.readAt);
+}
+
+/** Agent timestamp behavior is retained; Human status requires durable origin. */
+export function shouldShowSentWhileOfflineNotice(
+  entry: TranscriptMessage,
+): entry is TranscriptMessage & { composedAtMs: number } {
+  if (entry.role !== "user" || entry.delivery === "failed" || entry.composedAtMs == null) return false;
+  if (entry.authorKind !== "human") return true;
+  return entry.queuedOffline === true && entry.delivery === "sent"
+    && Number.isFinite(entry.composedAtMs)
+    && typeof entry.remoteMessageId === "string" && /^[1-9][0-9]*$/.test(entry.remoteMessageId)
+    && entry.id === `human-server-message:${entry.remoteMessageId}`;
 }
 
 export type TranscriptToolCallStatus = "pending" | "running" | "done" | "failed" | "error" | "aborted";
@@ -332,3 +402,4 @@ export interface TranscriptPermissionRequest {
 }
 
 export type ConversationTranscriptEntry = TranscriptMessage | TranscriptToolCall | TranscriptThinking | TranscriptNotice | TranscriptTimelineEvent | TranscriptTimeSeparator | TranscriptUnreadDivider | TranscriptComputerHandoff | TranscriptLocalToolPermission | TranscriptPermissionRequest | TranscriptCardEntry;
+

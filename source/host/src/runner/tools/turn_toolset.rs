@@ -219,6 +219,7 @@ impl Default for TurnToolsetRole {
 pub struct TurnLocalToolPermissionBinding {
     pub controller: Arc<SandLocalToolPermissionController>,
     pub agent_id: String,
+    pub session_key: String,
     pub direction_epoch: u64,
 }
 
@@ -279,6 +280,7 @@ impl RoutedToolBridge for LocalToolScopeBridge {
         };
         let scope = SandLocalToolScope {
             agent_id: self.binding.agent_id.clone(),
+            session_key: Some(self.binding.session_key.clone()),
             tool_call_id: Some(tool_call_id.to_string()),
             action: action.map(str::to_string),
             direction_epoch: Some(self.binding.direction_epoch),

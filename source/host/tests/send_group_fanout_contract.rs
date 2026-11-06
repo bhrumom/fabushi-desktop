@@ -1,4 +1,8 @@
-const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+const SHIPPING_HOST: &str = concat!(
+    include_str!("../app/src/main.rs"),
+    "\n",
+    include_str!("../app/src/ocrm_handlers/group_turn.rs")
+);
 
 use std::fs;
 use std::sync::{Arc, Mutex};
@@ -154,6 +158,11 @@ fn local_group_fanout_reads_room_history_executes_members_and_durably_posts_auth
     let entries = sessions
         .read_agent_transcript_entries(&room.id)
         .expect("room transcript");
+    let room_session_key = sessions
+        .read_session_work_admission(&room.id)
+        .expect("room admission")
+        .expect("room admission record")
+        .session_key;
     let authored = entries
         .iter()
         .filter(|entry| entry.get("kind").and_then(serde_json::Value::as_str) == Some("send-message"))
@@ -164,6 +173,8 @@ fn local_group_fanout_reads_room_history_executes_members_and_durably_posts_auth
             .and_then(|author| author.get("id"))
             .and_then(serde_json::Value::as_str)
             .is_some()
+            && entry.get("sessionKey").and_then(serde_json::Value::as_str)
+                == Some(room_session_key.as_str())
     }));
 
     sessions.shutdown();
@@ -330,7 +341,7 @@ fn shipping_agent_posted_group_turn_routes_through_group_chat_glue_owner() {
         .find("fn run_agent_posted_group_turn(")
         .expect("agent-posted group turn");
     let end = SHIPPING_HOST[start..]
-        .find("\nfn run_local_group_member_turn(")
+        .find("fn run_local_group_member_turn(")
         .map(|offset| start + offset)
         .expect("group member turn boundary");
     let body = &SHIPPING_HOST[start..end];

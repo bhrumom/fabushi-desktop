@@ -101,6 +101,7 @@ fn generated_send_message_uses_shipping_session_and_frozen_pipeline_threading() 
         .materialize_new_session(None, "user", None)
         .expect("materialize Agent session");
     let agent_id = record.id;
+    let session_key = format!("agent:{agent_id}:main");
     sessions
         .append_agent_transcript_entries(
             &agent_id,
@@ -120,6 +121,7 @@ fn generated_send_message_uses_shipping_session_and_frozen_pipeline_threading() 
         .append_generated_send_message(
             &sessions,
             &agent_id,
+            &session_key,
             &serde_json::json!({"type":"text","content":"answer"}),
             10,
             Some("t0u"),
@@ -132,6 +134,7 @@ fn generated_send_message_uses_shipping_session_and_frozen_pipeline_threading() 
         .append_generated_send_message(
             &sessions,
             &agent_id,
+            &session_key,
             &serde_json::json!({
                 "type":"text",
                 "content":"no dangling reply",
@@ -148,6 +151,7 @@ fn generated_send_message_uses_shipping_session_and_frozen_pipeline_threading() 
         .append_generated_send_message(
             &sessions,
             &agent_id,
+            &session_key,
             &serde_json::json!({
                 "type":"attachment",
                 "url":"file:///persisted/one.png"
@@ -161,6 +165,7 @@ fn generated_send_message_uses_shipping_session_and_frozen_pipeline_threading() 
         .append_generated_send_message(
             &sessions,
             &agent_id,
+            &session_key,
             &serde_json::json!({
                 "type":"attachment",
                 "url":"file:///persisted/two.png"
@@ -172,6 +177,24 @@ fn generated_send_message_uses_shipping_session_and_frozen_pipeline_threading() 
         .expect("append second attachment");
     assert_eq!(attachment_one, "t0s2");
     assert_eq!(attachment_two, "t0s3");
+
+    let generated_entries = sessions
+        .read_agent_transcript_entries(&agent_id)
+        .expect("generated transcript");
+    assert!(generated_entries
+        .iter()
+        .filter(|entry| {
+            entry
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|id| id.starts_with("t0s"))
+        })
+        .all(|entry| {
+            entry
+                .get("sessionKey")
+                .and_then(serde_json::Value::as_str)
+                == Some(session_key.as_str())
+        }));
 
     let entries = sessions
         .read_agent_transcript_entries(&agent_id)

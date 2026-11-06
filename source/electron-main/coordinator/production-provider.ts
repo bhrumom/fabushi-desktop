@@ -460,17 +460,14 @@ export function createProductionCoordinatorAdapter<
               );
               void resync.onTransportConnected();
               ports.resync.onHostSettingsTransportConnected();
-              context.hostSettingsFields.onTransportConnected();
             },
             "transport-down": (payload) => {
               telemetry.transportStream.onDown(payload);
               ports.resync.onHostSettingsTransportDown();
-              context.hostSettingsFields.setBoxStreamLive(false);
             },
           },
           onMainDataPort: (port) => {
             ports.resync.onHostSettingsTransportDown();
-            context.hostSettingsFields.setBoxStreamLive(false);
             try {
               context.coordinatorLegs.adoptPort(
                 port as Parameters<typeof context.coordinatorLegs.adoptPort>[0],
@@ -508,8 +505,6 @@ export function createProductionCoordinatorAdapter<
         revokeRefusedAccount: () => ports.account.revokeRefusedAccount(context),
         prepareAccountTransition: (transition) => {
           localHumanId = null;
-          context.accountLifecycle.beginTransition();
-          context.hostSettingsFields.onAccountDeparted();
           return ports.account.prepareAccountTransition(transition, context);
         },
         resetAccountState: () => ports.account.resetAccountState(context),

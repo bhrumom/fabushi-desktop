@@ -14,21 +14,26 @@ on:
         required: true
         default: false
         type: boolean
+      artifact_only:
+        description: Build and verify signed installer bytes without Fabushi account, Agent or Mini App service acceptance; never publish or qualify promotion.
+        required: false
+        default: false
+        type: boolean
       miniapp_version:
         description: Exact approved Mini App version for installed acceptance
         required: false
         type: string
-        default: '0.4.0'
+        default: '0.4.5'
       miniapp_digest:
         description: Exact approved Mini App SHA-256 for installed acceptance
         required: false
         type: string
-        default: '1c3f3291ae6d7a531502641edb9aee136f1f7cbef42777a31cb668ca11c8e22b'
+        default: 'edee0a39535b86bbc7de564483ca238448f0549bf011f4e252cccd328bc9ac75'
       native_engine_digest:
         description: SHA-256 of the executable resource inside the approved Mini App
         required: false
         type: string
-        default: 'a3e50d3f0a003e89dc95236b86839fab49ca1b8a1d90ad77e683418f24fc7569'
+        default: '450189b8ed6c3ca79037e5f0cbdd6e5ac33495b2b1360193b87b9a53cdbd3bfd'
       iterate_existing_miniapp_candidate:
         description: Diagnose the fixed e62ea0 signed binary with this harness; never publish or claim this harness SHA is the binary source.
         required: false
@@ -69,8 +74,35 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  scope:
+    name: Resolve package verification scope
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      scope: ${{ steps.scope.outputs.scope }}
+      artifact_only: ${{ steps.scope.outputs.artifact_only }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Admit the explicit package verification scope
+        id: scope
+        env:
+          PACKAGING_EVENT_NAME: ${{ github.event_name }}
+          PACKAGING_ARTIFACT_ONLY: ${{ inputs.artifact_only }}
+          PACKAGING_PUBLISH_RELEASE: ${{ inputs.publish_release }}
+          PACKAGING_PROMOTE_EXISTING_CANDIDATE: ${{ inputs.promote_existing_candidate }}
+          PACKAGING_ITERATE_EXISTING_MINIAPP_CANDIDATE: ${{ inputs.iterate_existing_miniapp_candidate }}
+        run: node .github/scripts/resolve-package-acceptance-scope.mjs
   promote:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.promote_existing_candidate }}
+    needs: scope
+    if: ${{ needs.scope.outputs.scope == 'full' && needs.scope.outputs.artifact_only == 'false' && github.event_name == 'workflow_dispatch' && inputs.promote_existing_candidate }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -91,13 +123,15 @@ jobs:
           PROMOTION_DIAGNOSTIC: ${{ inputs.iterate_existing_miniapp_candidate }}
         run: node .github/scripts/promote-miniapp-candidate.mjs
   miniapp-iteration:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.iterate_existing_miniapp_candidate && !inputs.promote_existing_candidate }}
+    needs: scope
+    if: ${{ needs.scope.outputs.scope == 'full' && needs.scope.outputs.artifact_only == 'false' && github.event_name == 'workflow_dispatch' && inputs.iterate_existing_miniapp_candidate && !inputs.promote_existing_candidate }}
     uses: ./.github/workflows/miniapp-packaged-iteration.yml
     secrets:
       FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
       FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
   publish:
-    if: ${{ github.event_name != 'workflow_dispatch' || (!inputs.iterate_existing_miniapp_candidate && !inputs.promote_existing_candidate) }}
+    needs: scope
+    if: ${{ ((needs.scope.outputs.scope == 'full' && needs.scope.outputs.artifact_only == 'false') || (needs.scope.outputs.scope == 'artifact-only' && needs.scope.outputs.artifact_only == 'true')) && (github.event_name != 'workflow_dispatch' || (!inputs.iterate_existing_miniapp_candidate && !inputs.promote_existing_candidate)) }}
     name: Build, notarize, and publish macOS arm64
     runs-on: macos-15
     timeout-minutes: 180
@@ -189,7 +223,7 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: '1.27.1'
-          cache-dependency-path: source/fabushi-network-worker/go.mod
+          cache-dependency-path: source/fabushi-network-worker/go.sum
 
       - name: Confirm Apple Silicon runner
         shell: bash
@@ -264,10 +298,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p target/release
-          go mod tidy
+          export GOTOOLCHAIN=local
+          go mod verify
           GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 \
-            go build -trimpath -ldflags='-s -w' \
+            go build -mod=readonly -trimpath -ldflags='-s -w' \
             -o target/release/fabushi-network-worker .
+          git diff --exit-code -- go.mod go.sum
           test -x target/release/fabushi-network-worker
           file target/release/fabushi-network-worker | grep -F 'arm64'
 
@@ -418,16 +454,18 @@ jobs:
           node .github/scripts/validate-apple-ticket.mjs "$app"
           spctl --assess --type execute --verbose=4 "$app"
 
-      - name: Verify desktop updater metadata
+      - name: Reconcile and verify final stapled update metadata
         shell: bash
         env:
           VERSION: ${{ steps.source.outputs.version }}
+          TARGET_SHA: ${{ steps.source.outputs.sha }}
         run: |
           set -euo pipefail
-          metadata="desktop/release/latest-mac.yml"
-          test -s "$metadata"
-          grep -F "fabushi-${VERSION}-macos-arm64.zip" "$metadata"
-          find desktop/release -maxdepth 1 -type f -name '*.blockmap' -size +0c -print -quit | grep -q .
+          node desktop/scripts/reconcile-macos-update-metadata.mjs \
+            --directory desktop/release --version "$VERSION" --target-sha "$TARGET_SHA" \
+            --receipt "$RUNNER_TEMP/fabushi-final-macos-metadata.json"
+          node desktop/scripts/reconcile-macos-update-metadata.mjs \
+            --directory desktop/release --version "$VERSION" --target-sha "$TARGET_SHA" --verify
 
       - name: Bind packaged candidate executable
         id: candidate
@@ -487,6 +525,7 @@ jobs:
           echo "Candidate executable SHA-256: \`$installed_sha256\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Provision bounded production CI account session
+        if: ${{ needs.scope.outputs.scope == 'full' && needs.scope.outputs.artifact_only == 'false' }}
         shell: bash
         env:
           FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
@@ -551,6 +590,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run real signed packaged acceptance
+        if: ${{ needs.scope.outputs.scope == 'full' && needs.scope.outputs.artifact_only == 'false' }}
         working-directory: desktop
         shell: bash
         timeout-minutes: 60
@@ -588,15 +628,16 @@ jobs:
           find "$OBF_EVIDENCE_DIR" -type f \( -name '*.mp4' -o -name '*.mov' -o -name '*.webm' \) -size +0c -print -quit | grep -q .
 
       - name: Run approved Mini App installed and OS-offline lifecycle acceptance
+        if: ${{ needs.scope.outputs.scope == 'full' && needs.scope.outputs.artifact_only == 'false' }}
         working-directory: desktop
         shell: bash
         timeout-minutes: 40
         env:
           MINIAPP_REAL_ACCEPTANCE: '1'
           MINIAPP_REQUIRE_NATIVE_ENGINE: '1'
-          MINIAPP_NATIVE_EXECUTABLE_DIGEST: ${{ inputs.native_engine_digest || 'a3e50d3f0a003e89dc95236b86839fab49ca1b8a1d90ad77e683418f24fc7569' }}
-          MINIAPP_PACKAGE_VERSION: ${{ inputs.miniapp_version || '0.4.0' }}
-          MINIAPP_PACKAGE_DIGEST: ${{ inputs.miniapp_digest || '1c3f3291ae6d7a531502641edb9aee136f1f7cbef42777a31cb668ca11c8e22b' }}
+          MINIAPP_NATIVE_EXECUTABLE_DIGEST: ${{ inputs.native_engine_digest || '450189b8ed6c3ca79037e5f0cbdd6e5ac33495b2b1360193b87b9a53cdbd3bfd' }}
+          MINIAPP_PACKAGE_VERSION: ${{ inputs.miniapp_version || '0.4.5' }}
+          MINIAPP_PACKAGE_DIGEST: ${{ inputs.miniapp_digest || 'edee0a39535b86bbc7de564483ca238448f0549bf011f4e252cccd328bc9ac75' }}
           MINIAPP_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-miniapp-acceptance
           OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
           OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}
@@ -622,7 +663,7 @@ jobs:
           find "$MINIAPP_EVIDENCE_DIR" -type f -name acceptance.json -size +0c -print -quit | grep -q .
 
       - name: Upload Mini App installed acceptance evidence
-        if: always()
+        if: ${{ always() && needs.scope.outputs.scope == 'full' && needs.scope.outputs.artifact_only == 'false' }}
         uses: actions/upload-artifact@v7
         with:
           name: fabushi-miniapp-installed-${{ steps.source.outputs.short }}
@@ -630,7 +671,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload packaged acceptance evidence
-        if: always()
+        if: ${{ always() && needs.scope.outputs.scope == 'full' && needs.scope.outputs.artifact_only == 'false' }}
         uses: actions/upload-artifact@v7
         with:
           name: fabushi-candidate-acceptance-${{ steps.source.outputs.short }}
@@ -644,6 +685,7 @@ jobs:
             ${{ runner.temp }}/fabushi-candidate-acceptance/*.mp4
             ${{ runner.temp }}/fabushi-packaged-network-worker.json
             ${{ runner.temp }}/fabushi-packaged-executable-copy-identity.json
+            ${{ runner.temp }}/fabushi-final-macos-metadata.json
             desktop/playwright-report
             desktop/test-results
           if-no-files-found: warn
@@ -658,11 +700,45 @@ jobs:
           find . -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' \) -print0 | sort -z | xargs -0 shasum -a 256 > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
+      - name: Record successful package verification scope
+        shell: bash
+        env:
+          PACKAGE_SCOPE: ${{ needs.scope.outputs.scope }}
+          PACKAGE_ARTIFACT_ONLY: ${{ needs.scope.outputs.artifact_only }}
+          PACKAGE_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+        run: |
+          set -euo pipefail
+          jq -n \
+            --arg scope "$PACKAGE_SCOPE" \
+            --argjson artifactOnly "$PACKAGE_ARTIFACT_ONLY" \
+            --arg sourceSha "$PACKAGE_SOURCE_SHA" \
+            --arg runHeadSha "$GITHUB_SHA" \
+            --arg workflowSha "$GITHUB_WORKFLOW_SHA" \
+            --arg workflowRef "$GITHUB_WORKFLOW_REF" \
+            --arg runId "$GITHUB_RUN_ID" \
+            --arg runAttempt "$GITHUB_RUN_ATTEMPT" \
+            '{kind:"fabushi-package-verification",scope:$scope,artifactOnly:$artifactOnly,sourceSha:$sourceSha,runHeadSha:$runHeadSha,workflowSha:$workflowSha,workflowRef:$workflowRef,runId:$runId,runAttempt:$runAttempt,byteGates:{signing:"passed",notarization:"passed",installedCopy:"passed",metadata:"passed",checksums:"passed"},serviceAcceptance:(if $artifactOnly then "not-run" else "required-steps-passed" end),productAccepted:false,independentAcceptance:false,publicRelease:false}' \
+            > "$RUNNER_TEMP/fabushi-package-verification.json"
+
+      - name: Upload package verification identity and byte evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ needs.scope.outputs.scope == 'artifact-only' && needs.scope.outputs.artifact_only == 'true' && 'fabushi-artifact-verification' || 'fabushi-package-verification' }}-${{ steps.source.outputs.short }}
+          path: |
+            ${{ runner.temp }}/fabushi-package-verification.json
+            ${{ runner.temp }}/fabushi-final-macos-metadata.json
+            ${{ runner.temp }}/fabushi-packaged-executable-copy-identity.json
+            ${{ runner.temp }}/fabushi-packaged-network-worker.json
+          if-no-files-found: warn
+          retention-days: 90
+          compression-level: 0
+
       - name: Upload workflow artifacts
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: fabushi-macos-${{ steps.source.outputs.short }}
+          name: ${{ needs.scope.outputs.scope == 'artifact-only' && needs.scope.outputs.artifact_only == 'true' && 'fabushi-macos-artifact-only' || 'fabushi-macos' }}-${{ steps.source.outputs.short }}
           path: |
             desktop/release/*.dmg
             desktop/release/*.zip
@@ -674,4 +750,9 @@ jobs:
           compression-level: 0
 
       - name: Keep accepted installer private until binary-bound factory promotion
+        if: ${{ needs.scope.outputs.scope == 'full' && needs.scope.outputs.artifact_only == 'false' }}
         run: echo 'Candidate retained as immutable Actions artifact; public promotion requires matching factory acceptance and zero-residue evidence.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep artifact-only installer unaccepted and private
+        if: ${{ needs.scope.outputs.scope == 'artifact-only' && needs.scope.outputs.artifact_only == 'true' }}
+        run: echo 'Artifact-only signed byte verification; Fabushi account, Agent and Mini App service acceptance was not run. Product/release/independent ACCEPT is false. This artifact cannot qualify immutable promotion.' >> "$GITHUB_STEP_SUMMARY"

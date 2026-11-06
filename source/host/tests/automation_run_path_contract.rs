@@ -7,9 +7,11 @@ use mahayana_host_runtime::automations::automation::AutomationSpec;
 use mahayana_host_runtime::automations::automation_store::FileAutomationStore;
 use mahayana_host_runtime::extensions::transcript::automation_run_path::{
     AutomationExecutionResult, AutomationRunObservation, AutomationRunPath, AutomationRunTrigger,
-    FireAutomationArgs, FireAutomationOutcome, build_automation_wake_prompt,
+    CronSessionRetentionPolicy, CronSessionSweepThrottle, FireAutomationArgs,
+    FireAutomationOutcome, CRON_SESSION_RETENTION_DEFAULT_MS, CRON_SESSION_SWEEP_THROTTLE_MS,
+    build_automation_wake_prompt,
     build_automation_wake_prompt_with_time_zone,
-    build_group_automation_seed, describe_trigger_event_batch,
+    build_group_automation_seed, describe_trigger_event_batch, parse_cron_session_retention,
 };
 use serde_json::json;
 
@@ -37,6 +39,42 @@ fn create_automation(store: &FileAutomationStore) -> mahayana_host_runtime::auto
         )
         .expect("upsert")
         .expect("automation")
+}
+
+#[test]
+fn cron_retention_policy_and_owner_throttle_fail_closed_at_the_policy_seam() {
+    assert_eq!(
+        parse_cron_session_retention(None),
+        CronSessionRetentionPolicy::DurationMs(CRON_SESSION_RETENTION_DEFAULT_MS)
+    );
+    assert_eq!(
+        parse_cron_session_retention(Some(&json!(false))),
+        CronSessionRetentionPolicy::Disabled
+    );
+    assert_eq!(
+        parse_cron_session_retention(Some(&json!(0))),
+        CronSessionRetentionPolicy::Disabled
+    );
+    assert_eq!(
+        parse_cron_session_retention(Some(&json!(-1))),
+        CronSessionRetentionPolicy::DurationMs(CRON_SESSION_RETENTION_DEFAULT_MS)
+    );
+    assert_eq!(
+        parse_cron_session_retention(Some(&json!("24h"))),
+        CronSessionRetentionPolicy::DurationMs(CRON_SESSION_RETENTION_DEFAULT_MS)
+    );
+    assert_eq!(
+        parse_cron_session_retention(Some(&json!(1234.9))),
+        CronSessionRetentionPolicy::DurationMs(1234)
+    );
+
+    let mut throttle = CronSessionSweepThrottle::default();
+    assert!(!throttle.admit("", 1_000));
+    assert!(throttle.admit("agent-a", 1_000));
+    assert!(!throttle.admit("agent-a", 1_000 + CRON_SESSION_SWEEP_THROTTLE_MS - 1));
+    assert!(!throttle.admit("agent-a", 999));
+    assert!(throttle.admit("agent-a", 1_000 + CRON_SESSION_SWEEP_THROTTLE_MS));
+    assert!(throttle.admit("agent-b", 1_001));
 }
 
 #[test]
@@ -69,6 +107,32 @@ fn manual_run_persists_running_then_terminal_success_after_executor_returns() {
     assert_eq!(runs[0].finished_at, Some(2_000.0));
     assert_eq!(store.get(&automation.id).and_then(|row| row.last_run_at), Some(2_000.0));
     assert!(!path.is_in_flight("agent-1", &automation.id));
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn background_run_without_durable_history_identity_never_reaches_executor() {
+    let root = root("missing-run-identity");
+    let store = FileAutomationStore::new(root.join("automations"));
+    let automation = create_automation(&store);
+    assert!(store.remove(&automation.id).expect("remove automation"));
+
+    let mut args = FireAutomationArgs::manual("agent-1", automation, 2_500.0);
+    args.trigger = AutomationRunTrigger::Schedule;
+    let executed = Arc::new(Mutex::new(false));
+    let executed_by_executor = Arc::clone(&executed);
+    let error = AutomationRunPath::default()
+        .fire_automation_with(&store, args, |_| {
+            *executed_by_executor.lock().unwrap() = true;
+            Ok(AutomationExecutionResult::Completed)
+        })
+        .expect_err("background run without a durable identity must fail closed");
+
+    assert_eq!(
+        error,
+        "background automation run did not produce a durable run identity"
+    );
+    assert!(!*executed.lock().unwrap());
     let _ = fs::remove_dir_all(root);
 }
 

@@ -101,6 +101,24 @@ fn background_run_nudges_then_pauses_and_resume_answer_restores_only_guard_pause
     assert_eq!(state.nudged_at_ms, Some(now_ms));
     assert_eq!(state.card_entry_ids.len(), 1);
     let nudge_entry_id = state.card_entry_ids[0].clone();
+    let nudge_entry = workers
+        .read_agent_transcript_entries(&agent.id)
+        .expect("nudge transcript")
+        .into_iter()
+        .find(|entry| {
+            entry.get("id").and_then(serde_json::Value::as_str)
+                == Some(nudge_entry_id.as_str())
+        })
+        .expect("nudge card");
+    let session_key = workers
+        .read_session_work_admission(&agent.id)
+        .expect("admission")
+        .expect("admission record")
+        .session_key;
+    assert_eq!(
+        nudge_entry.get("sessionKey").and_then(serde_json::Value::as_str),
+        Some(session_key.as_str())
+    );
 
     let called = Arc::new(AtomicBool::new(false));
     let called_in_run = Arc::clone(&called);

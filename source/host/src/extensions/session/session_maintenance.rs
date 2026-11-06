@@ -10,14 +10,11 @@ use crate::storage::store_db::{
 };
 
 use super::agent_db::{
-    append_persisted_transcript_entries, compare_and_set_persisted_latest_root_blob_id,
-    delete_persisted_transcript_entry, has_persisted_legacy_conversation_blobs,
-    hidden_entry_repair_version, legacy_blob_retirement_version,
+    has_persisted_legacy_conversation_blobs,
     read_persisted_agent_name, read_persisted_latest_root_blob_id,
-    read_persisted_transcript_entries, retire_persisted_legacy_conversation_blobs,
-    set_hidden_entry_repair_version, set_persisted_agent_name,
-    set_stale_root_cleanup_version, stale_root_cleanup_version,
+    SandAgentDb,
 };
+use super::agent_db_serde::is_valid_transcript_entry;
 use super::conversation_recovery::{
     OutlineItem, conversation_structure_fully_resolves, parse_conversation_state_structure,
     rebuild_transcript_entries_from_state, select_hidden_artifact_entry_ids,
@@ -106,6 +103,7 @@ pub fn sync_recovered_profile_name(
     db_path: &Path,
     busy_timeout_ms: u64,
     profile_name: &str,
+    owner: &SandAgentDb,
 ) -> Result<bool, String> {
     let profile_name = profile_name.trim();
     if profile_name.is_empty()
@@ -116,17 +114,26 @@ pub fn sync_recovered_profile_name(
     {
         return Ok(false);
     }
-    set_persisted_agent_name(db_path, busy_timeout_ms, profile_name)
+    owner
+        .set_metadata(
+            "name",
+            serde_json::Value::String(profile_name.to_string()),
+        )
         .map_err(|error| error.to_string())
 }
 
 pub fn backfill_transcript(
-    db_path: &Path,
-    busy_timeout_ms: u64,
+    _db_path: &Path,
+    _busy_timeout_ms: u64,
     rebuilt: &[serde_json::Value],
+    owner: &SandAgentDb,
 ) -> Result<usize, String> {
-    let persisted = read_persisted_transcript_entries(db_path, busy_timeout_ms)
-        .map_err(|error| error.to_string())?;
+    let persisted = owner
+        .get_transcript_entries()
+        .map_err(|error| error.to_string())?
+        .into_iter()
+        .filter(is_valid_transcript_entry)
+        .collect::<Vec<_>>();
     if persisted.len() >= rebuilt.len()
         || !persisted.iter().enumerate().all(|(index, entry)| {
             rebuilt
@@ -136,29 +143,29 @@ pub fn backfill_transcript(
     {
         return Ok(0);
     }
-    append_persisted_transcript_entries(
-        db_path,
-        busy_timeout_ms,
-        &rebuilt[persisted.len()..],
-    )
-    .map_err(|error| error.to_string())
+    owner
+        .append_transcript_entries(&rebuilt[persisted.len()..])
+        .map_err(|error| error.to_string())
 }
 
 pub fn backfill_transcript_from_outline(
-    db_path: &Path,
-    busy_timeout_ms: u64,
+    _db_path: &Path,
+    _busy_timeout_ms: u64,
     turns: &[Vec<OutlineItem>],
+    owner: &SandAgentDb,
 ) -> Result<usize, String> {
     let rebuilt = rebuild_transcript_entries_from_state(turns);
-    backfill_transcript(db_path, busy_timeout_ms, &rebuilt)
+    backfill_transcript(_db_path, _busy_timeout_ms, &rebuilt, owner)
 }
 
 pub fn repair_hidden_transcript_entries_once(
     db_path: &Path,
-    busy_timeout_ms: u64,
+    _busy_timeout_ms: u64,
     outline: &[OutlineItem],
+    owner: &SandAgentDb,
 ) -> Result<usize, String> {
-    if hidden_entry_repair_version(db_path, busy_timeout_ms)
+    if owner
+        .get_hidden_entry_repair_version()
         .map_err(|error| error.to_string())?
         >= HIDDEN_ENTRY_REPAIR_VERSION
     {
@@ -166,7 +173,8 @@ pub fn repair_hidden_transcript_entries_once(
     }
 
     let outcome = (|| -> Result<usize, String> {
-        let entries = read_persisted_transcript_entries(db_path, busy_timeout_ms)
+        let entries = owner
+            .get_transcript_entries()
             .map_err(|error| error.to_string())?;
         let has_recovered_user = entries.iter().any(|entry| {
             entry.get("kind").and_then(serde_json::Value::as_str) == Some("message")
@@ -177,12 +185,9 @@ pub fn repair_hidden_transcript_entries_once(
                     .is_some_and(|id| id.starts_with("recovered-"))
         });
         if !has_recovered_user {
-            let _ = set_hidden_entry_repair_version(
-                db_path,
-                busy_timeout_ms,
-                HIDDEN_ENTRY_REPAIR_VERSION,
-            )
-            .map_err(|error| error.to_string())?;
+            let _ = owner
+                .set_hidden_entry_repair_version(HIDDEN_ENTRY_REPAIR_VERSION)
+                .map_err(|error| error.to_string())?;
             return Ok(0);
         }
         if outline.is_empty() {
@@ -190,18 +195,16 @@ pub fn repair_hidden_transcript_entries_once(
         }
         let ids = select_hidden_artifact_entry_ids(&entries, outline);
         for id in &ids {
-            if !delete_persisted_transcript_entry(db_path, busy_timeout_ms, id)
+            if !owner
+                .delete_transcript_entry(id)
                 .map_err(|error| error.to_string())?
             {
                 return Ok(0);
             }
         }
-        let _ = set_hidden_entry_repair_version(
-            db_path,
-            busy_timeout_ms,
-            HIDDEN_ENTRY_REPAIR_VERSION,
-        )
-        .map_err(|error| error.to_string())?;
+        let _ = owner
+            .set_hidden_entry_repair_version(HIDDEN_ENTRY_REPAIR_VERSION)
+            .map_err(|error| error.to_string())?;
         Ok(ids.len())
     })();
 
@@ -235,6 +238,7 @@ pub fn recover_conversation_root_if_missing(
     db_path: &Path,
     blob_db_path: &Path,
     busy_timeout_ms: u64,
+    owner: &SandAgentDb,
 ) -> Result<bool, String> {
     let existing = read_persisted_latest_root_blob_id(db_path, busy_timeout_ms)
         .map_err(|error| error.to_string())?;
@@ -304,13 +308,9 @@ pub fn recover_conversation_root_if_missing(
         if !resolves || get_sand_agent_db_write_generation(db_path) != recovery_generation {
             return Ok(false);
         }
-        compare_and_set_persisted_latest_root_blob_id(
-            db_path,
-            busy_timeout_ms,
-            &existing,
-            &root,
-        )
-        .map_err(|error| error.to_string())
+        owner
+            .compare_and_set_latest_root_blob_id(&existing, &root)
+            .map_err(|error| error.to_string())
     })();
 
     match outcome {
@@ -328,9 +328,11 @@ pub fn clear_stale_checkpoint_roots_once(
     db_path: &Path,
     blob_db_path: &Path,
     busy_timeout_ms: u64,
+    owner: &SandAgentDb,
 ) -> Result<bool, String> {
     if !STALE_ROOT_GC.load(Ordering::Acquire)
-        || stale_root_cleanup_version(db_path, busy_timeout_ms)
+        || owner
+            .get_stale_root_cleanup_version()
             .map_err(|error| error.to_string())?
             >= STALE_ROOT_CLEANUP_VERSION
     {
@@ -376,12 +378,9 @@ pub fn clear_stale_checkpoint_roots_once(
         {
             return Ok(false);
         }
-        set_stale_root_cleanup_version(
-            db_path,
-            busy_timeout_ms,
-            STALE_ROOT_CLEANUP_VERSION,
-        )
-        .map_err(|error| error.to_string())
+        owner
+            .set_stale_root_cleanup_version(STALE_ROOT_CLEANUP_VERSION)
+            .map_err(|error| error.to_string())
     })();
 
     match outcome {
@@ -402,9 +401,11 @@ pub fn retire_legacy_store_blobs_once(
     db_path: &Path,
     blob_db_path: &Path,
     busy_timeout_ms: u64,
+    owner: &SandAgentDb,
 ) -> Result<bool, String> {
     if !is_legacy_store_blob_retirement_enabled()
-        || legacy_blob_retirement_version(db_path, busy_timeout_ms)
+        || owner
+            .get_legacy_blob_retirement_version()
             .map_err(|error| error.to_string())?
             >= LEGACY_BLOB_RETIREMENT_VERSION
     {
@@ -415,12 +416,9 @@ pub fn retire_legacy_store_blobs_once(
         if !has_persisted_legacy_conversation_blobs(db_path, busy_timeout_ms)
             .map_err(|error| error.to_string())?
         {
-            return retire_persisted_legacy_conversation_blobs(
-                db_path,
-                busy_timeout_ms,
-                LEGACY_BLOB_RETIREMENT_VERSION,
-            )
-            .map_err(|error| error.to_string());
+            return owner
+                .retire_legacy_conversation_blobs(LEGACY_BLOB_RETIREMENT_VERSION)
+                .map_err(|error| error.to_string());
         }
 
         let root = read_persisted_latest_root_blob_id(db_path, busy_timeout_ms)
@@ -462,12 +460,9 @@ pub fn retire_legacy_store_blobs_once(
         {
             return Ok(false);
         }
-        retire_persisted_legacy_conversation_blobs(
-            db_path,
-            busy_timeout_ms,
-            LEGACY_BLOB_RETIREMENT_VERSION,
-        )
-        .map_err(|error| error.to_string())
+        owner
+            .retire_legacy_conversation_blobs(LEGACY_BLOB_RETIREMENT_VERSION)
+            .map_err(|error| error.to_string())
     })();
 
     match outcome {

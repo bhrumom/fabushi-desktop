@@ -9,6 +9,7 @@ use mahayana_host_runtime::extensions::session::production::ProductionSessionWor
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::runner::tools::sand_multitask_todo_tool::{
     MultitaskTodoItem, MultitaskTodoState, MultitaskTodoStatus,
+    ProductionMultitaskTodoState,
     SAND_MULTITASK_TODO_TOOL_NAME, SAND_MULTITASK_TODOS_KV,
     SandMultitaskTodoToolBridge,
 };
@@ -168,11 +169,14 @@ fn merge_and_replace_follow_frozen_todo_semantics() {
 #[test]
 fn production_agent_db_adapter_keeps_todos_across_tool_bridge_rebuilds() {
     let root = root("sqlite");
-    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
     let session = workers
         .materialize_session_with_active(None, "user", None, None)
         .expect("session");
-    let state: Arc<dyn MultitaskTodoState> = session.db.clone();
+    let state: Arc<dyn MultitaskTodoState> = Arc::new(ProductionMultitaskTodoState::new(
+        Arc::clone(&workers),
+        &session.record.id,
+    ));
     let first: Arc<dyn RoutedToolBridge> = Arc::new(SandMultitaskTodoToolBridge::new(
         Arc::new(EmptyBridge),
         Arc::clone(&state),

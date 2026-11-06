@@ -12,6 +12,11 @@ pub trait AgentManagementSink:Send+Sync{
     fn self_agent_id(&self)->&str;
     fn resolve_image_source(&self,image:&AgentMessageImage,_tool_call_id:&str)->Result<AgentMessageImage,ProviderSessionError>{Ok(image.clone())}
     fn send_to_agent(&self,target_id:&str,message:&str,images:&[AgentMessageImage],priority:bool)->Result<String,ProviderSessionError>;
+    fn send_to_agent_with_reply(&self,target_id:&str,message:&str,images:&[AgentMessageImage],priority:bool,reply_to_id:Option<&str>)->Result<String,ProviderSessionError>{
+        let _ = reply_to_id;
+        self.send_to_agent(target_id,message,images,priority)
+    }
+    fn current_reply_to_id(&self)->Option<&str>{None}
     fn create_agent(&self,name:&str,description:&str)->Result<AgentManagementRecord,ProviderSessionError>;
     fn update_agent(&self,agent_id:&str,name:Option<&str>,description:Option<&str>)->Result<Option<AgentManagementRecord>,ProviderSessionError>;
 }
@@ -57,7 +62,7 @@ impl RoutedToolBridge for AgentManagementToolBridge{
                     .into_iter()
                     .map(|image|self.sink.resolve_image_source(&image,tool_call_id))
                     .collect::<Result<Vec<_>,_>>()?;
-                Ok(Value::String(self.sink.send_to_agent(target,message,&images,priority)?))
+                Ok(Value::String(self.sink.send_to_agent_with_reply(target,message,&images,priority,self.sink.current_reply_to_id())?))
             }
             "CreateAgent"=>{
                 let o=args.as_object().ok_or_else(||ProviderSessionError::Tool("CreateAgent arguments must be an object".into()))?;

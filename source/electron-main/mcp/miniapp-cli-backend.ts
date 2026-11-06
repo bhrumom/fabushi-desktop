@@ -10,8 +10,9 @@
  */
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { lstat, realpath, stat } from "node:fs/promises";
-import { basename, dirname, isAbsolute, relative, sep } from "node:path";
+import { ProgressStream } from "./progress-stream.js";
+import { lstat, mkdtemp, realpath, stat, writeFile, rm } from "node:fs/promises";
+import { basename, dirname, isAbsolute, join, relative, sep } from "node:path";
 import type {
   MiniAppCapability,
   MiniAppSelectionEntry,
@@ -65,6 +66,7 @@ export interface MiniAppPickPort {
 export interface MiniAppChildHandle {
   readonly done: Promise<{ readonly code: number; readonly stdout: string; readonly stderr: string }>;
   kill(): void;
+  snapshot?(): string;
 }
 
 export interface MiniAppSpawnPort {
@@ -88,9 +90,10 @@ function defaultSpawn(binaryPath: string, configPath: string): MiniAppSpawnPort 
       shell: false,
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
-      env: { PATH: "/usr/local/bin:/usr/bin:/bin", LC_ALL: "C" },
+      env: { PATH: "/usr/local/bin:/usr/bin:/bin", LC_ALL: "C", DANDELION_LOG: "warn" },
     });
     let stdout = "", stderr = "", stdoutBytes = 0, stderrBytes = 0;
+    const progress = argv.includes("--progress-json") ? new ProgressStream() : null;
     let exceeded = false;
     let killTimer: ReturnType<typeof setTimeout> | undefined;
     let settled = false;
@@ -100,6 +103,10 @@ function defaultSpawn(binaryPath: string, configPath: string): MiniAppSpawnPort 
       killTimer = setTimeout(() => { if (!settled) child.kill("SIGKILL"); }, 3000);
     };
     child.stdout.on("data", (chunk: Buffer) => {
+      if (progress) {
+        try { progress.push(chunk); } catch { exceeded = true; kill(); }
+        return;
+      }
       stdoutBytes += chunk.length;
       if (stdoutBytes > 1_048_576) { exceeded = true; kill(); }
       else stdout += chunk.toString("utf8");
@@ -110,14 +117,14 @@ function defaultSpawn(binaryPath: string, configPath: string): MiniAppSpawnPort 
       else stderr += chunk.toString("utf8");
     });
     const done = new Promise<{ code: number; stdout: string; stderr: string }>((settle) => {
-      child.on("error", (error) => settle({ code: -1, stdout, stderr: String(error.message) }));
+      child.on("error", (error) => settle({ code: -1, stdout: progress?.snapshot() ?? stdout, stderr: String(error.message) }));
       child.on("close", (code) => {
         settled = true;
         if (killTimer) clearTimeout(killTimer);
-        settle({ code: exceeded ? -2 : code ?? -1, stdout, stderr });
+        settle({ code: exceeded ? -2 : code ?? -1, stdout: progress?.snapshot() ?? stdout, stderr });
       });
     });
-    return { done, kill };
+    return { done, kill, snapshot: () => progress?.snapshot() ?? stdout };
   };
 }
 
@@ -144,7 +151,7 @@ export function createDandelionCliBackend(
   const platform = config.platform ?? process.platform;
   const nativeCliSupported = platform === "linux" || platform === "darwin";
   const spawnCommand = ports.spawn ?? defaultSpawn(config.binaryPath, config.configPath);
-  const selections = new Map<string, { root: string; device: bigint; inode: bigint; expiresAt: number }>();
+  const selections = new Map<string, { root: string; device: bigint; inode: bigint; expiresAt: number; dispose?: () => Promise<void> }>();
   const operations = new Map<string, Operation>();
   const active = new Set<NativeRun>();
   let generation = 0;
@@ -168,14 +175,19 @@ export function createDandelionCliBackend(
     }));
     return resolvedRoots;
   };
+  const dropSelection = (selectionId: string): void => {
+    const record = selections.get(selectionId);
+    selections.delete(selectionId);
+    void record?.dispose?.().catch(() => {});
+  };
 
   const pruneSelections = (): void => {
     const now = Date.now();
-    for (const [id, record] of selections) if (record.expiresAt <= now) selections.delete(id);
+    for (const [id, record] of selections) if (record.expiresAt <= now) dropSelection(id);
     while (selections.size > MAX_SELECTIONS) {
       const oldest = selections.keys().next().value;
       if (oldest === undefined) break;
-      selections.delete(oldest);
+      dropSelection(oldest);
     }
   };
 
@@ -191,7 +203,7 @@ export function createDandelionCliBackend(
     pruneSelections();
     const record = selections.get(selectionId);
     if (!record) throw new Error("UNKNOWN_SELECTION");
-    if (record.expiresAt <= Date.now()) { selections.delete(selectionId); throw new Error("SELECTION_EXPIRED"); }
+    if (record.expiresAt <= Date.now()) { dropSelection(selectionId); throw new Error("SELECTION_EXPIRED"); }
     const info = await lstat(record.root, { bigint: true });
     if (!info.isDirectory() || info.isSymbolicLink() || info.dev !== record.device || info.ino !== record.inode) throw new Error("SELECTION_SOURCE_CHANGED");
     return record.root;
@@ -207,11 +219,17 @@ export function createDandelionCliBackend(
     return run;
   };
 
-  const parseResult = (text: string, mode: "single" | "receive" | "watch" = "single"): unknown => {
+  const parseResult = (text: string, mode: "single" | "receive" | "send" | "watch" = "single"): unknown => {
     const trimmed = text.trim();
     try {
       if (mode === "single") return trimmed ? JSON.parse(trimmed) : {};
       const records: unknown[] = trimmed.split(/\r?\n/).map((line) => JSON.parse(line));
+      if (mode === "send") {
+        if (!records.length || records.length > 1801 || records.slice(0, -1).some((record) => !record || typeof record !== "object" || Reflect.get(record, "event") !== "progress")) throw new Error();
+        const final = records.at(-1);
+        if (!final || typeof final !== "object" || Reflect.get(final, "schema_version") !== 1) throw new Error();
+        return final;
+      }
       if (mode === "watch") {
         if (records.length < 1 || records.length > 10_000) throw new Error();
         return { samples: records };
@@ -225,9 +243,27 @@ export function createDandelionCliBackend(
     } catch { throw new Error("DANDELION_INVALID_JSON"); }
   };
 
-  const finish = async (run: NativeRun, mode: "single" | "receive" | "watch" = "single"): Promise<unknown> => {
+  const finish = async (run: NativeRun, mode: "single" | "receive" | "send" | "watch" = "single"): Promise<unknown> => {
     let result;
-    try { result = await run.result; }
+    try {
+      if (mode === "send" && run.handle.snapshot) {
+        // A signed native worker may finish its receipt before its bounded
+        // shutdown tasks close stdout. Surface the verified terminal receipt
+        // immediately; the normal process completion still settles cleanup.
+        let settled = false;
+        result = await Promise.race([
+          run.result.finally(() => { settled = true; }),
+          (async () => {
+            for (;;) {
+              const snapshot = run.handle.snapshot?.() ?? "";
+              if (/\"schema_version\"\s*:\s*1/.test(snapshot)) return { code: 0, stdout: snapshot, stderr: "" };
+              if (settled) throw new Error("DANDELION_PROCESS_FAILED");
+              await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+          })(),
+        ]);
+      } else result = await run.result;
+    }
     catch { throw new Error("DANDELION_PROCESS_FAILED"); }
     if (run.cancelled) throw new Error("DANDELION_CANCELLED");
     if (run.timedOut) throw new Error("DANDELION_TIMEOUT");
@@ -251,7 +287,7 @@ export function createDandelionCliBackend(
     return finish(admit(argv), mode);
   };
 
-  const startOperation = (argv: readonly string[], mode: "single" | "receive"): { operationId: string } => {
+  const startOperation = (argv: readonly string[], mode: "single" | "receive" | "send"): { operationId: string } => {
     pruneOperations();
     if (operations.size >= MAX_OPERATIONS) throw new Error("NATIVE_OPERATION_LIMIT");
     const operationId = randomUUID();
@@ -318,8 +354,23 @@ export function createDandelionCliBackend(
       return { selectionId, entries };
     },
     release(selectionId) {
-      selections.delete(selectionId);
+      dropSelection(selectionId);
       return Promise.resolve();
+    },
+    async compose(text, selectionId) {
+      if (!stateDirectory || !text || Buffer.byteLength(text) > 65536) throw new Error("MESSAGE_LIMIT");
+      const source = selectionId ? await requireSelection(selectionId) : null;
+      const root = await mkdtemp(join(stateDirectory, "miniapp-compose-"));
+      try {
+        await writeFile(join(root, "message.txt"), text, "utf8");
+        const info = await stat(root, { bigint: true });
+        const id = randomUUID();
+        selections.set(id, { root, device: info.dev, inode: info.ino, expiresAt: Date.now() + SELECTION_TTL_MS, dispose: () => rm(root, { recursive: true, force: true }) });
+        return { selectionId: id, entries: [{ name: source ? `${basename(source)} + message.txt` : "message.txt", size: Buffer.byteLength(text) }] };
+      } catch (error) {
+        await rm(root, { recursive: true, force: true });
+        throw error;
+      }
     },
     async send(sendConfig: MiniAppTransferSendConfig) {
       const ticket = generation;
@@ -330,6 +381,12 @@ export function createDandelionCliBackend(
       if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
       if (!config.targetPools.some((pool) => pool.id === sendConfig.targetPoolId)) throw new Error("UNKNOWN_TARGET_POOL");
       const argv = ["run", "--source", root];
+      // The selected target pool is an execution policy, not just a Host-side
+      // capability label. The signed v0.4.5 CLI requires the explicit mode
+      // switch; omitting it leaves a local composer waiting on the configured
+      // remote transport and never produces a completion receipt.
+      if (sendConfig.targetPoolId === "loopback") argv.push("--local-loopback");
+      if (sendConfig.targetPoolId === "lan") argv.push("--lan-only");
       if (sendConfig.repeat !== undefined) argv.push("--repeat", String(sendConfig.repeat));
       if (sendConfig.watch === true) argv.push("--watch");
       if (sendConfig.intervalMs !== undefined) argv.push("--interval-ms", String(sendConfig.intervalMs));
@@ -338,8 +395,9 @@ export function createDandelionCliBackend(
       if (sendConfig.trafficLimitBytes !== undefined) argv.push("--traffic-limit-bytes", String(sendConfig.trafficLimitBytes));
       if (sendConfig.queueCapacity !== undefined) argv.push("--queue-capacity", String(sendConfig.queueCapacity));
       if (sendConfig.chunkBytes !== undefined) argv.push("--chunk-bytes", String(sendConfig.chunkBytes));
+      argv.push("--progress-json");
       argv.push("--json");
-      return startOperation(argv, "single");
+      return startOperation(argv, "send");
     },
     async receive(receiveConfig) {
       const ticket = generation;

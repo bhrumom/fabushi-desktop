@@ -24,6 +24,7 @@ import { isVncWebviewReady, VncWebview, type VncWebviewElement } from "./vnc-web
 import { TeachRecordingFrame, TeachRecordingPreviewFrame, TeachRecordingPreviewPeerRow, TeachRecordingStoreView, TeachRecordingTopBar } from "../teach-recording/view";
 import type { TeachRecordingComputerInjection } from "../teach-recording/composition";
 import { SandIconButton } from "../../../ui/sand-kit-primitives";
+import { LocalComputerWorkbench } from "../../../../production/LocalComputerWorkbench";
 import "./view.css";
 
 const DETAILS_ID = "sand-conversation-details";
@@ -471,10 +472,25 @@ export function ComputerFullscreen({ bridge, experience, subjectLabel, onRequest
   };
   return <div aria-label={`${subjectLabel}'s screen`} className={isOpen
     ? "sand-computer-fullscreen sand-ixxii4 sand-10a8y8t sand-f5e64p sand-78zum5 sand-dt5ytf sand-14gmceu sand-1t137rt"
-    : "sand-computer-fullscreen sand-ixxii4 sand-10a8y8t sand-f5e64p sand-78zum5 sand-dt5ytf sand-14gmceu sand-1t137rt sand-lshs6z sand-47corl"} ref={regionRef} role="region" tabIndex={-1}>
+    : "sand-computer-fullscreen sand-ixxii4 sand-10a8y8t sand-f5e64p sand-78zum5 sand-dt5ytf sand-14gmceu sand-1t137rt sand-lshs6z sand-47corl"} ref={regionRef} role="region" style={{ left: "52px" }} tabIndex={-1}>
     {teachRecording == null ? <div className="sand-computer-top-bar sand-1n2onr6 sand-9f619 sand-78zum5 sand-6s0dn4 sand-167g77z sand-2lah0s sand-h8yej3 sand-n3w4p2 sand-163pfp sand-lkep63 sand-8qq8ib">
       <span aria-hidden="true" className="sand-1iyjqo2 sand-s83m0k sand-kh2ocl sand-euugli sand-avu8j0 sand-1wfn6di" />
-      <div className="sand-computer-top-bar__actions sand-78zum5 sand-6s0dn4 sand-167g77z sand-2lah0s sand-lvsv26 sand-482pwi"><button aria-label="Exit fullscreen" className={ICON_BUTTON_SM} data-size="sm" data-variant="ghost" onClick={close} title="Exit fullscreen" type="button"><ContractIcon /></button></div>
+      <div className="sand-computer-top-bar__actions sand-78zum5 sand-6s0dn4 sand-167g77z sand-2lah0s sand-lvsv26 sand-482pwi">
+        <button
+          aria-label="返回会话"
+          className={ICON_BUTTON_SM}
+          data-size="sm"
+          data-testid="computer-return-to-chat"
+          data-variant="ghost"
+          onClick={close}
+          style={{ alignItems: "center", background: "rgba(255, 255, 255, 0.12)", borderRadius: "6px", color: "inherit", cursor: "pointer", display: "inline-flex", fontSize: "12px", gap: "6px", padding: "4px 10px" }}
+          title="返回会话"
+          type="button"
+        >
+          <ContractIcon />
+          <span>返回会话</span>
+        </button>
+      </div>
     </div> : <TeachRecordingTopBar {...teachRecording.topBar} />}
     <div className="sand-computer-body sand-9f619 sand-78zum5 sand-dt5ytf sand-6s0dn4 sand-l56j7k sand-1iyjqo2 sand-s83m0k sand-2lwn1j sand-h8yej3 sand-e8ttls">
       {handoff == null ? null : <HandoffBanner handoff={handoff} onDismiss={() => handBack("dismissed")} onHandBack={() => handBack("button")} subjectLabel={subjectLabel} />}
@@ -482,7 +498,7 @@ export function ComputerFullscreen({ bridge, experience, subjectLabel, onRequest
       <div className="sand-computer-stage sand-1n2onr6 sand-h8yej3 sand-1iyjqo2 sand-s83m0k sand-2lwn1j sand-78zum5 sand-6s0dn4 sand-l56j7k sand-pqogu8">
         {stageKey != null && stageVnc != null ? <div className="sand-computer-stage__frame sand-1n2onr6 sand-78zum5 sand-6s0dn4 sand-l56j7k sand-b3r6kr sand-t9pb60 sand-1ua6jya sand-j04kma" style={{ width: `min(100cqw, calc(100cqh * ${dimensions.width} / ${dimensions.height}))`, aspectRatio: `${dimensions.width} / ${dimensions.height}` }}>
           <div className="sand-10l6tqk sand-10a8y8t"><VncWebview bridge={bridge} isInteractive isViewerVisible={isOpen} key={`${stageKey}:${stageVnc}`} onHostKey={(key) => onArrow(key)} onReadyChange={onReadyChange} openedAtMs={experience.openedAtMs} ref={webviewRef} src={stageVnc} /></div>
-        </div> : <StagePlaceholder copy={copy} onRetry={experience.refresh} tone="cover" />}
+        </div> : <LocalComputerWorkbench bridge={bridge} onBackToChat={close} onRetryVnc={experience.refresh} subjectLabel={subjectLabel} />}
       </div>
       {teachRecording == null ? null : <TeachRecordingStoreView {...teachRecording.storeView} />}
       {current == null ? null : <div className="sand-78zum5 sand-6s0dn4 sand-l56j7k sand-1jnr06f sand-2lah0s sand-h8yej3 sand-euugli sand-1k70j0n"><span className="sand-fifm61 sand-1d3mw78 sand-12oo3zp sand-euugli sand-b3r6kr sand-lyipyv sand-uxw1ft sand-2b8uid sand-102cea3">{current.title}</span></div>}

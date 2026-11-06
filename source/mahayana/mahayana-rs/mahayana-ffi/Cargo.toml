@@ -27,7 +27,6 @@ remote-model-provider = ["mahayana-host/remote-model-provider"]
 telemetry = ["mahayana-host/telemetry"]
 
 [dependencies]
-fabushi-telegram-runtime = { path = "../providers/telegram-runtime" }
 mahayana-core.workspace = true
 mahayana-host = { workspace = true, default-features = false }
 mahayana-product = { package = "mahayana-platform-client", path = "../mahayana-product" }

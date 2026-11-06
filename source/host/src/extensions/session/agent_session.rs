@@ -5,36 +5,261 @@ use std::process;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 use crate::agents::agent_profile::SandAgentProfile;
-use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_file};
 use crate::storage::store_db::delete_sand_agent_db_write_generation;
 use crate::transcript_mutation_events::publish_transcript_mutation;
 use crate::extensions::memory::memory_service::FileMemoryStore;
-use crate::automations::automation::{AUTOMATION_UI_LIMIT, AutomationRecord, AutomationSpec};
-use crate::automations::automation_store::FileAutomationStore;
-use crate::workflows::workflow_library::WorkflowSpec;
-use crate::workflows::workflow_store::{
-    FileWorkflowStore, WorkflowImportBatch, WorkflowImportResult, WorkflowImportSkipped,
-    WorkflowRecord,
+use crate::extensions::inference::model_picker_service::{
+    ApplySessionModelSelectionParams, ApplySessionModelSelectionResult, SessionModelEntryState,
 };
 
 use super::agent_db_serde::AwaitingUserResponse;
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
-use super::session_conversation_state::{ConversationOutlineItem, TranscriptThread};
+use super::session_conversation_state::{
+    ConversationOutlineItem, PendingConversationTurnRegistry, TranscriptThread,
+};
 use super::channel_store::{ChannelConfig, ChannelConnection, FileChannelStore};
-use super::conversation_blobs_path::conversation_blobs_path;
 use super::production::{PreparedAgentBlobStore, ProductionSessionWorkers};
 use super::session_materialization::MaterializedAgentRecord;
 use super::session_paths::ACTIVE_AGENT_FILENAME;
 use super::session_profile_files::{
     AgentAvatarResponse, AgentProfileUpdate, resolve_profile_name as resolve_profile_name_impl,
-    write_agent_profile_update,
 };
 use super::session_summaries::AgentSummary;
+
+const SESSION_MODEL_SELECTION_KV: &str = "sessionModelSelection";
+const SESSION_COMMUNICATION_POLICY_KV: &str = "sessionCommunicationPolicy";
+
+/// Read the authoritative per-session model selection from the session's
+/// SQLite KV owner. The record is deliberately scoped by agent id; malformed
+/// or cross-session state is rejected instead of being applied to another
+/// session.
+pub fn read_session_model_entry(
+    db: &crate::extensions::session::agent_db::SandAgentDb,
+    agent_id: &str,
+) -> Result<SessionModelEntryState, String> {
+    let Some(raw) = db
+        .read_kv(SESSION_MODEL_SELECTION_KV)
+        .map_err(|error| error.to_string())?
+    else {
+        return Ok(SessionModelEntryState {
+            session_id: agent_id.to_string(),
+            ..SessionModelEntryState::default()
+        });
+    };
+    let state = serde_json::from_str::<SessionModelEntryState>(&raw)
+        .map_err(|error| format!("invalid session model selection: {error}"))?;
+    if state.session_id != agent_id {
+        return Err(format!(
+            "session model selection belongs to {}, not {agent_id}",
+            state.session_id
+        ));
+    }
+    Ok(state)
+}
+
+/// Persist a validated session model selection without touching agent-level
+/// settings or defaults.
+pub fn write_session_model_entry(
+    db: &crate::extensions::session::agent_db::SandAgentDb,
+    agent_id: &str,
+    expected_lifecycle_revision: &str,
+    state: &SessionModelEntryState,
+) -> Result<bool, String> {
+    if state.session_id != agent_id {
+        return Err(format!(
+            "cannot persist session model selection for {}, expected {agent_id}",
+            state.session_id
+        ));
+    }
+    let raw = serde_json::to_string(state)
+        .map_err(|error| format!("serialize session model selection: {error}"))?;
+    db.write_session_kv_if_generation(
+        SESSION_MODEL_SELECTION_KV,
+        &raw,
+        agent_id,
+        expected_lifecycle_revision,
+    )
+        .map_err(|error| error.to_string())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SessionCommunicationMode {
+    Always,
+    Ask,
+    Never,
+}
+
+impl SessionCommunicationMode {
+    pub fn parse(value: &str) -> Option<Self> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "always" => Some(Self::Always),
+            "ask" => Some(Self::Ask),
+            "never" => Some(Self::Never),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields)]
+pub struct SessionCommunicationPolicyOverride {
+    pub send: Option<SessionCommunicationMode>,
+    pub receive: Option<SessionCommunicationMode>,
+}
+
+/// Read the optional communication policy through the existing agent DB owner.
+/// Missing state is intentionally distinct from malformed state: callers may
+/// apply the documented compatibility default only to the former.
+pub fn read_session_communication_policy(
+    db: &crate::extensions::session::agent_db::SandAgentDb,
+    agent_id: &str,
+) -> Result<Option<SessionCommunicationPolicyOverride>, String> {
+    let Some(raw) = db
+        .read_kv(SESSION_COMMUNICATION_POLICY_KV)
+        .map_err(|error| error.to_string())?
+    else {
+        return Ok(None);
+    };
+    serde_json::from_str::<SessionCommunicationPolicyOverride>(&raw)
+        .map(Some)
+        .map_err(|error| format!("invalid session communication policy for {agent_id}: {error}"))
+}
+
+pub fn write_session_communication_policy(
+    db: &crate::extensions::session::agent_db::SandAgentDb,
+    expected_session_id: &str,
+    expected_lifecycle_revision: &str,
+    policy: &SessionCommunicationPolicyOverride,
+) -> Result<bool, String> {
+    let raw = serde_json::to_string(policy)
+        .map_err(|error| format!("serialize session communication policy: {error}"))?;
+    db.write_session_kv_if_generation(
+        SESSION_COMMUNICATION_POLICY_KV,
+        &raw,
+        expected_session_id,
+        expected_lifecycle_revision,
+    )
+        .map_err(|error| error.to_string())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EffectiveSessionCommunicationPolicy {
+    pub send: SessionCommunicationMode,
+    pub receive: SessionCommunicationMode,
+}
+
+pub fn resolve_session_communication_policy(
+    defaults: Option<SessionCommunicationPolicyOverride>,
+    entry: Option<SessionCommunicationPolicyOverride>,
+) -> EffectiveSessionCommunicationPolicy {
+    let defaults = defaults.unwrap_or_default();
+    let entry = entry.unwrap_or_default();
+    EffectiveSessionCommunicationPolicy {
+        send: entry
+            .send
+            .or(defaults.send)
+            .unwrap_or(SessionCommunicationMode::Always),
+        receive: entry
+            .receive
+            .or(defaults.receive)
+            .unwrap_or(SessionCommunicationMode::Always),
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommunicationEndpoint {
+    pub agent_id: String,
+    pub session_key: String,
+    pub store_path: String,
+    pub session_id: Option<String>,
+    pub communication: Option<SessionCommunicationPolicyOverride>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommunicationApproval {
+    pub direction: SessionCommunicationDirection,
+    pub endpoint: CommunicationEndpoint,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SessionCommunicationDirection {
+    Send,
+    Receive,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SessionCommunicationDecision {
+    Allowed { approvals: Vec<CommunicationApproval> },
+    Denied { error: String },
+}
+
+fn is_same_session(
+    source: Option<&CommunicationEndpoint>,
+    target: Option<&CommunicationEndpoint>,
+) -> bool {
+    let (Some(source), Some(target)) = (source, target) else {
+        return false;
+    };
+    source.session_id.is_some()
+        && source.session_id == target.session_id
+        && source.agent_id == target.agent_id
+        && source.session_key == target.session_key
+        && source.store_path == target.store_path
+}
+
+/// Plan peer communication admission without bypassing the existing session owner.
+pub fn plan_session_communication(
+    defaults: Option<SessionCommunicationPolicyOverride>,
+    source: &[CommunicationEndpoint],
+    target: &[CommunicationEndpoint],
+    owned_task: bool,
+) -> SessionCommunicationDecision {
+    if owned_task || is_same_session(source.first(), target.first()) {
+        return SessionCommunicationDecision::Allowed { approvals: Vec::new() };
+    }
+
+    let mut approvals = Vec::new();
+    for (direction, endpoints) in [
+        (SessionCommunicationDirection::Send, source),
+        (SessionCommunicationDirection::Receive, target),
+    ] {
+        for endpoint in endpoints {
+            let policy = resolve_session_communication_policy(defaults, endpoint.communication);
+            let mode = match direction {
+                SessionCommunicationDirection::Send => policy.send,
+                SessionCommunicationDirection::Receive => policy.receive,
+            };
+            match mode {
+                SessionCommunicationMode::Always => {}
+                SessionCommunicationMode::Ask => approvals.push(CommunicationApproval {
+                    direction,
+                    endpoint: endpoint.clone(),
+                }),
+                SessionCommunicationMode::Never => {
+                    let direction_name = match direction {
+                        SessionCommunicationDirection::Send => "send",
+                        SessionCommunicationDirection::Receive => "receive",
+                    };
+                    return SessionCommunicationDecision::Denied {
+                        error: format!(
+                            "Session communication {direction_name} is disabled for {}.",
+                            endpoint.session_key
+                        ),
+                    };
+                }
+            }
+        }
+    }
+    SessionCommunicationDecision::Allowed { approvals }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SessionDbStat {
@@ -49,20 +274,10 @@ pub fn resolve_profile_name(
     resolve_profile_name_impl(trimmed_name, current)
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct AgentAutomationEntry {
-    pub agent_id: String,
-    pub automation: AutomationRecord,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct WorkflowImportResponse {
-    pub workflows: Vec<WorkflowRecord>,
-    pub result: WorkflowImportBatch,
-}
+pub use super::ocrm_agent_session_automations::*;
 
 pub struct SandAgentSessionStore {
-    production: Arc<ProductionSessionWorkers>,
+    pub(crate) production: Arc<ProductionSessionWorkers>,
 }
 
 impl SandAgentSessionStore {
@@ -72,6 +287,122 @@ impl SandAgentSessionStore {
 
     pub fn production(&self) -> &Arc<ProductionSessionWorkers> {
         &self.production
+    }
+
+    /// Apply and persist a session-scoped model selection through the existing
+    /// model-picker policy owner. Only an `Applied` result is persisted; policy
+    /// rejection and generation conflicts leave the previous KV state intact.
+    pub fn apply_session_model_selection(
+        &self,
+        agent_id: &str,
+        params: ApplySessionModelSelectionParams<'_>,
+        current_time_ms: u64,
+    ) -> Result<ApplySessionModelSelectionResult, String> {
+        self.production
+            .apply_session_model_selection(agent_id, params, current_time_ms)
+    }
+
+    pub fn read_session_model_entry(
+        &self,
+        agent_id: &str,
+    ) -> Result<SessionModelEntryState, String> {
+        let db = self.production.open_agent_db_owner(agent_id)?;
+        read_session_model_entry(&db, agent_id)
+    }
+
+    pub fn begin_cron_session_run(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        started_at_ms: f64,
+    ) -> Result<bool, String> {
+        self.production
+            .begin_cron_session_run(agent_id, automation_id, run_id, started_at_ms)
+    }
+
+    pub fn finish_cron_session_run(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+    ) -> Result<bool, String> {
+        self.production.finish_cron_session_run(
+            agent_id,
+            automation_id,
+            run_id,
+            outcome,
+            finished_at_ms,
+            detail,
+        )
+    }
+
+    pub fn finish_cron_session_run_with_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+        active_controller: bool,
+        pending_outgoing_media: bool,
+        unsettled_subagent: bool,
+    ) -> Result<bool, String> {
+        self.production.finish_cron_session_run_with_fences(
+            agent_id,
+            automation_id,
+            run_id,
+            outcome,
+            finished_at_ms,
+            detail,
+            active_controller,
+            pending_outgoing_media,
+            unsettled_subagent,
+        )
+    }
+
+    pub fn publish_cron_session_run_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        active_controller: bool,
+        pending_outgoing_media: bool,
+        unsettled_subagent: bool,
+    ) -> Result<bool, String> {
+        self.production.publish_cron_session_run_fences(
+            agent_id,
+            automation_id,
+            run_id,
+            active_controller,
+            pending_outgoing_media,
+            unsettled_subagent,
+        )
+    }
+
+    pub fn list_cron_session_runs(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<crate::extensions::session::agent_db::CronSessionRunRecord>, String> {
+        self.production.list_cron_session_runs(agent_id)
+    }
+
+    pub fn list_expired_cron_session_runs(
+        &self,
+        agent_id: &str,
+        now_ms: f64,
+        retention_ms: Option<u64>,
+    ) -> Result<Vec<crate::extensions::session::agent_db::CronSessionRunRecord>, String> {
+        self.production
+            .list_expired_cron_session_runs(agent_id, now_ms, retention_ms)
+    }
+
+    pub fn pending_conversation_turns(&self) -> PendingConversationTurnRegistry {
+        self.production.pending_conversation_turns()
     }
 
     pub fn create_memory_store(&self, agent_dir: impl AsRef<Path>) -> FileMemoryStore {
@@ -187,9 +518,10 @@ impl SandAgentSessionStore {
         agent_id: &str,
         update: &AgentProfileUpdate,
     ) -> Result<(), String> {
-        write_agent_profile_update(&self.get_agent_dir(agent_id), update)
+        let active = self.read_active_agent_id();
+        self.production
+            .update_agent_profile(agent_id, update, active.as_deref())
             .map(|_| ())
-            .map_err(|error| error.to_string())
     }
 
     pub fn create_session(
@@ -226,13 +558,10 @@ impl SandAgentSessionStore {
     }
 
     pub fn delete_session(&self, agent_id: &str) -> Result<(), String> {
-        self.production.begin_agent_delete(agent_id);
-        let result = (|| {
+        self.production.begin_agent_delete(agent_id)?;
+        let result = self.production.with_agent_filesystem_mutation(agent_id, || {
             let db_path = self.production.session_db_path(agent_id)?;
-            let blob_path = conversation_blobs_path(&db_path);
-            let _ = self.production.close_agent_store_owner(agent_id, false);
-            let _ = self.production.close_agent_db_owner(agent_id, false);
-            futures::executor::block_on(self.production.worker_pool().close_store(&blob_path));
+            self.production.retire_agent_owners_locked(agent_id, false)?;
             delete_sand_agent_db_write_generation(&db_path);
             match fs::remove_dir_all(self.get_agent_dir(agent_id)) {
                 Ok(()) => {}
@@ -245,9 +574,14 @@ impl SandAgentSessionStore {
             ]);
             publish_transcript_mutation(&mutation);
             Ok(())
-        })();
-        self.production.end_agent_delete(agent_id);
-        result
+        });
+        match result {
+            Err(error) => {
+                self.production.clear_agent_delete_fast_path(agent_id);
+                Err(error)
+            }
+            Ok(()) => self.production.end_agent_delete(agent_id),
+        }
     }
 
     pub fn list_agents(&self) -> Result<Vec<AgentSummary>, String> {
@@ -529,239 +863,8 @@ impl SandAgentSessionStore {
         )
     }
 
-    pub fn automation_store_for(&self, agent_id: &str) -> Result<FileAutomationStore, String> {
-        self.production.open_automation_store(agent_id)
-    }
-
-    pub fn list_agent_automations(&self, agent_id: &str) -> Result<Vec<AutomationRecord>, String> {
-        Ok(surface_automations(&self.automation_store_for(agent_id)?))
-    }
-
-    pub fn set_agent_automation_enabled(
-        &self,
-        agent_id: &str,
-        automation_id: &str,
-        enabled: bool,
-    ) -> Result<Vec<AutomationRecord>, String> {
-        let store = self.automation_store_for(agent_id)?;
-        let _ = store
-            .set_enabled(automation_id, enabled)
-            .map_err(|error| error.to_string())?;
-        Ok(surface_automations(&store))
-    }
-
-    pub fn create_agent_automation(
-        &self,
-        agent_id: &str,
-        spec: &AutomationSpec,
-    ) -> Result<Vec<AutomationRecord>, String> {
-        let store = self.automation_store_for(agent_id)?;
-        let _ = store
-            .upsert(spec, now_ms())
-            .map_err(|error| error.to_string())?;
-        Ok(surface_automations(&store))
-    }
-
-    pub fn update_agent_automation(
-        &self,
-        agent_id: &str,
-        automation_id: &str,
-        spec: &AutomationSpec,
-    ) -> Result<Vec<AutomationRecord>, String> {
-        let store = self.automation_store_for(agent_id)?;
-        let _ = store
-            .update(automation_id, spec)
-            .map_err(|error| error.to_string())?;
-        Ok(surface_automations(&store))
-    }
-
-    pub fn remove_agent_automation(
-        &self,
-        agent_id: &str,
-        automation_id: &str,
-    ) -> Result<Vec<AutomationRecord>, String> {
-        let store = self.automation_store_for(agent_id)?;
-        let _ = store
-            .remove(automation_id)
-            .map_err(|error| error.to_string())?;
-        Ok(surface_automations(&store))
-    }
-
-    pub fn workflow_store_for(&self, agent_id: &str) -> Result<FileWorkflowStore, String> {
-        self.production.open_workflow_store(agent_id)
-    }
-
-    pub fn list_agent_workflows(&self, agent_id: &str) -> Result<Vec<WorkflowRecord>, String> {
-        Ok(surface_workflows(&self.workflow_store_for(agent_id)?))
-    }
-
-    pub fn get_agent_workflow(
-        &self,
-        agent_id: &str,
-        workflow_id: &str,
-    ) -> Result<Option<WorkflowRecord>, String> {
-        Ok(self.workflow_store_for(agent_id)?.get(workflow_id))
-    }
-
-    pub fn create_agent_workflow(
-        &self,
-        agent_id: &str,
-        spec: &WorkflowSpec,
-    ) -> Result<Vec<WorkflowRecord>, String> {
-        let store = self.workflow_store_for(agent_id)?;
-        let _ = store.create(spec)?;
-        Ok(surface_workflows(&store))
-    }
-
-    pub fn update_agent_workflow(
-        &self,
-        agent_id: &str,
-        workflow_id: &str,
-        spec: &WorkflowSpec,
-    ) -> Result<Vec<WorkflowRecord>, String> {
-        let store = self.workflow_store_for(agent_id)?;
-        let _ = store.update(workflow_id, spec)?;
-        Ok(surface_workflows(&store))
-    }
-
-    pub fn set_agent_workflow_enabled(
-        &self,
-        agent_id: &str,
-        workflow_id: &str,
-        enabled: bool,
-    ) -> Result<Vec<WorkflowRecord>, String> {
-        let store = self.workflow_store_for(agent_id)?;
-        let _ = store.set_enabled_for_agent(workflow_id, enabled)?;
-        Ok(surface_workflows(&store))
-    }
-
-    pub fn remove_agent_workflow(
-        &self,
-        agent_id: &str,
-        workflow_id: &str,
-    ) -> Result<Vec<WorkflowRecord>, String> {
-        let store = self.workflow_store_for(agent_id)?;
-        let _ = store.remove(workflow_id)?;
-        Ok(surface_workflows(&store))
-    }
-
-    pub fn import_agent_workflow_markdown(
-        &self,
-        agent_id: &str,
-        markdown: &str,
-        fallback_name: Option<&str>,
-    ) -> Result<WorkflowImportResponse, String> {
-        let store = self.workflow_store_for(agent_id)?;
-        let result = match store.import_markdown(markdown, fallback_name)? {
-            Some((id, name)) => WorkflowImportBatch {
-                imported: vec![WorkflowImportResult { id, name }],
-                skipped: Vec::new(),
-            },
-            None => WorkflowImportBatch {
-                imported: Vec::new(),
-                skipped: vec![WorkflowImportSkipped {
-                    source: "pasted skill".into(),
-                    reason: "empty or invalid".into(),
-                }],
-            },
-        };
-        Ok(WorkflowImportResponse {
-            workflows: surface_workflows(&store),
-            result,
-        })
-    }
-
-    pub fn import_agent_workflow_source(
-        &self,
-        agent_id: &str,
-        source: &str,
-        fallback_name: Option<&str>,
-    ) -> Result<WorkflowImportResponse, String> {
-        let store = self.workflow_store_for(agent_id)?;
-        let result = match store.import_live_source(source, fallback_name)? {
-            Some((id, name)) => WorkflowImportBatch {
-                imported: vec![WorkflowImportResult { id, name }],
-                skipped: Vec::new(),
-            },
-            None => WorkflowImportBatch {
-                imported: Vec::new(),
-                skipped: vec![WorkflowImportSkipped {
-                    source: source.to_string(),
-                    reason: "could not link".into(),
-                }],
-            },
-        };
-        Ok(WorkflowImportResponse {
-            workflows: surface_workflows(&store),
-            result,
-        })
-    }
-
-    pub fn port_agent_local_skills_from(
-        &self,
-        agent_id: &str,
-        home_dir: &Path,
-        cwd: &Path,
-    ) -> Result<WorkflowImportResponse, String> {
-        let store = self.workflow_store_for(agent_id)?;
-        let result = store.port_local_skills(home_dir, cwd)?;
-        Ok(WorkflowImportResponse {
-            workflows: surface_workflows(&store),
-            result,
-        })
-    }
-
-    pub fn port_agent_local_skills(
-        &self,
-        agent_id: &str,
-    ) -> Result<WorkflowImportResponse, String> {
-        let home = std::env::var_os("HOME")
-            .or_else(|| std::env::var_os("USERPROFILE"))
-            .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from("."));
-        let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-        self.port_agent_local_skills_from(agent_id, &home, &cwd)
-    }
-
-    pub fn list_all_automations_from(
-        &self,
-        definitions_only: bool,
-    ) -> Result<Vec<AgentAutomationEntry>, String> {
-        let mut result = Vec::new();
-        for agent_id in self.list_agent_ids()? {
-            let Ok(store) = self.automation_store_for(&agent_id) else {
-                continue;
-            };
-            let automations = if definitions_only {
-                store.list_definitions()
-            } else {
-                store.list()
-            };
-            result.extend(automations.into_iter().map(|automation| AgentAutomationEntry {
-                agent_id: agent_id.clone(),
-                automation,
-            }));
-        }
-        Ok(result)
-    }
-
-    pub fn list_all_automations(&self) -> Result<Vec<AgentAutomationEntry>, String> {
-        self.list_all_automations_from(false)
-    }
-
-    pub fn list_all_automation_definitions(&self) -> Result<Vec<AgentAutomationEntry>, String> {
-        self.list_all_automations_from(true)
-    }
-
     fn write_settings(&self, agent_id: &str, update: Map<String, Value>) -> Result<(), String> {
-        if !self.agent_dir_exists(agent_id) {
-            return Err(format!("Agent missing: {agent_id}"));
-        }
-        write_sand_settings_file(
-            get_sand_settings_path(self.get_agent_dir(agent_id)),
-            &update,
-        )
-        .map_err(|error| error.to_string())
+        self.production.write_agent_settings(agent_id, update)
     }
 
     pub fn open_channel_store(&self, agent_id: &str) -> Result<FileChannelStore, String> {
@@ -813,30 +916,7 @@ impl SandAgentSessionStore {
     }
 }
 
-fn surface_automations(store: &FileAutomationStore) -> Vec<AutomationRecord> {
-    store
-        .list()
-        .into_iter()
-        .take(AUTOMATION_UI_LIMIT)
-        .collect()
-}
-
-fn surface_workflows(store: &FileWorkflowStore) -> Vec<WorkflowRecord> {
-    const WORKFLOW_UI_LIMIT: usize = 100;
-    let mut managed = Vec::new();
-    let mut user = Vec::new();
-    for workflow in store.list_all() {
-        if matches!(workflow.source.as_str(), "managed" | "plugin") {
-            managed.push(workflow);
-        } else {
-            user.push(workflow);
-        }
-    }
-    managed.extend(user.into_iter().take(WORKFLOW_UI_LIMIT));
-    managed
-}
-
-fn now_ms() -> f64 {
+pub(crate) fn now_ms() -> f64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()

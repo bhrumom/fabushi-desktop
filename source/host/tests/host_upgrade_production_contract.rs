@@ -96,7 +96,11 @@ fn shipping_host_recreates_durable_upgrade_turns_before_ack_redrive() {
 
 #[test]
 fn shipping_recreate_gateway_carries_pending_wakes_and_resumes_durable_turns() {
-    const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+    const SHIPPING_HOST: &str = concat!(
+        include_str!("../app/src/main.rs"),
+        "\n",
+        include_str!("../app/src/ocrm_handlers/automation_turn.rs")
+    );
     const GATEWAY_PROTOCOL: &str = include_str!("../src/gateway_protocol.rs");
     const TRANSCRIPT_MANAGER: &str =
         include_str!("../src/extensions/transcript/transcript_manager.rs");
@@ -136,10 +140,17 @@ fn shipping_upgrade_resume_keeps_durable_state_and_recreate_work_accounting() {
     let can_execute = resume_body
         .find("if !self.transcript_manager.can_execute()")
         .expect("execution guard before durable marker settlement");
-    let clear_all = resume_body
-        .find("store.clear_all();")
-        .expect("durable marker settlement");
-    assert!(can_execute < clear_all);
+    assert!(!resume_body.contains("store.clear_all();"));
+    let clear_if_matches = resume_body
+        .rfind("store.clear_if_matches(&marker)")
+        .expect("exact durable marker settlement");
+    assert!(can_execute < clear_if_matches);
+    let dispatch_failure = resume_body
+        .find("if let Err(error) = result")
+        .expect("upgrade resume failure branch");
+    assert!(dispatch_failure < clear_if_matches);
+    assert!(resume_body.contains("upgrade_resume_marker_identity_is_well_formed"));
+    assert!(resume_body.contains("upgrade_resume_identity_invalid"));
 
     assert!(TRANSCRIPT_MANAGER.contains("services.trace_flusher.flush_tracing()"));
     assert!(COMPLETION_REVIVALS.contains("pub fn mid_drain_revival_agent_ids(&self)"));

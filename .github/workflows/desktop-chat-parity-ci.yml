@@ -30,9 +30,7 @@ on:
       - "projects/desktop-chat-streaming-parity/**"
       - "projects/grok-fabu-parity/architecture-semantic-adaptations.json"
       - "scripts/check-grok-architecture.mjs"
-      - ".github/workflows/pr20-verify-once.yml"
       - ".github/workflows/desktop-chat-parity-ci.yml"
-      - ".github/workflows/pr20-verify-once.yml"
   workflow_dispatch:
 
 permissions:
@@ -86,7 +84,7 @@ jobs:
 
   focused-electron-e2e:
     name: Focused Electron chat E2E
-    runs-on: macos-14
+    runs-on: macos-15
     defaults:
       run:
         working-directory: desktop
@@ -114,6 +112,8 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
+      - name: Install locked Playwright video capture dependency
+        run: npx --no-install playwright install ffmpeg
       - name: Verify Electron runtime installation
         shell: bash
         run: |
@@ -180,8 +180,8 @@ jobs:
           set -euo pipefail
           mkdir -p source/fabushi-network-worker/target/ci
           cd source/fabushi-network-worker
-          go mod tidy
-          go build -trimpath -ldflags='-s -w' -o target/ci/fabushi-network-worker .
+          go build -mod=readonly -trimpath -ldflags='-s -w' -o target/ci/fabushi-network-worker .
+          git diff --exit-code -- go.mod go.sum
           test -x target/ci/fabushi-network-worker
       - name: Build deterministic Mahayana test host
         run: npm run build:host:ci
@@ -202,6 +202,7 @@ jobs:
         env:
           FABUSHI_FEATURE_HOST_MODE: test
           MAHAYANA_APP_HOST_BIN: ${{ github.workspace }}/desktop/resources/bin/mahayana-app-host
+          NMR_ELECTRON_TARGET_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           DEBUG: pw:browser*
           ELECTRON_ENABLE_LOGGING: "1"
           ELECTRON_ENABLE_STACK_DUMPING: "1"

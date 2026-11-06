@@ -1,11 +1,22 @@
 use std::collections::BTreeMap;
 use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 
 use serde_json::{Map, Value};
 
 pub type TranscriptMutation = Map<String, Value>;
+
+pub const TRANSCRIPT_MUTATION_ORIGIN_KEY: &str = "originDbPath";
+
+/// Internal database identity for post-commit projection only. Callers compute
+/// this from their trusted writer/owner path, never a notification-supplied
+/// path. The value must not enter Gateway events or public message metadata.
+pub fn transcript_mutation_origin(db_path: &Path) -> Option<String> {
+    let canonical = std::fs::canonicalize(db_path).ok()?;
+    canonical.to_str().map(str::to_owned)
+}
 type TranscriptMutationListener = Arc<dyn Fn(&TranscriptMutation) + Send + Sync + 'static>;
 
 fn listeners() -> &'static Mutex<BTreeMap<u64, TranscriptMutationListener>> {

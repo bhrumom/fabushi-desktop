@@ -15,8 +15,11 @@ const CANONICAL_PROTO: &str = include_str!("../proto/agent/v1/local_exec.proto")
 const BINDING_MODULE: &str =
     include_str!("../src/extensions/local_exec/agent_v1_exec_wire.rs");
 const HOST_BUILD_SCRIPT: &str = include_str!("../build.rs");
-const SHIPPING_MANAGER: &str =
-    include_str!("../src/extensions/local_exec/gateway_local_exec_sand_box.rs");
+const SHIPPING_MANAGER: &str = concat!(
+    include_str!("../src/extensions/local_exec/gateway_local_exec_sand_box.rs"),
+    "\n",
+    include_str!("../src/extensions/local_exec/gateway_local_exec_sandbox_ocrm.rs"),
+);
 const SHIPPING_RUNNER: &str =
     include_str!("../src/runner/host_external_machine_dependencies.rs");
 

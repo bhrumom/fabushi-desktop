@@ -19,9 +19,16 @@ export const MINIAPP_CAPABILITY = Object.freeze({
   UPDATE: "update",
   DIAGNOSTICS: "diagnostics",
   COMPAT: "compat",
+  CONVERSATION: "conversation",
 } as const);
 
 export type MiniAppCapability = typeof MINIAPP_CAPABILITY[keyof typeof MINIAPP_CAPABILITY];
+
+export interface MiniAppLaunchContext {
+  readonly launchSessionId: string;
+  readonly conversationId: string;
+  readonly startParameter?: string;
+}
 
 export interface MiniAppToolScope {
   readonly appId: string;
@@ -29,6 +36,7 @@ export interface MiniAppToolScope {
   readonly packageDigest: string;
   readonly accountScope: string;
   readonly accountGeneration: number;
+  readonly launchContext?: MiniAppLaunchContext;
 }
 
 export interface MiniAppToolError { readonly code: string; readonly message: string }
@@ -65,6 +73,7 @@ export interface MiniAppToolBackend {
   readState(): Promise<unknown>;
   pick(mode: "files" | "directory", limits: { readonly maxFiles: number; readonly maxBytes: number }): Promise<{ readonly selectionId: string; readonly entries: MiniAppSelectionEntry[] } | null>;
   release(selectionId: string): Promise<void>;
+  compose?(text: string, selectionId?: string): Promise<{ readonly selectionId: string; readonly entries: MiniAppSelectionEntry[] }>;
   send(config: MiniAppTransferSendConfig): Promise<{ readonly operationId: string }>;
   receive?(config: MiniAppReceiveConfig): Promise<{ readonly operationId: string }>;
   status(operationId: string): Promise<unknown>;
@@ -77,6 +86,24 @@ export interface MiniAppToolBackend {
   update(action: "check" | "stage"): Promise<unknown>;
   diagnostics?(action: "selfTest" | "doctor" | "status"): Promise<unknown>;
   compat?(action: "packetInspect" | "countryLookup" | "linkExercise" | "linkRecover", args: Record<string, unknown>): Promise<unknown>;
+  conversation?(
+    action: "sendData" | "sendMessage" | "openInvoice" | "startServiceCall" | "submitServiceCallInput" | "endServiceCall",
+    args: {
+      readonly launchSessionId: string;
+      readonly conversationId: string;
+      readonly text?: string;
+      readonly data?: string;
+      readonly startParameter?: string;
+      readonly clientNonce?: string;
+      readonly requestId?: string;
+      readonly appId: string;
+      readonly accountScope: string;
+      readonly invoiceId?: string;
+      readonly callId?: string;
+      readonly mode?: "voice" | "text" | "hybrid";
+      readonly input?: Record<string, unknown>;
+    },
+  ): Promise<unknown>;
   /** Fences and cancels native work when account/window ownership changes. */
   cancelAll?(): void;
 }
@@ -122,10 +149,174 @@ function asRecord(args: unknown): Record<string, unknown> {
   return args as Record<string, unknown>;
 }
 
-type Handler = (args: Record<string, unknown>) => Promise<MiniAppToolResult>;
+type Handler = (args: Record<string, unknown>, scope: MiniAppToolScope) => Promise<MiniAppToolResult>;
 
 function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: MiniAppCapability; mutating: boolean; run: Handler }> {
   const entries: Array<[string, MiniAppCapability, boolean, Handler]> = [
+    ["launch.getContext", MINIAPP_CAPABILITY.OFFLINE, false, async (_args, scope) => ({
+      ok: true,
+      data: scope.launchContext
+        ? {
+            launchSessionId: scope.launchContext.launchSessionId,
+            conversationId: scope.launchContext.conversationId,
+            startParameter: scope.launchContext.startParameter,
+          }
+        : {},
+    })],
+    ["conversation.sendMessage", MINIAPP_CAPABILITY.CONVERSATION, true, async (args, scope) => {
+      if (!backend.conversation) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供会话能力");
+      const launchSessionId = scope.launchContext?.launchSessionId;
+      const conversationId = scope.launchContext?.conversationId;
+      if (!launchSessionId || !conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
+      if (args.conversationId !== undefined && args.conversationId !== conversationId) {
+        return fail("FORBIDDEN_CONVERSATION_INJECTION", "禁止伪造或注入会话ID");
+      }
+      const rawText = args.text;
+      if (typeof rawText !== "string" || !rawText.trim()) throw new TypeError("INVALID_TEXT");
+      const text = rawText.trim();
+      const requestId = typeof args.requestId === "string" && args.requestId ? args.requestId : undefined;
+      const clientNonce = typeof args.clientNonce === "string" && args.clientNonce ? args.clientNonce : undefined;
+      const sent = await backend.conversation("sendMessage", {
+        launchSessionId,
+        conversationId,
+        text,
+        startParameter: scope.launchContext?.startParameter,
+        appId: scope.appId,
+        accountScope: scope.accountScope,
+        requestId,
+        clientNonce,
+      });
+      return { ok: true, data: sent };
+    }],
+    ["conversation.sendData", MINIAPP_CAPABILITY.CONVERSATION, true, async (args, scope) => {
+      if (!backend.conversation) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供会话能力");
+      const launchSessionId = scope.launchContext?.launchSessionId;
+      const conversationId = scope.launchContext?.conversationId;
+      if (!launchSessionId || !conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
+      if (args.conversationId !== undefined && args.conversationId !== conversationId) {
+        return fail("FORBIDDEN_CONVERSATION_INJECTION", "禁止伪造或注入会话ID");
+      }
+      if (typeof args.data !== "string") throw new TypeError("INVALID_DATA");
+      const requestId = typeof args.requestId === "string" && args.requestId ? args.requestId : undefined;
+      const clientNonce = typeof args.clientNonce === "string" && args.clientNonce ? args.clientNonce : undefined;
+      const sent = await backend.conversation("sendData", {
+        launchSessionId,
+        conversationId,
+        data: args.data,
+        startParameter: scope.launchContext?.startParameter,
+        appId: scope.appId,
+        accountScope: scope.accountScope,
+        requestId,
+        clientNonce,
+      });
+      return { ok: true, data: sent };
+    }],
+    ["conversation.openInvoice", MINIAPP_CAPABILITY.CONVERSATION, true, async (args, scope) => {
+      if (!backend.conversation) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供会话能力");
+      const launchSessionId = scope.launchContext?.launchSessionId;
+      const conversationId = scope.launchContext?.conversationId;
+      if (!launchSessionId || !conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
+      if (args.conversationId !== undefined && args.conversationId !== conversationId) {
+        return fail("FORBIDDEN_CONVERSATION_INJECTION", "禁止伪造或注入会话ID");
+      }
+      const rawInvoiceId = args.invoiceId;
+      if (typeof rawInvoiceId !== "string" || !rawInvoiceId.trim()) throw new TypeError("INVALID_INVOICE_ID");
+      const invoiceId = rawInvoiceId.trim();
+      const requestId = typeof args.requestId === "string" && args.requestId ? args.requestId : undefined;
+      const clientNonce = typeof args.clientNonce === "string" && args.clientNonce ? args.clientNonce : undefined;
+      const sent = await backend.conversation("openInvoice", {
+        launchSessionId,
+        conversationId,
+        invoiceId,
+        startParameter: scope.launchContext?.startParameter,
+        appId: scope.appId,
+        accountScope: scope.accountScope,
+        requestId,
+        clientNonce,
+      });
+      return { ok: true, data: sent };
+    }],
+    ["conversation.startServiceCall", MINIAPP_CAPABILITY.CONVERSATION, true, async (args, scope) => {
+      if (!backend.conversation) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供会话能力");
+      const launchSessionId = scope.launchContext?.launchSessionId;
+      const conversationId = scope.launchContext?.conversationId;
+      if (!launchSessionId || !conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
+      if (args.conversationId !== undefined && args.conversationId !== conversationId) {
+        return fail("FORBIDDEN_CONVERSATION_INJECTION", "禁止伪造或注入会话ID");
+      }
+      const rawCallId = args.callId;
+      if (typeof rawCallId !== "string" || !rawCallId.trim()) throw new TypeError("INVALID_CALL_ID");
+      const callId = rawCallId.trim();
+      const mode = args.mode;
+      if (mode !== "voice" && mode !== "text" && mode !== "hybrid") throw new TypeError("INVALID_MODE");
+      const requestId = typeof args.requestId === "string" && args.requestId ? args.requestId : undefined;
+      const clientNonce = typeof args.clientNonce === "string" && args.clientNonce ? args.clientNonce : undefined;
+      const sent = await backend.conversation("startServiceCall", {
+        launchSessionId,
+        conversationId,
+        callId,
+        mode,
+        startParameter: scope.launchContext?.startParameter,
+        appId: scope.appId,
+        accountScope: scope.accountScope,
+        requestId,
+        clientNonce,
+      });
+      return { ok: true, data: sent };
+    }],
+    ["conversation.submitServiceCallInput", MINIAPP_CAPABILITY.CONVERSATION, true, async (args, scope) => {
+      if (!backend.conversation) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供会话能力");
+      const launchSessionId = scope.launchContext?.launchSessionId;
+      const conversationId = scope.launchContext?.conversationId;
+      if (!launchSessionId || !conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
+      if (args.conversationId !== undefined && args.conversationId !== conversationId) {
+        return fail("FORBIDDEN_CONVERSATION_INJECTION", "禁止伪造或注入会话ID");
+      }
+      const rawCallId = args.callId;
+      if (typeof rawCallId !== "string" || !rawCallId.trim()) throw new TypeError("INVALID_CALL_ID");
+      const callId = rawCallId.trim();
+      if (!args.input || typeof args.input !== "object" || Array.isArray(args.input)) throw new TypeError("INVALID_INPUT");
+      const input = args.input as Record<string, unknown>;
+      const requestId = typeof args.requestId === "string" && args.requestId ? args.requestId : undefined;
+      const clientNonce = typeof args.clientNonce === "string" && args.clientNonce ? args.clientNonce : undefined;
+      const sent = await backend.conversation("submitServiceCallInput", {
+        launchSessionId,
+        conversationId,
+        callId,
+        input,
+        startParameter: scope.launchContext?.startParameter,
+        appId: scope.appId,
+        accountScope: scope.accountScope,
+        requestId,
+        clientNonce,
+      });
+      return { ok: true, data: sent };
+    }],
+    ["conversation.endServiceCall", MINIAPP_CAPABILITY.CONVERSATION, true, async (args, scope) => {
+      if (!backend.conversation) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供会话能力");
+      const launchSessionId = scope.launchContext?.launchSessionId;
+      const conversationId = scope.launchContext?.conversationId;
+      if (!launchSessionId || !conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
+      if (args.conversationId !== undefined && args.conversationId !== conversationId) {
+        return fail("FORBIDDEN_CONVERSATION_INJECTION", "禁止伪造或注入会话ID");
+      }
+      const rawCallId = args.callId;
+      if (typeof rawCallId !== "string" || !rawCallId.trim()) throw new TypeError("INVALID_CALL_ID");
+      const callId = rawCallId.trim();
+      const requestId = typeof args.requestId === "string" && args.requestId ? args.requestId : undefined;
+      const clientNonce = typeof args.clientNonce === "string" && args.clientNonce ? args.clientNonce : undefined;
+      const sent = await backend.conversation("endServiceCall", {
+        launchSessionId,
+        conversationId,
+        callId,
+        startParameter: scope.launchContext?.startParameter,
+        appId: scope.appId,
+        accountScope: scope.accountScope,
+        requestId,
+        clientNonce,
+      });
+      return { ok: true, data: sent };
+    }],
     ["offline.capabilities", MINIAPP_CAPABILITY.OFFLINE, false, async () => {
       const announced = await backend.capabilities();
       return { ok: true, data: { contract: MINIAPP_TOOL_CONTRACT, platform: announced.platform, capabilities: announced.capabilities, targetPools: announced.targetPools } };
@@ -139,6 +330,11 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
     ["selection.release", MINIAPP_CAPABILITY.SELECTION, false, async (args) => {
       await backend.release(requiredId(args, "selectionId"));
       return { ok: true };
+    }],
+    ["selection.compose", MINIAPP_CAPABILITY.SELECTION, false, async (args) => {
+      if (!backend.compose) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供文字暂存能力");
+      const text = typeof args.text === "string" ? args.text : "";
+      return { ok: true, data: await backend.compose(text, typeof args.selectionId === "string" ? args.selectionId : undefined) };
     }],
     ["transfer.send", MINIAPP_CAPABILITY.TRANSFER, true, async (args) => {
       const transferConfig = {
@@ -240,7 +436,7 @@ export function createMiniAppToolRouter(options: MiniAppToolRouterOptions): Mini
       }
       const handler = handlers.get(tool);
       if (!handler) return fail("UNKNOWN_TOOL", "该工具未在契约中声明");
-      const ownedControl = tool === "transfer.status" || tool === "transfer.cancel";
+      const ownedControl = tool === "transfer.status" || tool === "transfer.cancel" || tool === "launch.getContext";
       if (!ownedControl && !throttle(scope.accountScope)) return fail("RATE_LIMITED", "调用过于频繁，请稍后重试");
       // Discovery is a policy boundary, not a UI hint. Re-check the native
       // announcement on every invocation so a renderer cannot call a hidden
@@ -269,7 +465,7 @@ export function createMiniAppToolRouter(options: MiniAppToolRouterOptions): Mini
       }
       try {
         if (!isCurrent()) return fail("STALE_SCOPE", "小程序窗口或账号已变化");
-        const result = await handler.run(args);
+        const result = await handler.run(args, scope);
         if (!isCurrent()) return fail("STALE_SCOPE", "小程序窗口或账号已变化");
         return result;
       } catch (error) {

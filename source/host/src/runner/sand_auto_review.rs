@@ -157,6 +157,7 @@ pub enum SandAutoReviewApprovalStatus {
 pub struct SandAutoReviewApproval {
     pub id: String,
     pub agent_id: String,
+    pub session_key: Option<String>,
     pub surface: SandAutoReviewSurface,
     pub fingerprint: String,
     pub reason: String,
@@ -260,6 +261,7 @@ struct ControllerState {
 
 pub struct SandAutoReviewController {
     agent_id: String,
+    session_key: Option<String>,
     host_generation: String,
     approval_ttl_ms: u64,
     max_pending_per_agent: usize,
@@ -275,6 +277,7 @@ impl Clone for SandAutoReviewController {
     fn clone(&self) -> Self {
         Self {
             agent_id: self.agent_id.clone(),
+            session_key: self.session_key.clone(),
             host_generation: self.host_generation.clone(),
             approval_ttl_ms: self.approval_ttl_ms,
             max_pending_per_agent: self.max_pending_per_agent,
@@ -315,6 +318,7 @@ impl SandAutoReviewController {
     ) -> Self {
         Self {
             agent_id: agent_id.into(),
+            session_key: None,
             host_generation: host_generation.into(),
             approval_ttl_ms,
             max_pending_per_agent,
@@ -340,6 +344,13 @@ impl SandAutoReviewController {
 
     pub fn agent_id(&self) -> &str {
         &self.agent_id
+    }
+
+    pub fn with_session_key(mut self, session_key: Option<String>) -> Self {
+        self.session_key = session_key
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty());
+        self
     }
 
     pub fn host_generation(&self) -> &str {
@@ -432,6 +443,7 @@ impl SandAutoReviewController {
             SandAutoReviewApproval {
                 id: (self.random_id)(),
                 agent_id,
+                session_key: self.session_key.clone(),
                 surface: request.surface,
                 fingerprint: request.fingerprint,
                 reason: sanitize(&request.reason, "This action requires your approval.", 500),
