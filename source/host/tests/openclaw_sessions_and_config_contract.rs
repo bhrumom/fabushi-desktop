@@ -1056,7 +1056,7 @@ fn test_ocrm_session_o03_conversation_turn_correlation() {
             Some("turn-uuid-12345"),
             "conversation-1",
             "session-1",
-            Some("thread-1"),
+            None,
             Duration::from_secs(30),
         )
         .expect("register pending turn");
@@ -1073,7 +1073,7 @@ fn test_ocrm_session_o03_conversation_turn_correlation() {
             "session-1",
             "inbound-1",
             Some("outbound-1"),
-            Some("thread-1"),
+            None,
             "reply",
             1729900000000,
         ),
@@ -1088,7 +1088,7 @@ fn test_ocrm_session_o03_conversation_turn_correlation() {
             "session-1",
             "inbound-1",
             Some("outbound-1"),
-            Some("thread-1"),
+            None,
             "reply",
             1729900000000,
         ),
@@ -1098,7 +1098,7 @@ fn test_ocrm_session_o03_conversation_turn_correlation() {
     assert!(matches!(
         registry.claim_reply(
             "agent-1", "conversation-1", None, "session-1", "inbound-1b",
-            Some("outbound-1"), Some("thread-1"), "retry", 1729900000001,
+            Some("outbound-1"), None, "retry", 1729900000001,
         ),
         PendingConversationTurnClaimResult::Claimed(_)
     ));

@@ -248,6 +248,7 @@ fn group_member_routed_admission_projects_running_without_user_turn_badge() {
     let runtime = ProductionTranscriptRuntime::new(Some(&root));
     let args = serde_json::json!({
         "agentId": "member-a",
+        "sessionKey": "agent:member-a:group:room-a",
         "prompt": "hidden group prompt",
         "clientNonce": "group-member-nonce",
         "streamId": "group-member-stream",

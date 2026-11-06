@@ -4,6 +4,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::session::session_mutations::{
     capture_profile_mutation_files, profile_mutation_files_match,
@@ -232,13 +233,26 @@ fn bound_synthesis_gate_rejects_a_noncanonical_store_path() {
     ));
     workers.bind_memory_synthesis_gate();
 
-    let canonical = memory.store_for_agent("agent-gated");
+    let missing = memory.store_for_agent("agent-gated");
+    assert_eq!(
+        memory.apply_synthesis_with_gate(
+            "agent-gated", &missing, &missing.prepare_synthesis(), &[], 1,
+        ),
+        SynthesisApplyResult::Invalid,
+        "a canonical path does not authorize a missing Agent",
+    );
+
+    let sessions = SandAgentSessionStore::new(Arc::clone(&workers));
+    let agent = sessions.create_session(None, "user", None)
+        .expect("create a real admitted Agent for the store-path comparison");
+    workers.assert_agent_work_admission(&agent.id).expect("live Agent admission");
+    let canonical = memory.store_for_agent(&agent.id);
     let foreign = FileMemoryStore::new(root.join("foreign-memory"));
     let canonical_snapshot = canonical.prepare_synthesis();
     let foreign_snapshot = foreign.prepare_synthesis();
     assert_eq!(
         memory.apply_synthesis_with_gate(
-            "agent-gated",
+            &agent.id,
             &canonical,
             &canonical_snapshot,
             &[],
@@ -248,13 +262,21 @@ fn bound_synthesis_gate_rejects_a_noncanonical_store_path() {
     );
     assert_eq!(
         memory.apply_synthesis_with_gate(
-            "agent-gated",
+            &agent.id,
             &foreign,
             &foreign_snapshot,
             &[],
             2,
         ),
         SynthesisApplyResult::Invalid
+    );
+
+    assert_eq!(
+        memory.apply_synthesis_with_gate(
+            &agent.id, &canonical, &canonical.prepare_synthesis(), &[], 3,
+        ),
+        SynthesisApplyResult::Committed,
+        "foreign-store refusal leaves the same admitted owner usable",
     );
 
     workers.shutdown();
